@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Silver lease strategy</title>
+<style>
+:root{font-family:system-ui,sans-serif;color:#172033;background:#f5f7fb}*{box-sizing:border-box}body{margin:0}.app{max-width:1500px;margin:auto;padding:18px}.layout{display:grid;grid-template-columns:330px 1fr;gap:18px}.panel{background:white;border:1px solid #dce2ea;border-radius:12px;padding:16px}.controls{position:sticky;top:12px;align-self:start;max-height:calc(100vh - 24px);overflow:auto}h1{font-size:21px;margin:0 0 14px}h2{font-size:15px;margin:18px 0 8px}label{display:grid;grid-template-columns:1fr 100px;gap:10px;align-items:center;font-size:13px;margin:8px 0}input,select,button{font:inherit;padding:7px;border:1px solid #cbd5e1;border-radius:7px;background:white}button{width:100%;background:#172033;color:white;border:0;padding:10px;cursor:pointer;position:sticky;bottom:0}button:disabled{opacity:.55}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:15px}.metric{background:#f7f9fc;border-radius:9px;padding:11px}.metric span{display:block;color:#667085;font-size:12px}.metric strong{display:block;font-size:19px;margin-top:3px}.chart{height:285px;margin:12px 0}.chart h2{margin:0 0 4px}.chart canvas{width:100%;height:250px;display:block}.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:#667085}.key:before{content:"";width:12px;height:3px;background:var(--c);display:inline-block;margin-right:5px;vertical-align:middle}.status{min-height:22px;color:#667085;font-size:13px}.error{color:#b42318}@media(max-width:850px){.layout{grid-template-columns:1fr}.controls{position:static;max-height:none}.metrics{grid-template-columns:repeat(2,1fr)}}
+</style></head><body><div class="app"><h1>Silver lease strategy backtest</h1><div class="layout">
+<aside class="panel controls"><form id="form">
+<h2>Contract selection</h2>
+<label>Minimum days<input name="min_days" type="number" value="10" min="1"></label>
+<label>Short maturities<input name="negative_maturities" type="number" value="3" min="1"></label>
+<label>Max share / maturity (%)<input name="max_share_per_maturity" type="number" value="50" step="1"></label>
+<label>Maturity bonus / year (%)<input name="short_maturity_bonus_per_year" type="number" value="2" step="0.1"></label>
+<h2>Cash and SLV</h2>
+<label>SLV expense (%)<input name="slv_expense" type="number" value="0.5" step="0.1"></label>
+<label>SLV transition start (%)<input name="slv_start_rate" type="number" value="0.5" step="0.1"></label>
+<label>SLV fully allocated (%)<input name="slv_full_rate" type="number" value="-1.5" step="0.1"></label>
+<h2>Long futures</h2>
+<label>Full rate (%)<input name="positive_full_rate" type="number" value="15" step="1"></label>
+<label>Maximum notional (%)<input name="max_long_future" type="number" value="50" step="1"></label>
+<h2>Short futures</h2>
+<label>Entry rate (%)<input name="negative_short_start_rate" type="number" value="-0.5" step="0.1"></label>
+<label>Full rate (%)<input name="negative_short_full_rate" type="number" value="-15" step="1"></label>
+<label>Max fraction of SLV (%)<input name="max_short_fraction_of_slv" type="number" value="50" step="1"></label>
+<h2>Treasury return</h2><label>Valuation<select name="bond_mode"><option value="accrual">Accrued yield</option><option value="zero_coupon_mtm">Zero-coupon MTM</option></select></label>
+<div class="status" id="status"></div><button id="run" type="submit">Run strategy</button></form></aside>
+<main class="panel"><div class="metrics"><div class="metric"><span>Compounded return</span><strong id="compound">—</strong></div><div class="metric"><span>Simple return</span><strong id="simple">—</strong></div><div class="metric"><span>Ending NAV</span><strong id="nav">—</strong></div><div class="metric"><span>Observations</span><strong id="obs">—</strong></div></div>
+<div class="legend"><span class="key" style="--c:#2563eb">Interval</span><span class="key" style="--c:#ea580c">Simple cumulative</span><span class="key" style="--c:#16a34a">Compounded</span></div>
+<section class="chart"><h2>Returns over time</h2><canvas id="returns"></canvas></section>
+<div class="legend"><span class="key" style="--c:#2563eb">SLV</span><span class="key" style="--c:#64748b">Treasury</span><span class="key" style="--c:#16a34a">Long futures</span><span class="key" style="--c:#dc2626">Short futures</span></div>
+<section class="chart"><h2>Portfolio positions</h2><canvas id="positions"></canvas></section>
+<section class="chart"><h2>Weighted futures maturity</h2><canvas id="maturity"></canvas></section></main>
+</div></div><script>
+const $=id=>document.getElementById(id), form=$('form'), status=$('status'), button=$('run'); let last=null;
+function values(){return Object.fromEntries(new FormData(form).entries())}
+function fmt(v,d=1){return Number(v).toLocaleString(undefined,{maximumFractionDigits:d})}
+function lineChart(canvas, rows, specs, ylabel){const rect=canvas.getBoundingClientRect(),dpr=devicePixelRatio||1,w=Math.max(320,rect.width),h=250;canvas.width=w*dpr;canvas.height=h*dpr;const c=canvas.getContext('2d');c.scale(dpr,dpr);c.clearRect(0,0,w,h);const m={l:58,r:12,t:12,b:28}, vals=[];for(const s of specs)for(const r of rows){const v=Number(r[s.i]);if(Number.isFinite(v))vals.push(v)}if(!vals.length)return;let lo=Math.min(0,...vals),hi=Math.max(0,...vals),pad=(hi-lo||1)*.06;lo-=pad;hi+=pad;const x=i=>m.l+i/(rows.length-1||1)*(w-m.l-m.r),y=v=>m.t+(hi-v)/(hi-lo)*(h-m.t-m.b);c.font='11px system-ui';c.fillStyle='#667085';c.strokeStyle='#e3e7ee';c.lineWidth=1;for(let j=0;j<5;j++){const yy=m.t+j*(h-m.t-m.b)/4,v=hi-j*(hi-lo)/4;c.beginPath();c.moveTo(m.l,yy);c.lineTo(w-m.r,yy);c.stroke();c.fillText(fmt(v),4,yy+4)}for(const s of specs){c.strokeStyle=s.c;c.lineWidth=s.w||1.2;c.beginPath();rows.forEach((r,i)=>{const yy=y(Number(r[s.i]));i?c.lineTo(x(i),yy):c.moveTo(x(i),yy)});c.stroke()}c.fillStyle='#667085';c.fillText(rows[0][0],m.l,h-7);const end=rows.at(-1)[0],tw=c.measureText(end).width;c.fillText(end,w-m.r-tw,h-7);c.save();c.translate(13,h/2);c.rotate(-Math.PI/2);c.fillText(ylabel,0,0);c.restore()}
+function draw(){if(!last)return;const r=last.series;lineChart($('returns'),r,[{i:1,c:'#2563eb',w:.7},{i:2,c:'#ea580c'},{i:3,c:'#16a34a'}],'%');lineChart($('positions'),r,[{i:4,c:'#2563eb'},{i:5,c:'#64748b'},{i:6,c:'#16a34a'},{i:7,c:'#dc2626'}],'% of capital / notional');lineChart($('maturity'),r,[{i:8,c:'#7c3aed'}],'days')}
+async function run(e){if(e)e.preventDefault();button.disabled=true;status.className='status';status.textContent='Running full backtest…';try{const res=await fetch('/api/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(values())}),data=await res.json();if(!res.ok)throw Error(data.error||'Backtest failed');last=data;const s=data.summary;$('compound').textContent=fmt(s.compounded_return)+'%';$('simple').textContent=fmt(s.simple_return)+'%';$('nav').textContent=fmt(s.ending_nav,3);$('obs').textContent=fmt(s.observations,0);status.textContent=s.start+' to '+s.end+' · '+s.missing_intervals+' missing futures intervals skipped';draw()}catch(err){status.className='status error';status.textContent=err.message}finally{button.disabled=false}}
+form.addEventListener('submit',run);window.addEventListener('resize',draw);run();
+</script></body></html>
