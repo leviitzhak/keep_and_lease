@@ -38,9 +38,12 @@ def parameters(payload):
         max_share_per_maturity=pct("max_share_per_maturity", 50),
         short_maturity_bonus_per_year=pct("short_maturity_bonus_per_year", 2),
         bond_mode=str(payload.get("bond_mode", "accrual")),
+        treasury_asset=str(payload.get("treasury_asset", "matched_maturity")),
     )
     if p.bond_mode not in {"accrual", "zero_coupon_mtm"}:
         raise ValueError("Invalid bond mode")
+    if p.treasury_asset not in {"matched_maturity", "sgov_proxy"}:
+        raise ValueError("Invalid Treasury instrument")
     if p.slv_start_rate <= p.slv_full_rate:
         raise ValueError("SLV transition start must exceed its full-allocation rate")
     if p.negative_short_start_rate <= p.negative_short_full_rate:
@@ -48,6 +51,28 @@ def parameters(payload):
     if p.positive_full_rate <= 0:
         raise ValueError("Positive full-allocation rate must be positive")
     return p
+
+
+def position_change_stats(rows):
+    if len(rows) < 2:
+        return {"avg_daily_notional_change_pct": 0.0,
+                "avg_daily_futures_notional_change_pct": 0.0}
+    all_changes = []
+    futures_changes = []
+    for previous, current in zip(rows, rows[1:]):
+        slv_change = abs(current["slv_weight_pct"] - previous["slv_weight_pct"])
+        treasury_change = abs(current["treasury_weight_pct"] - previous["treasury_weight_pct"])
+        long_change = abs(current["long_futures_notional_pct"] -
+                          previous["long_futures_notional_pct"])
+        short_change = abs(current["short_futures_notional_pct"] -
+                           previous["short_futures_notional_pct"])
+        all_changes.append(slv_change + treasury_change + long_change + short_change)
+        futures_changes.append(long_change + short_change)
+    return {
+        "avg_daily_notional_change_pct": sum(all_changes) / len(all_changes),
+        "avg_daily_futures_notional_change_pct": (
+            sum(futures_changes) / len(futures_changes)),
+    }
 
 
 def result(payload):
@@ -62,7 +87,18 @@ def result(payload):
     fields = ["date", "interval_return_pct", "simple_cumulative_return_pct",
               "compounded_return_pct", "slv_weight_pct", "treasury_weight_pct",
               "long_futures_notional_pct", "short_futures_notional_pct",
-              "weighted_maturity_days"]
+              "long_weighted_maturity_days", "short_weighted_maturity_days",
+              "short_shortest_maturity_days", "short_longest_maturity_days",
+              "long_weighted_lease_rate_pct", "short_weighted_lease_rate_pct",
+              "long_book_interval_return_pct", "short_book_interval_return_pct",
+              "long_book_cumulative_return_pct", "short_book_cumulative_return_pct",
+              "long_futures_daily_return_pct", "short_futures_daily_return_pct",
+              "slv_daily_return_pct", "treasury_daily_return_pct",
+              "long_futures_cumulative_return_pct", "short_futures_cumulative_return_pct",
+              "slv_cumulative_return_pct", "treasury_cumulative_return_pct",
+              "long_futures_compounded_return_pct", "short_futures_compounded_return_pct",
+              "slv_compounded_return_pct", "treasury_compounded_return_pct"]
+    change_stats = position_change_stats(rows)
     return {
         "series": [[row[k] for k in fields] for row in sampled],
         "fields": fields,
@@ -72,6 +108,7 @@ def result(payload):
             "simple_return": rows[-1]["simple_cumulative_return_pct"],
             "compounded_return": rows[-1]["compounded_return_pct"],
             "ending_nav": rows[-1]["nav"],
+            **change_stats,
         },
     }
 
