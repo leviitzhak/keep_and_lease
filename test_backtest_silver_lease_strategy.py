@@ -54,6 +54,56 @@ class StandaloneLegReturnTests(unittest.TestCase):
         self.assertEqual(position["shorts"], position["short_leg"])
         self.assertEqual({"negative"}, set(position["short_leg"]))
 
+    def test_sleeves_are_proportional_to_available_signal_strength(self):
+        candidates = [
+            {"symbol": "positive", "days": 30, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": 0.075, "volume": 10},
+            {"symbol": "negative", "days": 90, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": -0.0775, "volume": 10},
+        ]
+        position = positions_for_day(candidates, Parameters(min_days=1))
+        self.assertAlmostEqual(0.075 / (0.075 + 0.0775), position["treasury"])
+        self.assertAlmostEqual(0.0775 / (0.075 + 0.0775), position["slv"])
+        self.assertEqual("long_and_short", position["mode"])
+
+    def test_only_available_sleeve_receives_capital(self):
+        positive = [{"symbol": "positive", "days": 30, "future": 100,
+                     "spot": 100, "rate": 0, "premium": 0,
+                     "lease": 0.075, "volume": 10}]
+        negative = [{"symbol": "negative", "days": 30, "future": 100,
+                     "spot": 100, "rate": 0, "premium": 0,
+                     "lease": -0.0775, "volume": 10}]
+        self.assertEqual(1.0, positions_for_day(positive, Parameters(min_days=1))["treasury"])
+        self.assertEqual(1.0, positions_for_day(negative, Parameters(min_days=1))["slv"])
+
+    def test_weekends_are_not_position_or_return_dates(self):
+        friday = date(2020, 1, 3)
+        saturday = date(2020, 1, 4)
+        monday = date(2020, 1, 6)
+        tuesday = date(2020, 1, 7)
+        days = [friday, saturday, monday, tuesday]
+        spot = {day: 100 + index for index, day in enumerate(days)}
+        contracts = {"near": {day: 100 for day in days}}
+        rates = {tenor: [(friday, 0.0)] for tenor in
+                 (91, 182, 365, 730, 1095, 1825)}
+        candidate = {"symbol": "near", "days": 30, "future": 100,
+                     "spot": 100, "rate": 0, "premium": 0,
+                     "lease": 0, "volume": 10}
+        by_day = {day: [dict(candidate)] for day in days}
+        rows, _ = run_backtest(spot, contracts, rates, by_day, Parameters(min_days=1))
+        self.assertEqual([tuesday.isoformat()], [row["date"] for row in rows])
+        self.assertEqual(monday.isoformat(), rows[0]["execution_date"])
+
+    def test_missing_leg_returns_are_reported_with_dates_and_symbol(self):
+        del self.contracts["near"][self.days[2]]
+        rows, missing = run_backtest(
+            self.spot, self.contracts, self.rates, self.by_day,
+            Parameters(min_days=1, positive_entry_rate=-0.01))
+        self.assertTrue(missing)
+        self.assertEqual("near", missing[0]["symbol"])
+        self.assertEqual(self.days[2].isoformat(), missing[0]["exit_date"])
+        self.assertNotEqual(len(self.days) - 2, len(rows))
+
 
 if __name__ == "__main__":
     unittest.main()

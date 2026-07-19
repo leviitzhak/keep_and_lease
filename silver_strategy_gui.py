@@ -111,7 +111,8 @@ def result(payload):
         "fields": fields,
         "summary": {
             "start": rows[0]["date"], "end": rows[-1]["date"],
-            "observations": len(rows), "missing_intervals": missing,
+            "observations": len(rows), "missing_intervals": len(missing),
+            "missing_return_events": missing,
             "simple_return": rows[-1]["simple_cumulative_return_pct"],
             "compounded_return": rows[-1]["compounded_return_pct"],
             "ending_nav": rows[-1]["nav"],

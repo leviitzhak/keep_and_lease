@@ -245,17 +245,7 @@ def positions_for_day(candidates, p):
     # eligible contract whose lease rate clears the configured entry rate.
     positive = [x for x in eligible if x["lease"] > p.positive_entry_rate]
     nearest_positive = min(positive, key=lambda x: (x["days"], -x["volume"])) if positive else None
-    longs = {}
-    if nearest_positive:
-        longs[nearest_positive["symbol"]] = p.max_long_future * clamp(
-            (nearest_positive["lease"] - p.positive_entry_rate) /
-            (p.positive_full_rate - p.positive_entry_rate))
-
-    # Cash allocation follows the lowest observed lease rate. By default SLV
-    # rises from zero at +0.5% to 100% at -1.5%: ±1% around -expense (=-0.5%).
     cash_signal = min(x["lease"] for x in eligible)
-    slv_weight = clamp((p.slv_start_rate - cash_signal) /
-                       (p.slv_start_rate - p.slv_full_rate))
 
     # Any eligible maturity, including the shortest, can enter the short book,
     # but only after its lease rate passes the explicit negative entry threshold.
@@ -264,9 +254,31 @@ def positions_for_day(candidates, p):
     short_start_rate = p.negative_short_start_rate
     best_negative = min(eligible, key=lambda x: x["lease"])
     signal = best_negative["lease"]
-    short_fraction = p.max_short_fraction_of_slv * clamp(
+    positive_strength = (clamp(
+        (nearest_positive["lease"] - p.positive_entry_rate) /
+        (p.positive_full_rate - p.positive_entry_rate)) if nearest_positive else 0.0)
+    negative_strength = clamp(
         (short_start_rate - signal) /
         (short_start_rate - p.negative_short_full_rate))
+    positive_available = (max(0.0, min(nearest_positive["lease"], p.positive_full_rate))
+                          if nearest_positive else 0.0)
+    negative_available = (abs(max(signal, p.negative_short_full_rate))
+                          if signal < short_start_rate else 0.0)
+    available_total = positive_available + negative_available
+    if available_total:
+        treasury_weight = positive_available / available_total
+        slv_weight = negative_available / available_total
+    else:
+        treasury_weight, slv_weight = 1.0, 0.0
+
+    # Positive lease supports the cash + long sleeve and negative lease the
+    # SLV + short sleeve. Both available sleeves share capital in proportion
+    # to the absolute lease rates, capped at their configured full thresholds.
+    longs = {}
+    if nearest_positive:
+        longs[nearest_positive["symbol"]] = (
+            treasury_weight * p.max_long_future * positive_strength)
+    short_fraction = p.max_short_fraction_of_slv * negative_strength
     total_short = slv_weight * short_fraction
 
     # Score trades off negative lease edge against a preference for maturity.
@@ -313,7 +325,7 @@ def positions_for_day(candidates, p):
     return {"mode": mode, "signal": cash_signal,
             "positive_signal": nearest_positive["lease"] if nearest_positive else 0.0,
             "negative_signal": signal, "slv": slv_weight,
-            "treasury": 1 - slv_weight, "longs": longs,
+            "treasury": treasury_weight, "longs": longs,
             "shorts": shorts, "long_leg": long_leg, "short_leg": short_leg,
             "diagnostic_longs": long_leg, "diagnostic_shorts": short_leg,
             "bond_days": bond_days, "contracts": contract_map}
@@ -381,7 +393,9 @@ def diagnostic_futures_return(positions, day, next_day, contracts, direction):
 
 
 def run_backtest(spot, contracts, rates, by_day, p):
-    days = sorted(day for day in by_day if day in spot)
+    # Ignore stray weekend records. Exchange holidays have no observation, so
+    # each interval automatically runs to the next available business day.
+    days = sorted(day for day in by_day if day in spot and day.weekday() < 5)
     output = []
     simple = 0.0
     long_simple = 0.0
@@ -390,7 +404,7 @@ def run_backtest(spot, contracts, rates, by_day, p):
     asset_simple = {"long_futures": 0.0, "short_futures": 0.0, "slv": 0.0, "treasury": 0.0}
     asset_nav = {"long_futures": 1.0, "short_futures": 1.0, "slv": 1.0, "treasury": 1.0}
     sgov_proxy_nav = 1.0
-    missing_futures_intervals = 0
+    missing_futures_intervals = []
     # Signal at t, execute at t+1, and measure P&L from t+1 to t+2.
     for signal_day, execution_day, exit_day in zip(days, days[1:], days[2:]):
         position = positions_for_day(by_day[signal_day], p)
@@ -415,14 +429,24 @@ def run_backtest(spot, contracts, rates, by_day, p):
             contribution = weight * value
             long_return += contribution
             portfolio_return += contribution
-            missing_futures_intervals += int(not found)
+            if not found:
+                missing_futures_intervals.append({
+                    "signal_date": signal_day.isoformat(),
+                    "execution_date": execution_day.isoformat(),
+                    "exit_date": exit_day.isoformat(), "leg": "long",
+                    "symbol": symbol, "reason": "missing futures price"})
             valid_interval = valid_interval and found
         for symbol, weight in position["shorts"].items():
             value, found = futures_interval_return(symbol, execution_day, exit_day, contracts)
             contribution = -weight * value
             short_return += contribution
             portfolio_return += contribution
-            missing_futures_intervals += int(not found)
+            if not found:
+                missing_futures_intervals.append({
+                    "signal_date": signal_day.isoformat(),
+                    "execution_date": execution_day.isoformat(),
+                    "exit_date": exit_day.isoformat(), "leg": "short",
+                    "symbol": symbol, "reason": "missing futures price"})
             valid_interval = valid_interval and found
         # Do not invent a zero futures return when a held contract has no next
         # observation. Skip that entire portfolio interval instead.
@@ -447,6 +471,12 @@ def run_backtest(spot, contracts, rates, by_day, p):
                     symbol, execution_day, exit_day, contracts)
                 selected_valid = selected_valid and found
                 selected_return += direction * weight * value
+                if not found:
+                    missing_futures_intervals.append({
+                        "signal_date": signal_day.isoformat(),
+                        "execution_date": execution_day.isoformat(),
+                        "exit_date": exit_day.isoformat(), "leg": key,
+                        "symbol": symbol, "reason": "missing futures price"})
             asset_returns[key] = (selected_return / selected_total
                                   if selected_valid else None)
         for key, value in asset_returns.items():
@@ -540,11 +570,11 @@ def run_backtest(spot, contracts, rates, by_day, p):
     return output, missing_futures_intervals
 
 
-def write_csv(path, rows):
-    if not rows:
+def write_csv(path, rows, fieldnames=None):
+    if not rows and not fieldnames:
         return
     with open(path, "w", newline="", encoding="utf-8") as stream:
-        writer = csv.DictWriter(stream, fieldnames=list(rows[0]))
+        writer = csv.DictWriter(stream, fieldnames=fieldnames or list(rows[0]))
         writer.writeheader()
         writer.writerows(rows)
 
@@ -597,6 +627,8 @@ def main():
                                 treasury_asset=args.treasury_asset)
         rows, missing = run_backtest(spot, contracts, rates, by_day, parameters)
         write_csv(args.output_dir / f"strategy_min_{min_days}d.csv", rows)
+        write_csv(args.output_dir / f"missing_returns_min_{min_days}d.csv", missing,
+                  ["signal_date", "execution_date", "exit_date", "leg", "symbol", "reason"])
         if rows:
             summary.append({"min_days": min_days, "bond_mode": args.bond_mode,
                             "start": rows[0]["date"], "end": rows[-1]["date"],
@@ -604,7 +636,7 @@ def main():
                             "simple_total_return_pct": rows[-1]["simple_cumulative_return_pct"],
                             "compounded_total_return_pct": rows[-1]["compounded_return_pct"],
                             "ending_nav": rows[-1]["nav"],
-                            "missing_futures_intervals": missing})
+                            "missing_futures_intervals": len(missing)})
     write_csv(args.output_dir / "summary.csv", summary)
     config = vars(args).copy()
     config["root"] = str(config["root"]); config["output_dir"] = str(config["output_dir"])
