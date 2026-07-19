@@ -1,7 +1,7 @@
 import unittest
 from datetime import date
 
-from backtest_silver_lease_strategy import Parameters, positions_for_day, run_backtest
+from backtest_silver_lease_strategy import Parameters, positions_for_day, run_backtest, usd_rate
 from silver_strategy_gui import futures_diagnostics
 
 
@@ -42,8 +42,10 @@ class StandaloneLegReturnTests(unittest.TestCase):
         self.assertAlmostEqual(10.0, rows[0]["slv_daily_return_pct"])
         self.assertAlmostEqual(2.0, rows[0]["long_futures_daily_return_pct"])
         self.assertIsNotNone(rows[0]["short_futures_daily_return_pct"])
-        self.assertIsNotNone(rows[0]["long_weighted_forward_premium_pct"])
-        self.assertIsNotNone(rows[0]["short_weighted_forward_premium_pct"])
+        self.assertEqual(0.0, rows[0]["long_weighted_lease_rate_pct"])
+        self.assertEqual(0.0, rows[0]["short_weighted_lease_rate_pct"])
+        self.assertEqual(0.0, rows[0]["long_weighted_forward_premium_pct"])
+        self.assertEqual(0.0, rows[0]["short_weighted_forward_premium_pct"])
 
     def test_short_leg_uses_strategy_maturities_when_short_is_nonzero(self):
         candidates = [
@@ -123,6 +125,18 @@ class StandaloneLegReturnTests(unittest.TestCase):
         self.assertEqual("high", diagnostics[0]["highest_lease"]["symbol"])
         self.assertAlmostEqual(1.0, diagnostics[0]["lowest_premium_pct"])
         self.assertAlmostEqual(3.0, diagnostics[0]["highest_premium_pct"])
+
+    def test_output_includes_eligible_futures_maturity_range(self):
+        rows, _ = run_backtest(
+            self.spot, self.contracts, self.rates, self.by_day,
+            Parameters(min_days=100, slv_expense=0))
+        self.assertEqual(300, rows[0]["available_futures_min_maturity_days"])
+        self.assertEqual(300, rows[0]["available_futures_max_maturity_days"])
+
+    def test_usd_rate_interpolates_missing_observation_dates(self):
+        series = {tenor: [(date(2020, 1, 1), 0.01), (date(2020, 1, 11), 0.03)]
+                  for tenor in (91, 182, 365, 730, 1095, 1825)}
+        self.assertAlmostEqual(0.02, usd_rate(series, date(2020, 1, 6), 365))
 
 
 if __name__ == "__main__":

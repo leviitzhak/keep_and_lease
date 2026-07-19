@@ -151,7 +151,9 @@ def result(payload):
               "slv_price", "long_weighted_future_price", "short_weighted_future_price",
               "treasury_position_price_index", "sgov_proxy_price_index",
               "long_weighted_forward_premium_pct",
-              "short_weighted_forward_premium_pct", "cash_plus_slv_weight_pct"]
+              "short_weighted_forward_premium_pct", "cash_plus_slv_weight_pct",
+              "available_futures_min_maturity_days",
+              "available_futures_max_maturity_days"]
     change_stats = position_change_stats(rows)
     return {
         "series": [[row[k] for k in fields] for row in sampled],

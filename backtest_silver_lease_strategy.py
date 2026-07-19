@@ -136,10 +136,21 @@ def read_rates(root):
 
 def asof_rate(series, tenor, day):
     observations = series[tenor]
+    if not observations:
+        return None
     index = bisect_right(observations, (day, float("inf"))) - 1
-    if index >= 0 and (day - observations[index][0]).days <= 7:
+    if index >= 0 and observations[index][0] == day:
         return observations[index][1]
-    return None
+    right_index = index + 1
+    if index < 0:
+        return observations[0][1]
+    if right_index >= len(observations):
+        return observations[-1][1]
+    left_day, left_rate = observations[index]
+    right_day, right_rate = observations[right_index]
+    alpha = ((day - left_day).days /
+             (right_day - left_day).days)
+    return left_rate + alpha * (right_rate - left_rate)
 
 
 def usd_rate(series, day, days):
@@ -485,8 +496,13 @@ def run_backtest(spot, contracts, rates, by_day, p):
                 asset_nav[key] *= 1 + value
         long_weighted_days = weighted_contract_value(position["longs"], position["contracts"], "days")
         short_weighted_days = weighted_contract_value(position["shorts"], position["contracts"], "days")
-        long_weighted_lease = weighted_contract_value(position["longs"], position["contracts"], "lease")
-        short_weighted_lease = weighted_contract_value(position["shorts"], position["contracts"], "lease")
+        # Market diagnostics remain visible even when the entry thresholds leave
+        # the actual portfolio with no position.  Use the threshold-independent
+        # diagnostic books, just as the standalone futures price/return series do.
+        long_weighted_lease = weighted_contract_value(
+            position["diagnostic_longs"], position["contracts"], "lease")
+        short_weighted_lease = weighted_contract_value(
+            position["diagnostic_shorts"], position["contracts"], "lease")
         long_weighted_future_price = weighted_futures_price(
             position["diagnostic_longs"], contracts, exit_day)
         short_weighted_future_price = weighted_futures_price(
@@ -498,6 +514,7 @@ def run_backtest(spot, contracts, rates, by_day, p):
             position["diagnostic_longs"], position["contracts"], "premium")
         short_weighted_premium = weighted_contract_value(
             position["diagnostic_shorts"], position["contracts"], "premium")
+        available_maturities = [contract["days"] for contract in position["contracts"].values()]
         if short_total:
             short_maturities = [position["contracts"][s]["days"] for s in position["shorts"]]
             shortest_short_maturity_days = min(short_maturities)
@@ -565,6 +582,8 @@ def run_backtest(spot, contracts, rates, by_day, p):
                            100 * long_weighted_premium if long_weighted_premium is not None else None),
                        "short_weighted_forward_premium_pct": (
                            100 * short_weighted_premium if short_weighted_premium is not None else None),
+                       "available_futures_min_maturity_days": min(available_maturities),
+                       "available_futures_max_maturity_days": max(available_maturities),
                        "cash_plus_slv_weight_pct": 100 * (position["treasury"] + position["slv"]),
                        "short_shortest_maturity_days": shortest_short_maturity_days,
                        "short_longest_maturity_days": longest_short_maturity_days,
