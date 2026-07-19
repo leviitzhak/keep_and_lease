@@ -214,6 +214,12 @@ def positions_for_day(candidates, p):
         return None
     contract_map = {x["symbol"]: x for x in eligible}
 
+    # The performance charts are diagnostics for a hypothetical 100% position
+    # in each leg.  Select their contracts independently of the thresholds
+    # which decide whether the portfolio actually takes the position.
+    nearest_long_leg = min(eligible, key=lambda x: (x["days"], -x["volume"]))
+    long_leg = {nearest_long_leg["symbol"]: 1.0}
+
     # The long and short books are independent. The long book uses the nearest
     # eligible contract whose lease rate is positive.
     positive = [x for x in eligible if x["lease"] > 0]
@@ -252,6 +258,22 @@ def positions_for_day(candidates, p):
     negative = negative[:p.negative_maturities]
     scores = [(x["symbol"], x["short_score"]) for x in negative]
     shorts = capped_proportional(scores, total_short, p.max_share_per_maturity)
+
+    # When the strategy has a short position, its diagnostic must use exactly
+    # the same maturities and relative allocations.  Only use a
+    # threshold-independent selection when the strategy has no short at all.
+    if shorts:
+        short_leg = dict(shorts)
+    else:
+        short_leg_candidates = []
+        for x in eligible:
+            score = max(0.0, short_start_rate - x["lease"]) + \
+                    p.short_maturity_bonus_per_year * x["days"] / 365
+            short_leg_candidates.append((x["symbol"], score))
+        short_leg_candidates.sort(key=lambda item: item[1], reverse=True)
+        short_leg = capped_proportional(
+            short_leg_candidates[:p.negative_maturities], 1.0,
+            p.max_share_per_maturity)
     if shorts:
         bond_days = sum(shorts[s] * contract_map[s]["days"] for s in shorts) / sum(shorts.values())
     elif nearest_positive:
@@ -270,7 +292,8 @@ def positions_for_day(candidates, p):
             "positive_signal": nearest_positive["lease"] if nearest_positive else 0.0,
             "negative_signal": signal, "slv": slv_weight,
             "treasury": 1 - slv_weight, "longs": longs,
-            "shorts": shorts, "bond_days": bond_days, "contracts": contract_map}
+            "shorts": shorts, "long_leg": long_leg, "short_leg": short_leg,
+            "bond_days": bond_days, "contracts": contract_map}
 
 
 def bond_return(rates, day, next_day, days, mode):
@@ -335,8 +358,6 @@ def run_backtest(spot, contracts, rates, by_day, p):
         portfolio_return = position["treasury"] * treasury_return + position["slv"] * spot_return
         long_return = 0.0
         short_return = 0.0
-        long_asset_return = 0.0
-        short_asset_return = 0.0
         valid_interval = True
         short_total = sum(position["shorts"].values())
         long_total = sum(position["longs"].values())
@@ -344,7 +365,6 @@ def run_backtest(spot, contracts, rates, by_day, p):
             value, found = futures_interval_return(symbol, execution_day, exit_day, contracts)
             contribution = weight * value
             long_return += contribution
-            long_asset_return += weight * value
             portfolio_return += contribution
             missing_futures_intervals += int(not found)
             valid_interval = valid_interval and found
@@ -352,7 +372,6 @@ def run_backtest(spot, contracts, rates, by_day, p):
             value, found = futures_interval_return(symbol, execution_day, exit_day, contracts)
             contribution = -weight * value
             short_return += contribution
-            short_asset_return -= weight * value
             portfolio_return += contribution
             missing_futures_intervals += int(not found)
             valid_interval = valid_interval and found
@@ -364,12 +383,22 @@ def run_backtest(spot, contracts, rates, by_day, p):
         long_simple += long_return
         short_simple += short_return
         nav *= 1 + portfolio_return
-        asset_returns = {
-            "long_futures": long_asset_return / long_total if long_total else None,
-            "short_futures": short_asset_return / short_total if short_total else None,
-            "slv": spot_return if position["slv"] > 0 else None,
-            "treasury": treasury_return if position["treasury"] > 0 else None,
-        }
+        # Standalone leg returns always represent a fully invested leg.  They
+        # are deliberately independent of the portfolio's allocation signal.
+        asset_returns = {"slv": spot_return, "treasury": treasury_return}
+        for key, selected, direction in (
+                ("long_futures", position["long_leg"], 1.0),
+                ("short_futures", position["short_leg"], -1.0)):
+            selected_total = sum(selected.values())
+            selected_return = 0.0
+            selected_valid = bool(selected_total)
+            for symbol, weight in selected.items():
+                value, found = futures_interval_return(
+                    symbol, execution_day, exit_day, contracts)
+                selected_valid = selected_valid and found
+                selected_return += direction * weight * value
+            asset_returns[key] = (selected_return / selected_total
+                                  if selected_valid else None)
         for key, value in asset_returns.items():
             if value is not None:
                 asset_simple[key] += value
