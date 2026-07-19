@@ -38,7 +38,7 @@ class Parameters:
     max_short_fraction_of_slv: float = 0.50
     negative_maturities: int = 3
     max_share_per_maturity: float = 0.50
-    short_maturity_bonus_per_year: float = 0.003
+    short_maturity_bonus_per_year: float = 0.004
     bond_mode: str = "accrual"
     treasury_asset: str = "matched_maturity"
 
@@ -208,11 +208,33 @@ def capped_proportional(items, total, cap):
     return {key: value for key, value in result.items() if value > 0}
 
 
+def full_notional_diagnostic_books(eligible, p):
+    if not eligible:
+        return {}, {}
+    nearest = min(eligible, key=lambda x: (x["days"], -x["volume"]))
+    longs = {nearest["symbol"]: 1.0}
+
+    # Use the short-book ranking without applying the entry/full-allocation
+    # thresholds. The constant threshold term does not affect ranking, so the
+    # threshold-free score is negative lease plus the maturity bonus.
+    ranked = []
+    for x in eligible:
+        score = -x["lease"] + p.short_maturity_bonus_per_year * x["days"] / 365
+        ranked.append((x["symbol"], max(score, 1e-9)))
+    ranked.sort(key=lambda item: item[1], reverse=True)
+    shorts = capped_proportional(ranked[:p.negative_maturities], 1.0, p.max_share_per_maturity)
+    short_total = sum(shorts.values())
+    if short_total:
+        shorts = {symbol: weight / short_total for symbol, weight in shorts.items()}
+    return longs, shorts
+
+
 def positions_for_day(candidates, p):
     eligible = [x for x in candidates if x["days"] >= p.min_days]
     if not eligible:
         return None
     contract_map = {x["symbol"]: x for x in eligible}
+    diagnostic_longs, diagnostic_shorts = full_notional_diagnostic_books(eligible, p)
 
     # The long and short books are independent. The long book uses the nearest
     # eligible contract whose lease rate is positive.
@@ -270,7 +292,9 @@ def positions_for_day(candidates, p):
             "positive_signal": nearest_positive["lease"] if nearest_positive else 0.0,
             "negative_signal": signal, "slv": slv_weight,
             "treasury": 1 - slv_weight, "longs": longs,
-            "shorts": shorts, "bond_days": bond_days, "contracts": contract_map}
+            "shorts": shorts, "diagnostic_longs": diagnostic_longs,
+            "diagnostic_shorts": diagnostic_shorts, "bond_days": bond_days,
+            "contracts": contract_map}
 
 
 def bond_return(rates, day, next_day, days, mode):
@@ -312,6 +336,28 @@ def weighted_contract_value(positions, contracts, field):
                for symbol, weight in positions.items()) / total
 
 
+def weighted_futures_price(positions, contracts, day):
+    total = sum(positions.values())
+    if not total:
+        return None
+    if any(day not in contracts.get(symbol, {}) for symbol in positions):
+        return None
+    return sum(weight * contracts[symbol][day]
+               for symbol, weight in positions.items()) / total
+
+
+def diagnostic_futures_return(positions, day, next_day, contracts, direction):
+    if not positions:
+        return None
+    result = 0.0
+    for symbol, weight in positions.items():
+        value, found = futures_interval_return(symbol, day, next_day, contracts)
+        if not found:
+            return None
+        result += direction * weight * value
+    return result
+
+
 def run_backtest(spot, contracts, rates, by_day, p):
     days = sorted(day for day in by_day if day in spot)
     output = []
@@ -321,6 +367,7 @@ def run_backtest(spot, contracts, rates, by_day, p):
     nav = 1.0
     asset_simple = {"long_futures": 0.0, "short_futures": 0.0, "slv": 0.0, "treasury": 0.0}
     asset_nav = {"long_futures": 1.0, "short_futures": 1.0, "slv": 1.0, "treasury": 1.0}
+    sgov_proxy_nav = 1.0
     missing_futures_intervals = 0
     # Signal at t, execute at t+1, and measure P&L from t+1 to t+2.
     for signal_day, execution_day, exit_day in zip(days, days[1:], days[2:]):
@@ -331,12 +378,13 @@ def run_backtest(spot, contracts, rates, by_day, p):
         holding_days = max(1.0, position["bond_days"] - lag)
         elapsed = (exit_day - execution_day).days
         treasury_return = treasury_position_return(rates, execution_day, exit_day, holding_days, p)
+        sgov_proxy_return = treasury_position_return(
+            rates, execution_day, exit_day, holding_days,
+            Parameters(min_days=p.min_days, treasury_asset="sgov_proxy"))
         spot_return = spot[exit_day] / spot[execution_day] - 1 - p.slv_expense * elapsed / 365
         portfolio_return = position["treasury"] * treasury_return + position["slv"] * spot_return
         long_return = 0.0
         short_return = 0.0
-        long_asset_return = 0.0
-        short_asset_return = 0.0
         valid_interval = True
         short_total = sum(position["shorts"].values())
         long_total = sum(position["longs"].values())
@@ -344,7 +392,6 @@ def run_backtest(spot, contracts, rates, by_day, p):
             value, found = futures_interval_return(symbol, execution_day, exit_day, contracts)
             contribution = weight * value
             long_return += contribution
-            long_asset_return += weight * value
             portfolio_return += contribution
             missing_futures_intervals += int(not found)
             valid_interval = valid_interval and found
@@ -352,7 +399,6 @@ def run_backtest(spot, contracts, rates, by_day, p):
             value, found = futures_interval_return(symbol, execution_day, exit_day, contracts)
             contribution = -weight * value
             short_return += contribution
-            short_asset_return -= weight * value
             portfolio_return += contribution
             missing_futures_intervals += int(not found)
             valid_interval = valid_interval and found
@@ -364,11 +410,16 @@ def run_backtest(spot, contracts, rates, by_day, p):
         long_simple += long_return
         short_simple += short_return
         nav *= 1 + portfolio_return
+        sgov_proxy_nav *= 1 + sgov_proxy_return
+        long_asset_return = diagnostic_futures_return(
+            position["diagnostic_longs"], execution_day, exit_day, contracts, 1)
+        short_asset_return = diagnostic_futures_return(
+            position["diagnostic_shorts"], execution_day, exit_day, contracts, -1)
         asset_returns = {
-            "long_futures": long_asset_return / long_total if long_total else None,
-            "short_futures": short_asset_return / short_total if short_total else None,
-            "slv": spot_return if position["slv"] > 0 else None,
-            "treasury": treasury_return if position["treasury"] > 0 else None,
+            "long_futures": long_asset_return,
+            "short_futures": short_asset_return,
+            "slv": spot_return,
+            "treasury": treasury_return,
         }
         for key, value in asset_returns.items():
             if value is not None:
@@ -378,6 +429,10 @@ def run_backtest(spot, contracts, rates, by_day, p):
         short_weighted_days = weighted_contract_value(position["shorts"], position["contracts"], "days")
         long_weighted_lease = weighted_contract_value(position["longs"], position["contracts"], "lease")
         short_weighted_lease = weighted_contract_value(position["shorts"], position["contracts"], "lease")
+        long_weighted_future_price = weighted_futures_price(
+            position["diagnostic_longs"], contracts, exit_day)
+        short_weighted_future_price = weighted_futures_price(
+            position["diagnostic_shorts"], contracts, exit_day)
         if short_total:
             short_maturities = [position["contracts"][s]["days"] for s in position["shorts"]]
             shortest_short_maturity_days = min(short_maturities)
@@ -425,6 +480,11 @@ def run_backtest(spot, contracts, rates, by_day, p):
                        "short_futures_compounded_return_pct": 100 * (asset_nav["short_futures"] - 1),
                        "slv_compounded_return_pct": 100 * (asset_nav["slv"] - 1),
                        "treasury_compounded_return_pct": 100 * (asset_nav["treasury"] - 1),
+                       "slv_price": spot[exit_day],
+                       "long_weighted_future_price": long_weighted_future_price,
+                       "short_weighted_future_price": short_weighted_future_price,
+                       "treasury_position_price_index": 100 * asset_nav["treasury"],
+                       "sgov_proxy_price_index": 100 * sgov_proxy_nav,
                        "slv_weight_pct": 100 * position["slv"],
                        "treasury_weight_pct": 100 * position["treasury"],
                        "long_futures_notional_pct": 100 * long_total,
@@ -470,7 +530,7 @@ def parse_args():
     parser.add_argument("--max-short-fraction-of-slv", type=float, default=0.50)
     parser.add_argument("--negative-maturities", type=int, default=3)
     parser.add_argument("--max-share-per-maturity", type=float, default=0.50)
-    parser.add_argument("--short-maturity-bonus-per-year", type=float, default=0.02,
+    parser.add_argument("--short-maturity-bonus-per-year", type=float, default=0.004,
                         help="Added short-selection score per extra year to maturity")
     parser.add_argument("--bond-mode", choices=["accrual", "zero_coupon_mtm"], default="accrual")
     parser.add_argument("--treasury-asset", choices=["matched_maturity", "sgov_proxy"],

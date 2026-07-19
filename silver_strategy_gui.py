@@ -36,7 +36,7 @@ def parameters(payload):
         max_short_fraction_of_slv=pct("max_short_fraction_of_slv", 50),
         negative_maturities=int(number(payload, "negative_maturities", 3, 1, 20)),
         max_share_per_maturity=pct("max_share_per_maturity", 50),
-        short_maturity_bonus_per_year=pct("short_maturity_bonus_per_year", 2),
+        short_maturity_bonus_per_year=pct("short_maturity_bonus_per_year", 0.4),
         bond_mode=str(payload.get("bond_mode", "accrual")),
         treasury_asset=str(payload.get("treasury_asset", "matched_maturity")),
     )
@@ -97,7 +97,9 @@ def result(payload):
               "long_futures_cumulative_return_pct", "short_futures_cumulative_return_pct",
               "slv_cumulative_return_pct", "treasury_cumulative_return_pct",
               "long_futures_compounded_return_pct", "short_futures_compounded_return_pct",
-              "slv_compounded_return_pct", "treasury_compounded_return_pct"]
+              "slv_compounded_return_pct", "treasury_compounded_return_pct",
+              "slv_price", "long_weighted_future_price", "short_weighted_future_price",
+              "treasury_position_price_index", "sgov_proxy_price_index"]
     change_stats = position_change_stats(rows)
     return {
         "series": [[row[k] for k in fields] for row in sampled],
