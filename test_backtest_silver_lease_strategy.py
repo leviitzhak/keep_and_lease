@@ -2,6 +2,7 @@ import unittest
 from datetime import date
 
 from backtest_silver_lease_strategy import Parameters, positions_for_day, run_backtest
+from silver_strategy_gui import futures_diagnostics
 
 
 class StandaloneLegReturnTests(unittest.TestCase):
@@ -41,6 +42,8 @@ class StandaloneLegReturnTests(unittest.TestCase):
         self.assertAlmostEqual(10.0, rows[0]["slv_daily_return_pct"])
         self.assertAlmostEqual(2.0, rows[0]["long_futures_daily_return_pct"])
         self.assertIsNotNone(rows[0]["short_futures_daily_return_pct"])
+        self.assertIsNotNone(rows[0]["long_weighted_forward_premium_pct"])
+        self.assertIsNotNone(rows[0]["short_weighted_forward_premium_pct"])
 
     def test_short_leg_uses_strategy_maturities_when_short_is_nonzero(self):
         candidates = [
@@ -103,6 +106,23 @@ class StandaloneLegReturnTests(unittest.TestCase):
         self.assertEqual("near", missing[0]["symbol"])
         self.assertEqual(self.days[2].isoformat(), missing[0]["exit_date"])
         self.assertNotEqual(len(self.days) - 2, len(rows))
+
+    def test_futures_diagnostics_summarize_eligible_contracts(self):
+        rows = [{"execution_date": self.days[0].isoformat()}]
+        self.by_day[self.days[0]] = [
+            {"symbol": "low", "days": 30, "future": 101, "premium": 0.01,
+             "lease": -0.05},
+            {"symbol": "high", "days": 60, "future": 103, "premium": 0.03,
+             "lease": 0.04},
+            {"symbol": "too_short", "days": 5, "future": 90, "premium": -0.10,
+             "lease": -0.50},
+        ]
+        diagnostics = futures_diagnostics(rows, self.by_day, Parameters(min_days=10))
+        self.assertEqual(2, diagnostics[0]["available"])
+        self.assertEqual("low", diagnostics[0]["lowest_lease"]["symbol"])
+        self.assertEqual("high", diagnostics[0]["highest_lease"]["symbol"])
+        self.assertAlmostEqual(1.0, diagnostics[0]["lowest_premium_pct"])
+        self.assertAlmostEqual(3.0, diagnostics[0]["highest_premium_pct"])
 
 
 if __name__ == "__main__":

@@ -491,8 +491,13 @@ def run_backtest(spot, contracts, rates, by_day, p):
             position["diagnostic_longs"], contracts, exit_day)
         short_weighted_future_price = weighted_futures_price(
             position["diagnostic_shorts"], contracts, exit_day)
-        long_weighted_premium = weighted_contract_value(position["longs"], position["contracts"], "premium")
-        short_weighted_premium = weighted_contract_value(position["shorts"], position["contracts"], "premium")
+        # Premium charts are market diagnostics, not position diagnostics.  Use
+        # the threshold-independent books so a null means that a source quote
+        # is unavailable, rather than merely that the strategy did not trade.
+        long_weighted_premium = weighted_contract_value(
+            position["diagnostic_longs"], position["contracts"], "premium")
+        short_weighted_premium = weighted_contract_value(
+            position["diagnostic_shorts"], position["contracts"], "premium")
         if short_total:
             short_maturities = [position["contracts"][s]["days"] for s in position["shorts"]]
             shortest_short_maturity_days = min(short_maturities)

@@ -2,6 +2,7 @@
 """Local browser GUI for the parameterized silver lease strategy backtest."""
 
 import json
+from datetime import date
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -78,6 +79,52 @@ def position_change_stats(rows):
     }
 
 
+def futures_price_series(rows, contracts):
+    """Return sparse, chart-ready prices for every contract on output dates."""
+    dates = {row["date"]: index for index, row in enumerate(rows)}
+    result = {}
+    for symbol, prices in contracts.items():
+        points = [[dates[day.isoformat()], price] for day, price in prices.items()
+                  if day.isoformat() in dates]
+        if points:
+            result[symbol] = sorted(points)
+    return result
+
+
+def futures_diagnostics(rows, by_day, p):
+    """Return per-date futures details for the all-prices chart tooltip."""
+    result = []
+    for row in rows:
+        execution_day = date.fromisoformat(row["execution_date"])
+        candidates = by_day.get(execution_day, [])
+        eligible = [x for x in candidates if x["days"] >= p.min_days]
+        if not eligible:
+            result.append({"available": 0})
+            continue
+        lowest_lease = min(eligible, key=lambda x: (x["lease"], x["days"]))
+        highest_lease = max(eligible, key=lambda x: (x["lease"], -x["days"]))
+        lowest_premium = min(x["premium"] for x in eligible)
+        highest_premium = max(x["premium"] for x in eligible)
+        result.append({
+            "available": len(eligible),
+            "lowest_lease": contract_summary(lowest_lease),
+            "highest_lease": contract_summary(highest_lease),
+            "lowest_premium_pct": 100 * lowest_premium,
+            "highest_premium_pct": 100 * highest_premium,
+        })
+    return result
+
+
+def contract_summary(contract):
+    return {
+        "symbol": contract["symbol"],
+        "maturity_days": contract["days"],
+        "price": contract["future"],
+        "premium_pct": 100 * contract["premium"],
+        "lease_pct": 100 * contract["lease"],
+    }
+
+
 def result(payload):
     p = parameters(payload)
     rows, missing = run_backtest(*MARKET, p)
@@ -109,6 +156,8 @@ def result(payload):
     return {
         "series": [[row[k] for k in fields] for row in sampled],
         "fields": fields,
+        "futures_prices": futures_price_series(sampled, MARKET[1]),
+        "futures_diagnostics": futures_diagnostics(sampled, MARKET[3], p),
         "summary": {
             "start": rows[0]["date"], "end": rows[-1]["date"],
             "observations": len(rows), "missing_intervals": len(missing),
