@@ -29,6 +29,7 @@ def parameters(payload):
         slv_expense=pct("slv_expense", 0.5),
         slv_start_rate=pct("slv_start_rate", 0.5),
         slv_full_rate=pct("slv_full_rate", -1.5),
+        positive_entry_rate=pct("positive_entry_rate", 0),
         positive_full_rate=pct("positive_full_rate", 15),
         max_long_future=pct("max_long_future", 50),
         negative_short_start_rate=pct("negative_short_start_rate", -0.5),
@@ -50,6 +51,8 @@ def parameters(payload):
         raise ValueError("Short entry threshold must exceed its full-allocation rate")
     if p.positive_full_rate <= 0:
         raise ValueError("Positive full-allocation rate must be positive")
+    if p.positive_entry_rate >= p.positive_full_rate:
+        raise ValueError("Long entry rate must be below its full-allocation rate")
     return p
 
 
@@ -98,6 +101,8 @@ def result(payload):
               "slv_cumulative_return_pct", "treasury_cumulative_return_pct",
               "long_futures_compounded_return_pct", "short_futures_compounded_return_pct",
               "slv_compounded_return_pct", "treasury_compounded_return_pct"]
+    fields += ["slv_price", "long_weighted_forward_premium_pct",
+               "short_weighted_forward_premium_pct", "cash_plus_slv_weight_pct"]
     change_stats = position_change_stats(rows)
     return {
         "series": [[row[k] for k in fields] for row in sampled],
