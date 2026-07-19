@@ -31,6 +31,7 @@ class Parameters:
     slv_expense: float = 0.005
     slv_start_rate: float = 0.005
     slv_full_rate: float = -0.015
+    positive_entry_rate: float = 0.0
     positive_full_rate: float = 0.15
     max_long_future: float = 0.50
     negative_short_start_rate: float = -0.005
@@ -241,13 +242,14 @@ def positions_for_day(candidates, p):
     long_leg = {nearest_long_leg["symbol"]: 1.0}
 
     # The long and short books are independent. The long book uses the nearest
-    # eligible contract whose lease rate is positive.
-    positive = [x for x in eligible if x["lease"] > 0]
+    # eligible contract whose lease rate clears the configured entry rate.
+    positive = [x for x in eligible if x["lease"] > p.positive_entry_rate]
     nearest_positive = min(positive, key=lambda x: (x["days"], -x["volume"])) if positive else None
     longs = {}
     if nearest_positive:
         longs[nearest_positive["symbol"]] = p.max_long_future * clamp(
-            nearest_positive["lease"] / p.positive_full_rate)
+            (nearest_positive["lease"] - p.positive_entry_rate) /
+            (p.positive_full_rate - p.positive_entry_rate))
 
     # Cash allocation follows the lowest observed lease rate. By default SLV
     # rises from zero at +0.5% to 100% at -1.5%: ±1% around -expense (=-0.5%).
@@ -459,6 +461,8 @@ def run_backtest(spot, contracts, rates, by_day, p):
             position["diagnostic_longs"], contracts, exit_day)
         short_weighted_future_price = weighted_futures_price(
             position["diagnostic_shorts"], contracts, exit_day)
+        long_weighted_premium = weighted_contract_value(position["longs"], position["contracts"], "premium")
+        short_weighted_premium = weighted_contract_value(position["shorts"], position["contracts"], "premium")
         if short_total:
             short_maturities = [position["contracts"][s]["days"] for s in position["shorts"]]
             shortest_short_maturity_days = min(short_maturities)
@@ -522,6 +526,11 @@ def run_backtest(spot, contracts, rates, by_day, p):
                            100 * long_weighted_lease if long_weighted_lease is not None else None),
                        "short_weighted_lease_rate_pct": (
                            100 * short_weighted_lease if short_weighted_lease is not None else None),
+                       "long_weighted_forward_premium_pct": (
+                           100 * long_weighted_premium if long_weighted_premium is not None else None),
+                       "short_weighted_forward_premium_pct": (
+                           100 * short_weighted_premium if short_weighted_premium is not None else None),
+                       "cash_plus_slv_weight_pct": 100 * (position["treasury"] + position["slv"]),
                        "short_shortest_maturity_days": shortest_short_maturity_days,
                        "short_longest_maturity_days": longest_short_maturity_days,
                        "number_of_futures_maturities": len(position["longs"]) + len(position["shorts"]),
@@ -549,6 +558,8 @@ def parse_args():
     parser.add_argument("--slv-start-rate", type=float, default=0.005)
     parser.add_argument("--slv-full-rate", type=float, default=-0.015)
     parser.add_argument("--positive-full-rate", type=float, default=0.15)
+    parser.add_argument("--positive-entry-rate", type=float, default=0.0,
+                        help="Lease rate above which a contract becomes eligible for a long")
     parser.add_argument("--max-long-future", type=float, default=0.50)
     parser.add_argument("--negative-short-start-rate", type=float, default=-0.005,
                         help="Lease rate below which a contract becomes eligible for shorting")
@@ -573,6 +584,7 @@ def main():
         parameters = Parameters(min_days=min_days, slv_expense=args.slv_expense,
                                 slv_start_rate=args.slv_start_rate,
                                 slv_full_rate=args.slv_full_rate,
+                                positive_entry_rate=args.positive_entry_rate,
                                 positive_full_rate=args.positive_full_rate,
                                 max_long_future=args.max_long_future,
                                 negative_short_start_rate=args.negative_short_start_rate,
