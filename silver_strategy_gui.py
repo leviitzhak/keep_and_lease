@@ -78,6 +78,18 @@ def position_change_stats(rows):
     }
 
 
+def futures_price_series(rows, contracts):
+    """Return sparse, chart-ready prices for every contract on output dates."""
+    dates = {row["date"]: index for index, row in enumerate(rows)}
+    result = {}
+    for symbol, prices in contracts.items():
+        points = [[dates[day.isoformat()], price] for day, price in prices.items()
+                  if day.isoformat() in dates]
+        if points:
+            result[symbol] = sorted(points)
+    return result
+
+
 def result(payload):
     p = parameters(payload)
     rows, missing = run_backtest(*MARKET, p)
@@ -109,6 +121,7 @@ def result(payload):
     return {
         "series": [[row[k] for k in fields] for row in sampled],
         "fields": fields,
+        "futures_prices": futures_price_series(sampled, MARKET[1]),
         "summary": {
             "start": rows[0]["date"], "end": rows[-1]["date"],
             "observations": len(rows), "missing_intervals": missing,
