@@ -41,6 +41,8 @@ class StandaloneLegReturnTests(unittest.TestCase):
         self.assertAlmostEqual(10.0, rows[0]["slv_daily_return_pct"])
         self.assertAlmostEqual(2.0, rows[0]["long_futures_daily_return_pct"])
         self.assertIsNotNone(rows[0]["short_futures_daily_return_pct"])
+        self.assertIsNotNone(rows[0]["long_weighted_forward_premium_pct"])
+        self.assertIsNotNone(rows[0]["short_weighted_forward_premium_pct"])
 
     def test_short_leg_uses_strategy_maturities_when_short_is_nonzero(self):
         candidates = [
