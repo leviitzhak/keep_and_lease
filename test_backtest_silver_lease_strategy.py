@@ -2,6 +2,7 @@ import unittest
 from datetime import date
 
 from backtest_silver_lease_strategy import Parameters, positions_for_day, run_backtest, usd_rate
+import silver_strategy_gui
 from silver_strategy_gui import futures_diagnostics
 
 
@@ -46,6 +47,10 @@ class StandaloneLegReturnTests(unittest.TestCase):
         self.assertEqual(0.0, rows[0]["short_weighted_lease_rate_pct"])
         self.assertEqual(0.0, rows[0]["long_weighted_forward_premium_pct"])
         self.assertEqual(0.0, rows[0]["short_weighted_forward_premium_pct"])
+        self.assertEqual(30, rows[0]["diagnostic_long_weighted_maturity_days"])
+        self.assertGreater(rows[0]["diagnostic_short_weighted_maturity_days"], 30)
+        self.assertEqual(0.0, rows[0]["long_weighted_usd_rate_pct"])
+        self.assertEqual(0.0, rows[0]["short_weighted_usd_rate_pct"])
 
     def test_short_leg_uses_strategy_maturities_when_short_is_nonzero(self):
         candidates = [
@@ -251,11 +256,27 @@ class StandaloneLegReturnTests(unittest.TestCase):
         self.assertEqual(self.days[2].isoformat(), rows[0]["date"])
         self.assertAlmostEqual(8.0, rows[0]["long_weighted_lease_rate_pct"])
         self.assertEqual(28, rows[0]["available_futures_min_maturity_days"])
+        self.assertEqual(28, rows[0]["diagnostic_long_weighted_maturity_days"])
 
     def test_usd_rate_interpolates_missing_observation_dates(self):
         series = {tenor: [(date(2020, 1, 1), 0.01), (date(2020, 1, 11), 0.03)]
                   for tenor in (91, 182, 365, 730, 1095, 1825)}
         self.assertAlmostEqual(0.02, usd_rate(series, date(2020, 1, 6), 365))
+
+    def test_gui_result_exposes_versioned_diagnostic_series(self):
+        original_market = silver_strategy_gui.MARKET
+        silver_strategy_gui.MARKET = (
+            self.spot, self.contracts, self.rates, self.by_day)
+        try:
+            payload = silver_strategy_gui.result({"min_days": 1})
+        finally:
+            silver_strategy_gui.MARKET = original_market
+        self.assertEqual(2, payload["schema_version"])
+        for name in ("diagnostic_long_weighted_maturity_days",
+                     "diagnostic_short_weighted_maturity_days",
+                     "long_weighted_usd_rate_pct", "short_weighted_usd_rate_pct"):
+            index = payload["fields"].index(name)
+            self.assertTrue(all(row[index] is not None for row in payload["series"]))
 
 
 if __name__ == "__main__":

@@ -163,9 +163,13 @@ def result(payload):
               "long_weighted_forward_premium_pct",
               "short_weighted_forward_premium_pct", "cash_plus_slv_weight_pct",
               "available_futures_min_maturity_days",
-              "available_futures_max_maturity_days"]
+              "available_futures_max_maturity_days",
+              "diagnostic_long_weighted_maturity_days",
+              "diagnostic_short_weighted_maturity_days",
+              "long_weighted_usd_rate_pct", "short_weighted_usd_rate_pct"]
     change_stats = position_change_stats(rows)
     return {
+        "schema_version": 2,
         "series": [[row[k] for k in fields] for row in sampled],
         "fields": fields,
         "futures_prices": futures_price_series(sampled, MARKET[1]),
@@ -187,6 +191,7 @@ class Handler(SimpleHTTPRequestHandler):
         if self.path in {"/", "/index.html"}:
             data = PAGE.read_bytes()
             self.send_response(200); self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Cache-Control", "no-store")
             self.send_header("Content-Length", str(len(data))); self.end_headers(); self.wfile.write(data)
         else:
             self.send_error(404)
@@ -201,6 +206,7 @@ class Handler(SimpleHTTPRequestHandler):
         except Exception as exc:
             body, status = json.dumps({"error": str(exc)}).encode(), 400
         self.send_response(status); self.send_header("Content-Type", "application/json")
+        self.send_header("Cache-Control", "no-store")
         self.send_header("Content-Length", str(len(body))); self.end_headers(); self.wfile.write(body)
 
     def log_message(self, fmt, *args):
