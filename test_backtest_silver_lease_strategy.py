@@ -241,6 +241,15 @@ class StandaloneLegReturnTests(unittest.TestCase):
         self.assertEqual(300, rows[0]["available_futures_min_maturity_days"])
         self.assertEqual(300, rows[0]["available_futures_max_maturity_days"])
 
+    def test_output_maturities_match_plotted_forward_and_lease_series(self):
+        rows, _ = run_backtest(
+            self.spot, self.contracts, self.rates, self.by_day,
+            Parameters(min_days=1, slv_expense=0))
+        self.assertEqual(30, rows[0]["long_forward_maturity_days"])
+        expected_short = (30 * 30 + 300 * 300) / (30 + 300)
+        self.assertAlmostEqual(
+            expected_short, rows[0]["short_forward_maturity_days"], places=3)
+
     def test_market_diagnostics_use_the_displayed_output_date(self):
         self.by_day[self.days[0]][0]["lease"] = -0.05
         self.by_day[self.days[2]][0]["lease"] = 0.08
