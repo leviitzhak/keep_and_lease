@@ -7,18 +7,19 @@
 <aside class="panel controls"><form id="form">
 <h2>Contract selection</h2>
 <label>Minimum days<input name="min_days" type="number" value="10" min="1"></label>
-<label>Short maturities<input name="negative_maturities" type="number" value="3" min="1"></label>
-<label>Max share / maturity (%)<input name="max_share_per_maturity" type="number" value="50" step="1"></label>
-<label>Maturity bonus / year (%)<input name="short_maturity_bonus_per_year" type="number" value="0.4" step="0.1"></label>
 <h2>Cash and SLV</h2>
 <label>SLV expense (%)<input name="slv_expense" type="number" value="0.5" step="0.1"></label>
 <label>SLV transition start (%)<input name="slv_start_rate" type="number" value="0.5" step="0.1"></label>
 <label>SLV fully allocated (%)<input name="slv_full_rate" type="number" value="-1.5" step="0.1"></label>
 <h2>Long futures</h2>
+<label>Contract selection<select name="long_contract_selection"><option value="shortest_maturity">Shortest maturity</option><option value="highest_lease_rate">Highest lease rate</option><option value="weighted_lease_rate">All, weighted by lease</option></select></label>
+<label>Shorter maturity bonus / year (%)<input name="long_maturity_bonus_per_year" type="number" value="0.4" step="0.1"></label>
 <label>Entry rate (%)<input name="positive_entry_rate" type="number" value="0" step="0.1"></label>
 <label>Full rate (%)<input name="positive_full_rate" type="number" value="15" step="1"></label>
 <label>Maximum notional (%)<input name="max_long_future" type="number" value="50" step="1"></label>
 <h2>Short futures</h2>
+<label>Contract selection<select name="short_contract_selection"><option value="weighted_lease_rate">All, weighted by lease</option><option value="lowest_lease_rate">Lowest lease rate</option></select></label>
+<label>Longer maturity bonus / year (%)<input name="short_maturity_bonus_per_year" type="number" value="0.4" step="0.1"></label>
 <label>Entry rate (%)<input name="negative_short_start_rate" type="number" value="-0.5" step="0.1"></label>
 <label>Full rate (%)<input name="negative_short_full_rate" type="number" value="-15" step="1"></label>
 <label>Max fraction of SLV (%)<input name="max_short_fraction_of_slv" type="number" value="50" step="1"></label>

@@ -32,12 +32,15 @@ def parameters(payload):
         slv_full_rate=pct("slv_full_rate", -1.5),
         positive_entry_rate=pct("positive_entry_rate", 0),
         positive_full_rate=pct("positive_full_rate", 15),
+        long_contract_selection=str(payload.get(
+            "long_contract_selection", "shortest_maturity")),
+        long_maturity_bonus_per_year=pct("long_maturity_bonus_per_year", 0.4),
         max_long_future=pct("max_long_future", 50),
         negative_short_start_rate=pct("negative_short_start_rate", -0.5),
         negative_short_full_rate=pct("negative_short_full_rate", -15),
         max_short_fraction_of_slv=pct("max_short_fraction_of_slv", 50),
-        negative_maturities=int(number(payload, "negative_maturities", 3, 1, 20)),
-        max_share_per_maturity=pct("max_share_per_maturity", 50),
+        short_contract_selection=str(payload.get(
+            "short_contract_selection", "weighted_lease_rate")),
         short_maturity_bonus_per_year=pct("short_maturity_bonus_per_year", 0.4),
         bond_mode=str(payload.get("bond_mode", "accrual")),
         treasury_asset=str(payload.get("treasury_asset", "matched_maturity")),
@@ -46,6 +49,11 @@ def parameters(payload):
         raise ValueError("Invalid bond mode")
     if p.treasury_asset not in {"matched_maturity", "sgov_proxy"}:
         raise ValueError("Invalid Treasury instrument")
+    if p.long_contract_selection not in {
+            "shortest_maturity", "highest_lease_rate", "weighted_lease_rate"}:
+        raise ValueError("Invalid long contract selection")
+    if p.short_contract_selection not in {"weighted_lease_rate", "lowest_lease_rate"}:
+        raise ValueError("Invalid short contract selection")
     if p.slv_start_rate <= p.slv_full_rate:
         raise ValueError("SLV transition start must exceed its full-allocation rate")
     if p.negative_short_start_rate <= p.negative_short_full_rate:

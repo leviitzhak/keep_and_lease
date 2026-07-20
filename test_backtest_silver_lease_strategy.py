@@ -81,6 +81,112 @@ class StandaloneLegReturnTests(unittest.TestCase):
         self.assertEqual(1.0, positions_for_day(positive, Parameters(min_days=1))["treasury"])
         self.assertEqual(1.0, positions_for_day(negative, Parameters(min_days=1))["slv"])
 
+    def test_long_can_select_highest_lease_rate_instead_of_shortest_maturity(self):
+        candidates = [
+            {"symbol": "near", "days": 30, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": 0.03, "volume": 10},
+            {"symbol": "far", "days": 300, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": 0.08, "volume": 5},
+        ]
+        default = positions_for_day(candidates, Parameters(min_days=1))
+        highest = positions_for_day(
+            candidates,
+            Parameters(min_days=1, long_contract_selection="highest_lease_rate"))
+        self.assertEqual({"near"}, set(default["longs"]))
+        self.assertEqual({"far"}, set(highest["longs"]))
+        self.assertEqual({"far": 1.0}, highest["long_leg"])
+
+    def test_highest_lease_selection_still_enforces_entry_threshold(self):
+        candidates = [
+            {"symbol": "near", "days": 30, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": 0.02, "volume": 10},
+            {"symbol": "far", "days": 300, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": 0.04, "volume": 5},
+        ]
+        position = positions_for_day(
+            candidates,
+            Parameters(min_days=1, positive_entry_rate=0.05,
+                       long_contract_selection="highest_lease_rate"))
+        self.assertEqual({}, position["longs"])
+
+    def test_long_can_use_all_maturities_weighted_by_lease_edge(self):
+        candidates = [
+            {"symbol": "low", "days": 30, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": 0.03, "volume": 10},
+            {"symbol": "high", "days": 300, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": 0.09, "volume": 5},
+        ]
+        position = positions_for_day(
+            candidates,
+            Parameters(min_days=1, positive_entry_rate=0.01,
+                       long_contract_selection="weighted_lease_rate",
+                       long_maturity_bonus_per_year=0))
+        self.assertEqual({"low", "high"}, set(position["longs"]))
+        self.assertAlmostEqual(4, position["longs"]["high"] / position["longs"]["low"])
+
+    def test_weighted_long_score_favors_shorter_maturity(self):
+        candidates = [
+            {"symbol": "near", "days": 30, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": 0.05, "volume": 10},
+            {"symbol": "far", "days": 395, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": 0.05, "volume": 5},
+        ]
+        position = positions_for_day(
+            candidates,
+            Parameters(min_days=1, long_contract_selection="weighted_lease_rate",
+                       long_maturity_bonus_per_year=0.004))
+        self.assertGreater(position["longs"]["near"], position["longs"]["far"])
+
+    def test_short_can_select_only_lowest_lease_rate(self):
+        candidates = [
+            {"symbol": "low", "days": 30, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": -0.10, "volume": 10},
+            {"symbol": "higher", "days": 300, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": -0.05, "volume": 5},
+        ]
+        position = positions_for_day(
+            candidates,
+            Parameters(min_days=1, short_contract_selection="lowest_lease_rate"))
+        self.assertEqual({"low"}, set(position["shorts"]))
+
+    def test_weighted_short_uses_all_eligible_maturities_without_a_share_cap(self):
+        candidates = [
+            {"symbol": "strong", "days": 30, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": -0.10, "volume": 10},
+            {"symbol": "weak", "days": 30, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": -0.01, "volume": 5},
+        ]
+        position = positions_for_day(candidates, Parameters(min_days=1))
+        self.assertEqual({"strong", "weak"}, set(position["shorts"]))
+        total = sum(position["shorts"].values())
+        self.assertGreater(position["shorts"]["strong"] / total, 0.5)
+
+    def test_weighted_short_is_proportional_to_lease_edge_from_entry(self):
+        candidates = [
+            {"symbol": "strong", "days": 30, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": -0.095, "volume": 10},
+            {"symbol": "weak", "days": 30, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": -0.035, "volume": 5},
+        ]
+        position = positions_for_day(
+            candidates,
+            Parameters(min_days=1, negative_short_start_rate=-0.005,
+                       short_maturity_bonus_per_year=0))
+        self.assertAlmostEqual(3, position["shorts"]["strong"] /
+                               position["shorts"]["weak"])
+
+    def test_weighted_short_score_favors_longer_maturity(self):
+        candidates = [
+            {"symbol": "near", "days": 30, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": -0.05, "volume": 10},
+            {"symbol": "far", "days": 395, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": -0.05, "volume": 5},
+        ]
+        position = positions_for_day(
+            candidates,
+            Parameters(min_days=1, short_maturity_bonus_per_year=0.004))
+        self.assertGreater(position["shorts"]["far"], position["shorts"]["near"])
+
     def test_weekends_are_not_position_or_return_dates(self):
         friday = date(2020, 1, 3)
         saturday = date(2020, 1, 4)
