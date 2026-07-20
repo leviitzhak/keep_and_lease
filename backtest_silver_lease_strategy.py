@@ -265,7 +265,9 @@ def positions_for_day(candidates, p):
     # the configured maturity/rate policy after enforcing the entry threshold.
     positive = [x for x in eligible if x["lease"] > p.positive_entry_rate]
     selected_positive = select_long(positive) if positive else None
-    cash_signal = min(x["lease"] for x in eligible)
+    # SLV is controlled by the lease rate of the configured long book, not by
+    # the most negative contract used to construct the short-futures signal.
+    long_signal = weighted_contract_value(long_leg, contract_map, "lease")
 
     # Any eligible maturity, including the shortest, can enter the short book,
     # but only after its lease rate passes the explicit negative entry threshold.
@@ -280,35 +282,27 @@ def positions_for_day(candidates, p):
     negative_strength = clamp(
         (short_start_rate - signal) /
         (short_start_rate - p.negative_short_full_rate))
-    positive_available = (max(0.0, min(selected_positive["lease"], p.positive_full_rate))
-                          if selected_positive else 0.0)
-    negative_available = (abs(max(signal, p.negative_short_full_rate))
-                          if signal < short_start_rate else 0.0)
-    available_total = positive_available + negative_available
-    if available_total:
-        treasury_weight = positive_available / available_total
-        slv_weight = negative_available / available_total
-    else:
-        treasury_weight, slv_weight = 1.0, 0.0
+    slv_weight = clamp(
+        (p.slv_start_rate - long_signal) /
+        (p.slv_start_rate - p.slv_full_rate))
+    treasury_weight = 1.0 - slv_weight
 
-    # Positive lease supports the cash + long sleeve and negative lease the
-    # SLV + short sleeve. Both available sleeves share capital in proportion
-    # to the absolute lease rates, capped at their configured full thresholds.
-    longs = {}
-    long_notional = treasury_weight * p.max_long_future * positive_strength
+    # Treasury and SLV form the fully invested base, while long futures are an
+    # overlay sized independently by their positive lease signal.
+    base_longs = {}
+    long_notional = p.max_long_future * positive_strength
     if positive and p.long_contract_selection == "weighted_lease_rate":
         longest_days = max(x["days"] for x in positive)
-        longs = proportional_allocation([
+        base_longs = proportional_allocation([
             (x["symbol"],
              (x["lease"] - p.positive_entry_rate) +
              p.long_maturity_bonus_per_year * (longest_days - x["days"]) / 365)
             for x in positive
         ], long_notional)
     elif selected_positive:
-        longs[selected_positive["symbol"]] = (
+        base_longs[selected_positive["symbol"]] = (
             long_notional)
-    short_fraction = p.max_short_fraction_of_slv * negative_strength
-    total_short = slv_weight * short_fraction
+    total_short = p.max_short_fraction_of_slv * negative_strength
 
     # Score trades off negative lease edge against a preference for longer
     # maturity (the opposite of the long book). A 0.02 bonus means one extra
@@ -326,6 +320,17 @@ def positions_for_day(candidates, p):
     else:
         scores = [(x["symbol"], x["short_score"]) for x in negative]
         shorts = proportional_allocation(scores, total_short)
+
+    # A short-futures position is paired with an equally sized extension of
+    # the complete base long book.  The extension retains the same relative
+    # mix of long futures, SLV, and Treasuries.
+    base_long_total = treasury_weight + slv_weight + sum(base_longs.values())
+    long_extension = total_short
+    extension_ratio = long_extension / base_long_total if base_long_total else 0.0
+    treasury = treasury_weight * (1.0 + extension_ratio)
+    slv = slv_weight * (1.0 + extension_ratio)
+    longs = {symbol: weight * (1.0 + extension_ratio)
+             for symbol, weight in base_longs.items()}
 
     # When the strategy has a short position, its diagnostic must use exactly
     # the same maturities and relative allocations.  Only use a
@@ -357,12 +362,15 @@ def positions_for_day(candidates, p):
         mode = "negative"
     else:
         mode = "neutral"
-    return {"mode": mode, "signal": cash_signal,
+    return {"mode": mode, "signal": long_signal,
             "positive_signal": selected_positive["lease"] if selected_positive else 0.0,
-            "negative_signal": signal, "slv": slv_weight,
-            "treasury": treasury_weight, "longs": longs,
+            "negative_signal": signal, "slv": slv,
+            "treasury": treasury, "longs": longs,
             "shorts": shorts, "long_leg": long_leg, "short_leg": short_leg,
             "diagnostic_longs": long_leg, "diagnostic_shorts": short_leg,
+            "base_slv": slv_weight, "base_treasury": treasury_weight,
+            "base_longs": base_longs, "long_extension": long_extension,
+            "extension_ratio": extension_ratio,
             "bond_days": bond_days, "contracts": contract_map}
 
 
@@ -454,16 +462,17 @@ def run_backtest(spot, contracts, rates, by_day, p):
             Parameters(min_days=p.min_days, treasury_asset="sgov_proxy"))
         spot_return = spot[exit_day] / spot[execution_day] - 1 - p.slv_expense * elapsed / 365
         portfolio_return = position["treasury"] * treasury_return + position["slv"] * spot_return
-        long_return = 0.0
-        short_return = 0.0
+        base_long_return = (position["base_treasury"] * treasury_return +
+                            position["base_slv"] * spot_return)
+        short_futures_return = 0.0
         valid_interval = True
         short_total = sum(position["shorts"].values())
         long_total = sum(position["longs"].values())
         for symbol, weight in position["longs"].items():
             value, found = futures_interval_return(symbol, execution_day, exit_day, contracts)
             contribution = weight * value
-            long_return += contribution
             portfolio_return += contribution
+            base_long_return += position["base_longs"].get(symbol, 0.0) * value
             if not found:
                 missing_futures_intervals.append({
                     "signal_date": signal_day.isoformat(),
@@ -474,7 +483,7 @@ def run_backtest(spot, contracts, rates, by_day, p):
         for symbol, weight in position["shorts"].items():
             value, found = futures_interval_return(symbol, execution_day, exit_day, contracts)
             contribution = -weight * value
-            short_return += contribution
+            short_futures_return += contribution
             portfolio_return += contribution
             if not found:
                 missing_futures_intervals.append({
@@ -487,9 +496,11 @@ def run_backtest(spot, contracts, rates, by_day, p):
         # observation. Skip that entire portfolio interval instead.
         if not valid_interval:
             continue
+        short_book_return = (position["extension_ratio"] * base_long_return +
+                             short_futures_return)
         simple += portfolio_return
-        long_simple += long_return
-        short_simple += short_return
+        long_simple += base_long_return
+        short_simple += short_book_return
         nav *= 1 + portfolio_return
         sgov_proxy_nav *= 1 + sgov_proxy_return
         # Standalone leg returns always represent a fully invested leg.  They
@@ -569,8 +580,8 @@ def run_backtest(spot, contracts, rates, by_day, p):
                        "positive_signal_annual_pct": 100 * position["positive_signal"],
                        "negative_signal_annual_pct": 100 * position["negative_signal"],
                        "interval_return_pct": 100 * portfolio_return,
-                       "long_book_interval_return_pct": 100 * long_return,
-                       "short_book_interval_return_pct": 100 * short_return,
+                       "long_book_interval_return_pct": 100 * base_long_return,
+                       "short_book_interval_return_pct": 100 * short_book_return,
                        "simple_cumulative_return_pct": 100 * simple,
                        "long_book_cumulative_return_pct": 100 * long_simple,
                        "short_book_cumulative_return_pct": 100 * short_simple,
@@ -616,6 +627,8 @@ def run_backtest(spot, contracts, rates, by_day, p):
                            100 * short_weighted_premium if short_weighted_premium is not None else None),
                        "long_forward_maturity_days": long_forward_maturity_days,
                        "short_forward_maturity_days": short_forward_maturity_days,
+                       "allocation_long_lease_signal_pct": 100 * position["signal"],
+                       "long_book_extension_pct": 100 * position["long_extension"],
                        "available_futures_min_maturity_days": (
                            market_diagnostics["min_maturity_days"]
                            if market_diagnostics else None),
@@ -663,7 +676,8 @@ def parse_args():
     parser.add_argument("--negative-short-start-rate", type=float, default=-0.005,
                         help="Lease rate below which a contract becomes eligible for shorting")
     parser.add_argument("--negative-short-full-rate", type=float, default=-0.15)
-    parser.add_argument("--max-short-fraction-of-slv", type=float, default=0.50)
+    parser.add_argument("--max-short-fraction-of-slv", type=float, default=0.50,
+                        help="Maximum short-futures notional as a fraction of capital")
     parser.add_argument("--short-contract-selection",
                         choices=["weighted_lease_rate", "lowest_lease_rate"],
                         default="weighted_lease_rate")
