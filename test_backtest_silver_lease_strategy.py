@@ -175,6 +175,18 @@ class StandaloneLegReturnTests(unittest.TestCase):
         self.assertAlmostEqual(3, position["shorts"]["strong"] /
                                position["shorts"]["weak"])
 
+    def test_weighted_short_score_favors_longer_maturity(self):
+        candidates = [
+            {"symbol": "near", "days": 30, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": -0.05, "volume": 10},
+            {"symbol": "far", "days": 395, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": -0.05, "volume": 5},
+        ]
+        position = positions_for_day(
+            candidates,
+            Parameters(min_days=1, short_maturity_bonus_per_year=0.004))
+        self.assertGreater(position["shorts"]["far"], position["shorts"]["near"])
+
     def test_weekends_are_not_position_or_return_dates(self):
         friday = date(2020, 1, 3)
         saturday = date(2020, 1, 4)

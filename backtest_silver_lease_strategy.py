@@ -278,9 +278,10 @@ def positions_for_day(candidates, p):
     short_fraction = p.max_short_fraction_of_slv * negative_strength
     total_short = slv_weight * short_fraction
 
-    # Score trades off negative lease edge against a preference for maturity.
-    # A 0.02 bonus means one extra year can compensate for 2 percentage points
-    # less-negative annualized lease rate.
+    # Score trades off negative lease edge against a preference for longer
+    # maturity (the opposite of the long book). A 0.02 bonus means one extra
+    # year can compensate for 2 percentage points less-negative annualized
+    # lease rate.
     negative = [x for x in eligible if x["lease"] < short_start_rate]
     for x in negative:
         # A short's lease edge is the magnitude of lease rate minus entry
@@ -621,7 +622,7 @@ def parse_args():
                         choices=["weighted_lease_rate", "lowest_lease_rate"],
                         default="weighted_lease_rate")
     parser.add_argument("--short-maturity-bonus-per-year", type=float, default=0.004,
-                        help="Added short-selection score per extra year to maturity")
+                        help="Added short-selection score per extra year of maturity")
     parser.add_argument("--bond-mode", choices=["accrual", "zero_coupon_mtm"], default="accrual")
     parser.add_argument("--treasury-asset", choices=["matched_maturity", "sgov_proxy"],
                         default="matched_maturity")
