@@ -220,34 +220,30 @@ def capped_proportional(items, total, cap):
     return {key: value for key, value in result.items() if value > 0}
 
 
-def full_notional_diagnostic_books(eligible, p):
-    if not eligible:
-        return {}, {}
-    nearest = min(eligible, key=lambda x: (x["days"], -x["volume"]))
-    longs = {nearest["symbol"]: 1.0}
-
-    # Use the short-book ranking without applying the entry/full-allocation
-    # thresholds. The constant threshold term does not affect ranking, so the
-    # threshold-free score is negative lease plus the maturity bonus.
-    ranked = []
-    for x in eligible:
-        score = -x["lease"] + p.short_maturity_bonus_per_year * x["days"] / 365
-        ranked.append((x["symbol"], max(score, 1e-9)))
-    ranked.sort(key=lambda item: item[1], reverse=True)
-    shorts = capped_proportional(ranked[:p.negative_maturities], 1.0, p.max_share_per_maturity)
-    short_total = sum(shorts.values())
-    if short_total:
-        shorts = {symbol: weight / short_total for symbol, weight in shorts.items()}
-    return longs, shorts
-
-
 def market_diagnostics_for_day(candidates, p):
     """Select chart diagnostics from quotes available on the charted day."""
     eligible = [x for x in candidates if x["days"] >= p.min_days]
     if not eligible:
         return None
     contracts = {x["symbol"]: x for x in eligible}
-    longs, shorts = full_notional_diagnostic_books(eligible, p)
+    nearest = min(eligible, key=lambda x: (x["days"], -x["volume"]))
+    longs = {nearest["symbol"]: 1.0}
+
+    # Build the threshold-independent short diagnostics here, alongside their
+    # eligibility filtering.  Keeping this operation self-contained prevents
+    # the GUI request path from depending on a separately defined helper.
+    ranked = []
+    for contract in eligible:
+        score = (-contract["lease"] + p.short_maturity_bonus_per_year *
+                 contract["days"] / 365)
+        ranked.append((contract["symbol"], max(score, 1e-9)))
+    ranked.sort(key=lambda item: item[1], reverse=True)
+    shorts = capped_proportional(
+        ranked[:p.negative_maturities], 1.0, p.max_share_per_maturity)
+    short_total = sum(shorts.values())
+    if short_total:
+        shorts = {symbol: weight / short_total
+                  for symbol, weight in shorts.items()}
     return {
         "contracts": contracts,
         "longs": longs,
