@@ -95,8 +95,8 @@ def futures_diagnostics(rows, by_day, p):
     """Return per-date futures details for the all-prices chart tooltip."""
     result = []
     for row in rows:
-        execution_day = date.fromisoformat(row["execution_date"])
-        candidates = by_day.get(execution_day, [])
+        chart_day = date.fromisoformat(row["date"])
+        candidates = by_day.get(chart_day, [])
         eligible = [x for x in candidates if x["days"] >= p.min_days]
         if not eligible:
             result.append({"available": 0})

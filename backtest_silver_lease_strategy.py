@@ -241,6 +241,22 @@ def full_notional_diagnostic_books(eligible, p):
     return longs, shorts
 
 
+def market_diagnostics_for_day(candidates, p):
+    """Select chart diagnostics from quotes available on the charted day."""
+    eligible = [x for x in candidates if x["days"] >= p.min_days]
+    if not eligible:
+        return None
+    contracts = {x["symbol"]: x for x in eligible}
+    longs, shorts = full_notional_diagnostic_books(eligible, p)
+    return {
+        "contracts": contracts,
+        "longs": longs,
+        "shorts": shorts,
+        "min_maturity_days": min(x["days"] for x in eligible),
+        "max_maturity_days": max(x["days"] for x in eligible),
+    }
+
+
 def positions_for_day(candidates, p):
     eligible = [x for x in candidates if x["days"] >= p.min_days]
     if not eligible:
@@ -496,25 +512,29 @@ def run_backtest(spot, contracts, rates, by_day, p):
                 asset_nav[key] *= 1 + value
         long_weighted_days = weighted_contract_value(position["longs"], position["contracts"], "days")
         short_weighted_days = weighted_contract_value(position["shorts"], position["contracts"], "days")
-        # Market diagnostics remain visible even when the entry thresholds leave
-        # the actual portfolio with no position.  Use the threshold-independent
-        # diagnostic books, just as the standalone futures price/return series do.
+        # Chart diagnostics describe the displayed (exit) date, rather than the
+        # earlier signal date used for the portfolio. This keeps them aligned
+        # with the spot/futures quotes and date shown by the chart tooltip.
+        market_diagnostics = market_diagnostics_for_day(by_day.get(exit_day, []), p)
+        diagnostic_contracts = (market_diagnostics["contracts"]
+                                if market_diagnostics else {})
+        diagnostic_longs = market_diagnostics["longs"] if market_diagnostics else {}
+        diagnostic_shorts = market_diagnostics["shorts"] if market_diagnostics else {}
         long_weighted_lease = weighted_contract_value(
-            position["diagnostic_longs"], position["contracts"], "lease")
+            diagnostic_longs, diagnostic_contracts, "lease")
         short_weighted_lease = weighted_contract_value(
-            position["diagnostic_shorts"], position["contracts"], "lease")
+            diagnostic_shorts, diagnostic_contracts, "lease")
         long_weighted_future_price = weighted_futures_price(
-            position["diagnostic_longs"], contracts, exit_day)
+            diagnostic_longs, contracts, exit_day)
         short_weighted_future_price = weighted_futures_price(
-            position["diagnostic_shorts"], contracts, exit_day)
+            diagnostic_shorts, contracts, exit_day)
         # Premium charts are market diagnostics, not position diagnostics.  Use
         # the threshold-independent books so a null means that a source quote
         # is unavailable, rather than merely that the strategy did not trade.
         long_weighted_premium = weighted_contract_value(
-            position["diagnostic_longs"], position["contracts"], "premium")
+            diagnostic_longs, diagnostic_contracts, "premium")
         short_weighted_premium = weighted_contract_value(
-            position["diagnostic_shorts"], position["contracts"], "premium")
-        available_maturities = [contract["days"] for contract in position["contracts"].values()]
+            diagnostic_shorts, diagnostic_contracts, "premium")
         if short_total:
             short_maturities = [position["contracts"][s]["days"] for s in position["shorts"]]
             shortest_short_maturity_days = min(short_maturities)
@@ -582,8 +602,12 @@ def run_backtest(spot, contracts, rates, by_day, p):
                            100 * long_weighted_premium if long_weighted_premium is not None else None),
                        "short_weighted_forward_premium_pct": (
                            100 * short_weighted_premium if short_weighted_premium is not None else None),
-                       "available_futures_min_maturity_days": min(available_maturities),
-                       "available_futures_max_maturity_days": max(available_maturities),
+                       "available_futures_min_maturity_days": (
+                           market_diagnostics["min_maturity_days"]
+                           if market_diagnostics else None),
+                       "available_futures_max_maturity_days": (
+                           market_diagnostics["max_maturity_days"]
+                           if market_diagnostics else None),
                        "cash_plus_slv_weight_pct": 100 * (position["treasury"] + position["slv"]),
                        "short_shortest_maturity_days": shortest_short_maturity_days,
                        "short_longest_maturity_days": longest_short_maturity_days,

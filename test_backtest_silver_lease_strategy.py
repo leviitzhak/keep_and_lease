@@ -110,7 +110,7 @@ class StandaloneLegReturnTests(unittest.TestCase):
         self.assertNotEqual(len(self.days) - 2, len(rows))
 
     def test_futures_diagnostics_summarize_eligible_contracts(self):
-        rows = [{"execution_date": self.days[0].isoformat()}]
+        rows = [{"date": self.days[0].isoformat()}]
         self.by_day[self.days[0]] = [
             {"symbol": "low", "days": 30, "future": 101, "premium": 0.01,
              "lease": -0.05},
@@ -132,6 +132,17 @@ class StandaloneLegReturnTests(unittest.TestCase):
             Parameters(min_days=100, slv_expense=0))
         self.assertEqual(300, rows[0]["available_futures_min_maturity_days"])
         self.assertEqual(300, rows[0]["available_futures_max_maturity_days"])
+
+    def test_market_diagnostics_use_the_displayed_output_date(self):
+        self.by_day[self.days[0]][0]["lease"] = -0.05
+        self.by_day[self.days[2]][0]["lease"] = 0.08
+        self.by_day[self.days[2]][0]["days"] = 28
+        rows, _ = run_backtest(
+            self.spot, self.contracts, self.rates, self.by_day,
+            Parameters(min_days=1, slv_expense=0))
+        self.assertEqual(self.days[2].isoformat(), rows[0]["date"])
+        self.assertAlmostEqual(8.0, rows[0]["long_weighted_lease_rate_pct"])
+        self.assertEqual(28, rows[0]["available_futures_min_maturity_days"])
 
     def test_usd_rate_interpolates_missing_observation_dates(self):
         series = {tenor: [(date(2020, 1, 1), 0.01), (date(2020, 1, 11), 0.03)]

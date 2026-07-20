@@ -26,7 +26,7 @@
 <label>Valuation<select name="bond_mode"><option value="accrual">Accrued yield</option><option value="zero_coupon_mtm">Zero-coupon MTM</option></select></label>
 <div class="status" id="status"></div><button id="run" type="submit">Run strategy</button></form></aside>
 <main class="panel"><div class="metrics"><div class="metric"><span>Compounded return</span><strong id="compound">--</strong></div><div class="metric"><span>Simple return</span><strong id="simple">--</strong></div><div class="metric"><span>Ending NAV</span><strong id="nav">--</strong></div><div class="metric"><span>Observations</span><strong id="obs">--</strong></div><div class="metric"><span>Avg daily futures change</span><strong id="changes">--</strong></div></div><details class="missing" id="missing"><summary id="missingSummary">Missing leg returns: --</summary><pre id="missingEvents"></pre></details>
-<div class="legend"><span class="key" style="--c:#2563eb">Spot silver</span><span class="key" style="--c:#94a3b8">Individual futures contracts</span></div>
+<div class="legend"><span class="key" style="--c:#2563eb">Spot silver</span><span class="key" style="--c:#94a3b8">Individual futures contracts</span><span class="key" style="--c:#f59e0b">Minimum available maturity (right)</span><span class="key" style="--c:#7c3aed">Maximum available maturity (right)</span></div>
 <section class="chart"><h2>Spot silver and all futures prices</h2><canvas id="allFuturesPrices"></canvas></section>
 <div class="legend"><span class="key" style="--c:#2563eb">SLV price (left)</span><span class="key" style="--c:#16a34a">Long forward premium (right)</span><span class="key" style="--c:#dc2626">Short forward premium (right)</span><span class="key" style="--c:#0f766e">Long weighted lease (right)</span><span class="key" style="--c:#f59e0b">Short weighted lease (right)</span></div>
 <section class="chart"><h2>SLV price, forward premiums, and weighted lease rates</h2><canvas id="market"></canvas><p class="chart-note">Premiums and lease rates are shown independently of whether the strategy opens a position. Remaining breaks mean the source has no usable futures quote or spot fixing for that date.</p></section>
@@ -92,9 +92,9 @@ function lineChart(canvas, rows, specs, ylabel, opts={}) {
   charts.set(canvas,{rows,specs,hoverSpecs:opts.hoverSpecs||[],m,x,w,ylabel,scales});
 }
 function futuresPriceChart(canvas, rows, series, diagnostics) {
-  const specs=[{i:30,c:'#2563eb',w:2,label:'Spot silver'}];
+  const specs=[{i:30,c:'#2563eb',w:2,label:'Spot silver'},{i:38,c:'#f59e0b',label:'Minimum available maturity',axis:'right',d:0,suffix:' days'},{i:39,c:'#7c3aed',label:'Maximum available maturity',axis:'right',d:0,suffix:' days'}];
   const futuresValues=[];Object.values(series||{}).forEach(points=>points.forEach(point=>futuresValues.push(point[1])));
-  lineChart(canvas,rows,specs,'price ($)',{zero:false,extraValues:futuresValues});
+  lineChart(canvas,rows,specs,'price ($)',{zero:false,extraValues:futuresValues,rightLabel:'maturity (days)'});
   const meta=charts.get(canvas); if(!meta)return;
   meta.details=diagnostics||[];
   const dpr=devicePixelRatio||1,c=canvas.getContext('2d'),y=meta.scales.left.y;
