@@ -34,6 +34,7 @@ def parameters(payload):
         positive_full_rate=pct("positive_full_rate", 15),
         long_contract_selection=str(payload.get(
             "long_contract_selection", "shortest_maturity")),
+        long_maturity_bonus_per_year=pct("long_maturity_bonus_per_year", 0.4),
         max_long_future=pct("max_long_future", 50),
         negative_short_start_rate=pct("negative_short_start_rate", -0.5),
         negative_short_full_rate=pct("negative_short_full_rate", -15),

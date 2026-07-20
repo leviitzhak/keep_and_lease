@@ -119,9 +119,23 @@ class StandaloneLegReturnTests(unittest.TestCase):
         position = positions_for_day(
             candidates,
             Parameters(min_days=1, positive_entry_rate=0.01,
-                       long_contract_selection="weighted_lease_rate"))
+                       long_contract_selection="weighted_lease_rate",
+                       long_maturity_bonus_per_year=0))
         self.assertEqual({"low", "high"}, set(position["longs"]))
         self.assertAlmostEqual(4, position["longs"]["high"] / position["longs"]["low"])
+
+    def test_weighted_long_score_favors_shorter_maturity(self):
+        candidates = [
+            {"symbol": "near", "days": 30, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": 0.05, "volume": 10},
+            {"symbol": "far", "days": 395, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": 0.05, "volume": 5},
+        ]
+        position = positions_for_day(
+            candidates,
+            Parameters(min_days=1, long_contract_selection="weighted_lease_rate",
+                       long_maturity_bonus_per_year=0.004))
+        self.assertGreater(position["longs"]["near"], position["longs"]["far"])
 
     def test_short_can_select_only_lowest_lease_rate(self):
         candidates = [
@@ -146,6 +160,20 @@ class StandaloneLegReturnTests(unittest.TestCase):
         self.assertEqual({"strong", "weak"}, set(position["shorts"]))
         total = sum(position["shorts"].values())
         self.assertGreater(position["shorts"]["strong"] / total, 0.5)
+
+    def test_weighted_short_is_proportional_to_lease_edge_from_entry(self):
+        candidates = [
+            {"symbol": "strong", "days": 30, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": -0.095, "volume": 10},
+            {"symbol": "weak", "days": 30, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": -0.035, "volume": 5},
+        ]
+        position = positions_for_day(
+            candidates,
+            Parameters(min_days=1, negative_short_start_rate=-0.005,
+                       short_maturity_bonus_per_year=0))
+        self.assertAlmostEqual(3, position["shorts"]["strong"] /
+                               position["shorts"]["weak"])
 
     def test_weekends_are_not_position_or_return_dates(self):
         friday = date(2020, 1, 3)

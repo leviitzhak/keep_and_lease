@@ -34,6 +34,7 @@ class Parameters:
     positive_entry_rate: float = 0.0
     positive_full_rate: float = 0.15
     long_contract_selection: str = "shortest_maturity"
+    long_maturity_bonus_per_year: float = 0.004
     max_long_future: float = 0.50
     negative_short_start_rate: float = -0.005
     negative_short_full_rate: float = -0.15
@@ -218,8 +219,11 @@ def positions_for_day(candidates, p):
             contracts, key=lambda x: (x["days"], -x["volume"]))
     if p.long_contract_selection == "weighted_lease_rate":
         lease_floor = min(x["lease"] for x in eligible)
+        longest_days = max(x["days"] for x in eligible)
         long_leg = proportional_allocation([
-            (x["symbol"], x["lease"] - lease_floor + 1e-9) for x in eligible
+            (x["symbol"], x["lease"] - lease_floor + 1e-9 +
+             p.long_maturity_bonus_per_year * (longest_days - x["days"]) / 365)
+            for x in eligible
         ], 1.0)
     else:
         diagnostic_long = select_long(eligible)
@@ -261,8 +265,12 @@ def positions_for_day(candidates, p):
     longs = {}
     long_notional = treasury_weight * p.max_long_future * positive_strength
     if positive and p.long_contract_selection == "weighted_lease_rate":
+        longest_days = max(x["days"] for x in positive)
         longs = proportional_allocation([
-            (x["symbol"], x["lease"] - p.positive_entry_rate) for x in positive
+            (x["symbol"],
+             (x["lease"] - p.positive_entry_rate) +
+             p.long_maturity_bonus_per_year * (longest_days - x["days"]) / 365)
+            for x in positive
         ], long_notional)
     elif selected_positive:
         longs[selected_positive["symbol"]] = (
@@ -275,7 +283,9 @@ def positions_for_day(candidates, p):
     # less-negative annualized lease rate.
     negative = [x for x in eligible if x["lease"] < short_start_rate]
     for x in negative:
-        x["short_score"] = (short_start_rate - x["lease"]) + \
+        # A short's lease edge is the magnitude of lease rate minus entry
+        # threshold. It is positive because qualifying leases are below entry.
+        x["short_score"] = abs(x["lease"] - short_start_rate) + \
                            p.short_maturity_bonus_per_year * x["days"] / 365
     if negative and p.short_contract_selection == "lowest_lease_rate":
         lowest = min(negative, key=lambda x: (x["lease"], x["days"], -x["volume"]))
@@ -601,6 +611,8 @@ def parse_args():
                         default="shortest_maturity",
                         help="How to select among long contracts above the entry rate")
     parser.add_argument("--max-long-future", type=float, default=0.50)
+    parser.add_argument("--long-maturity-bonus-per-year", type=float, default=0.004,
+                        help="Added long score per year shorter than the longest candidate")
     parser.add_argument("--negative-short-start-rate", type=float, default=-0.005,
                         help="Lease rate below which a contract becomes eligible for shorting")
     parser.add_argument("--negative-short-full-rate", type=float, default=-0.15)
@@ -628,6 +640,7 @@ def main():
                                 positive_entry_rate=args.positive_entry_rate,
                                 positive_full_rate=args.positive_full_rate,
                                 long_contract_selection=args.long_contract_selection,
+                                long_maturity_bonus_per_year=args.long_maturity_bonus_per_year,
                                 max_long_future=args.max_long_future,
                                 negative_short_start_rate=args.negative_short_start_rate,
                                 negative_short_full_rate=args.negative_short_full_rate,
