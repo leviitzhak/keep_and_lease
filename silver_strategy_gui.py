@@ -107,6 +107,8 @@ def futures_diagnostics(rows, by_day, p):
         highest_premium = max(x["premium"] for x in eligible)
         result.append({
             "available": len(eligible),
+            "shortest_maturity_days": min(x["days"] for x in eligible),
+            "longest_maturity_days": max(x["days"] for x in eligible),
             "lowest_lease": contract_summary(lowest_lease),
             "highest_lease": contract_summary(highest_lease),
             "lowest_premium_pct": 100 * lowest_premium,

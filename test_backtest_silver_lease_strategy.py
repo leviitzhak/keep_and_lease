@@ -121,6 +121,8 @@ class StandaloneLegReturnTests(unittest.TestCase):
         ]
         diagnostics = futures_diagnostics(rows, self.by_day, Parameters(min_days=10))
         self.assertEqual(2, diagnostics[0]["available"])
+        self.assertEqual(30, diagnostics[0]["shortest_maturity_days"])
+        self.assertEqual(60, diagnostics[0]["longest_maturity_days"])
         self.assertEqual("low", diagnostics[0]["lowest_lease"]["symbol"])
         self.assertEqual("high", diagnostics[0]["highest_lease"]["symbol"])
         self.assertAlmostEqual(1.0, diagnostics[0]["lowest_premium_pct"])
