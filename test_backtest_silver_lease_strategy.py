@@ -81,6 +81,34 @@ class StandaloneLegReturnTests(unittest.TestCase):
         self.assertEqual(1.0, positions_for_day(positive, Parameters(min_days=1))["treasury"])
         self.assertEqual(1.0, positions_for_day(negative, Parameters(min_days=1))["slv"])
 
+    def test_long_can_select_highest_lease_rate_instead_of_shortest_maturity(self):
+        candidates = [
+            {"symbol": "near", "days": 30, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": 0.03, "volume": 10},
+            {"symbol": "far", "days": 300, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": 0.08, "volume": 5},
+        ]
+        default = positions_for_day(candidates, Parameters(min_days=1))
+        highest = positions_for_day(
+            candidates,
+            Parameters(min_days=1, long_contract_selection="highest_lease_rate"))
+        self.assertEqual({"near"}, set(default["longs"]))
+        self.assertEqual({"far"}, set(highest["longs"]))
+        self.assertEqual({"far": 1.0}, highest["long_leg"])
+
+    def test_highest_lease_selection_still_enforces_entry_threshold(self):
+        candidates = [
+            {"symbol": "near", "days": 30, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": 0.02, "volume": 10},
+            {"symbol": "far", "days": 300, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": 0.04, "volume": 5},
+        ]
+        position = positions_for_day(
+            candidates,
+            Parameters(min_days=1, positive_entry_rate=0.05,
+                       long_contract_selection="highest_lease_rate"))
+        self.assertEqual({}, position["longs"])
+
     def test_weekends_are_not_position_or_return_dates(self):
         friday = date(2020, 1, 3)
         saturday = date(2020, 1, 4)

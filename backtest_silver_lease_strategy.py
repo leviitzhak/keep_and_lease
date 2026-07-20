@@ -33,6 +33,7 @@ class Parameters:
     slv_full_rate: float = -0.015
     positive_entry_rate: float = 0.0
     positive_full_rate: float = 0.15
+    long_contract_selection: str = "shortest_maturity"
     max_long_future: float = 0.50
     negative_short_start_rate: float = -0.005
     negative_short_full_rate: float = -0.15
@@ -249,13 +250,19 @@ def positions_for_day(candidates, p):
     # The performance charts are diagnostics for a hypothetical 100% position
     # in each leg.  Select their contracts independently of the thresholds
     # which decide whether the portfolio actually takes the position.
-    nearest_long_leg = min(eligible, key=lambda x: (x["days"], -x["volume"]))
-    long_leg = {nearest_long_leg["symbol"]: 1.0}
+    if p.long_contract_selection == "highest_lease_rate":
+        select_long = lambda contracts: max(
+            contracts, key=lambda x: (x["lease"], -x["days"], x["volume"]))
+    else:
+        select_long = lambda contracts: min(
+            contracts, key=lambda x: (x["days"], -x["volume"]))
+    diagnostic_long = select_long(eligible)
+    long_leg = {diagnostic_long["symbol"]: 1.0}
 
-    # The long and short books are independent. The long book uses the nearest
-    # eligible contract whose lease rate clears the configured entry rate.
+    # The long and short books are independent. Select the long contract using
+    # the configured maturity/rate policy after enforcing the entry threshold.
     positive = [x for x in eligible if x["lease"] > p.positive_entry_rate]
-    nearest_positive = min(positive, key=lambda x: (x["days"], -x["volume"])) if positive else None
+    selected_positive = select_long(positive) if positive else None
     cash_signal = min(x["lease"] for x in eligible)
 
     # Any eligible maturity, including the shortest, can enter the short book,
@@ -266,13 +273,13 @@ def positions_for_day(candidates, p):
     best_negative = min(eligible, key=lambda x: x["lease"])
     signal = best_negative["lease"]
     positive_strength = (clamp(
-        (nearest_positive["lease"] - p.positive_entry_rate) /
-        (p.positive_full_rate - p.positive_entry_rate)) if nearest_positive else 0.0)
+        (selected_positive["lease"] - p.positive_entry_rate) /
+        (p.positive_full_rate - p.positive_entry_rate)) if selected_positive else 0.0)
     negative_strength = clamp(
         (short_start_rate - signal) /
         (short_start_rate - p.negative_short_full_rate))
-    positive_available = (max(0.0, min(nearest_positive["lease"], p.positive_full_rate))
-                          if nearest_positive else 0.0)
+    positive_available = (max(0.0, min(selected_positive["lease"], p.positive_full_rate))
+                          if selected_positive else 0.0)
     negative_available = (abs(max(signal, p.negative_short_full_rate))
                           if signal < short_start_rate else 0.0)
     available_total = positive_available + negative_available
@@ -286,8 +293,8 @@ def positions_for_day(candidates, p):
     # SLV + short sleeve. Both available sleeves share capital in proportion
     # to the absolute lease rates, capped at their configured full thresholds.
     longs = {}
-    if nearest_positive:
-        longs[nearest_positive["symbol"]] = (
+    if selected_positive:
+        longs[selected_positive["symbol"]] = (
             treasury_weight * p.max_long_future * positive_strength)
     short_fraction = p.max_short_fraction_of_slv * negative_strength
     total_short = slv_weight * short_fraction
@@ -321,8 +328,8 @@ def positions_for_day(candidates, p):
             p.max_share_per_maturity)
     if shorts:
         bond_days = sum(shorts[s] * contract_map[s]["days"] for s in shorts) / sum(shorts.values())
-    elif nearest_positive:
-        bond_days = nearest_positive["days"]
+    elif selected_positive:
+        bond_days = selected_positive["days"]
     else:
         bond_days = best_negative["days"]
     if longs and shorts:
@@ -334,7 +341,7 @@ def positions_for_day(candidates, p):
     else:
         mode = "neutral"
     return {"mode": mode, "signal": cash_signal,
-            "positive_signal": nearest_positive["lease"] if nearest_positive else 0.0,
+            "positive_signal": selected_positive["lease"] if selected_positive else 0.0,
             "negative_signal": signal, "slv": slv_weight,
             "treasury": treasury_weight, "longs": longs,
             "shorts": shorts, "long_leg": long_leg, "short_leg": short_leg,
@@ -614,6 +621,10 @@ def parse_args():
     parser.add_argument("--positive-full-rate", type=float, default=0.15)
     parser.add_argument("--positive-entry-rate", type=float, default=0.0,
                         help="Lease rate above which a contract becomes eligible for a long")
+    parser.add_argument("--long-contract-selection",
+                        choices=["shortest_maturity", "highest_lease_rate"],
+                        default="shortest_maturity",
+                        help="How to select among long contracts above the entry rate")
     parser.add_argument("--max-long-future", type=float, default=0.50)
     parser.add_argument("--negative-short-start-rate", type=float, default=-0.005,
                         help="Lease rate below which a contract becomes eligible for shorting")
@@ -640,6 +651,7 @@ def main():
                                 slv_full_rate=args.slv_full_rate,
                                 positive_entry_rate=args.positive_entry_rate,
                                 positive_full_rate=args.positive_full_rate,
+                                long_contract_selection=args.long_contract_selection,
                                 max_long_future=args.max_long_future,
                                 negative_short_start_rate=args.negative_short_start_rate,
                                 negative_short_full_rate=args.negative_short_full_rate,
