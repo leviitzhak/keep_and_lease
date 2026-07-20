@@ -535,6 +535,14 @@ def run_backtest(spot, contracts, rates, by_day, p):
             diagnostic_longs, diagnostic_contracts, "premium")
         short_weighted_premium = weighted_contract_value(
             diagnostic_shorts, diagnostic_contracts, "premium")
+        diagnostic_long_weighted_days = weighted_contract_value(
+            diagnostic_longs, diagnostic_contracts, "days")
+        diagnostic_short_weighted_days = weighted_contract_value(
+            diagnostic_shorts, diagnostic_contracts, "days")
+        long_weighted_usd_rate = weighted_contract_value(
+            diagnostic_longs, diagnostic_contracts, "rate")
+        short_weighted_usd_rate = weighted_contract_value(
+            diagnostic_shorts, diagnostic_contracts, "rate")
         if short_total:
             short_maturities = [position["contracts"][s]["days"] for s in position["shorts"]]
             shortest_short_maturity_days = min(short_maturities)
@@ -602,6 +610,14 @@ def run_backtest(spot, contracts, rates, by_day, p):
                            100 * long_weighted_premium if long_weighted_premium is not None else None),
                        "short_weighted_forward_premium_pct": (
                            100 * short_weighted_premium if short_weighted_premium is not None else None),
+                       "diagnostic_long_weighted_maturity_days": diagnostic_long_weighted_days,
+                       "diagnostic_short_weighted_maturity_days": diagnostic_short_weighted_days,
+                       "long_weighted_usd_rate_pct": (
+                           100 * long_weighted_usd_rate
+                           if long_weighted_usd_rate is not None else None),
+                       "short_weighted_usd_rate_pct": (
+                           100 * short_weighted_usd_rate
+                           if short_weighted_usd_rate is not None else None),
                        "available_futures_min_maturity_days": (
                            market_diagnostics["min_maturity_days"]
                            if market_diagnostics else None),

@@ -155,7 +155,10 @@ def result(payload):
               "long_weighted_forward_premium_pct",
               "short_weighted_forward_premium_pct", "cash_plus_slv_weight_pct",
               "available_futures_min_maturity_days",
-              "available_futures_max_maturity_days"]
+              "available_futures_max_maturity_days",
+              "diagnostic_long_weighted_maturity_days",
+              "diagnostic_short_weighted_maturity_days",
+              "long_weighted_usd_rate_pct", "short_weighted_usd_rate_pct"]
     change_stats = position_change_stats(rows)
     return {
         "series": [[row[k] for k in fields] for row in sampled],

@@ -46,6 +46,10 @@ class StandaloneLegReturnTests(unittest.TestCase):
         self.assertEqual(0.0, rows[0]["short_weighted_lease_rate_pct"])
         self.assertEqual(0.0, rows[0]["long_weighted_forward_premium_pct"])
         self.assertEqual(0.0, rows[0]["short_weighted_forward_premium_pct"])
+        self.assertEqual(30, rows[0]["diagnostic_long_weighted_maturity_days"])
+        self.assertGreater(rows[0]["diagnostic_short_weighted_maturity_days"], 30)
+        self.assertEqual(0.0, rows[0]["long_weighted_usd_rate_pct"])
+        self.assertEqual(0.0, rows[0]["short_weighted_usd_rate_pct"])
 
     def test_short_leg_uses_strategy_maturities_when_short_is_nonzero(self):
         candidates = [
@@ -145,6 +149,7 @@ class StandaloneLegReturnTests(unittest.TestCase):
         self.assertEqual(self.days[2].isoformat(), rows[0]["date"])
         self.assertAlmostEqual(8.0, rows[0]["long_weighted_lease_rate_pct"])
         self.assertEqual(28, rows[0]["available_futures_min_maturity_days"])
+        self.assertEqual(28, rows[0]["diagnostic_long_weighted_maturity_days"])
 
     def test_usd_rate_interpolates_missing_observation_dates(self):
         series = {tenor: [(date(2020, 1, 1), 0.01), (date(2020, 1, 11), 0.03)]
