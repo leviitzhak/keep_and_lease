@@ -209,7 +209,23 @@ def market_diagnostics_for_day(candidates, p):
     if not eligible:
         return None
     contracts = {x["symbol"]: x for x in eligible}
-    longs, shorts = full_notional_diagnostic_books(eligible, p)
+    nearest = min(eligible, key=lambda x: (x["days"], -x["volume"]))
+    longs = {nearest["symbol"]: 1.0}
+
+    # Build the threshold-independent short diagnostics here, alongside their
+    # eligibility filtering.  Keeping this operation self-contained prevents
+    # the GUI request path from depending on a separately defined helper.
+    ranked = []
+    for contract in eligible:
+        score = (-contract["lease"] + p.short_maturity_bonus_per_year *
+                 contract["days"] / 365)
+        ranked.append((contract["symbol"], max(score, 1e-9)))
+    ranked.sort(key=lambda item: item[1], reverse=True)
+    shorts = proportional_allocation(ranked, 1.0)
+    short_total = sum(shorts.values())
+    if short_total:
+        shorts = {symbol: weight / short_total
+                  for symbol, weight in shorts.items()}
     return {
         "contracts": contracts,
         "longs": longs,
