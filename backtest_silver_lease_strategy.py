@@ -532,6 +532,10 @@ def run_backtest(spot, contracts, rates, by_day, p):
             diagnostic_longs, diagnostic_contracts, "lease")
         short_weighted_lease = weighted_contract_value(
             diagnostic_shorts, diagnostic_contracts, "lease")
+        long_forward_maturity_days = weighted_contract_value(
+            diagnostic_longs, diagnostic_contracts, "days")
+        short_forward_maturity_days = weighted_contract_value(
+            diagnostic_shorts, diagnostic_contracts, "days")
         long_weighted_future_price = weighted_futures_price(
             diagnostic_longs, contracts, exit_day)
         short_weighted_future_price = weighted_futures_price(
@@ -610,6 +614,8 @@ def run_backtest(spot, contracts, rates, by_day, p):
                            100 * long_weighted_premium if long_weighted_premium is not None else None),
                        "short_weighted_forward_premium_pct": (
                            100 * short_weighted_premium if short_weighted_premium is not None else None),
+                       "long_forward_maturity_days": long_forward_maturity_days,
+                       "short_forward_maturity_days": short_forward_maturity_days,
                        "available_futures_min_maturity_days": (
                            market_diagnostics["min_maturity_days"]
                            if market_diagnostics else None),

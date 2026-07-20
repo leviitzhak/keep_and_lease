@@ -163,7 +163,8 @@ def result(payload):
               "long_weighted_forward_premium_pct",
               "short_weighted_forward_premium_pct", "cash_plus_slv_weight_pct",
               "available_futures_min_maturity_days",
-              "available_futures_max_maturity_days"]
+              "available_futures_max_maturity_days",
+              "long_forward_maturity_days", "short_forward_maturity_days"]
     change_stats = position_change_stats(rows)
     return {
         "series": [[row[k] for k in fields] for row in sampled],
