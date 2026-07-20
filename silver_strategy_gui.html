@@ -3,7 +3,7 @@
 <title>Silver lease strategy</title>
 <style>
 :root{font-family:system-ui,sans-serif;color:#172033;background:#f5f7fb}*{box-sizing:border-box}body{margin:0}.app{max-width:1500px;margin:auto;padding:18px}.layout{display:grid;grid-template-columns:330px 1fr;gap:18px}.panel{background:white;border:1px solid #dce2ea;border-radius:12px;padding:16px}.controls{position:sticky;top:12px;align-self:start;max-height:calc(100vh - 24px);overflow:auto}h1{font-size:21px;margin:0 0 14px}h2{font-size:15px;margin:18px 0 8px}label{display:grid;grid-template-columns:1fr 100px;gap:10px;align-items:center;font-size:13px;margin:8px 0}input,select,button{font:inherit;padding:7px;border:1px solid #cbd5e1;border-radius:7px;background:white}button{width:100%;background:#172033;color:white;border:0;padding:10px;cursor:pointer;position:sticky;bottom:0}button:disabled{opacity:.55}.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:15px}.metric{background:#f7f9fc;border-radius:9px;padding:11px}.metric span{display:block;color:#667085;font-size:12px}.metric strong{display:block;font-size:19px;margin-top:3px}.chart{height:305px;margin:12px 0;overflow-x:auto;overflow-y:hidden;scrollbar-gutter:stable;position:relative}.chart h2{position:sticky;left:0;margin:0 0 4px;background:white;z-index:1}.chart canvas{height:250px;display:block}.chart:has(.chart-note){height:350px}.chart-note{position:sticky;left:0;max-width:850px;margin:7px 0 0;color:#667085;font-size:12px;line-height:1.4}.tooltip{position:fixed;display:none;pointer-events:none;background:#172033;color:white;border-radius:6px;padding:7px 9px;font-size:12px;line-height:1.35;box-shadow:0 6px 18px #0002;z-index:20;max-width:460px}.tooltip strong{display:block;margin-bottom:3px}.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:#667085}.key:before{content:"";width:12px;height:3px;background:var(--c);display:inline-block;margin-right:5px;vertical-align:middle}.status{min-height:22px;color:#667085;font-size:13px}.error{color:#b42318}.missing{font-size:12px;margin:0 0 14px}.missing summary{cursor:pointer;color:#667085}.missing pre{max-height:180px;overflow:auto;background:#f7f9fc;padding:10px;border-radius:7px;white-space:pre-wrap}@media(max-width:1050px){.metrics{grid-template-columns:repeat(3,1fr)}}@media(max-width:850px){.layout{grid-template-columns:1fr}.controls{position:static;max-height:none}.metrics{grid-template-columns:repeat(2,1fr)}}
-</style></head><body><div class="app"><h1>Silver lease strategy backtest</h1><div class="layout">
+</style><style>.panel{min-width:0}.chart{width:100%;max-width:100%}</style></head><body><div class="app"><h1>Silver lease strategy backtest</h1><div class="layout">
 <aside class="panel controls"><form id="form">
 <h2>Contract selection</h2>
 <label>Minimum days<input name="min_days" type="number" value="10" min="1"></label>
@@ -66,9 +66,11 @@ function values(){return Object.fromEntries(new FormData(form).entries())}
 function fmt(v,d=1){return v==null?'--':Number(v).toLocaleString(undefined,{maximumFractionDigits:d})}
 function num(v){return v==null||v===''?NaN:Number(v)}
 function lineChart(canvas, rows, specs, ylabel, opts={}) {
-  const parent=canvas.parentElement, dpr=devicePixelRatio||1, visible=Math.max(320,parent.clientWidth);
+  const parent=canvas.parentElement, mobile=matchMedia('(max-width:850px)').matches;
+  const dpr=mobile?1:Math.min(devicePixelRatio||1,1.25), visible=Math.max(280,parent.clientWidth);
   // Give every observation enough horizontal room to expose daily evolution.
-  const target=Math.min(30000,Math.max(visible,rows.length*(opts.px||6))), h=250;
+  // Mobile browsers have much tighter canvas dimension and memory limits.
+  const target=Math.min(mobile?4000:8000,Math.max(visible,rows.length*(opts.px||6))), h=250;
   canvas.style.width=target+'px'; canvas.style.height=h+'px'; canvas.width=target*dpr; canvas.height=h*dpr;
   const c=canvas.getContext('2d'), w=target, m={l:58,r:opts.rightLabel?62:12,t:12,b:32};
   c.scale(dpr,dpr); c.clearRect(0,0,w,h);
