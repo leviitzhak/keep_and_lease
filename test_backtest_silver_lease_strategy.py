@@ -1,7 +1,10 @@
 import unittest
 from datetime import date
 
-from backtest_silver_lease_strategy import (Parameters, futures_trade_prices,\n                                                positions_for_day, run_backtest, usd_rate)
+from backtest_silver_lease_strategy import (Parameters, futures_trade_prices,
+                                                matched_usd_rate_details,
+                                                positions_for_day, run_backtest,
+                                                usd_rate, usd_rate_components)
 from silver_strategy_gui import futures_diagnostics
 
 
@@ -32,6 +35,29 @@ class StandaloneLegReturnTests(unittest.TestCase):
             self.contracts, day)
         self.assertAlmostEqual(self.contracts["far"][day], entered)
         self.assertAlmostEqual(self.contracts["near"][day], exited)
+
+    def test_usd_rate_components_reconstruct_interpolated_rate(self):
+        day = self.days[0]
+        rates = {
+            91: [(day, 0.04)], 182: [(day, 0.06)],
+            365: [], 730: [], 1095: [], 1825: [],
+        }
+        components = usd_rate_components(rates, day, 136.5)
+        self.assertEqual([(91, 0.04, 0.5), (182, 0.06, 0.5)], components)
+        self.assertAlmostEqual(usd_rate(rates, day, 136.5), 0.05)
+
+    def test_matched_usd_rate_details_combine_contract_and_curve_weights(self):
+        day = self.days[0]
+        rates = {
+            91: [(day, 0.04)], 182: [(day, 0.06)],
+            365: [], 730: [], 1095: [], 1825: [],
+        }
+        contracts = {"near": {"days": 91}, "far": {"days": 182}}
+        detail = matched_usd_rate_details(
+            rates, day, {"near": 0.25, "far": 0.75}, contracts)
+        self.assertAlmostEqual(detail["rate"], 0.055)
+        self.assertEqual([25.0, 75.0],
+                         [x["weight_pct"] for x in detail["components"]])
 
     def test_leg_contracts_are_selected_even_when_thresholds_disable_trades(self):
         position = positions_for_day(self.by_day[self.days[0]], Parameters(min_days=1))
