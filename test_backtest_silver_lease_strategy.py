@@ -1,7 +1,7 @@
 import unittest
 from datetime import date
 
-from backtest_silver_lease_strategy import Parameters, positions_for_day, run_backtest, usd_rate
+from backtest_silver_lease_strategy import (Parameters, futures_trade_prices,\n                                                positions_for_day, run_backtest, usd_rate)
 from silver_strategy_gui import futures_diagnostics
 
 
@@ -23,6 +23,15 @@ class StandaloneLegReturnTests(unittest.TestCase):
         ]
         self.by_day = {day: [dict(item) for item in candidates]
                        for day in self.days}
+
+    def test_trade_prices_weight_entries_and_exits_by_changed_notional(self):
+        day = self.days[1]
+        entered, exited = futures_trade_prices(
+            {"near": 0.30, "far": 0.20},
+            {"near": 0.10, "far": 0.50},
+            self.contracts, day)
+        self.assertAlmostEqual(self.contracts["far"][day], entered)
+        self.assertAlmostEqual(self.contracts["near"][day], exited)
 
     def test_leg_contracts_are_selected_even_when_thresholds_disable_trades(self):
         position = positions_for_day(self.by_day[self.days[0]], Parameters(min_days=1))
