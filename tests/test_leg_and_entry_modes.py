@@ -45,6 +45,14 @@ class LegAndEntryModeTests(unittest.TestCase):
         self.assertEqual(position["base_longs"], {})
         self.assertGreater(position["base_slv"], 0.0)
 
+    def test_short_book_is_zero_when_no_long_composition_exists(self):
+        position = positions_for_day(
+            self.candidates,
+            Parameters(min_days=10, enable_slv_leg=False,
+                       enable_cash_long_futures_leg=False))
+        self.assertEqual(position["shorts"], {})
+        self.assertEqual(position["long_extension"], 0.0)
+
 
 if __name__ == "__main__":
     unittest.main()
