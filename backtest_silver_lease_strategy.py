@@ -31,6 +31,11 @@ class Parameters:
     roll_only_if_better: bool = True
     force_roll_at_min_days: bool = True
     enable_short_book: bool = True
+    enable_slv_leg: bool = True
+    enable_cash_long_futures_leg: bool = True
+    slv_entry_mode: str = "gradual"
+    long_futures_entry_mode: str = "gradual"
+    short_futures_entry_mode: str = "gradual"
     slv_expense: float = 0.005
     slv_start_rate: float = 0.005
     slv_full_rate: float = -0.015
@@ -362,18 +367,28 @@ def positions_for_day(candidates, p, previous=None):
     positive_strength = (clamp(
         (selected_positive["lease"] - p.positive_entry_rate) /
         (p.positive_full_rate - p.positive_entry_rate)) if selected_positive else 0.0)
+    if selected_positive and p.long_futures_entry_mode == "fixed":
+        positive_strength = 1.0
     negative_strength = clamp(
         (short_start_rate - signal) /
         (short_start_rate - p.negative_short_full_rate))
+    if signal < short_start_rate and p.short_futures_entry_mode == "fixed":
+        negative_strength = 1.0
     slv_weight = clamp(
         (p.slv_start_rate - long_signal) /
         (p.slv_start_rate - p.slv_full_rate))
-    treasury_weight = 1.0 - slv_weight
+    if long_signal < p.slv_start_rate and p.slv_entry_mode == "fixed":
+        slv_weight = 1.0
+    if not p.enable_slv_leg:
+        slv_weight = 0.0
+    treasury_weight = ((1.0 - slv_weight)
+                       if p.enable_cash_long_futures_leg else 0.0)
 
     # Treasury and SLV form the fully invested base, while long futures are an
     # overlay sized independently by their positive lease signal.
     base_longs = {}
-    long_notional = p.max_long_future * positive_strength
+    long_notional = (p.max_long_future * positive_strength
+                     if p.enable_cash_long_futures_leg else 0.0)
     if positive and p.long_contract_selection == "weighted_lease_rate":
         longest_days = max(x["days"] for x in positive)
         base_longs = proportional_allocation([
