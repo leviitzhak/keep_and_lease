@@ -1,7 +1,8 @@
 import unittest
 from datetime import date
 
-from backtest_silver_lease_strategy import (Parameters, futures_trade_prices,
+from backtest_silver_lease_strategy import (Parameters, futures_trade_details,
+                                                futures_trade_prices,
                                                 matched_usd_rate_details,
                                                 positions_for_day, run_backtest,
                                                 usd_rate, usd_rate_components)
@@ -29,12 +30,27 @@ class StandaloneLegReturnTests(unittest.TestCase):
 
     def test_trade_prices_weight_entries_and_exits_by_changed_notional(self):
         day = self.days[1]
-        entered, exited = futures_trade_prices(
+        entered, entered_size, exited, exited_size = futures_trade_prices(
             {"near": 0.30, "far": 0.20},
             {"near": 0.10, "far": 0.50},
             self.contracts, day)
         self.assertAlmostEqual(self.contracts["far"][day], entered)
         self.assertAlmostEqual(self.contracts["near"][day], exited)
+        self.assertAlmostEqual(0.30, entered_size)
+        self.assertAlmostEqual(0.20, exited_size)
+
+    def test_trade_details_list_each_contract_price_size_and_action(self):
+        day = self.days[1]
+        details = futures_trade_details(
+            {"near": 0.30, "far": 0.20},
+            {"near": 0.10, "far": 0.50},
+            self.contracts, day)
+        self.assertEqual({"far", "near"}, {item["symbol"] for item in details})
+        by_symbol = {item["symbol"]: item for item in details}
+        self.assertEqual("entry", by_symbol["far"]["action"])
+        self.assertAlmostEqual(30.0, by_symbol["far"]["size_pct"])
+        self.assertEqual("exit", by_symbol["near"]["action"])
+        self.assertAlmostEqual(20.0, by_symbol["near"]["size_pct"])
 
     def test_usd_rate_components_reconstruct_interpolated_rate(self):
         day = self.days[0]
@@ -162,6 +178,10 @@ class StandaloneLegReturnTests(unittest.TestCase):
             self.assertAlmostEqual(
                 row["short_futures_notional_pct"],
                 row["long_book_extension_pct"])
+            self.assertIn("matched_long_extension_interval_return_pct", row)
+        self.assertAlmostEqual(
+            sum(row["matched_long_extension_interval_return_pct"] for row in rows),
+            rows[-1]["matched_long_extension_cumulative_return_pct"])
 
     def test_long_can_select_highest_lease_rate_instead_of_shortest_maturity(self):
         candidates = [
