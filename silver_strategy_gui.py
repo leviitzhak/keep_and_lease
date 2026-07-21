@@ -151,7 +151,9 @@ def result(payload):
               "short_shortest_maturity_days", "short_longest_maturity_days",
               "long_weighted_lease_rate_pct", "short_weighted_lease_rate_pct",
               "long_book_interval_return_pct", "short_book_interval_return_pct",
+              "matched_long_extension_interval_return_pct",
               "long_book_cumulative_return_pct", "short_book_cumulative_return_pct",
+              "matched_long_extension_cumulative_return_pct",
               "long_futures_daily_return_pct", "short_futures_daily_return_pct",
               "slv_daily_return_pct", "treasury_daily_return_pct",
               "long_futures_cumulative_return_pct", "short_futures_cumulative_return_pct",
@@ -168,7 +170,10 @@ def result(payload):
               "allocation_long_lease_signal_pct", "long_book_extension_pct",
               "entered_long_futures_price", "entered_short_futures_price",
               "exited_long_futures_price", "exited_short_futures_price",
-              "long_matched_usd_rate_pct", "short_matched_usd_rate_pct"]
+              "long_matched_usd_rate_pct", "short_matched_usd_rate_pct",
+              "entered_long_futures_size_pct", "entered_short_futures_size_pct",
+              "exited_long_futures_size_pct", "exited_short_futures_size_pct",
+              "resulting_long_futures_size_pct", "resulting_short_futures_size_pct"]
     change_stats = position_change_stats(rows)
     return {
         "series": [[row[k] for k in fields] for row in sampled],
@@ -178,6 +183,10 @@ def result(payload):
         "usd_rate_diagnostics": [{
             "long": row["long_matched_usd_rate_components"],
             "short": row["short_matched_usd_rate_components"],
+        } for row in sampled],
+        "futures_trade_diagnostics": [{
+            "long": row["long_futures_trade_details"],
+            "short": row["short_futures_trade_details"],
         } for row in sampled],
         "summary": {
             "start": rows[0]["date"], "end": rows[-1]["date"],
