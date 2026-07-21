@@ -29,8 +29,12 @@ def number(payload, name, default, low=None, high=None):
 def parameters(payload):
     # Rates and weights arrive as percentages from the GUI.
     pct = lambda name, default: number(payload, name, default) / 100
+    flag = lambda name, default: str(payload.get(
+        name, "true" if default else "false")).lower() == "true"
     p = Parameters(
         min_days=int(number(payload, "min_days", 10, 1, 2000)),
+        roll_only_if_better=flag("roll_only_if_better", True),
+        force_roll_at_min_days=flag("force_roll_at_min_days", True),
         slv_expense=pct("slv_expense", 0.5),
         slv_start_rate=pct("slv_start_rate", 0.5),
         slv_full_rate=pct("slv_full_rate", -1.5),
@@ -139,6 +143,42 @@ def contract_summary(contract):
     }
 
 
+def statistics_points(by_day, contracts, p, limit=12000):
+    """Historical eligible contract observations for maturity scatter plots."""
+    points = []
+    next_quotes = {}
+    for symbol, prices in contracts.items():
+        quoted_days = sorted(prices)
+        next_quotes[symbol] = {
+            day: quoted_days[index + 1]
+            for index, day in enumerate(quoted_days[:-1])
+        }
+    for day, candidates in sorted(by_day.items()):
+        for contract in candidates:
+            if contract["days"] < p.min_days:
+                continue
+            symbol = contract["symbol"]
+            next_day = next_quotes.get(symbol, {}).get(day)
+            current_price = contracts.get(symbol, {}).get(day)
+            next_price = contracts.get(symbol, {}).get(next_day) if next_day else None
+            next_return = (next_price / current_price - 1
+                           if current_price and next_price is not None else None)
+            points.append({
+                "date": day.isoformat(), "symbol": symbol,
+                "days": contract["days"],
+                "annualized_lease_pct": 100 * contract["lease"],
+                "forward_premium_pct": 100 * contract["premium"],
+                "actual_lease_pct": 100 * contract["lease"] * contract["days"] / 365,
+                "next_date": next_day.isoformat() if next_day else None,
+                "next_elapsed_days": (next_day - day).days if next_day else None,
+                "next_return_pct": 100 * next_return if next_return is not None else None,
+            })
+    if len(points) <= limit:
+        return points
+    stride = len(points) / limit
+    return [points[int(i * stride)] for i in range(limit)]
+
+
 def result(payload):
     p = parameters(payload)
     rows, missing = run_backtest(*MARKET, p)
@@ -184,6 +224,7 @@ def result(payload):
         "fields": fields,
         "futures_prices": futures_price_series(sampled, MARKET[1]),
         "futures_diagnostics": futures_diagnostics(sampled, MARKET[3], p),
+        "statistics_points": statistics_points(MARKET[3], MARKET[1], p),
         "usd_rate_diagnostics": [{
             "long": row["long_matched_usd_rate_components"],
             "short": row["short_matched_usd_rate_components"],
