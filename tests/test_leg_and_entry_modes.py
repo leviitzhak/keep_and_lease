@@ -2,7 +2,7 @@ import sys
 import unittest
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "public"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from backtest_silver_lease_strategy import Parameters, positions_for_day
 from silver_strategy_gui import parameters
