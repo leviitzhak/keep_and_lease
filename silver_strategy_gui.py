@@ -36,6 +36,13 @@ def parameters(payload):
         roll_only_if_better=flag("roll_only_if_better", True),
         force_roll_at_min_days=flag("force_roll_at_min_days", True),
         enable_short_book=flag("enable_short_book", True),
+        enable_slv_leg=flag("enable_slv_leg", True),
+        enable_cash_long_futures_leg=flag("enable_cash_long_futures_leg", True),
+        slv_entry_mode=str(payload.get("slv_entry_mode", "gradual")),
+        long_futures_entry_mode=str(payload.get(
+            "long_futures_entry_mode", "gradual")),
+        short_futures_entry_mode=str(payload.get(
+            "short_futures_entry_mode", "gradual")),
         slv_expense=pct("slv_expense", 0.5),
         slv_start_rate=pct("slv_start_rate", 0.5),
         slv_full_rate=pct("slv_full_rate", -1.5),
@@ -63,12 +70,14 @@ def parameters(payload):
         raise ValueError("Invalid long contract selection")
     if p.short_contract_selection not in {"weighted_lease_rate", "lowest_lease_rate"}:
         raise ValueError("Invalid short contract selection")
+    for name in ("slv_entry_mode", "long_futures_entry_mode",
+                 "short_futures_entry_mode"):
+        if getattr(p, name) not in {"gradual", "fixed"}:
+            raise ValueError(f"Invalid {name}")
     if p.slv_start_rate <= p.slv_full_rate:
         raise ValueError("SLV transition start must exceed its full-allocation rate")
     if p.negative_short_start_rate <= p.negative_short_full_rate:
         raise ValueError("Short entry threshold must exceed its full-allocation rate")
-    if p.positive_full_rate <= 0:
-        raise ValueError("Positive full-allocation rate must be positive")
     if p.positive_entry_rate >= p.positive_full_rate:
         raise ValueError("Long entry rate must be below its full-allocation rate")
     return p
