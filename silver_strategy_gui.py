@@ -14,7 +14,11 @@ MARKET = None
 
 
 def number(payload, name, default, low=None, high=None):
-    value = float(payload.get(name, default))
+    raw = payload.get(name, default)
+    # An HTML number input sends an empty string when the user clears it.
+    # Treat that the same as an omitted value so optional/defaulted controls do
+    # not turn an otherwise valid backtest request into a float conversion error.
+    value = float(default if raw is None or str(raw).strip() == "" else raw)
     if low is not None and value < low:
         raise ValueError(f"{name} must be at least {low}")
     if high is not None and value > high:
@@ -187,6 +191,8 @@ def result(payload):
         "futures_trade_diagnostics": [{
             "long": row["long_futures_trade_details"],
             "short": row["short_futures_trade_details"],
+            "resulting_long_size_pct": row["resulting_long_futures_size_pct"],
+            "resulting_short_size_pct": row["resulting_short_futures_size_pct"],
         } for row in sampled],
         "summary": {
             "start": rows[0]["date"], "end": rows[-1]["date"],
