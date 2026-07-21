@@ -165,7 +165,9 @@ def result(payload):
               "available_futures_min_maturity_days",
               "available_futures_max_maturity_days",
               "long_forward_maturity_days", "short_forward_maturity_days",
-              "allocation_long_lease_signal_pct", "long_book_extension_pct"]
+              "allocation_long_lease_signal_pct", "long_book_extension_pct",
+              "entered_long_futures_price", "entered_short_futures_price",
+              "exited_long_futures_price", "exited_short_futures_price"]
     change_stats = position_change_stats(rows)
     return {
         "series": [[row[k] for k in fields] for row in sampled],
