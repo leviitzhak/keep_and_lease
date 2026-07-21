@@ -170,6 +170,59 @@ def usd_rate(series, day, days):
     return None
 
 
+def usd_rate_components(series, day, days):
+    """Return the curve tenors, rates, and interpolation weights for a maturity."""
+    curve = [(tenor, asof_rate(series, tenor, day)) for tenor, _ in TENORS]
+    curve = [(tenor, value) for tenor, value in curve if value is not None]
+    if not curve:
+        return []
+    if days <= curve[0][0]:
+        return [(curve[0][0], curve[0][1], 1.0)]
+    if days >= curve[-1][0]:
+        return [(curve[-1][0], curve[-1][1], 1.0)]
+    for (left_t, left_r), (right_t, right_r) in zip(curve, curve[1:]):
+        if left_t <= days <= right_t:
+            alpha = (days - left_t) / (right_t - left_t)
+            if alpha == 0:
+                return [(left_t, left_r, 1.0)]
+            if alpha == 1:
+                return [(right_t, right_r, 1.0)]
+            return [(left_t, left_r, 1 - alpha),
+                    (right_t, right_r, alpha)]
+    return []
+
+
+def matched_usd_rate_details(series, day, positions, contracts):
+    """Aggregate curve interpolation across a weighted futures selection."""
+    total = sum(positions.values())
+    if total <= 0:
+        return {"rate": None, "components": []}
+    components = defaultdict(lambda: {"weight": 0.0, "rate_weight": 0.0})
+    for symbol, position_weight in positions.items():
+        contract = contracts.get(symbol)
+        if not contract:
+            continue
+        for tenor, rate, interpolation_weight in usd_rate_components(
+                series, day, contract["days"]):
+            combined_weight = position_weight / total * interpolation_weight
+            components[tenor]["weight"] += combined_weight
+            components[tenor]["rate_weight"] += combined_weight * rate
+    details = []
+    for tenor, values in sorted(components.items()):
+        if values["weight"] <= 0:
+            continue
+        details.append({
+            "maturity_days": tenor,
+            "rate_pct": 100 * values["rate_weight"] / values["weight"],
+            "weight_pct": 100 * values["weight"],
+        })
+    return {
+        "rate": sum(x["rate_pct"] * x["weight_pct"] for x in details) / 10000
+                if details else None,
+        "components": details,
+    }
+
+
 def build_market(root):
     spot = read_spot(root)
     contracts, volumes = read_contracts(root, spot)
@@ -569,6 +622,10 @@ def run_backtest(spot, contracts, rates, by_day, p):
             diagnostic_longs, contracts, exit_day)
         short_weighted_future_price = weighted_futures_price(
             diagnostic_shorts, contracts, exit_day)
+        long_usd_rate = matched_usd_rate_details(
+            rates, exit_day, diagnostic_longs, diagnostic_contracts)
+        short_usd_rate = matched_usd_rate_details(
+            rates, exit_day, diagnostic_shorts, diagnostic_contracts)
         # The currently held position is rebalanced on the displayed exit date.
         # Compare it with the next scheduled position and weight prices by the
         # absolute notional traded when several contracts change together.
@@ -640,6 +697,14 @@ def run_backtest(spot, contracts, rates, by_day, p):
                        "entered_short_futures_price": entered_short_price,
                        "exited_long_futures_price": exited_long_price,
                        "exited_short_futures_price": exited_short_price,
+                       "long_matched_usd_rate_pct": (
+                           100 * long_usd_rate["rate"]
+                           if long_usd_rate["rate"] is not None else None),
+                       "short_matched_usd_rate_pct": (
+                           100 * short_usd_rate["rate"]
+                           if short_usd_rate["rate"] is not None else None),
+                       "long_matched_usd_rate_components": long_usd_rate["components"],
+                       "short_matched_usd_rate_components": short_usd_rate["components"],
                        "treasury_position_price_index": 100 * asset_nav["treasury"],
                        "sgov_proxy_price_index": 100 * sgov_proxy_nav,
                        "slv_weight_pct": 100 * position["slv"],
