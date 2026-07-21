@@ -35,6 +35,7 @@ def parameters(payload):
         min_days=int(number(payload, "min_days", 10, 1, 2000)),
         roll_only_if_better=flag("roll_only_if_better", True),
         force_roll_at_min_days=flag("force_roll_at_min_days", True),
+        enable_short_book=flag("enable_short_book", True),
         slv_expense=pct("slv_expense", 0.5),
         slv_start_rate=pct("slv_start_rate", 0.5),
         slv_full_rate=pct("slv_full_rate", -1.5),
