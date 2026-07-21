@@ -119,7 +119,7 @@ function lineChart(canvas, rows, specs, ylabel, opts={}) {
   charts.set(canvas,{canvas,rows,specs,hoverSpecs:opts.hoverSpecs||[],m,x,w,ylabel,scales,dpr,title:parent.querySelector('h2')?.textContent||ylabel});
 }
 function futuresPriceChart(canvas, rows, series, diagnostics) {
-  const specs=[{i:30,c:'#2563eb',w:2,label:'Spot silver'}];
+  const spotIndex=ix('slv_price'),specs=[{i:spotIndex,c:'#2563eb',w:2,label:'Spot silver'}];
   const futuresValues=[];Object.values(series||{}).forEach(points=>points.forEach(point=>futuresValues.push(point[1])));
   lineChart(canvas,rows,specs,'price ($)',{zero:false,extraValues:futuresValues});
   const meta=charts.get(canvas); if(!meta)return;
@@ -127,7 +127,7 @@ function futuresPriceChart(canvas, rows, series, diagnostics) {
   const dpr=meta.dpr,c=canvas.getContext('2d'),y=meta.scales.left.y;
   c.save();c.setTransform(dpr,0,0,dpr,0,0);c.strokeStyle='#94a3b8';c.globalAlpha=.42;c.lineWidth=.75;
   Object.values(series||{}).forEach(points=>{c.beginPath();let previous=-2;for(const [i,value] of points){const yy=y(num(value));if(!Number.isFinite(yy)){previous=-2;continue}const xx=meta.x(i);i===previous+1?c.lineTo(xx,yy):c.moveTo(xx,yy);previous=i}c.stroke()});
-  c.strokeStyle='#2563eb';c.globalAlpha=1;c.lineWidth=2;c.beginPath();let open=false;rows.forEach((row,i)=>{const yy=y(num(row[30]));if(!Number.isFinite(yy)){open=false;return}const xx=meta.x(i);open?c.lineTo(xx,yy):c.moveTo(xx,yy);open=true});c.stroke();c.restore();
+  c.strokeStyle='#2563eb';c.globalAlpha=1;c.lineWidth=2;c.beginPath();let open=false;rows.forEach((row,i)=>{const yy=y(num(row[spotIndex]));if(!Number.isFinite(yy)){open=false;return}const xx=meta.x(i);open?c.lineTo(xx,yy):c.moveTo(xx,yy);open=true});c.stroke();c.restore();
 }
 function contractTip(label,contract){return '<div>'+label+': '+contract.symbol+' | '+fmt(contract.maturity_days,0)+'d | $'+fmt(contract.price,2)+' | premium '+fmt(contract.premium_pct,2)+'% | lease '+fmt(contract.lease_pct,2)+'%</div>'}
 function usdRateTip(label,components){let html='<div style="margin-top:6px"><strong>'+label+'</strong></div>';if(!components||!components.length)return html+'<div>No matched USD rate</div>';for(const x of components)html+='<div>'+fmt(x.maturity_days,0)+' days: '+fmt(x.rate_pct,3)+'% <span style="opacity:.8">(weight '+fmt(x.weight_pct,2)+'%)</span></div>';return html}
