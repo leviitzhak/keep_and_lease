@@ -477,7 +477,7 @@ def weighted_futures_price(positions, contracts, day):
 
 
 def futures_trade_prices(previous, current, contracts, day):
-    """Return notional-weighted entry and exit prices for one book side."""
+    """Return weighted entry/exit prices and traded notionals for one book side."""
     entries = {}
     exits = {}
     for symbol in set(previous) | set(current):
@@ -486,8 +486,21 @@ def futures_trade_prices(previous, current, contracts, day):
             entries[symbol] = change
         elif change < 0:
             exits[symbol] = -change
-    return (weighted_futures_price(entries, contracts, day),
-            weighted_futures_price(exits, contracts, day))
+    return (weighted_futures_price(entries, contracts, day), sum(entries.values()),
+            weighted_futures_price(exits, contracts, day), sum(exits.values()))
+
+
+def futures_trade_details(previous, current, contracts, day):
+    """Return the individual contract changes executed on a rebalance day."""
+    trades = []
+    for symbol in sorted(set(previous) | set(current)):
+        change = current.get(symbol, 0.0) - previous.get(symbol, 0.0)
+        price = contracts.get(symbol, {}).get(day)
+        if change and price is not None:
+            trades.append({"symbol": symbol, "price": price,
+                           "size_pct": 100 * abs(change),
+                           "action": "entry" if change > 0 else "exit"})
+    return trades
 
 
 def diagnostic_futures_return(positions, day, next_day, contracts, direction):
@@ -509,6 +522,7 @@ def run_backtest(spot, contracts, rates, by_day, p):
     output = []
     simple = 0.0
     long_simple = 0.0
+    extension_simple = 0.0
     short_simple = 0.0
     nav = 1.0
     asset_simple = {"long_futures": 0.0, "short_futures": 0.0, "slv": 0.0, "treasury": 0.0}
@@ -567,10 +581,11 @@ def run_backtest(spot, contracts, rates, by_day, p):
         # observation. Skip that entire portfolio interval instead.
         if not valid_interval:
             continue
-        short_book_return = (position["extension_ratio"] * base_long_return +
-                             short_futures_return)
+        matched_long_extension_return = position["extension_ratio"] * base_long_return
+        short_book_return = matched_long_extension_return + short_futures_return
         simple += portfolio_return
         long_simple += base_long_return
+        extension_simple += matched_long_extension_return
         short_simple += short_book_return
         nav *= 1 + portfolio_return
         sgov_proxy_nav *= 1 + sgov_proxy_return
@@ -632,9 +647,15 @@ def run_backtest(spot, contracts, rates, by_day, p):
         next_position = scheduled_positions.get(exit_day)
         next_longs = next_position["longs"] if next_position else {}
         next_shorts = next_position["shorts"] if next_position else {}
-        entered_long_price, exited_long_price = futures_trade_prices(
+        (entered_long_price, entered_long_size,
+         exited_long_price, exited_long_size) = futures_trade_prices(
             position["longs"], next_longs, contracts, exit_day)
-        entered_short_price, exited_short_price = futures_trade_prices(
+        (entered_short_price, entered_short_size,
+         exited_short_price, exited_short_size) = futures_trade_prices(
+            position["shorts"], next_shorts, contracts, exit_day)
+        long_trade_details = futures_trade_details(
+            position["longs"], next_longs, contracts, exit_day)
+        short_trade_details = futures_trade_details(
             position["shorts"], next_shorts, contracts, exit_day)
         # Premium charts are market diagnostics, not position diagnostics.  Use
         # the threshold-independent books so a null means that a source quote
@@ -666,9 +687,13 @@ def run_backtest(spot, contracts, rates, by_day, p):
                        "negative_signal_annual_pct": 100 * position["negative_signal"],
                        "interval_return_pct": 100 * portfolio_return,
                        "long_book_interval_return_pct": 100 * base_long_return,
+                       "matched_long_extension_interval_return_pct": (
+                           100 * matched_long_extension_return),
                        "short_book_interval_return_pct": 100 * short_book_return,
                        "simple_cumulative_return_pct": 100 * simple,
                        "long_book_cumulative_return_pct": 100 * long_simple,
+                       "matched_long_extension_cumulative_return_pct": (
+                           100 * extension_simple),
                        "short_book_cumulative_return_pct": 100 * short_simple,
                        "compounded_return_pct": 100 * (nav - 1), "nav": nav,
                        "long_futures_daily_return_pct": (
@@ -697,6 +722,14 @@ def run_backtest(spot, contracts, rates, by_day, p):
                        "entered_short_futures_price": entered_short_price,
                        "exited_long_futures_price": exited_long_price,
                        "exited_short_futures_price": exited_short_price,
+                       "entered_long_futures_size_pct": 100 * entered_long_size,
+                       "entered_short_futures_size_pct": 100 * entered_short_size,
+                       "exited_long_futures_size_pct": 100 * exited_long_size,
+                       "exited_short_futures_size_pct": 100 * exited_short_size,
+                       "resulting_long_futures_size_pct": 100 * sum(next_longs.values()),
+                       "resulting_short_futures_size_pct": 100 * sum(next_shorts.values()),
+                       "long_futures_trade_details": long_trade_details,
+                       "short_futures_trade_details": short_trade_details,
                        "long_matched_usd_rate_pct": (
                            100 * long_usd_rate["rate"]
                            if long_usd_rate["rate"] is not None else None),
