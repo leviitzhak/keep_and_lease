@@ -28,6 +28,9 @@ TENORS = [(91, "DTB3"), (182, "DTB6"), (365, "DGS1"),
 @dataclass
 class Parameters:
     min_days: int
+    roll_only_if_better: bool = True
+    force_roll_at_min_days: bool = True
+    enable_short_book: bool = True
     slv_expense: float = 0.005
     slv_start_rate: float = 0.005
     slv_full_rate: float = -0.015
@@ -288,11 +291,38 @@ def market_diagnostics_for_day(candidates, p):
     }
 
 
-def positions_for_day(candidates, p):
+def _sticky_contract_book(desired, previous, contract_map, qualifying_symbols,
+                          direction, p):
+    """Keep held maturities unless a replacement improves the lease signal."""
+    desired_total = sum(desired.values())
+    if desired_total <= 0:
+        return {}
+    previous = previous or {}
+    held = {symbol: weight for symbol, weight in previous.items()
+            if symbol in contract_map and
+            (symbol in qualifying_symbols or not p.force_roll_at_min_days)}
+    if not held or not p.roll_only_if_better:
+        return desired
+    forced = (p.force_roll_at_min_days and
+              any(contract_map[symbol]["days"] <= p.min_days for symbol in held))
+    held_lease = weighted_contract_value(held, contract_map, "lease")
+    desired_lease = weighted_contract_value(desired, contract_map, "lease")
+    better = (desired_lease > held_lease if direction == "long"
+              else desired_lease < held_lease)
+    if forced or better:
+        return desired
+    held_total = sum(held.values())
+    return {symbol: desired_total * weight / held_total
+            for symbol, weight in held.items()}
+
+
+def positions_for_day(candidates, p, previous=None):
     eligible = [x for x in candidates if x["days"] >= p.min_days]
     if not eligible:
         return None
-    contract_map = {x["symbol"]: x for x in eligible}
+    # Keep quotes below the new-entry maturity floor available for an existing
+    # position when the user explicitly disables the forced minimum-day roll.
+    contract_map = {x["symbol"]: x for x in candidates if x["days"] > 0}
     # The performance charts are diagnostics for a hypothetical 100% position
     # in each leg.  Select their contracts independently of the thresholds
     # which decide whether the portfolio actually takes the position.
@@ -355,7 +385,8 @@ def positions_for_day(candidates, p):
     elif selected_positive:
         base_longs[selected_positive["symbol"]] = (
             long_notional)
-    total_short = p.max_short_fraction_of_slv * negative_strength
+    total_short = (p.max_short_fraction_of_slv * negative_strength
+                   if p.enable_short_book else 0.0)
 
     # Score trades off negative lease edge against a preference for longer
     # maturity (the opposite of the long book). A 0.02 bonus means one extra
@@ -373,6 +404,15 @@ def positions_for_day(candidates, p):
     else:
         scores = [(x["symbol"], x["short_score"]) for x in negative]
         shorts = proportional_allocation(scores, total_short)
+
+    # Resize with the signal, but change contracts only for a better lease or
+    # when the configured minimum-maturity boundary forces a roll.
+    base_longs = _sticky_contract_book(
+        base_longs, previous.get("base_longs") if previous else None,
+        contract_map, {x["symbol"] for x in positive}, "long", p)
+    shorts = _sticky_contract_book(
+        shorts, previous.get("shorts") if previous else None,
+        contract_map, {x["symbol"] for x in negative}, "short", p)
 
     # A short-futures position is paired with an equally sized extension of
     # the complete base long book.  The extension retains the same relative
@@ -529,13 +569,15 @@ def run_backtest(spot, contracts, rates, by_day, p):
     asset_nav = {"long_futures": 1.0, "short_futures": 1.0, "slv": 1.0, "treasury": 1.0}
     sgov_proxy_nav = 1.0
     missing_futures_intervals = []
-    scheduled_positions = {
-        execution_day: positions_for_day(by_day[signal_day], p)
-        for signal_day, execution_day in zip(days, days[1:])
-    }
+    scheduled_positions = {}
+    previous_position = None
+    for signal_day, execution_day in zip(days, days[1:]):
+        previous_position = positions_for_day(
+            by_day[signal_day], p, previous_position)
+        scheduled_positions[execution_day] = previous_position
     # Signal at t, execute at t+1, and measure P&L from t+1 to t+2.
     for signal_day, execution_day, exit_day in zip(days, days[1:], days[2:]):
-        position = positions_for_day(by_day[signal_day], p)
+        position = scheduled_positions.get(execution_day)
         if position is None or execution_day not in spot or exit_day not in spot:
             continue
         lag = (execution_day - signal_day).days
