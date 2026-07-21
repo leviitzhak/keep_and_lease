@@ -402,6 +402,11 @@ def positions_for_day(candidates, p, previous=None):
             long_notional)
     total_short = (p.max_short_fraction_of_slv * negative_strength
                    if p.enable_short_book else 0.0)
+    # The short book is defined as short futures plus an equal-sized extension
+    # of the active base long book.  If both long sleeves are inactive there is
+    # no composition to extend, so the complete short book must also be zero.
+    if treasury_weight + slv_weight + sum(base_longs.values()) <= 0:
+        total_short = 0.0
 
     # Score trades off negative lease edge against a preference for longer
     # maturity (the opposite of the long book). A 0.02 bonus means one extra
