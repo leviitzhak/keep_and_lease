@@ -423,6 +423,20 @@ def weighted_futures_price(positions, contracts, day):
                for symbol, weight in positions.items()) / total
 
 
+def futures_trade_prices(previous, current, contracts, day):
+    """Return notional-weighted entry and exit prices for one book side."""
+    entries = {}
+    exits = {}
+    for symbol in set(previous) | set(current):
+        change = current.get(symbol, 0.0) - previous.get(symbol, 0.0)
+        if change > 0:
+            entries[symbol] = change
+        elif change < 0:
+            exits[symbol] = -change
+    return (weighted_futures_price(entries, contracts, day),
+            weighted_futures_price(exits, contracts, day))
+
+
 def diagnostic_futures_return(positions, day, next_day, contracts, direction):
     if not positions:
         return None
@@ -448,6 +462,10 @@ def run_backtest(spot, contracts, rates, by_day, p):
     asset_nav = {"long_futures": 1.0, "short_futures": 1.0, "slv": 1.0, "treasury": 1.0}
     sgov_proxy_nav = 1.0
     missing_futures_intervals = []
+    scheduled_positions = {
+        execution_day: positions_for_day(by_day[signal_day], p)
+        for signal_day, execution_day in zip(days, days[1:])
+    }
     # Signal at t, execute at t+1, and measure P&L from t+1 to t+2.
     for signal_day, execution_day, exit_day in zip(days, days[1:], days[2:]):
         position = positions_for_day(by_day[signal_day], p)
@@ -551,6 +569,16 @@ def run_backtest(spot, contracts, rates, by_day, p):
             diagnostic_longs, contracts, exit_day)
         short_weighted_future_price = weighted_futures_price(
             diagnostic_shorts, contracts, exit_day)
+        # The currently held position is rebalanced on the displayed exit date.
+        # Compare it with the next scheduled position and weight prices by the
+        # absolute notional traded when several contracts change together.
+        next_position = scheduled_positions.get(exit_day)
+        next_longs = next_position["longs"] if next_position else {}
+        next_shorts = next_position["shorts"] if next_position else {}
+        entered_long_price, exited_long_price = futures_trade_prices(
+            position["longs"], next_longs, contracts, exit_day)
+        entered_short_price, exited_short_price = futures_trade_prices(
+            position["shorts"], next_shorts, contracts, exit_day)
         # Premium charts are market diagnostics, not position diagnostics.  Use
         # the threshold-independent books so a null means that a source quote
         # is unavailable, rather than merely that the strategy did not trade.
@@ -608,6 +636,10 @@ def run_backtest(spot, contracts, rates, by_day, p):
                        "slv_price": spot[exit_day],
                        "long_weighted_future_price": long_weighted_future_price,
                        "short_weighted_future_price": short_weighted_future_price,
+                       "entered_long_futures_price": entered_long_price,
+                       "entered_short_futures_price": entered_short_price,
+                       "exited_long_futures_price": exited_long_price,
+                       "exited_short_futures_price": exited_short_price,
                        "treasury_position_price_index": 100 * asset_nav["treasury"],
                        "sgov_proxy_price_index": 100 * sgov_proxy_nav,
                        "slv_weight_pct": 100 * position["slv"],
