@@ -167,13 +167,18 @@ def result(payload):
               "long_forward_maturity_days", "short_forward_maturity_days",
               "allocation_long_lease_signal_pct", "long_book_extension_pct",
               "entered_long_futures_price", "entered_short_futures_price",
-              "exited_long_futures_price", "exited_short_futures_price"]
+              "exited_long_futures_price", "exited_short_futures_price",
+              "long_matched_usd_rate_pct", "short_matched_usd_rate_pct"]
     change_stats = position_change_stats(rows)
     return {
         "series": [[row[k] for k in fields] for row in sampled],
         "fields": fields,
         "futures_prices": futures_price_series(sampled, MARKET[1]),
         "futures_diagnostics": futures_diagnostics(sampled, MARKET[3], p),
+        "usd_rate_diagnostics": [{
+            "long": row["long_matched_usd_rate_components"],
+            "short": row["short_matched_usd_rate_components"],
+        } for row in sampled],
         "summary": {
             "start": rows[0]["date"], "end": rows[-1]["date"],
             "observations": len(rows), "missing_intervals": len(missing),
