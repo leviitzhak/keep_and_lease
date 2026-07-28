@@ -14,7 +14,11 @@ MARKET = None
 
 
 def number(payload, name, default, low=None, high=None):
-    value = float(payload.get(name, default))
+    raw = payload.get(name, default)
+    # An HTML number input sends an empty string when the user clears it.
+    # Treat that the same as an omitted value so optional/defaulted controls do
+    # not turn an otherwise valid backtest request into a float conversion error.
+    value = float(default if raw is None or str(raw).strip() == "" else raw)
     if low is not None and value < low:
         raise ValueError(f"{name} must be at least {low}")
     if high is not None and value > high:
@@ -25,8 +29,20 @@ def number(payload, name, default, low=None, high=None):
 def parameters(payload):
     # Rates and weights arrive as percentages from the GUI.
     pct = lambda name, default: number(payload, name, default) / 100
+    flag = lambda name, default: str(payload.get(
+        name, "true" if default else "false")).lower() == "true"
     p = Parameters(
         min_days=int(number(payload, "min_days", 10, 1, 2000)),
+        roll_only_if_better=flag("roll_only_if_better", True),
+        force_roll_at_min_days=flag("force_roll_at_min_days", True),
+        enable_short_book=flag("enable_short_book", True),
+        enable_slv_leg=flag("enable_slv_leg", True),
+        enable_cash_long_futures_leg=flag("enable_cash_long_futures_leg", True),
+        slv_entry_mode=str(payload.get("slv_entry_mode", "gradual")),
+        long_futures_entry_mode=str(payload.get(
+            "long_futures_entry_mode", "gradual")),
+        short_futures_entry_mode=str(payload.get(
+            "short_futures_entry_mode", "gradual")),
         slv_expense=pct("slv_expense", 0.5),
         slv_start_rate=pct("slv_start_rate", 0.5),
         slv_full_rate=pct("slv_full_rate", -1.5),
@@ -54,12 +70,14 @@ def parameters(payload):
         raise ValueError("Invalid long contract selection")
     if p.short_contract_selection not in {"weighted_lease_rate", "lowest_lease_rate"}:
         raise ValueError("Invalid short contract selection")
+    for name in ("slv_entry_mode", "long_futures_entry_mode",
+                 "short_futures_entry_mode"):
+        if getattr(p, name) not in {"gradual", "fixed"}:
+            raise ValueError(f"Invalid {name}")
     if p.slv_start_rate <= p.slv_full_rate:
         raise ValueError("SLV transition start must exceed its full-allocation rate")
     if p.negative_short_start_rate <= p.negative_short_full_rate:
         raise ValueError("Short entry threshold must exceed its full-allocation rate")
-    if p.positive_full_rate <= 0:
-        raise ValueError("Positive full-allocation rate must be positive")
     if p.positive_entry_rate >= p.positive_full_rate:
         raise ValueError("Long entry rate must be below its full-allocation rate")
     return p
@@ -135,6 +153,42 @@ def contract_summary(contract):
     }
 
 
+def statistics_points(by_day, contracts, p, limit=12000):
+    """Historical eligible contract observations for maturity scatter plots."""
+    points = []
+    next_quotes = {}
+    for symbol, prices in contracts.items():
+        quoted_days = sorted(prices)
+        next_quotes[symbol] = {
+            day: quoted_days[index + 1]
+            for index, day in enumerate(quoted_days[:-1])
+        }
+    for day, candidates in sorted(by_day.items()):
+        for contract in candidates:
+            if contract["days"] < p.min_days:
+                continue
+            symbol = contract["symbol"]
+            next_day = next_quotes.get(symbol, {}).get(day)
+            current_price = contracts.get(symbol, {}).get(day)
+            next_price = contracts.get(symbol, {}).get(next_day) if next_day else None
+            next_return = (next_price / current_price - 1
+                           if current_price and next_price is not None else None)
+            points.append({
+                "date": day.isoformat(), "symbol": symbol,
+                "days": contract["days"],
+                "annualized_lease_pct": 100 * contract["lease"],
+                "forward_premium_pct": 100 * contract["premium"],
+                "actual_lease_pct": 100 * contract["lease"] * contract["days"] / 365,
+                "next_date": next_day.isoformat() if next_day else None,
+                "next_elapsed_days": (next_day - day).days if next_day else None,
+                "next_return_pct": 100 * next_return if next_return is not None else None,
+            })
+    if len(points) <= limit:
+        return points
+    stride = len(points) / limit
+    return [points[int(i * stride)] for i in range(limit)]
+
+
 def result(payload):
     p = parameters(payload)
     rows, missing = run_backtest(*MARKET, p)
@@ -151,7 +205,9 @@ def result(payload):
               "short_shortest_maturity_days", "short_longest_maturity_days",
               "long_weighted_lease_rate_pct", "short_weighted_lease_rate_pct",
               "long_book_interval_return_pct", "short_book_interval_return_pct",
+              "matched_long_extension_interval_return_pct",
               "long_book_cumulative_return_pct", "short_book_cumulative_return_pct",
+              "matched_long_extension_cumulative_return_pct",
               "long_futures_daily_return_pct", "short_futures_daily_return_pct",
               "slv_daily_return_pct", "treasury_daily_return_pct",
               "long_futures_cumulative_return_pct", "short_futures_cumulative_return_pct",
@@ -164,13 +220,31 @@ def result(payload):
               "short_weighted_forward_premium_pct", "cash_plus_slv_weight_pct",
               "available_futures_min_maturity_days",
               "available_futures_max_maturity_days",
-              "long_forward_maturity_days", "short_forward_maturity_days"]
+              "long_forward_maturity_days", "short_forward_maturity_days",
+              "allocation_long_lease_signal_pct", "long_book_extension_pct",
+              "entered_long_futures_price", "entered_short_futures_price",
+              "exited_long_futures_price", "exited_short_futures_price",
+              "long_matched_usd_rate_pct", "short_matched_usd_rate_pct",
+              "entered_long_futures_size_pct", "entered_short_futures_size_pct",
+              "exited_long_futures_size_pct", "exited_short_futures_size_pct",
+              "resulting_long_futures_size_pct", "resulting_short_futures_size_pct"]
     change_stats = position_change_stats(rows)
     return {
         "series": [[row[k] for k in fields] for row in sampled],
         "fields": fields,
         "futures_prices": futures_price_series(sampled, MARKET[1]),
         "futures_diagnostics": futures_diagnostics(sampled, MARKET[3], p),
+        "statistics_points": statistics_points(MARKET[3], MARKET[1], p),
+        "usd_rate_diagnostics": [{
+            "long": row["long_matched_usd_rate_components"],
+            "short": row["short_matched_usd_rate_components"],
+        } for row in sampled],
+        "futures_trade_diagnostics": [{
+            "long": row["long_futures_trade_details"],
+            "short": row["short_futures_trade_details"],
+            "resulting_long_size_pct": row["resulting_long_futures_size_pct"],
+            "resulting_short_size_pct": row["resulting_short_futures_size_pct"],
+        } for row in sampled],
         "summary": {
             "start": rows[0]["date"], "end": rows[-1]["date"],
             "observations": len(rows), "missing_intervals": len(missing),

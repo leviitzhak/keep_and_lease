@@ -1,7 +1,11 @@
 import unittest
 from datetime import date
 
-from backtest_silver_lease_strategy import Parameters, positions_for_day, run_backtest, usd_rate
+from backtest_silver_lease_strategy import (Parameters, futures_trade_details,
+                                                futures_trade_prices,
+                                                matched_usd_rate_details,
+                                                positions_for_day, run_backtest,
+                                                usd_rate, usd_rate_components)
 from silver_strategy_gui import futures_diagnostics
 
 
@@ -23,6 +27,53 @@ class StandaloneLegReturnTests(unittest.TestCase):
         ]
         self.by_day = {day: [dict(item) for item in candidates]
                        for day in self.days}
+
+    def test_trade_prices_weight_entries_and_exits_by_changed_notional(self):
+        day = self.days[1]
+        entered, entered_size, exited, exited_size = futures_trade_prices(
+            {"near": 0.30, "far": 0.20},
+            {"near": 0.10, "far": 0.50},
+            self.contracts, day)
+        self.assertAlmostEqual(self.contracts["far"][day], entered)
+        self.assertAlmostEqual(self.contracts["near"][day], exited)
+        self.assertAlmostEqual(0.30, entered_size)
+        self.assertAlmostEqual(0.20, exited_size)
+
+    def test_trade_details_list_each_contract_price_size_and_action(self):
+        day = self.days[1]
+        details = futures_trade_details(
+            {"near": 0.30, "far": 0.20},
+            {"near": 0.10, "far": 0.50},
+            self.contracts, day)
+        self.assertEqual({"far", "near"}, {item["symbol"] for item in details})
+        by_symbol = {item["symbol"]: item for item in details}
+        self.assertEqual("entry", by_symbol["far"]["action"])
+        self.assertAlmostEqual(30.0, by_symbol["far"]["size_pct"])
+        self.assertEqual("exit", by_symbol["near"]["action"])
+        self.assertAlmostEqual(20.0, by_symbol["near"]["size_pct"])
+
+    def test_usd_rate_components_reconstruct_interpolated_rate(self):
+        day = self.days[0]
+        rates = {
+            91: [(day, 0.04)], 182: [(day, 0.06)],
+            365: [], 730: [], 1095: [], 1825: [],
+        }
+        components = usd_rate_components(rates, day, 136.5)
+        self.assertEqual([(91, 0.04, 0.5), (182, 0.06, 0.5)], components)
+        self.assertAlmostEqual(usd_rate(rates, day, 136.5), 0.05)
+
+    def test_matched_usd_rate_details_combine_contract_and_curve_weights(self):
+        day = self.days[0]
+        rates = {
+            91: [(day, 0.04)], 182: [(day, 0.06)],
+            365: [], 730: [], 1095: [], 1825: [],
+        }
+        contracts = {"near": {"days": 91}, "far": {"days": 182}}
+        detail = matched_usd_rate_details(
+            rates, day, {"near": 0.25, "far": 0.75}, contracts)
+        self.assertAlmostEqual(detail["rate"], 0.055)
+        self.assertEqual([25.0, 75.0],
+                         [x["weight_pct"] for x in detail["components"]])
 
     def test_leg_contracts_are_selected_even_when_thresholds_disable_trades(self):
         position = positions_for_day(self.by_day[self.days[0]], Parameters(min_days=1))
@@ -59,7 +110,7 @@ class StandaloneLegReturnTests(unittest.TestCase):
         self.assertEqual(position["shorts"], position["short_leg"])
         self.assertEqual({"negative"}, set(position["short_leg"]))
 
-    def test_sleeves_are_proportional_to_available_signal_strength(self):
+    def test_slv_uses_long_lease_signal_and_short_adds_matched_long_extension(self):
         candidates = [
             {"symbol": "positive", "days": 30, "future": 100, "spot": 100,
              "rate": 0, "premium": 0, "lease": 0.075, "volume": 10},
@@ -67,19 +118,70 @@ class StandaloneLegReturnTests(unittest.TestCase):
              "rate": 0, "premium": 0, "lease": -0.0775, "volume": 10},
         ]
         position = positions_for_day(candidates, Parameters(min_days=1))
-        self.assertAlmostEqual(0.075 / (0.075 + 0.0775), position["treasury"])
-        self.assertAlmostEqual(0.0775 / (0.075 + 0.0775), position["slv"])
+        # The configured long contract is above the SLV entry rate, so the
+        # base long book contains no SLV despite another contract being shortable.
+        self.assertEqual(0.0, position["base_slv"])
+        self.assertEqual(1.0, position["base_treasury"])
+        short_total = sum(position["shorts"].values())
+        self.assertAlmostEqual(short_total, position["long_extension"])
+        base_total = (position["base_treasury"] + position["base_slv"] +
+                      sum(position["base_longs"].values()))
+        self.assertAlmostEqual(short_total / base_total, position["extension_ratio"])
+        self.assertAlmostEqual(
+            position["base_treasury"] * (1 + position["extension_ratio"]),
+            position["treasury"])
+        self.assertEqual(0.0, position["slv"])
         self.assertEqual("long_and_short", position["mode"])
 
-    def test_only_available_sleeve_receives_capital(self):
+    def test_slv_transition_uses_its_own_entry_and_full_thresholds(self):
         positive = [{"symbol": "positive", "days": 30, "future": 100,
                      "spot": 100, "rate": 0, "premium": 0,
                      "lease": 0.075, "volume": 10}]
         negative = [{"symbol": "negative", "days": 30, "future": 100,
                      "spot": 100, "rate": 0, "premium": 0,
                      "lease": -0.0775, "volume": 10}]
-        self.assertEqual(1.0, positions_for_day(positive, Parameters(min_days=1))["treasury"])
-        self.assertEqual(1.0, positions_for_day(negative, Parameters(min_days=1))["slv"])
+        positive_position = positions_for_day(positive, Parameters(min_days=1))
+        negative_position = positions_for_day(negative, Parameters(min_days=1))
+        self.assertEqual(1.0, positive_position["base_treasury"])
+        self.assertEqual(0.0, positive_position["base_slv"])
+        self.assertEqual(0.0, negative_position["base_treasury"])
+        self.assertEqual(1.0, negative_position["base_slv"])
+
+    def test_slv_starts_only_below_configured_entry_rate(self):
+        above = [{"symbol": "near", "days": 30, "future": 100,
+                  "spot": 100, "rate": 0, "premium": 0,
+                  "lease": 0.006, "volume": 10}]
+        below = [dict(above[0], lease=0.004)]
+        parameters = Parameters(min_days=1, slv_start_rate=0.005,
+                                slv_full_rate=-0.015)
+        self.assertEqual(0.0, positions_for_day(above, parameters)["base_slv"])
+        self.assertGreater(positions_for_day(below, parameters)["base_slv"], 0.0)
+
+    def test_long_and_short_book_returns_reconcile_to_portfolio(self):
+        candidates = [
+            {"symbol": "near", "days": 30, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": -0.08, "volume": 10},
+            {"symbol": "far", "days": 300, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": -0.10, "volume": 5},
+        ]
+        by_day = {day: [dict(item) for item in candidates]
+                  for day in self.days}
+        rows, _ = run_backtest(
+            self.spot, self.contracts, self.rates, by_day,
+            Parameters(min_days=1, slv_expense=0))
+        self.assertTrue(rows)
+        for row in rows:
+            self.assertAlmostEqual(
+                row["interval_return_pct"],
+                row["long_book_interval_return_pct"] +
+                row["short_book_interval_return_pct"])
+            self.assertAlmostEqual(
+                row["short_futures_notional_pct"],
+                row["long_book_extension_pct"])
+            self.assertIn("matched_long_extension_interval_return_pct", row)
+        self.assertAlmostEqual(
+            sum(row["matched_long_extension_interval_return_pct"] for row in rows),
+            rows[-1]["matched_long_extension_cumulative_return_pct"])
 
     def test_long_can_select_highest_lease_rate_instead_of_shortest_maturity(self):
         candidates = [
