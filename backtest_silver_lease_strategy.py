@@ -15,8 +15,9 @@ import math
 import re
 import zipfile
 from bisect import bisect_right
-from collections import defaultdict
+from collections import Counter, defaultdict
 from dataclasses import dataclass
+from dataclasses import replace
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
@@ -28,21 +29,40 @@ TENORS = [(91, "DTB3"), (182, "DTB6"), (365, "DGS1"),
 @dataclass
 class Parameters:
     min_days: int
+    roll_only_if_better: bool = True
+    force_roll_at_min_days: bool = True
+    enable_short_book: bool = True
+    enable_slv_leg: bool = True
+    enable_cash_long_futures_leg: bool = True
+    slv_entry_mode: str = "gradual"
+    long_futures_entry_mode: str = "gradual"
+    short_futures_entry_mode: str = "gradual"
     slv_expense: float = 0.005
     slv_start_rate: float = 0.005
     slv_full_rate: float = -0.015
     positive_entry_rate: float = 0.0
     positive_full_rate: float = 0.15
     long_contract_selection: str = "shortest_maturity"
+    long_maturity_line_intercept: float = 0.0
+    long_maturity_line_slope_per_year: float = 0.004
     long_maturity_bonus_per_year: float = 0.004
+    long_extreme_qualification_rate: float = 0.08
+    long_extreme_maturity_advantage_per_year: float = 0.005
+    long_extreme_maturity_bonus_per_year: float = 0.01
     max_long_future: float = 0.50
     negative_short_start_rate: float = -0.005
     negative_short_full_rate: float = -0.15
     max_short_fraction_of_slv: float = 0.50
     short_contract_selection: str = "weighted_lease_rate"
+    short_maturity_line_intercept: float = 0.0
+    short_maturity_line_slope_per_year: float = 0.004
     short_maturity_bonus_per_year: float = 0.004
+    short_extreme_qualification_rate: float = -0.08
+    short_extreme_maturity_advantage_per_year: float = 0.005
+    short_extreme_maturity_bonus_per_year: float = 0.01
     bond_mode: str = "accrual"
     treasury_asset: str = "matched_maturity"
+    treasury_allocation_mode: str = "shortest_rolling"
 
 
 def clamp(x, low=0.0, high=1.0):
@@ -60,7 +80,8 @@ def parse_date(value):
 
 
 def expiry_from_symbol(symbol):
-    match = re.fullmatch(r"SI(\d{2})([FGHJKMNQUVXZ])", symbol)
+    """Infer the contract month from TurtleTrader's PREFIXyyM symbols."""
+    match = re.fullmatch(r"[A-Z]+(\d{2})([FGHJKMNQUVXZ])", symbol.upper())
     if not match:
         return None
     yy, month_code = int(match.group(1)), match.group(2)
@@ -76,18 +97,141 @@ def expiry_from_symbol(symbol):
     return expiry
 
 
-def read_spot(root):
+def read_generic_contracts(root, archive_name, symbol_prefix):
+    """Read an unscaled TurtleTrader individual-contract archive.
+
+    Unlike the old silver source, the additional archives already contain
+    decimal exchange prices.  A prefix filter also excludes the stray CC
+    (cocoa) file bundled in the corn archive.
+    """
+    contracts, volumes = {}, {}
+    with zipfile.ZipFile(root / archive_name) as archive:
+        for filename in archive.namelist():
+            if not filename.lower().endswith(".txt"):
+                continue
+            symbol = Path(filename).stem.upper()
+            if not re.fullmatch(
+                    rf"{re.escape(symbol_prefix.upper())}\d{{2}}[FGHJKMNQUVXZ]",
+                    symbol):
+                continue
+            rows = {}
+            stream = io.TextIOWrapper(archive.open(filename), encoding="utf-8-sig")
+            for row in csv.reader(stream):
+                if not row or row[0].strip('"').lower() == "date":
+                    continue
+                try:
+                    day, value = parse_date(row[0]), float(row[4])
+                    if value <= 0:
+                        continue
+                    rows[day] = value
+                    volumes[(symbol, day)] = (
+                        float(row[5]) if len(row) > 5 and row[5] else 0.0)
+                except (ValueError, TypeError, IndexError):
+                    pass
+            if rows:
+                contracts[symbol] = rows
+    return contracts, volumes
+
+
+def build_proxy_market(root, archive_name, symbol_prefix):
+    """Build a curve market using the nearest live future as the direct proxy.
+
+    Spot histories of consistent quality are not available for every added
+    market.  The nearest live contract is therefore the explicit direct-
+    commodity proxy.  Deferred premiums and lease signals are measured against
+    it; no continuous-series back adjustment is applied.
+    """
+    contracts, volumes = read_generic_contracts(
+        root, archive_name, symbol_prefix)
+    rates = read_rates(root)
+    quotes = defaultdict(list)
+    for symbol, prices in contracts.items():
+        expiry = expiry_from_symbol(symbol)
+        if not expiry:
+            continue
+        for day, value in prices.items():
+            days = (expiry - day).days
+            if days > 0:
+                quotes[day].append((days, -volumes.get((symbol, day), 0.0),
+                                    symbol, value))
+    spot = {day: min(day_quotes)[3]
+            for day, day_quotes in quotes.items() if day_quotes}
+    by_day = defaultdict(list)
+    for symbol, prices in contracts.items():
+        expiry = expiry_from_symbol(symbol)
+        if not expiry:
+            continue
+        for day, future in prices.items():
+            days = (expiry - day).days
+            physical = spot.get(day)
+            rate = usd_rate(rates, day, days) if days > 0 else None
+            if days <= 0 or not physical or rate is None:
+                continue
+            premium = future / physical - 1
+            lease = rate - premium * 365 / days
+            by_day[day].append({
+                "symbol": symbol, "days": days, "future": future,
+                "spot": physical, "rate": rate, "premium": premium,
+                "lease": lease, "volume": volumes.get((symbol, day), 0.0)})
+    return spot, contracts, rates, by_day
+
+
+def build_spot_market(root, archive_name, symbol_prefix, spot):
+    """Build a futures curve against an independently observed cash price."""
+    contracts, volumes = read_generic_contracts(
+        root, archive_name, symbol_prefix)
+    rates = read_rates(root)
+    by_day = defaultdict(list)
+    for symbol, prices in contracts.items():
+        expiry = expiry_from_symbol(symbol)
+        if not expiry:
+            continue
+        for day, future in prices.items():
+            days = (expiry - day).days
+            physical = spot.get(day)
+            rate = usd_rate(rates, day, days) if days > 0 else None
+            if days <= 0 or not physical or rate is None:
+                continue
+            premium = future / physical - 1
+            lease = rate - premium * 365 / days
+            by_day[day].append({
+                "symbol": symbol, "days": days, "future": future,
+                "spot": physical, "rate": rate, "premium": premium,
+                "lease": lease, "volume": volumes.get((symbol, day), 0.0)})
+    usable_days = set(by_day)
+    return ({day: value for day, value in spot.items() if day in usable_days},
+            contracts, rates, by_day)
+
+
+def read_zip_spot(root, member):
     result = {}
     with zipfile.ZipFile(root / "gold_silver.zip") as archive:
-        stream = io.TextIOWrapper(archive.open("silver_price.csv"), encoding="utf-8-sig")
+        stream = io.TextIOWrapper(archive.open(member), encoding="utf-8-sig")
         for row in csv.DictReader(stream):
             try:
                 value = float(row["price"])
                 if value > 0:
                     result[date.fromisoformat(row["date"])] = value
-            except (ValueError, KeyError):
+            except (ValueError, TypeError, KeyError):
                 pass
     return result
+
+
+def read_csv_spot(root, filename, value_column):
+    result = {}
+    with open(root / filename, encoding="utf-8-sig") as stream:
+        for row in csv.DictReader(stream):
+            try:
+                value = float(row[value_column])
+                if value > 0:
+                    result[date.fromisoformat(row["observation_date"])] = value
+            except (ValueError, TypeError, KeyError):
+                pass
+    return result
+
+
+def read_spot(root):
+    return read_zip_spot(root, "silver_price.csv")
 
 
 def read_contracts(root, spot):
@@ -99,6 +243,7 @@ def read_contracts(root, spot):
                 continue
             symbol = filename[:-4]
             rows = {}
+            parsed = []
             stream = io.TextIOWrapper(archive.open(filename), encoding="utf-8-sig")
             for row in csv.reader(stream):
                 if not row or row[0].strip('"').lower() == "date":
@@ -108,12 +253,20 @@ def read_contracts(root, spot):
                     physical = spot.get(day)
                     if not physical or physical <= 0:
                         continue
-                    candidates = [raw / scale for scale in (1, 10, 100, 1000, 10000)]
-                    price = min(candidates, key=lambda value: abs(value / physical - 1))
-                    rows[day] = price
-                    volumes[(symbol, day)] = float(row[5]) if len(row) > 5 else 0.0
+                    scales = (1, 10, 100, 1000, 10000)
+                    daily_scale = min(
+                        scales, key=lambda scale: abs(raw / scale / physical - 1))
+                    parsed.append((day, raw, daily_scale,
+                                   float(row[5]) if len(row) > 5 else 0.0))
                 except (ValueError, TypeError, IndexError):
                     pass
+            # Quote scale is fixed within a contract file. Inferring it for
+            # each row can create a spurious 10x jump on a volatile spot day.
+            if parsed:
+                contract_scale = Counter(x[2] for x in parsed).most_common(1)[0][0]
+                for day, raw, _, volume in parsed:
+                    rows[day] = raw / contract_scale
+                    volumes[(symbol, day)] = volume
             if rows:
                 contracts[symbol] = rows
     return contracts, volumes
@@ -170,6 +323,59 @@ def usd_rate(series, day, days):
     return None
 
 
+def usd_rate_components(series, day, days):
+    """Return the curve tenors, rates, and interpolation weights for a maturity."""
+    curve = [(tenor, asof_rate(series, tenor, day)) for tenor, _ in TENORS]
+    curve = [(tenor, value) for tenor, value in curve if value is not None]
+    if not curve:
+        return []
+    if days <= curve[0][0]:
+        return [(curve[0][0], curve[0][1], 1.0)]
+    if days >= curve[-1][0]:
+        return [(curve[-1][0], curve[-1][1], 1.0)]
+    for (left_t, left_r), (right_t, right_r) in zip(curve, curve[1:]):
+        if left_t <= days <= right_t:
+            alpha = (days - left_t) / (right_t - left_t)
+            if alpha == 0:
+                return [(left_t, left_r, 1.0)]
+            if alpha == 1:
+                return [(right_t, right_r, 1.0)]
+            return [(left_t, left_r, 1 - alpha),
+                    (right_t, right_r, alpha)]
+    return []
+
+
+def matched_usd_rate_details(series, day, positions, contracts):
+    """Aggregate curve interpolation across a weighted futures selection."""
+    total = sum(positions.values())
+    if total <= 0:
+        return {"rate": None, "components": []}
+    components = defaultdict(lambda: {"weight": 0.0, "rate_weight": 0.0})
+    for symbol, position_weight in positions.items():
+        contract = contracts.get(symbol)
+        if not contract:
+            continue
+        for tenor, rate, interpolation_weight in usd_rate_components(
+                series, day, contract["days"]):
+            combined_weight = position_weight / total * interpolation_weight
+            components[tenor]["weight"] += combined_weight
+            components[tenor]["rate_weight"] += combined_weight * rate
+    details = []
+    for tenor, values in sorted(components.items()):
+        if values["weight"] <= 0:
+            continue
+        details.append({
+            "maturity_days": tenor,
+            "rate_pct": 100 * values["rate_weight"] / values["weight"],
+            "weight_pct": 100 * values["weight"],
+        })
+    return {
+        "rate": sum(x["rate_pct"] * x["weight_pct"] for x in details) / 10000
+                if details else None,
+        "components": details,
+    }
+
+
 def build_market(root):
     spot = read_spot(root)
     contracts, volumes = read_contracts(root, spot)
@@ -197,10 +403,74 @@ def proportional_allocation(items, total):
     """Allocate total across ``(key, score)`` items in proportion to score."""
     if total <= 0 or not items:
         return {}
-    score_sum = sum(score for _, score in items)
+    positive_items = [(key, score) for key, score in items if score > 0]
+    score_sum = sum(score for _, score in positive_items)
     if score_sum <= 0:
         return {}
-    return {key: total * score / score_sum for key, score in items if score > 0}
+    return {key: total * score / score_sum for key, score in positive_items}
+
+
+def maturity_line_score(contract, p, direction):
+    """Signed vertical distance from the maturity/absolute-lease line."""
+    years = contract["days"] / 365
+    if direction == "long":
+        line = (p.long_maturity_line_intercept +
+                p.long_maturity_line_slope_per_year * years)
+        return contract["lease"] - line
+    line = (p.short_maturity_line_intercept +
+            p.short_maturity_line_slope_per_year * years)
+    return -contract["lease"] - line
+
+
+def maturity_line_adjusted_score(base_score, contract, p, direction):
+    """Apply the maturity-line distance as a relative change to ``base_score``.
+
+    The signed distance has rate units, whereas ``base_score`` can have a
+    different scale depending on the candidates available that day.  Dividing
+    by the line converts the distance to a dimensionless relative adjustment.
+    A contract exactly on the line keeps its base score; one 20% above the line
+    receives 120% of its base score, and one 20% below receives 80%.
+    """
+    years = contract["days"] / 365
+    if direction == "long":
+        line = (p.long_maturity_line_intercept +
+                p.long_maturity_line_slope_per_year * years)
+    else:
+        line = (p.short_maturity_line_intercept +
+                p.short_maturity_line_slope_per_year * years)
+    if abs(line) <= 1e-12:
+        return base_score
+    relative_addition = maturity_line_score(contract, p, direction) / abs(line)
+    return base_score * (1.0 + relative_addition)
+
+
+def extreme_maturity_bonus(contract, candidates, p, direction):
+    """Conditional longer-maturity preference at an extreme lease signal.
+
+    A longer contract receives a bonus only when it is close to the configured
+    full-allocation lease boundary *and* improves on every shorter candidate by
+    at least the configured annualized advantage per extra year.
+    """
+    shorter = [x for x in candidates if x["days"] < contract["days"]]
+    if not shorter:
+        return 0.0
+    if direction == "long":
+        if contract["lease"] < p.long_extreme_qualification_rate:
+            return 0.0
+        best_shorter = max(shorter, key=lambda x: x["lease"])
+        extra_years = (contract["days"] - best_shorter["days"]) / 365
+        required = p.long_extreme_maturity_advantage_per_year * extra_years
+        if contract["lease"] - best_shorter["lease"] < required:
+            return 0.0
+        return p.long_extreme_maturity_bonus_per_year * extra_years
+    if contract["lease"] > p.short_extreme_qualification_rate:
+        return 0.0
+    best_shorter = min(shorter, key=lambda x: x["lease"])
+    extra_years = (contract["days"] - best_shorter["days"]) / 365
+    required = p.short_extreme_maturity_advantage_per_year * extra_years
+    if best_shorter["lease"] - contract["lease"] < required:
+        return 0.0
+    return p.short_extreme_maturity_bonus_per_year * extra_years
 
 
 def market_diagnostics_for_day(candidates, p):
@@ -217,8 +487,9 @@ def market_diagnostics_for_day(candidates, p):
     # the GUI request path from depending on a separately defined helper.
     ranked = []
     for contract in eligible:
-        score = (-contract["lease"] + p.short_maturity_bonus_per_year *
-                 contract["days"] / 365)
+        base_score = max(1e-9, -contract["lease"])
+        score = maturity_line_adjusted_score(
+            base_score, contract, p, "short")
         ranked.append((contract["symbol"], max(score, 1e-9)))
     ranked.sort(key=lambda item: item[1], reverse=True)
     shorts = proportional_allocation(ranked, 1.0)
@@ -235,26 +506,58 @@ def market_diagnostics_for_day(candidates, p):
     }
 
 
-def positions_for_day(candidates, p):
+def _sticky_contract_book(desired, previous, contract_map, qualifying_symbols,
+                          direction, p):
+    """Keep held maturities unless a replacement improves the lease signal."""
+    desired_total = sum(desired.values())
+    if desired_total <= 0:
+        return {}
+    previous = previous or {}
+    held = {symbol: weight for symbol, weight in previous.items()
+            if symbol in contract_map and
+            (symbol in qualifying_symbols or not p.force_roll_at_min_days)}
+    if not held or not p.roll_only_if_better:
+        return desired
+    forced = (p.force_roll_at_min_days and
+              any(contract_map[symbol]["days"] <= p.min_days for symbol in held))
+    held_lease = weighted_contract_value(held, contract_map, "lease")
+    desired_lease = weighted_contract_value(desired, contract_map, "lease")
+    better = (desired_lease > held_lease if direction == "long"
+              else desired_lease < held_lease)
+    if forced or better:
+        return desired
+    held_total = sum(held.values())
+    return {symbol: desired_total * weight / held_total
+            for symbol, weight in held.items()}
+
+
+def positions_for_day(candidates, p, previous=None):
     eligible = [x for x in candidates if x["days"] >= p.min_days]
     if not eligible:
         return None
-    contract_map = {x["symbol"]: x for x in eligible}
+    # Keep quotes below the new-entry maturity floor available for an existing
+    # position when the user explicitly disables the forced minimum-day roll.
+    contract_map = {x["symbol"]: x for x in candidates if x["days"] > 0}
     # The performance charts are diagnostics for a hypothetical 100% position
     # in each leg.  Select their contracts independently of the thresholds
     # which decide whether the portfolio actually takes the position.
     if p.long_contract_selection in {"highest_lease_rate", "weighted_lease_rate"}:
-        select_long = lambda contracts: max(
-            contracts, key=lambda x: (x["lease"], -x["days"], x["volume"]))
+        def select_long(contracts):
+            lease_floor = min(x["lease"] for x in contracts)
+            return max(
+                contracts, key=lambda x: (
+                    maturity_line_adjusted_score(
+                        max(1e-9, x["lease"] - lease_floor),
+                        x, p, "long"),
+                    -x["days"], x["volume"]))
     else:
         select_long = lambda contracts: min(
             contracts, key=lambda x: (x["days"], -x["volume"]))
     if p.long_contract_selection == "weighted_lease_rate":
         lease_floor = min(x["lease"] for x in eligible)
-        longest_days = max(x["days"] for x in eligible)
         long_leg = proportional_allocation([
-            (x["symbol"], x["lease"] - lease_floor + 1e-9 +
-             p.long_maturity_bonus_per_year * (longest_days - x["days"]) / 365)
+            (x["symbol"], maturity_line_adjusted_score(
+                max(1e-9, x["lease"] - lease_floor), x, p, "long"))
             for x in eligible
         ], 1.0)
     else:
@@ -264,8 +567,19 @@ def positions_for_day(candidates, p):
     # The long and short books are independent. Select the long contract using
     # the configured maturity/rate policy after enforcing the entry threshold.
     positive = [x for x in eligible if x["lease"] > p.positive_entry_rate]
-    selected_positive = select_long(positive) if positive else None
-    cash_signal = min(x["lease"] for x in eligible)
+    # Fixed allocation is unconditional: enabled fixed legs allocate their
+    # configured maximum even when no contract crosses an entry threshold.
+    long_candidates = (eligible if p.long_futures_entry_mode == "fixed"
+                       else positive)
+    selected_positive = select_long(long_candidates) if long_candidates else None
+    # SLV is controlled by the lease rate of the configured long book, not by
+    # the most negative contract used to construct the short-futures signal.
+    long_signal = weighted_contract_value(long_leg, contract_map, "lease")
+    # A line can suppress every weighted diagnostic score.  The direct/fund
+    # allocation still needs a market lease signal, so fall back to the best
+    # eligible lease without creating a futures allocation.
+    if long_signal is None:
+        long_signal = max(x["lease"] for x in eligible)
 
     # Any eligible maturity, including the shortest, can enter the short book,
     # but only after its lease rate passes the explicit negative entry threshold.
@@ -277,55 +591,86 @@ def positions_for_day(candidates, p):
     positive_strength = (clamp(
         (selected_positive["lease"] - p.positive_entry_rate) /
         (p.positive_full_rate - p.positive_entry_rate)) if selected_positive else 0.0)
+    if p.long_futures_entry_mode == "fixed":
+        positive_strength = 1.0
     negative_strength = clamp(
         (short_start_rate - signal) /
         (short_start_rate - p.negative_short_full_rate))
-    positive_available = (max(0.0, min(selected_positive["lease"], p.positive_full_rate))
-                          if selected_positive else 0.0)
-    negative_available = (abs(max(signal, p.negative_short_full_rate))
-                          if signal < short_start_rate else 0.0)
-    available_total = positive_available + negative_available
-    if available_total:
-        treasury_weight = positive_available / available_total
-        slv_weight = negative_available / available_total
-    else:
-        treasury_weight, slv_weight = 1.0, 0.0
+    if p.short_futures_entry_mode == "fixed":
+        negative_strength = 1.0
+    slv_weight = clamp(
+        (p.slv_start_rate - long_signal) /
+        (p.slv_start_rate - p.slv_full_rate))
+    if p.slv_entry_mode == "fixed":
+        slv_weight = 1.0
+    if not p.enable_slv_leg:
+        slv_weight = 0.0
+    treasury_weight = ((1.0 - slv_weight)
+                       if p.enable_cash_long_futures_leg else 0.0)
 
-    # Positive lease supports the cash + long sleeve and negative lease the
-    # SLV + short sleeve. Both available sleeves share capital in proportion
-    # to the absolute lease rates, capped at their configured full thresholds.
-    longs = {}
-    long_notional = treasury_weight * p.max_long_future * positive_strength
-    if positive and p.long_contract_selection == "weighted_lease_rate":
-        longest_days = max(x["days"] for x in positive)
-        longs = proportional_allocation([
-            (x["symbol"],
-             (x["lease"] - p.positive_entry_rate) +
-             p.long_maturity_bonus_per_year * (longest_days - x["days"]) / 365)
-            for x in positive
+    # Treasury and SLV form the fully invested base, while long futures are an
+    # overlay sized independently by their positive lease signal.
+    base_longs = {}
+    long_notional = (p.max_long_future * positive_strength
+                     if p.enable_cash_long_futures_leg else 0.0)
+    if long_candidates and p.long_contract_selection == "weighted_lease_rate":
+        lease_floor = min(x["lease"] for x in long_candidates)
+        base_longs = proportional_allocation([
+            (x["symbol"], maturity_line_adjusted_score(
+                max(1e-9, x["lease"] - lease_floor), x, p, "long"))
+            for x in long_candidates
         ], long_notional)
     elif selected_positive:
-        longs[selected_positive["symbol"]] = (
+        base_longs[selected_positive["symbol"]] = (
             long_notional)
-    short_fraction = p.max_short_fraction_of_slv * negative_strength
-    total_short = slv_weight * short_fraction
+    total_short = (p.max_short_fraction_of_slv * negative_strength
+                   if p.enable_short_book else 0.0)
+    # The short book is defined as short futures plus an equal-sized extension
+    # of the active base long book.  If both long sleeves are inactive there is
+    # no composition to extend, so the complete short book must also be zero.
+    if treasury_weight + slv_weight + sum(base_longs.values()) <= 0:
+        total_short = 0.0
 
     # Score trades off negative lease edge against a preference for longer
     # maturity (the opposite of the long book). A 0.02 bonus means one extra
     # year can compensate for 2 percentage points less-negative annualized
     # lease rate.
     negative = [x for x in eligible if x["lease"] < short_start_rate]
-    for x in negative:
+    short_candidates = (eligible if p.short_futures_entry_mode == "fixed"
+                        else negative)
+    short_ceiling = max(x["lease"] for x in short_candidates) if short_candidates else 0.0
+    for x in short_candidates:
         # A short's lease edge is the magnitude of lease rate minus entry
         # threshold. It is positive because qualifying leases are below entry.
-        x["short_score"] = abs(x["lease"] - short_start_rate) + \
-                           p.short_maturity_bonus_per_year * x["days"] / 365
-    if negative and p.short_contract_selection == "lowest_lease_rate":
-        lowest = min(negative, key=lambda x: (x["lease"], x["days"], -x["volume"]))
+        base_score = short_ceiling - x["lease"] + 1e-9
+        x["short_score"] = maturity_line_adjusted_score(
+            base_score, x, p, "short")
+    if short_candidates and p.short_contract_selection == "lowest_lease_rate":
+        lowest = min(short_candidates, key=lambda x: (x["lease"], x["days"], -x["volume"]))
         shorts = {lowest["symbol"]: total_short}
     else:
-        scores = [(x["symbol"], x["short_score"]) for x in negative]
+        scores = [(x["symbol"], x["short_score"]) for x in short_candidates]
         shorts = proportional_allocation(scores, total_short)
+
+    # Resize with the signal, but change contracts only for a better lease or
+    # when the configured minimum-maturity boundary forces a roll.
+    base_longs = _sticky_contract_book(
+        base_longs, previous.get("base_longs") if previous else None,
+        contract_map, {x["symbol"] for x in long_candidates}, "long", p)
+    shorts = _sticky_contract_book(
+        shorts, previous.get("shorts") if previous else None,
+        contract_map, {x["symbol"] for x in short_candidates}, "short", p)
+
+    # A short-futures position is paired with an equally sized extension of
+    # the complete base long book.  The extension retains the same relative
+    # mix of long futures, SLV, and Treasuries.
+    base_long_total = treasury_weight + slv_weight + sum(base_longs.values())
+    long_extension = total_short
+    extension_ratio = long_extension / base_long_total if base_long_total else 0.0
+    treasury = treasury_weight * (1.0 + extension_ratio)
+    slv = slv_weight * (1.0 + extension_ratio)
+    longs = {symbol: weight * (1.0 + extension_ratio)
+             for symbol, weight in base_longs.items()}
 
     # When the strategy has a short position, its diagnostic must use exactly
     # the same maturities and relative allocations.  Only use a
@@ -357,12 +702,15 @@ def positions_for_day(candidates, p):
         mode = "negative"
     else:
         mode = "neutral"
-    return {"mode": mode, "signal": cash_signal,
+    return {"mode": mode, "signal": long_signal,
             "positive_signal": selected_positive["lease"] if selected_positive else 0.0,
-            "negative_signal": signal, "slv": slv_weight,
-            "treasury": treasury_weight, "longs": longs,
+            "negative_signal": signal, "slv": slv,
+            "treasury": treasury, "longs": longs,
             "shorts": shorts, "long_leg": long_leg, "short_leg": short_leg,
             "diagnostic_longs": long_leg, "diagnostic_shorts": short_leg,
+            "base_slv": slv_weight, "base_treasury": treasury_weight,
+            "base_longs": base_longs, "long_extension": long_extension,
+            "extension_ratio": extension_ratio,
             "bond_days": bond_days, "contracts": contract_map}
 
 
@@ -387,6 +735,34 @@ def treasury_position_return(rates, day, next_day, days, p):
         rate = asof_rate(rates, 91, day)
         elapsed = (next_day - day).days
         return 0.0 if rate is None else rate * elapsed / 365
+    if p.treasury_allocation_mode == "rate_weighted_maturities":
+        available = [
+            (tenor, asof_rate(rates, tenor, day))
+            for tenor, _ in TENORS
+        ]
+        available = [(tenor, rate) for tenor, rate in available
+                     if rate is not None]
+        if not available:
+            return 0.0
+        positive_total = sum(max(0.0, rate) for _, rate in available)
+        if positive_total > 0:
+            weights = [
+                (tenor, max(0.0, rate) / positive_total)
+                for tenor, rate in available
+            ]
+        else:
+            # If the complete curve is non-positive, use the least-negative
+            # tenor rather than creating undefined or negative allocations.
+            best = max(available, key=lambda item: item[1])[0]
+            weights = [(tenor, 1.0 if tenor == best else 0.0)
+                       for tenor, _ in available]
+        return sum(
+            weight * bond_return(
+                rates, day, next_day, tenor, p.bond_mode)
+            for tenor, weight in weights
+        )
+    if p.treasury_allocation_mode == "shortest_rolling":
+        return bond_return(rates, day, next_day, TENORS[0][0], p.bond_mode)
     return bond_return(rates, day, next_day, days, p.bond_mode)
 
 
@@ -415,6 +791,33 @@ def weighted_futures_price(positions, contracts, day):
                for symbol, weight in positions.items()) / total
 
 
+def futures_trade_prices(previous, current, contracts, day):
+    """Return weighted entry/exit prices and traded notionals for one book side."""
+    entries = {}
+    exits = {}
+    for symbol in set(previous) | set(current):
+        change = current.get(symbol, 0.0) - previous.get(symbol, 0.0)
+        if change > 0:
+            entries[symbol] = change
+        elif change < 0:
+            exits[symbol] = -change
+    return (weighted_futures_price(entries, contracts, day), sum(entries.values()),
+            weighted_futures_price(exits, contracts, day), sum(exits.values()))
+
+
+def futures_trade_details(previous, current, contracts, day):
+    """Return the individual contract changes executed on a rebalance day."""
+    trades = []
+    for symbol in sorted(set(previous) | set(current)):
+        change = current.get(symbol, 0.0) - previous.get(symbol, 0.0)
+        price = contracts.get(symbol, {}).get(day)
+        if change and price is not None:
+            trades.append({"symbol": symbol, "price": price,
+                           "size_pct": 100 * abs(change),
+                           "action": "entry" if change > 0 else "exit"})
+    return trades
+
+
 def diagnostic_futures_return(positions, day, next_day, contracts, direction):
     if not positions:
         return None
@@ -427,6 +830,20 @@ def diagnostic_futures_return(positions, day, next_day, contracts, direction):
     return result
 
 
+def _rescaled_book_return(book, target_total, day, next_day, contracts, direction):
+    """Counterfactual return contribution from retaining the prior contract mix."""
+    source_total = sum(book.values())
+    if not source_total or not target_total:
+        return 0.0, True
+    result = 0.0
+    for symbol, weight in book.items():
+        value, found = futures_interval_return(symbol, day, next_day, contracts)
+        if not found:
+            return 0.0, False
+        result += direction * target_total * weight / source_total * value
+    return result, True
+
+
 def run_backtest(spot, contracts, rates, by_day, p):
     # Ignore stray weekend records. Exchange holidays have no observation, so
     # each interval automatically runs to the next available business day.
@@ -434,15 +851,23 @@ def run_backtest(spot, contracts, rates, by_day, p):
     output = []
     simple = 0.0
     long_simple = 0.0
+    extension_simple = 0.0
     short_simple = 0.0
     nav = 1.0
     asset_simple = {"long_futures": 0.0, "short_futures": 0.0, "slv": 0.0, "treasury": 0.0}
     asset_nav = {"long_futures": 1.0, "short_futures": 1.0, "slv": 1.0, "treasury": 1.0}
     sgov_proxy_nav = 1.0
     missing_futures_intervals = []
+    previous_valid_position = None
+    scheduled_positions = {}
+    previous_position = None
+    for signal_day, execution_day in zip(days, days[1:]):
+        previous_position = positions_for_day(
+            by_day[signal_day], p, previous_position)
+        scheduled_positions[execution_day] = previous_position
     # Signal at t, execute at t+1, and measure P&L from t+1 to t+2.
     for signal_day, execution_day, exit_day in zip(days, days[1:], days[2:]):
-        position = positions_for_day(by_day[signal_day], p)
+        position = scheduled_positions.get(execution_day)
         if position is None or execution_day not in spot or exit_day not in spot:
             continue
         lag = (execution_day - signal_day).days
@@ -454,16 +879,19 @@ def run_backtest(spot, contracts, rates, by_day, p):
             Parameters(min_days=p.min_days, treasury_asset="sgov_proxy"))
         spot_return = spot[exit_day] / spot[execution_day] - 1 - p.slv_expense * elapsed / 365
         portfolio_return = position["treasury"] * treasury_return + position["slv"] * spot_return
-        long_return = 0.0
-        short_return = 0.0
+        base_long_return = (position["base_treasury"] * treasury_return +
+                            position["base_slv"] * spot_return)
+        short_futures_return = 0.0
+        long_futures_contribution = 0.0
         valid_interval = True
         short_total = sum(position["shorts"].values())
         long_total = sum(position["longs"].values())
         for symbol, weight in position["longs"].items():
             value, found = futures_interval_return(symbol, execution_day, exit_day, contracts)
             contribution = weight * value
-            long_return += contribution
+            long_futures_contribution += contribution
             portfolio_return += contribution
+            base_long_return += position["base_longs"].get(symbol, 0.0) * value
             if not found:
                 missing_futures_intervals.append({
                     "signal_date": signal_day.isoformat(),
@@ -474,7 +902,7 @@ def run_backtest(spot, contracts, rates, by_day, p):
         for symbol, weight in position["shorts"].items():
             value, found = futures_interval_return(symbol, execution_day, exit_day, contracts)
             contribution = -weight * value
-            short_return += contribution
+            short_futures_return += contribution
             portfolio_return += contribution
             if not found:
                 missing_futures_intervals.append({
@@ -487,9 +915,49 @@ def run_backtest(spot, contracts, rates, by_day, p):
         # observation. Skip that entire portfolio interval instead.
         if not valid_interval:
             continue
+
+        # Exact daily return attribution. Futures price returns are separated
+        # into the contemporaneous silver move and basis-related effects. The
+        # roll/rebalance effect is the difference versus retaining the prior
+        # contract mix at the current side's total notional. The remaining
+        # basis effect is split into implied lease carry and lease-rate/basis
+        # repricing; the final residual is retained so the displayed columns
+        # always reconcile exactly to the portfolio return.
+        raw_spot_return = spot[exit_day] / spot[execution_day] - 1
+        silver_price_component = (
+            position["slv"] + long_total - short_total) * raw_spot_return
+        slv_expense_component = -position["slv"] * p.slv_expense * elapsed / 365
+        treasury_component = position["treasury"] * treasury_return
+        actual_futures_component = long_futures_contribution + short_futures_return
+        futures_basis_component = actual_futures_component - (
+            long_total - short_total) * raw_spot_return
+        roll_component = 0.0
+        if previous_valid_position is not None:
+            kept_long, long_found = _rescaled_book_return(
+                previous_valid_position["longs"], long_total,
+                execution_day, exit_day, contracts, 1.0)
+            kept_short, short_found = _rescaled_book_return(
+                previous_valid_position["shorts"], short_total,
+                execution_day, exit_day, contracts, -1.0)
+            if long_found and short_found:
+                roll_component = actual_futures_component - kept_long - kept_short
+        lease_carry_component = 0.0
+        for symbol, weight in position["longs"].items():
+            lease_carry_component += weight * position["contracts"][symbol]["lease"] * elapsed / 365
+        for symbol, weight in position["shorts"].items():
+            lease_carry_component -= weight * position["contracts"][symbol]["lease"] * elapsed / 365
+        lease_repricing_component = (
+            futures_basis_component - lease_carry_component - roll_component)
+        attributed = (silver_price_component + slv_expense_component +
+                      treasury_component + lease_carry_component +
+                      lease_repricing_component + roll_component)
+        attribution_residual = portfolio_return - attributed
+        matched_long_extension_return = position["extension_ratio"] * base_long_return
+        short_book_return = matched_long_extension_return + short_futures_return
         simple += portfolio_return
-        long_simple += long_return
-        short_simple += short_return
+        long_simple += base_long_return
+        extension_simple += matched_long_extension_return
+        short_simple += short_book_return
         nav *= 1 + portfolio_return
         sgov_proxy_nav *= 1 + sgov_proxy_return
         # Standalone leg returns always represent a fully invested leg.  They
@@ -540,6 +1008,26 @@ def run_backtest(spot, contracts, rates, by_day, p):
             diagnostic_longs, contracts, exit_day)
         short_weighted_future_price = weighted_futures_price(
             diagnostic_shorts, contracts, exit_day)
+        long_usd_rate = matched_usd_rate_details(
+            rates, exit_day, diagnostic_longs, diagnostic_contracts)
+        short_usd_rate = matched_usd_rate_details(
+            rates, exit_day, diagnostic_shorts, diagnostic_contracts)
+        # The currently held position is rebalanced on the displayed exit date.
+        # Compare it with the next scheduled position and weight prices by the
+        # absolute notional traded when several contracts change together.
+        next_position = scheduled_positions.get(exit_day)
+        next_longs = next_position["longs"] if next_position else {}
+        next_shorts = next_position["shorts"] if next_position else {}
+        (entered_long_price, entered_long_size,
+         exited_long_price, exited_long_size) = futures_trade_prices(
+            position["longs"], next_longs, contracts, exit_day)
+        (entered_short_price, entered_short_size,
+         exited_short_price, exited_short_size) = futures_trade_prices(
+            position["shorts"], next_shorts, contracts, exit_day)
+        long_trade_details = futures_trade_details(
+            position["longs"], next_longs, contracts, exit_day)
+        short_trade_details = futures_trade_details(
+            position["shorts"], next_shorts, contracts, exit_day)
         # Premium charts are market diagnostics, not position diagnostics.  Use
         # the threshold-independent books so a null means that a source quote
         # is unavailable, rather than merely that the strategy did not trade.
@@ -569,10 +1057,21 @@ def run_backtest(spot, contracts, rates, by_day, p):
                        "positive_signal_annual_pct": 100 * position["positive_signal"],
                        "negative_signal_annual_pct": 100 * position["negative_signal"],
                        "interval_return_pct": 100 * portfolio_return,
-                       "long_book_interval_return_pct": 100 * long_return,
-                       "short_book_interval_return_pct": 100 * short_return,
+                       "silver_price_return_contribution_pct": 100 * silver_price_component,
+                       "slv_expense_contribution_pct": 100 * slv_expense_component,
+                       "treasury_return_contribution_pct": 100 * treasury_component,
+                       "lease_carry_contribution_pct": 100 * lease_carry_component,
+                       "lease_rate_change_contribution_pct": 100 * lease_repricing_component,
+                       "rolling_contribution_pct": 100 * roll_component,
+                       "other_return_contribution_pct": 100 * attribution_residual,
+                       "long_book_interval_return_pct": 100 * base_long_return,
+                       "matched_long_extension_interval_return_pct": (
+                           100 * matched_long_extension_return),
+                       "short_book_interval_return_pct": 100 * short_book_return,
                        "simple_cumulative_return_pct": 100 * simple,
                        "long_book_cumulative_return_pct": 100 * long_simple,
+                       "matched_long_extension_cumulative_return_pct": (
+                           100 * extension_simple),
                        "short_book_cumulative_return_pct": 100 * short_simple,
                        "compounded_return_pct": 100 * (nav - 1), "nav": nav,
                        "long_futures_daily_return_pct": (
@@ -597,6 +1096,26 @@ def run_backtest(spot, contracts, rates, by_day, p):
                        "slv_price": spot[exit_day],
                        "long_weighted_future_price": long_weighted_future_price,
                        "short_weighted_future_price": short_weighted_future_price,
+                       "entered_long_futures_price": entered_long_price,
+                       "entered_short_futures_price": entered_short_price,
+                       "exited_long_futures_price": exited_long_price,
+                       "exited_short_futures_price": exited_short_price,
+                       "entered_long_futures_size_pct": 100 * entered_long_size,
+                       "entered_short_futures_size_pct": 100 * entered_short_size,
+                       "exited_long_futures_size_pct": 100 * exited_long_size,
+                       "exited_short_futures_size_pct": 100 * exited_short_size,
+                       "resulting_long_futures_size_pct": 100 * sum(next_longs.values()),
+                       "resulting_short_futures_size_pct": 100 * sum(next_shorts.values()),
+                       "long_futures_trade_details": long_trade_details,
+                       "short_futures_trade_details": short_trade_details,
+                       "long_matched_usd_rate_pct": (
+                           100 * long_usd_rate["rate"]
+                           if long_usd_rate["rate"] is not None else None),
+                       "short_matched_usd_rate_pct": (
+                           100 * short_usd_rate["rate"]
+                           if short_usd_rate["rate"] is not None else None),
+                       "long_matched_usd_rate_components": long_usd_rate["components"],
+                       "short_matched_usd_rate_components": short_usd_rate["components"],
                        "treasury_position_price_index": 100 * asset_nav["treasury"],
                        "sgov_proxy_price_index": 100 * sgov_proxy_nav,
                        "slv_weight_pct": 100 * position["slv"],
@@ -616,6 +1135,8 @@ def run_backtest(spot, contracts, rates, by_day, p):
                            100 * short_weighted_premium if short_weighted_premium is not None else None),
                        "long_forward_maturity_days": long_forward_maturity_days,
                        "short_forward_maturity_days": short_forward_maturity_days,
+                       "allocation_long_lease_signal_pct": 100 * position["signal"],
+                       "long_book_extension_pct": 100 * position["long_extension"],
                        "available_futures_min_maturity_days": (
                            market_diagnostics["min_maturity_days"]
                            if market_diagnostics else None),
@@ -629,6 +1150,7 @@ def run_backtest(spot, contracts, rates, by_day, p):
                        "largest_futures_maturity_share_pct": 100 * largest_share,
                        "long_symbols": ";".join(position["longs"]),
                        "short_symbols": ";".join(position["shorts"])})
+        previous_valid_position = position
     return output, missing_futures_intervals
 
 
@@ -663,7 +1185,8 @@ def parse_args():
     parser.add_argument("--negative-short-start-rate", type=float, default=-0.005,
                         help="Lease rate below which a contract becomes eligible for shorting")
     parser.add_argument("--negative-short-full-rate", type=float, default=-0.15)
-    parser.add_argument("--max-short-fraction-of-slv", type=float, default=0.50)
+    parser.add_argument("--max-short-fraction-of-slv", type=float, default=0.50,
+                        help="Maximum short-futures notional as a fraction of capital")
     parser.add_argument("--short-contract-selection",
                         choices=["weighted_lease_rate", "lowest_lease_rate"],
                         default="weighted_lease_rate")
