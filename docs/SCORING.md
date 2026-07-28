@@ -15,13 +15,31 @@ For contract `i` on decision date `t`:
 - `d_i`: signed vertical distance from the boundary.
 - `k`: relative adjustment strength.
 
-Define the boundary as:
+## Anchor-point parameterization
+
+The user-facing boundary is defined by two understandable points in rate–maturity space rather than by an intercept and slope:
 
 ```text
-L(m) = intercept + slope * m
+(m_1, r_1)
+(m_2, r_2), with m_2 > m_1
 ```
 
-The intended geometry links a longer maturity with a larger absolute rate requirement. The exact slope sign therefore depends on whether the plotted quantity is the signed lease rate or its absolute adverse/favorable magnitude.
+The boundary through those points is:
+
+```text
+L(m) = r_1 + ((r_2 - r_1) / (m_2 - m_1)) * (m - m_1)
+```
+
+The implementation may derive and retain the equivalent slope and intercept internally:
+
+```text
+slope     = (r_2 - r_1) / (m_2 - m_1)
+intercept = r_1 - slope * m_1
+```
+
+Slope and intercept are derived values, not primary GUI parameters. The two maturity values must use the same unit as `m_i`, and the two rate values must use the same annualized-rate convention as `r_i`.
+
+Long and short books may use separate pairs of anchor points. The intended geometry links a longer maturity with a larger absolute rate requirement. The exact direction of each boundary therefore depends on the signed-rate convention used for that book.
 
 ## Long-side adjustment
 
@@ -104,13 +122,16 @@ The inspected-day table and hover data should show:
 
 - contract identifier;
 - maturity and rate;
-- boundary value;
+- both configured boundary anchor points;
+- boundary value at the contract maturity;
 - signed distance;
 - base score;
 - relative multiplier;
 - final score;
 - eligibility result;
 - final target weight.
+
+The rate-versus-maturity scatter should draw the two anchor points and their connecting line. The implied slope and intercept may be shown as read-only diagnostics.
 
 ## Tests
 
@@ -121,4 +142,7 @@ At minimum, test that:
 3. equal boundary distances produce equal relative multipliers;
 4. ineligible contracts never receive weight;
 5. setting `k = 0` reproduces the base-score ranking;
-6. normalization and clipping behave consistently at extreme values.
+6. normalization and clipping behave consistently at extreme values;
+7. the boundary passes exactly through both configured anchor points;
+8. the anchor-point formula reproduces the internally derived slope/intercept form;
+9. configurations with `m_2 <= m_1` are rejected.
