@@ -5,7 +5,20 @@ This branch includes an isolated preview server that runs the existing silver
 backtest with the active maturity score function replaced by the canonical PR
 #15 implementation.
 
-## Run
+## Deploy an automatic mobile preview
+
+[Deploy this branch to Render](https://render.com/deploy?repo=https://github.com/leviitzhak/keep_and_lease/tree/agent/implement-doc-plans)
+
+The one-time Render setup creates a public HTTPS `onrender.com` URL. After that,
+every commit pushed to `agent/implement-doc-plans` automatically rebuilds and
+redeploys the preview. The deployment runs the PR #15 regression tests before
+starting the web service.
+
+The included `render.yaml` also enables automatic pull-request service previews
+for future pull requests opened against the branch linked to the Render service.
+Render deletes those temporary PR previews when their pull requests are closed.
+
+## Run locally
 
 ```bash
 python pr15_preview_server.py --host 0.0.0.0 --port 8000
