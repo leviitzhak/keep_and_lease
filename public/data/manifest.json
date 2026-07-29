@@ -1,0 +1,61 @@
+{
+  "gold_repair": {
+    "archive_sha256": "96292d22406bdcda93b30f995b9f531acfa1b6b7136fabc5ec69eb0e6453395a",
+    "contracts_downloaded": 214,
+    "first_contract": "GC99Z.txt",
+    "last_contract": "GC001F.txt",
+    "source": "https://www.turtletrader.com/cddata/gc.zip"
+  },
+  "refreshed_at_utc": "2026-07-29T13:02:50.815003+00:00",
+  "series": {
+    "gold/fund.csv": {
+      "end": "2026-07-28",
+      "observations": 5407,
+      "sha256": "b4092de0df26c71fe6ebff81c78260bac03ed35dda6bf56e04fbdf8079ba28ea",
+      "start": "2005-01-28",
+      "symbol": "IAU"
+    },
+    "gold/spot.csv": {
+      "end": "2026-07-29",
+      "observations": 6501,
+      "sha256": "a001e4ba2fa6c02307fafa0c01b3407b8e2c1294818f47f46d43fb88adf755e4",
+      "start": "2000-08-30",
+      "symbol": "GC=F"
+    },
+    "silver/fund.csv": {
+      "end": "2026-07-28",
+      "observations": 5093,
+      "sha256": "c9253bf66a99fbb4cd2c5c0bace91acc30377c50fec524c5ae8563bfa818f3f7",
+      "start": "2006-04-28",
+      "symbol": "SLV"
+    },
+    "silver/spot.csv": {
+      "end": "2026-07-29",
+      "observations": 6503,
+      "sha256": "74825bc777786bb6ef177a750f824afa3c389fbf30941ec71a74b6d6e55db021",
+      "start": "2000-08-30",
+      "symbol": "SI=F"
+    },
+    "sp500/fund.csv": {
+      "end": "2026-07-28",
+      "observations": 8430,
+      "sha256": "941f450de335c9300a49e4de8a8db693cd2314570c47f9e6b1fe94c2b4357350",
+      "start": "1993-01-29",
+      "symbol": "SPY"
+    },
+    "sp500/spot.csv": {
+      "end": "2026-07-28",
+      "observations": 14263,
+      "sha256": "a49e2463d83c9adb9b2f938eb9ae2d7926e5aaffdf09fd4d61aefc716d5dbe03",
+      "start": "1970-01-02",
+      "symbol": "^GSPC"
+    },
+    "treasuries/fund.csv": {
+      "end": "2026-07-28",
+      "observations": 6037,
+      "sha256": "4be094fa005b77773db4c38d37277c513a4a87026937f2cf60fd263fb8441409",
+      "start": "2002-07-30",
+      "symbol": "SHY"
+    }
+  }
+}
