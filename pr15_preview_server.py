@@ -3,14 +3,16 @@
 
 This entry point reuses the existing market loader and backtest engine, while
 patching the active maturity score path to the canonical two-anchor model in
-``maturity_scoring.py``.  It is intentionally isolated so the production GUI
+``maturity_scoring.py``. It is intentionally isolated so the production GUI
 can remain stable until the preview has been reviewed.
 """
 
+import argparse
 import json
 from dataclasses import asdict
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from threading import Lock
 
 import backtest_silver_lease_strategy as engine
 from maturity_scoring import BoundaryAnchors, RelativeAdjustment, adjusted_score
@@ -18,6 +20,7 @@ from maturity_scoring import BoundaryAnchors, RelativeAdjustment, adjusted_score
 ROOT = Path(__file__).resolve().parent
 PAGE = ROOT / "pr15_preview.html"
 MARKET = None
+PATCH_LOCK = Lock()
 
 
 def _number(payload, name, default):
@@ -86,12 +89,13 @@ def run_preview(payload):
     if MARKET is None:
         MARKET = engine.build_market(ROOT)
     p = preview_parameters(payload)
-    original = engine.maturity_line_adjusted_score
-    engine.maturity_line_adjusted_score = anchored_maturity_score
-    try:
-        rows, missing = engine.run_backtest(*MARKET, p)
-    finally:
-        engine.maturity_line_adjusted_score = original
+    with PATCH_LOCK:
+        original = engine.maturity_line_adjusted_score
+        engine.maturity_line_adjusted_score = anchored_maturity_score
+        try:
+            rows, missing = engine.run_backtest(*MARKET, p)
+        finally:
+            engine.maturity_line_adjusted_score = original
     if not rows:
         raise ValueError("No observations remain with these parameters")
     stride = max(1, (len(rows) + 2999) // 3000)
@@ -148,7 +152,7 @@ class Handler(SimpleHTTPRequestHandler):
             result = run_preview(payload)
             body = json.dumps(result).encode("utf-8")
             self.send_response(200)
-        except Exception as exc:  # preview endpoint should return actionable errors
+        except Exception as exc:
             body = json.dumps({"error": str(exc)}).encode("utf-8")
             self.send_response(400)
         self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -158,7 +162,7 @@ class Handler(SimpleHTTPRequestHandler):
 
 
 def main():
-    parser = engine.argparse.ArgumentParser()
+    parser = argparse.ArgumentParser()
     parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=8000)
     args = parser.parse_args()
