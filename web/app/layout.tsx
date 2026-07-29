@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Keep and Lease",
-  description: "Interactive silver lease strategy backtest.",
+  title: "Starter Project",
+  description: "A clean starting point for building your site.",
   other: {
     "codex-preview": "development",
   },

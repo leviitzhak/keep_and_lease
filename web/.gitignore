@@ -46,6 +46,13 @@ next-env.d.ts
 /public/pyodide/
 /public/gold_silver.zip
 /public/si.zip
+/public/gc.zip
+/public/cl.zip
+/public/w.zip
+/public/c.zip
+/public/s.zip
+/public/sp.zip
+/public/DCOILWTICO.csv
 /public/DGS1.csv
 /public/DGS2.csv
 /public/DGS3.csv

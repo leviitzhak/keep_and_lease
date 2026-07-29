@@ -10,9 +10,10 @@ const pyodideDir = join(publicDir, "pyodide");
 await mkdir(pyodideDir, { recursive: true });
 
 const repositoryAssets = [
-  "gold_silver.zip", "si.zip", "DGS1.csv", "DGS2.csv", "DGS3.csv",
-  "DGS5.csv", "DTB3.csv", "DTB6.csv", "backtest_silver_lease_strategy.py",
-  "silver_strategy_gui.py",
+  "gold_silver.zip", "si.zip", "gc.zip", "cl.zip", "w.zip", "c.zip",
+  "s.zip", "sp.zip", "DCOILWTICO.csv", "DGS1.csv", "DGS2.csv",
+  "DGS3.csv", "DGS5.csv", "DTB3.csv", "DTB6.csv",
+  "backtest_silver_lease_strategy.py", "silver_strategy_gui.py",
 ];
 
 for (const name of repositoryAssets) {
