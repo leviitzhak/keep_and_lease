@@ -1,36 +1,48 @@
 # TODO
 
-## Priority 1 — scoring and correctness
+This checklist reflects the application synchronized from the deployed Sites checkpoint in PR #16.
 
-- [ ] Implement linear rate–maturity boundaries for long and short ranking.
-- [ ] Apply eligibility gates before maturity adjustment.
-- [ ] Scale maturity adjustment relative to the base score.
-- [ ] Confirm and test the short formula `-lease_rate - line` under the code's sign convention.
-- [ ] Add robust normalization and clipping.
-- [ ] Add unit tests for monotonicity, eligibility, zero-strength behavior, and weight normalization.
-- [ ] Verify the one-trading-day execution shift throughout the engine.
+## Implemented
 
-## Priority 2 — inspection and plots
+- [x] Eligibility gates are applied before maturity scoring.
+- [x] Long and short linear maturity/rate boundaries are available.
+- [x] Boundary distance is normalized, clipped, and applied as a relative score multiplier.
+- [x] Short-side signed distance follows `-lease_rate - line`.
+- [x] Per-commodity leg parameters and saved browser strategy presets are available.
+- [x] Day inspection shows portfolio composition by commodity, leg, and contract.
+- [x] Common plots, calendar-year filtering, synchronized date inspection, and explicit plot diagnostics are implemented.
+- [x] Commodity and Treasury maturity scatters are available; Treasury plots use yield.
+- [x] Scatter points support hover/click on desktop and tap inspection on mobile.
+- [x] Daily hierarchical return attribution reconciles to total return.
+- [x] Annual statistics, headline drawdowns, and extreme-return inspection are present.
+- [x] Silver, gold, Treasury, and S&P 500 data are organized as plain CSV with a coverage and hash manifest.
 
-- [ ] Remove hard-coded last-entry contract tables from general statistics.
-- [ ] Add complete contract details to inspected-day view.
-- [ ] Synchronize selected date across plots and inspection.
-- [ ] Add previous/next trading-day controls.
-- [ ] Add lease-rate/maturity scatters for every commodity.
-- [ ] Add equivalent Treasury rate/maturity scatters.
-- [ ] Show explicit diagnostics instead of empty plots.
+## Priority 1 — scoring and attribution correctness
 
-## Priority 3 — portfolio and reporting
+- [ ] Consolidate the legacy root Python engine and the deployed `public/` engine so there is one canonical production implementation.
+- [ ] Add a complete inspected-day score audit: eligibility threshold, boundary value, signed distance, base timing score, relative multiplier, final score, caps, and final weight.
+- [ ] Verify the one-trading-day execution shift end to end with explicit regression tests.
+- [ ] Replace residual lease/basis-change attribution with observed-versus-frozen-curve valuation for every held contract.
+- [ ] Add attribution-versus-maturity scatter plots for each commodity and Treasury yield changes.
+- [ ] Add no-look-ahead tests that perturb future observations.
 
-- [ ] Finalize weighted Treasury maturity allocation.
-- [ ] Confirm gradual ETF/Treasury transition defaults.
-- [ ] Validate coexistence of short-term long and long-term short positions.
-- [ ] Reconcile daily return components to total return.
-- [ ] Add annual tables, turnover, exposure, and drawdown statistics.
-- [ ] Persist and version GUI parameter sets.
+## Priority 2 — data
 
-## Documentation maintenance
+- [ ] Obtain modern individual-contract histories for gold, silver, and S&P 500. Current cross-maturity archives stop in 2002; continuous benchmarks through 2026 cannot replace a maturity curve.
+- [ ] Add automated data refresh and structural quality checks to CI.
+- [ ] Decide whether large historical CSVs remain directly in Git or move to durable object storage while preserving reproducible manifests.
+- [ ] Verify ETF distributions and total-return benchmark treatment.
 
-- [ ] Link code modules and parameter names to these specifications.
-- [ ] Update `CHANGELOG.md` whenever a durable design decision changes.
-- [ ] Mark uncertain assumptions explicitly rather than silently treating them as final.
+## Priority 3 — research and usability
+
+- [ ] Add persistent/versioned strategy presets across devices, beyond browser-local storage.
+- [ ] Add scenario comparison between saved strategies.
+- [ ] Add sensitivity surfaces, walk-forward/out-of-sample evaluation, and transaction-cost/liquidity stress tests.
+- [ ] Validate coexistence of short-term long and long-term short books across commodities.
+- [ ] Complete previous/next trading-day controls wherever inspection still requires date entry.
+
+## Engineering
+
+- [ ] Add GitHub Actions checks for Python tests, the production build, rendered tests, and artifact validation.
+- [ ] Remove obsolete generated worker versions and other duplicated deployment artifacts after confirming the canonical build path.
+- [ ] Keep `CHANGELOG.md`, parameter documentation, data manifest, and this checklist current with every durable behavior change.
