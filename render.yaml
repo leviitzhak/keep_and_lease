@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: keep-and-lease-pr15-preview
+    name: keep-and-lease-preview
     runtime: python
     plan: free
     region: frankfurt
@@ -10,3 +10,4 @@ services:
     autoDeployTrigger: commit
     previews:
       generation: automatic
+      plan: free
