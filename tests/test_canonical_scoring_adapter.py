@@ -24,15 +24,23 @@ class FakeStrategy:
 
 
 class FakeGui:
+    MARKETS = {}
+
     @staticmethod
     def parameters(payload):
         return SimpleNamespace(
             min_days=10,
+            positive_entry_rate=0.0,
+            negative_short_start_rate=-0.005,
             long_maturity_line_intercept=0.01,
             long_maturity_line_slope_per_year=0.0,
             short_maturity_line_intercept=0.01,
             short_maturity_line_slope_per_year=0.0,
         )
+
+    @staticmethod
+    def inspection_for_day(payload, requested_day):
+        return {"requested_date": requested_day, "commodities": {}}
 
 
 def candidates(rate):
@@ -84,3 +92,9 @@ def test_invalid_strength_is_rejected_during_parameter_parsing():
         assert "non-negative" in str(error)
     else:
         raise AssertionError("negative pure-maturity strength was accepted")
+
+
+def test_inspection_hook_preserves_base_response_without_markets():
+    _, gui = adapter.install(FakeStrategy(), FakeGui())
+    result = gui.inspection_for_day(payload(), "2026-07-30")
+    assert result == {"requested_date": "2026-07-30", "commodities": {}}
