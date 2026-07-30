@@ -20,7 +20,8 @@ This checklist reflects the application synchronized from the deployed Sites che
 ## Priority 1 — scoring and attribution correctness
 
 - [ ] Consolidate the legacy root Python engine and the deployed `public/` engine so there is one canonical production implementation.
-- [ ] Add a complete inspected-day score audit: eligibility threshold, boundary value, signed distance, base timing score, relative multiplier, final score, caps, and final weight.
+- [ ] Add an independent pure-maturity time-advantage multiplier, separate from the lease-rate/maturity boundary multiplier: progressively favor shorter maturities for long positions and longer maturities for short positions; expose independent long and short strength parameters; apply it after the boundary-based multiplier and before score normalization; and include it separately in inspected-day diagnostics and parameter documentation.
+- [ ] Add a complete inspected-day score audit: eligibility threshold, boundary value, signed distance, base timing score, boundary-based relative multiplier, pure-maturity multiplier, final score, caps, and final weight.
 - [ ] Verify the one-trading-day execution shift end to end with explicit regression tests.
 - [ ] Replace residual lease/basis-change attribution with observed-versus-frozen-curve valuation for every held contract.
 - [ ] Add attribution-versus-maturity scatter plots for each commodity and Treasury yield changes.
