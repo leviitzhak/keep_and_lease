@@ -3,9 +3,9 @@ const PYODIDE_BASE = new URL("/pyodide/", self.location.origin).href;
 const DATA_FILES = [
   "gold_silver.zip", "si.zip", "DGS1.csv", "DGS2.csv", "DGS3.csv",
   "DGS5.csv", "DTB3.csv", "DTB6.csv", "backtest_silver_lease_strategy.py",
-  "silver_strategy_gui.py", "maturity_scoring.py", "rate_change_attribution.py",
-  "gc.zip", "cl.zip", "w.zip", "c.zip", "s.zip", "sp.zip",
-  "DCOILWTICO.csv",
+  "silver_strategy_gui.py", "maturity_scoring.py", "canonical_scoring_adapter.py",
+  "rate_change_attribution.py", "gc.zip", "cl.zip", "w.zip", "c.zip", "s.zip",
+  "sp.zip", "DCOILWTICO.csv",
 ];
 let pyodide; let stage = "starting"; const runtimeLogs = [];
 const delay = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
@@ -62,6 +62,8 @@ def load_module(name, path):
     return module
 strategy = load_module("backtest_silver_lease_strategy", "/data/backtest_silver_lease_strategy.py")
 gui = load_module("silver_strategy_gui", "/data/silver_strategy_gui.py")
+scoring_adapter = load_module("canonical_scoring_adapter", "/data/canonical_scoring_adapter.py")
+scoring_adapter.install(strategy, gui)
 gui.MARKET = strategy.build_market(Path("/data"))
 gui.MARKETS = gui.build_markets(Path("/data"))
   `); self.postMessage({type:"ready"});
