@@ -1,13 +1,13 @@
 """Reusable maturity/rate boundary scoring primitives.
 
 The functions in this module implement the canonical scoring rules documented in
-``docs/SCORING.md``.  They are deliberately independent of a particular market
+``docs/SCORING.md``. They are deliberately independent of a particular market
 or GUI so commodity futures and Treasury/cash instruments can share the same
 validated implementation.
 """
 
 from dataclasses import dataclass
-from typing import Iterable, Mapping, Sequence
+from typing import Iterable, Mapping
 
 
 @dataclass(frozen=True)
@@ -75,6 +75,39 @@ class RelativeAdjustment:
         return base_score * self.multiplier(signed_distance)
 
 
+@dataclass(frozen=True)
+class PureMaturityPreference:
+    """Rate-independent preference for timing advantage across maturities.
+
+    ``strength`` is applied to a cross-sectional maturity coordinate in [-1, 1].
+    Positive strength favors shorter contracts for longs and longer contracts for
+    shorts. A zero strength exactly preserves the boundary-adjusted ranking.
+    """
+
+    strength: float = 0.0
+
+    def __post_init__(self) -> None:
+        if self.strength < 0:
+            raise ValueError("maturity preference strength must be non-negative")
+
+    def coordinate(self, maturity: float, minimum: float, maximum: float,
+                   direction: str) -> float:
+        if direction not in {"long", "short"}:
+            raise ValueError("direction must be 'long' or 'short'")
+        if maximum <= minimum:
+            return 0.0
+        midpoint = (minimum + maximum) / 2.0
+        half_range = (maximum - minimum) / 2.0
+        shorter_is_better = (midpoint - maturity) / half_range
+        return shorter_is_better if direction == "long" else -shorter_is_better
+
+    def multiplier(self, maturity: float, minimum: float, maximum: float,
+                   direction: str) -> float:
+        coordinate = self.coordinate(maturity, minimum, maximum, direction)
+        return max(0.0, 1.0 + self.strength * coordinate)
+
+
+
 def signed_distance(rate: float, maturity: float, boundary: BoundaryAnchors,
                     direction: str) -> float:
     """Return the canonical vertical distance for a long or short candidate."""
@@ -86,6 +119,7 @@ def signed_distance(rate: float, maturity: float, boundary: BoundaryAnchors,
     raise ValueError("direction must be 'long' or 'short'")
 
 
+
 def adjusted_score(base_score: float, rate: float, maturity: float,
                    boundary: BoundaryAnchors, adjustment: RelativeAdjustment,
                    direction: str) -> float:
@@ -93,6 +127,7 @@ def adjusted_score(base_score: float, rate: float, maturity: float,
         base_score,
         signed_distance(rate, maturity, boundary, direction),
     )
+
 
 
 def allocate_scores(scores: Mapping[str, float], target: float) -> dict[str, float]:
@@ -106,21 +141,37 @@ def allocate_scores(scores: Mapping[str, float], target: float) -> dict[str, flo
     return {key: target * value / total for key, value in positive.items()}
 
 
+
 def score_contracts(
         contracts: Iterable[Mapping[str, float | str]], *, direction: str,
         eligibility_threshold: float, boundary: BoundaryAnchors,
         adjustment: RelativeAdjustment, target: float,
+        maturity_preference: PureMaturityPreference | None = None,
         rate_key: str = "lease", maturity_key: str = "days",
         symbol_key: str = "symbol") -> tuple[dict[str, float], list[dict]]:
     """Gate, score and allocate a contract universe with complete diagnostics.
 
-    Long base score is the rate above the long eligibility threshold.  Short base
-    score is the amount by which the rate is below the short threshold.  Maturity
-    is passed in the caller's chosen unit; boundary anchors must use that unit.
+    Long base score is the rate above the long eligibility threshold. Short base
+    score is the amount by which the rate is below the short threshold. The
+    boundary multiplier is applied first, followed by the independent pure-
+    maturity multiplier, and the resulting scores are normalized to ``target``.
     """
+    preference = maturity_preference or PureMaturityPreference()
+    contract_rows = list(contracts)
+    eligible_rows = []
+    for contract in contract_rows:
+        rate = float(contract[rate_key])
+        eligible = (rate >= eligibility_threshold if direction == "long"
+                    else rate <= eligibility_threshold)
+        if eligible:
+            eligible_rows.append(contract)
+    maturities = [float(row[maturity_key]) for row in eligible_rows]
+    minimum = min(maturities) if maturities else 0.0
+    maximum = max(maturities) if maturities else 0.0
+
     diagnostics: list[dict] = []
     scores: dict[str, float] = {}
-    for contract in contracts:
+    for contract in contract_rows:
         symbol = str(contract[symbol_key])
         rate = float(contract[rate_key])
         maturity = float(contract[maturity_key])
@@ -129,8 +180,13 @@ def score_contracts(
         base = (rate - eligibility_threshold if direction == "long"
                 else eligibility_threshold - rate)
         distance = signed_distance(rate, maturity, boundary, direction)
-        multiplier = adjustment.multiplier(distance)
-        final = adjustment.score(base, distance) if eligible else 0.0
+        boundary_multiplier = adjustment.multiplier(distance)
+        boundary_score = adjustment.score(base, distance) if eligible else 0.0
+        maturity_coordinate = preference.coordinate(
+            maturity, minimum, maximum, direction) if eligible else 0.0
+        maturity_multiplier = preference.multiplier(
+            maturity, minimum, maximum, direction) if eligible else 1.0
+        final = boundary_score * maturity_multiplier
         if final > 0:
             scores[symbol] = final
         diagnostics.append({
@@ -141,7 +197,10 @@ def score_contracts(
             "boundary_value": boundary.value(maturity),
             "signed_distance": distance,
             "base_score": max(0.0, base),
-            "relative_multiplier": multiplier,
+            "relative_multiplier": boundary_multiplier,
+            "boundary_adjusted_score": boundary_score,
+            "pure_maturity_coordinate": maturity_coordinate,
+            "pure_maturity_multiplier": maturity_multiplier,
             "final_score": final,
             "target_weight": 0.0,
         })
