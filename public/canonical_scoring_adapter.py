@@ -1,8 +1,8 @@
 """Install the canonical maturity scoring engine into the browser backtest.
 
 The historical backtest module still contains compatibility helper functions used by
-older local scripts.  The deployed worker calls :func:`install`, replacing the
-active score helper with this adapter.  All boundary and pure-maturity score
+older local scripts. The deployed worker calls :func:`install`, replacing the
+active score helper with this adapter. All boundary and pure-maturity score
 calculations therefore come from ``maturity_scoring.py``.
 """
 
@@ -118,7 +118,7 @@ def _maturity_context(candidates, minimum_days):
 
 
 def install(strategy_module, gui_module):
-    """Make the canonical module the only active scoring implementation."""
+    """Make the canonical module the only active deployed scoring implementation."""
     original_positions_for_day = strategy_module.positions_for_day
     original_parameters = gui_module.parameters
 
