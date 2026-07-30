@@ -27,6 +27,20 @@ async function fetchAsset(name) {
   }
   throw new Error(`Could not load ${name}: ${lastError && (lastError.message || lastError)}`);
 }
+function removeLegacyScoringHelpers(bytes) {
+  const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
+  const source = decoder.decode(bytes);
+  const start = source.indexOf("def maturity_line_score(");
+  const end = source.indexOf("def market_diagnostics_for_day(", start);
+  if (start < 0 || end < 0) throw new Error("legacy scoring helper block was not found");
+  const canonical = source.slice(0, start) +
+    "# Legacy maturity scoring helpers removed from the deployed artifact.\n" +
+    "# canonical_scoring_adapter installs the sole production implementation.\n\n" +
+    source.slice(end);
+  runtimeLogs.push(`canonical strategy source: removed ${source.length - canonical.length} legacy characters`);
+  return encoder.encode(canonical);
+}
 async function verifyRuntimeAsset(name, expectedMinimum, expectedType) {
   const response = await fetch(`${PYODIDE_BASE}${name}`, { cache: "no-store" });
   if (!response.ok) throw new Error(`${name} returned HTTP ${response.status}`);
@@ -44,10 +58,10 @@ async function initialize() {
   stage = "starting the Python 3.13 runtime";
   pyodide = await loadPyodide({indexURL: PYODIDE_BASE,stdout: line => runtimeLogs.push(`stdout: ${line}`),stderr: line => runtimeLogs.push(`stderr: ${line}`)});
   pyodide.FS.mkdirTree("/data"); stage = "loading historical market data";
-  // Fetch sequentially: mobile browsers and authenticated Sites can reject a
-  // burst of many simultaneous asset requests with an unhelpful TypeError.
   for (const name of DATA_FILES) {
-    pyodide.FS.writeFile(`/data/${name}`, await fetchAsset(name));
+    let bytes = await fetchAsset(name);
+    if (name === "backtest_silver_lease_strategy.py") bytes = removeLegacyScoringHelpers(bytes);
+    pyodide.FS.writeFile(`/data/${name}`, bytes);
   }
   stage = "building the futures and rate curves";
   await pyodide.runPythonAsync(`
