@@ -8,6 +8,7 @@ This checklist reflects the application synchronized from the deployed Sites che
 - [x] Long and short linear maturity/rate boundaries are available.
 - [x] Boundary distance is normalized, clipped, and applied as a relative score multiplier.
 - [x] Short-side signed distance follows `-lease_rate - line`.
+- [x] The reusable scoring module implements an independent pure-maturity multiplier with shorter-long and longer-short preferences, separate strengths, neutral zero-strength behavior, diagnostics, and regression tests.
 - [x] Per-commodity leg parameters and saved browser strategy presets are available.
 - [x] Day inspection shows portfolio composition by commodity, leg, and contract.
 - [x] Common plots, calendar-year filtering, synchronized date inspection, and explicit plot diagnostics are implemented.
@@ -20,8 +21,8 @@ This checklist reflects the application synchronized from the deployed Sites che
 ## Priority 1 — scoring and attribution correctness
 
 - [ ] Consolidate the legacy root Python engine and the deployed `public/` engine so there is one canonical production implementation.
-- [ ] Add an independent pure-maturity time-advantage multiplier, separate from the lease-rate/maturity boundary multiplier: progressively favor shorter maturities for long positions and longer maturities for short positions; expose independent long and short strength parameters; apply it after the boundary-based multiplier and before score normalization; and include it separately in inspected-day diagnostics and parameter documentation.
-- [ ] Add a complete inspected-day score audit: eligibility threshold, boundary value, signed distance, base timing score, boundary-based relative multiplier, pure-maturity multiplier, final score, caps, and final weight.
+- [ ] Wire the implemented pure-maturity multiplier into the canonical production backtest and GUI: expose independent long and short strength parameters, apply it after the boundary multiplier and before normalization, and show it in inspected-day diagnostics.
+- [ ] Add a complete inspected-day score audit: eligibility threshold, boundary value, signed distance, base timing score, boundary-based relative multiplier, boundary-adjusted score, pure-maturity coordinate and multiplier, final score, caps, and final weight.
 - [ ] Verify the one-trading-day execution shift end to end with explicit regression tests.
 - [ ] Replace residual lease/basis-change attribution with observed-versus-frozen-curve valuation for every held contract.
 - [ ] Add attribution-versus-maturity scatter plots for each commodity and Treasury yield changes.
