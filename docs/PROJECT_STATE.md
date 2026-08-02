@@ -1,6 +1,6 @@
 # Keep & Lease — Project State
 
-_Last updated: 2026-07-28_
+_Last updated: 2026-08-02_
 
 ## Purpose
 
@@ -37,14 +37,15 @@ Build an interactive research and backtesting application for strategies that al
 - [CHANGELOG.md](CHANGELOG.md): durable design decisions.
 - [ROADMAP.md](ROADMAP.md): staged development plan.
 
-## Current implementation priorities
+## Current implementation state
 
-1. Replace separate ad-hoc long/short maturity parameters with the linear-boundary scoring model.
-2. Scale the maturity adjustment relative to the pre-existing score.
-3. Verify the exact short-side sign convention in code and tests.
-4. Move contract details into synchronized day inspection.
-5. Add commodity-wide and Treasury scatter plots.
-6. Add tests for execution delay, eligibility gates, score normalization, and return decomposition.
+1. Registered commodity markets run as independent sleeves through the same engine.
+2. Global settings can be overridden independently for every commodity.
+3. A generic aggregator combines commodity sleeves and an independent cash/Treasury sleeve under the selected rebalancing schedule.
+4. `maturity_scoring.py` is the single formula implementation used by trading and inspected-day diagnostics.
+5. The GUI includes synchronized inspection, score audits, per-commodity and Treasury scatters, hierarchical decomposition, statistics, and versioned parameter sets.
+6. Unavailable or corrupt market archives are isolated and reported only if the user selects the affected commodity.
+7. The pure shorter-long/longer-short maturity multiplier remains explicitly deferred.
 
 ## Source-of-truth policy
 

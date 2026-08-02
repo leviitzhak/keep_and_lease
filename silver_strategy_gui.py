@@ -7,15 +7,18 @@ from dataclasses import replace
 from datetime import date
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from zipfile import BadZipFile
 
 from backtest_silver_lease_strategy import (
     Parameters, build_market, build_proxy_market, build_spot_market,
-    TENORS, asof_rate, read_csv_spot, read_zip_spot, run_backtest)
+    TENORS, asof_rate, positions_for_day, read_csv_spot, read_zip_spot,
+    run_backtest, score_diagnostic)
 
 ROOT = Path(__file__).resolve().parent
 PAGE = ROOT / "silver_strategy_gui.html"
 MARKET = None
 MARKETS = None
+MARKET_LOAD_ERRORS = {}
 
 PRODUCTS = {
     "silver": {"label": "Silver", "archive": None, "prefix": "SI",
@@ -43,15 +46,23 @@ PRODUCTS = {
 
 
 def build_markets(root):
-    markets = {"silver": build_market(root)}
-    markets["gold"] = build_spot_market(
-        root, "gc.zip", "GC", read_zip_spot(root, "gold_price.csv"))
-    markets["oil"] = build_spot_market(
-        root, "cl.zip", "CL",
-        read_csv_spot(root, "DCOILWTICO.csv", "DCOILWTICO"))
-    for key in ("wheat", "corn", "soybeans", "sp500"):
-        spec = PRODUCTS[key]
-        markets[key] = build_proxy_market(root, spec["archive"], spec["prefix"])
+    global MARKET_LOAD_ERRORS
+    markets, MARKET_LOAD_ERRORS = {}, {}
+    builders = {
+        "silver": lambda: build_market(root),
+        "gold": lambda: build_spot_market(
+            root, "gc.zip", "GC", read_zip_spot(root, "gold_price.csv")),
+        "oil": lambda: build_spot_market(
+            root, "cl.zip", "CL",
+            read_csv_spot(root, "DCOILWTICO.csv", "DCOILWTICO")),
+    }
+    for key, spec in PRODUCTS.items():
+        builder = builders.get(key, lambda spec=spec: build_proxy_market(
+            root, spec["archive"], spec["prefix"]))
+        try:
+            markets[key] = builder()
+        except (BadZipFile, FileNotFoundError, OSError, ValueError) as exc:
+            MARKET_LOAD_ERRORS[key] = str(exc)
     return markets
 
 
@@ -66,6 +77,24 @@ def number(payload, name, default, low=None, high=None):
     if high is not None and value > high:
         raise ValueError(f"{name} must be at most {high}")
     return value
+
+
+def product_payload(payload, product):
+    """Overlay product-specific settings on the global configuration.
+
+    API clients may send either ``commodity_parameters: {gold: {...}}`` or
+    flat ``gold__parameter`` keys.  This keeps the engine independent of the
+    current GUI's product list and lets every commodity own its thresholds,
+    scoring curve, caps, and leg switches.
+    """
+    merged = dict(payload)
+    nested = payload.get("commodity_parameters", {})
+    if isinstance(nested, dict) and isinstance(nested.get(product), dict):
+        merged.update(nested[product])
+    prefix = f"{product}__"
+    merged.update({key[len(prefix):]: value for key, value in payload.items()
+                   if key.startswith(prefix)})
+    return merged
 
 
 def parameters(payload):
@@ -97,6 +126,8 @@ def parameters(payload):
         long_maturity_line_slope_per_year=pct(
             "long_maturity_line_slope_per_year",
             payload.get("long_maturity_bonus_per_year", 0.4)),
+        long_relative_strength=number(
+            payload, "long_relative_strength", 1, 0, 100),
         long_maturity_bonus_per_year=pct("long_maturity_bonus_per_year", 0.4),
         long_extreme_qualification_rate=pct(
             "long_extreme_qualification_rate",
@@ -117,6 +148,11 @@ def parameters(payload):
         short_maturity_line_slope_per_year=pct(
             "short_maturity_line_slope_per_year",
             payload.get("short_maturity_bonus_per_year", 0.4)),
+        short_relative_strength=number(
+            payload, "short_relative_strength", 1, 0, 100),
+        score_rate_scale=pct("score_rate_scale", 1),
+        score_adjustment_clip=number(
+            payload, "score_adjustment_clip", 3, 0, 100),
         short_maturity_bonus_per_year=pct("short_maturity_bonus_per_year", 0.4),
         short_extreme_qualification_rate=pct(
             "short_extreme_qualification_rate",
@@ -153,6 +189,8 @@ def parameters(payload):
         raise ValueError("Short entry threshold must exceed its full-allocation rate")
     if p.positive_entry_rate >= p.positive_full_rate:
         raise ValueError("Long entry rate must be below its full-allocation rate")
+    if p.score_rate_scale <= 0:
+        raise ValueError("Score rate scale must be positive")
     return p
 
 
@@ -291,12 +329,34 @@ def treasury_statistics_points(rates, limit=12000):
     return [points[int(i * stride)] for i in range(limit)]
 
 
+def treasury_rate_change_points(rates, limit=12000):
+    """Observed yield changes and zero-coupon duration return by tenor."""
+    points = []
+    labels = {tenor: symbol for tenor, symbol in TENORS}
+    for tenor, observations in rates.items():
+        for (start_day, start_rate), (end_day, end_rate) in zip(
+                observations, observations[1:]):
+            change = end_rate - start_rate
+            points.append({
+                "start_date": start_day.isoformat(),
+                "end_date": end_day.isoformat(),
+                "date": end_day.isoformat(),
+                "symbol": labels.get(tenor, f"{tenor}d"),
+                "days": tenor,
+                "yield_change_pct": 100 * change,
+                "rate_change_return_pct": -100 * tenor / 365 * change,
+            })
+    if len(points) <= limit:
+        return points
+    stride = len(points) / limit
+    return [points[int(i * stride)] for i in range(limit)]
+
+
 def inspection_for_day(payload, requested_day):
     """Return contract curves and the cash yield curve for one inspected day."""
     global MARKETS
     if MARKETS is None:
         MARKETS = {"silver": MARKET}
-    p = parameters(payload)
     selected = date.fromisoformat(requested_day)
     weights = portfolio_allocations(payload)
     result = {"requested_date": requested_day, "commodities": {}}
@@ -304,19 +364,28 @@ def inspection_for_day(payload, requested_day):
     for key in weights:
         if key == "treasury":
             continue
+        p = parameters(product_payload(payload, key))
         market = MARKETS[key]
         available_days = sorted(market[3])
         if not available_days:
             continue
         actual = min(available_days, key=lambda day: abs(day - selected))
         resolved_days.append(actual)
-        contracts = [
-            contract_summary(item)
-            for item in sorted(
-                (item for item in market[3].get(actual, [])
-                 if item["days"] >= p.min_days),
-                key=lambda item: item["days"])
-        ]
+        candidates = [item for item in market[3].get(actual, [])
+                      if item["days"] >= p.min_days]
+        position = positions_for_day(candidates, p) or {}
+        long_weights = position.get("base_longs", {})
+        short_weights = position.get("shorts", {})
+        contracts = []
+        for item in sorted(candidates, key=lambda candidate: candidate["days"]):
+            row = contract_summary(item)
+            row["long_scoring"] = score_diagnostic(
+                item, p, "long", p.positive_entry_rate,
+                long_weights.get(item["symbol"], 0.0))
+            row["short_scoring"] = score_diagnostic(
+                item, p, "short", p.negative_short_start_rate,
+                short_weights.get(item["symbol"], 0.0))
+            contracts.append(row)
         result["commodities"][key] = {
             "label": PRODUCTS[key]["label"],
             "date": actual.isoformat(),
@@ -471,7 +540,7 @@ def outlier_statistics(rows, limit=50):
     return {"median_pct": center, "mad_pct": mad, "count": len(flagged),
             "flagged": flagged[:limit]}
 def sleeve_result(payload, market=None, product="silver"):
-    p = parameters(payload)
+    p = parameters(product_payload(payload, product))
     market = market or MARKET
     rows, missing = run_backtest(*market, p)
     if not rows:
@@ -571,6 +640,17 @@ def sleeve_result(payload, market=None, product="silver"):
         "futures_diagnostics": futures_diagnostics(sampled, market[3], p),
         "statistics_points": statistics_points(market[3], market[1], p),
         "treasury_statistics_points": treasury_statistics_points(market[2]),
+        "treasury_rate_change_points": treasury_rate_change_points(market[2]),
+        "rate_change_attribution_points": [
+            {**point, "commodity": product,
+             "date": point["end_date"],
+             "symbol": point["leg"],
+             "days": point["weighted_maturity"],
+             "rate_change_return_pct": 100 * point["position_relative_return"]}
+            for row in rows
+            for point in row.get("rate_change_attribution_points", [])
+            if not point.get("excluded")
+        ],
         "annual_statistics": annual_statistics(rows),
         "extreme_return_statistics": extreme_return_statistics(rows),
         "outlier_statistics": outlier_statistics(rows),
@@ -610,11 +690,12 @@ def portfolio_allocations(payload):
                        0, 10000)
         if value > 0:
             weights[key] = value
-    if not weights:
-        raise ValueError("At least one commodity proportion must be positive")
     treasury = number(payload, "weight_treasury", 0, 0, 10000)
     if treasury > 0:
         weights["treasury"] = treasury
+    if not weights:
+        raise ValueError(
+            "At least one commodity or Treasury proportion must be positive")
     total = sum(weights.values())
     return {key: value / total for key, value in weights.items()}
 
@@ -727,13 +808,30 @@ def result(payload):
     commodity_weights = {
         key: value for key, value in weights.items() if key != "treasury"
     }
+    unavailable = [key for key in commodity_weights if key not in MARKETS]
+    if unavailable:
+        details = "; ".join(
+            f"{key}: {MARKET_LOAD_ERRORS.get(key, 'market data unavailable')}"
+            for key in unavailable)
+        raise ValueError(
+            "Selected commodity data could not be loaded (" + details +
+            "). Set those proportions to zero or repair the market archive.")
     rebalance = str(payload.get("portfolio_rebalancing", "daily"))
     sleeves = {
         key: sleeve_result(payload, MARKETS[key], key)
         for key in commodity_weights
     }
+    cash_reference = None
+    aggregation_sleeves = sleeves
+    if not sleeves:
+        # A Treasury-only portfolio still needs a calendar and rate-return
+        # series.  Reuse any loaded market's calendar without adding its
+        # commodity return or exposing it as an invested sleeve.
+        reference_key, reference_market = next(iter(MARKETS.items()))
+        cash_reference = sleeve_result(payload, reference_market, reference_key)
+        aggregation_sleeves = {"_cash_reference": cash_reference}
     fields, series, attribution = aggregate_portfolio(
-        sleeves, weights, rebalance)
+        aggregation_sleeves, weights, rebalance)
     if (len(sleeves) == 1 and "silver" in sleeves and rebalance == "daily"
             and "treasury" not in weights):
         # Keep the legacy silver-only response shape without making the
@@ -756,6 +854,11 @@ def result(payload):
         return answer
     for sleeve in sleeves.values():
         sleeve.pop("_full_rows", None)
+    treasury_points = (next(iter(sleeves.values()))["treasury_statistics_points"]
+                       if sleeves else cash_reference["treasury_statistics_points"])
+    treasury_change_points = (
+        next(iter(sleeves.values()))["treasury_rate_change_points"]
+        if sleeves else cash_reference["treasury_rate_change_points"])
     nav_values = [1.0] + [row[fields.index("nav")] for row in series]
     direct_nav_values = [1.0] + [
         1 + row[fields.index("direct_compounded_return_pct")] / 100
@@ -765,8 +868,8 @@ def result(payload):
         "series": series,
         "daily_attribution": attribution,
         "commodity_sleeves": sleeves,
-        "treasury_statistics_points": next(
-            iter(sleeves.values()))["treasury_statistics_points"],
+        "treasury_statistics_points": treasury_points,
+        "treasury_rate_change_points": treasury_change_points,
         "portfolio": {
             "weights": weights, "rebalancing": rebalance,
             "available_products": PRODUCTS,

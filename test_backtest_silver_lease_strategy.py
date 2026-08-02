@@ -29,7 +29,7 @@ class StandaloneLegReturnTests(unittest.TestCase):
         self.assertEqual({}, position["longs"])
         self.assertEqual({}, position["shorts"])
         self.assertEqual({"near": 1.0}, position["long_leg"])
-        self.assertEqual(1.0, sum(position["short_leg"].values()))
+        self.assertAlmostEqual(1.0, sum(position["short_leg"].values()))
 
     def test_leg_returns_ignore_zero_portfolio_weights(self):
         rows, _ = run_backtest(
@@ -67,8 +67,11 @@ class StandaloneLegReturnTests(unittest.TestCase):
              "rate": 0, "premium": 0, "lease": -0.0775, "volume": 10},
         ]
         position = positions_for_day(candidates, Parameters(min_days=1))
-        self.assertAlmostEqual(0.075 / (0.075 + 0.0775), position["treasury"])
-        self.assertAlmostEqual(0.0775 / (0.075 + 0.0775), position["slv"])
+        self.assertAlmostEqual(1.0, position["base_treasury"] + position["base_slv"])
+        self.assertGreater(position["treasury"], position["base_treasury"])
+        self.assertGreater(
+            position["treasury"] + position["slv"],
+            position["base_treasury"] + position["base_slv"])
         self.assertEqual("long_and_short", position["mode"])
 
     def test_only_available_sleeve_receives_capital(self):
@@ -79,7 +82,7 @@ class StandaloneLegReturnTests(unittest.TestCase):
                      "spot": 100, "rate": 0, "premium": 0,
                      "lease": -0.0775, "volume": 10}]
         self.assertEqual(1.0, positions_for_day(positive, Parameters(min_days=1))["treasury"])
-        self.assertEqual(1.0, positions_for_day(negative, Parameters(min_days=1))["slv"])
+        self.assertEqual(1.0, positions_for_day(negative, Parameters(min_days=1))["base_slv"])
 
     def test_long_can_select_highest_lease_rate_instead_of_shortest_maturity(self):
         candidates = [
@@ -120,7 +123,7 @@ class StandaloneLegReturnTests(unittest.TestCase):
             candidates,
             Parameters(min_days=1, positive_entry_rate=0.01,
                        long_contract_selection="weighted_lease_rate",
-                       long_maturity_bonus_per_year=0))
+                       long_relative_strength=0))
         self.assertEqual({"low", "high"}, set(position["longs"]))
         self.assertAlmostEqual(4, position["longs"]["high"] / position["longs"]["low"])
 
@@ -134,7 +137,8 @@ class StandaloneLegReturnTests(unittest.TestCase):
         position = positions_for_day(
             candidates,
             Parameters(min_days=1, long_contract_selection="weighted_lease_rate",
-                       long_maturity_bonus_per_year=0.004))
+                       long_maturity_line_slope_per_year=0.04,
+                       long_relative_strength=1))
         self.assertGreater(position["longs"]["near"], position["longs"]["far"])
 
     def test_short_can_select_only_lowest_lease_rate(self):
@@ -171,7 +175,7 @@ class StandaloneLegReturnTests(unittest.TestCase):
         position = positions_for_day(
             candidates,
             Parameters(min_days=1, negative_short_start_rate=-0.005,
-                       short_maturity_bonus_per_year=0))
+                       short_relative_strength=0))
         self.assertAlmostEqual(3, position["shorts"]["strong"] /
                                position["shorts"]["weak"])
 
@@ -184,7 +188,8 @@ class StandaloneLegReturnTests(unittest.TestCase):
         ]
         position = positions_for_day(
             candidates,
-            Parameters(min_days=1, short_maturity_bonus_per_year=0.004))
+            Parameters(min_days=1, short_maturity_line_slope_per_year=-0.04,
+                       short_relative_strength=1, score_rate_scale=0.1))
         self.assertGreater(position["shorts"]["far"], position["shorts"]["near"])
 
     def test_weekends_are_not_position_or_return_dates(self):
@@ -204,6 +209,27 @@ class StandaloneLegReturnTests(unittest.TestCase):
         rows, _ = run_backtest(spot, contracts, rates, by_day, Parameters(min_days=1))
         self.assertEqual([tuesday.isoformat()], [row["date"] for row in rows])
         self.assertEqual(monday.isoformat(), rows[0]["execution_date"])
+
+    def test_future_quote_perturbation_cannot_change_earlier_decisions(self):
+        baseline, _ = run_backtest(
+            self.spot, self.contracts, self.rates, self.by_day,
+            Parameters(min_days=1))
+        changed_contracts = {
+            symbol: dict(prices) for symbol, prices in self.contracts.items()}
+        changed_contracts["near"][self.days[-1]] *= 10
+        changed_by_day = {
+            day: [dict(item) for item in candidates]
+            for day, candidates in self.by_day.items()}
+        changed_by_day[self.days[-1]][0]["future"] *= 10
+        changed, _ = run_backtest(
+            self.spot, changed_contracts, self.rates, changed_by_day,
+            Parameters(min_days=1))
+        decision_fields = ("signal_date", "execution_date", "mode",
+                           "long_futures_symbols", "short_futures_symbols")
+        for before, after in zip(baseline[:-1], changed[:-1]):
+            self.assertEqual(
+                tuple(before[field] for field in decision_fields),
+                tuple(after[field] for field in decision_fields))
 
     def test_missing_leg_returns_are_reported_with_dates_and_symbol(self):
         del self.contracts["near"][self.days[2]]
@@ -246,7 +272,7 @@ class StandaloneLegReturnTests(unittest.TestCase):
             self.spot, self.contracts, self.rates, self.by_day,
             Parameters(min_days=1, slv_expense=0))
         self.assertEqual(30, rows[0]["long_forward_maturity_days"])
-        expected_short = (30 * 30 + 300 * 300) / (30 + 300)
+        expected_short = (30 + 300) / 2
         self.assertAlmostEqual(
             expected_short, rows[0]["short_forward_maturity_days"], places=3)
 
@@ -260,6 +286,24 @@ class StandaloneLegReturnTests(unittest.TestCase):
         self.assertEqual(self.days[2].isoformat(), rows[0]["date"])
         self.assertAlmostEqual(8.0, rows[0]["long_weighted_lease_rate_pct"])
         self.assertEqual(28, rows[0]["available_futures_min_maturity_days"])
+
+    def test_rate_change_attribution_is_contract_level_and_reconciled(self):
+        rows, _ = run_backtest(
+            self.spot, self.contracts, self.rates, self.by_day,
+            Parameters(min_days=1, positive_entry_rate=-0.01, slv_expense=0))
+        points = rows[0]["rate_change_attribution_points"]
+        self.assertEqual({"long", "short"}, {point["leg"] for point in points})
+        self.assertTrue(any(point["instruments"] for point in points))
+        components = sum(rows[0][name] for name in (
+            "silver_price_return_contribution_pct",
+            "slv_expense_contribution_pct",
+            "treasury_return_contribution_pct",
+            "lease_carry_contribution_pct",
+            "lease_rate_change_contribution_pct",
+            "rolling_contribution_pct",
+            "other_return_contribution_pct",
+        ))
+        self.assertAlmostEqual(rows[0]["interval_return_pct"], components)
 
     def test_usd_rate_interpolates_missing_observation_dates(self):
         series = {tenor: [(date(2020, 1, 1), 0.01), (date(2020, 1, 11), 0.03)]

@@ -32,6 +32,15 @@ Daily portfolio return should be decomposed into at least:
 
 The components must reconcile to total return within a documented numerical tolerance.
 
+Lease/basis repricing uses contract-level observed-versus-frozen-curve valuation.
+For each held contract, the frozen end price retains the start-of-period implied
+lease rate while allowing the observed spot and matched USD rate to move. The
+signed holding times the difference between observed and frozen end values is
+the rate-change contribution. Stored diagnostics retain symbol, signed notional,
+start maturity, rates before/after, both end values, and instrument P&L. Any
+remaining difference is reported explicitly as `other`; it is not relabeled as
+lease-rate change.
+
 ## Futures
 
 Use consistent contract multipliers, currencies, settlement prices, and expiry calendars. Contract rolls must be explicit transactions rather than symbol substitution. Prevent accidental holding beyond the operational close-or-roll deadline.

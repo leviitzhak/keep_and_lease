@@ -103,7 +103,12 @@ def allocate_scores(scores: Mapping[str, float], target: float) -> dict[str, flo
     total = sum(positive.values())
     if total <= 0:
         return {}
-    return {key: target * value / total for key, value in positive.items()}
+    weights = {key: target * value / total for key, value in positive.items()}
+    # Put the unavoidable floating-point remainder on the final instrument so
+    # callers can rely on exact book-target preservation.
+    last = next(reversed(weights))
+    weights[last] += target - sum(weights.values())
+    return weights
 
 
 def score_contracts(

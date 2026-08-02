@@ -66,7 +66,7 @@ class LegAndEntryModeTests(unittest.TestCase):
         self.assertEqual(position["shorts"], {})
         self.assertEqual(position["long_extension"], 0.0)
 
-    def test_allocation_thresholds_do_not_change_relative_long_contract_weights(self):
+    def test_entry_threshold_defines_the_canonical_long_base_score(self):
         candidates = [
             {"symbol": "near", "lease": 0.04, "days": 30, "volume": 100},
             {"symbol": "far", "lease": 0.03, "days": 395, "volume": 100},
@@ -85,8 +85,8 @@ class LegAndEntryModeTests(unittest.TestCase):
                    for k, v in low["base_longs"].items()}
         high_mix = {k: v / sum(high["base_longs"].values())
                     for k, v in high["base_longs"].items()}
-        for symbol in low_mix:
-            self.assertAlmostEqual(low_mix[symbol], high_mix[symbol])
+        self.assertGreater(high_mix["near"], low_mix["near"])
+        self.assertLess(high_mix["far"], low_mix["far"])
 
     def test_maturity_line_rewards_contract_above_line(self):
         candidates = [

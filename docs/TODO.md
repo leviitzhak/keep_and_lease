@@ -19,12 +19,12 @@ This checklist reflects the application synchronized from the deployed Sites che
 
 ## Priority 1 — scoring and attribution correctness
 
-- [ ] Consolidate the legacy root Python engine and the deployed `public/` engine so there is one canonical production implementation.
-- [ ] Add a complete inspected-day score audit: eligibility threshold, boundary value, signed distance, base timing score, relative multiplier, final score, caps, and final weight.
-- [ ] Verify the one-trading-day execution shift end to end with explicit regression tests.
-- [ ] Replace residual lease/basis-change attribution with observed-versus-frozen-curve valuation for every held contract.
-- [ ] Add attribution-versus-maturity scatter plots for each commodity and Treasury yield changes.
-- [ ] Add no-look-ahead tests that perturb future observations.
+- [x] Use the root Python engine as the canonical implementation and copy it into `public/` only through `scripts/prepare-assets.mjs`; scoring itself has one implementation in `maturity_scoring.py`.
+- [x] Add an inspected-day score audit with eligibility, boundary value, signed distance, base score, relative multiplier, final score, and target weight for both sides.
+- [x] Verify the one-trading-day execution shift end to end with explicit regression tests.
+- [x] Replace residual lease/basis-change attribution with observed-versus-frozen-curve valuation for every held contract.
+- [x] Add attribution-versus-maturity scatter plots for each commodity and Treasury yield changes.
+- [x] Add no-look-ahead tests that perturb future observations.
 
 ## Priority 2 — data
 
@@ -35,7 +35,7 @@ This checklist reflects the application synchronized from the deployed Sites che
 
 ## Priority 3 — research and usability
 
-- [ ] Add persistent/versioned strategy presets across devices, beyond browser-local storage.
+- [x] Add schema-versioned current and named strategy presets, including server persistence where available and JSON import/export.
 - [ ] Add scenario comparison between saved strategies.
 - [ ] Add sensitivity surfaces, walk-forward/out-of-sample evaluation, and transaction-cost/liquidity stress tests.
 - [ ] Validate coexistence of short-term long and long-term short books across commodities.
@@ -46,3 +46,7 @@ This checklist reflects the application synchronized from the deployed Sites che
 - [ ] Add GitHub Actions checks for Python tests, the production build, rendered tests, and artifact validation.
 - [ ] Remove obsolete generated worker versions and other duplicated deployment artifacts after confirming the canonical build path.
 - [ ] Keep `CHANGELOG.md`, parameter documentation, data manifest, and this checklist current with every durable behavior change.
+
+## Deferred to the next scoring change
+
+- [ ] Add the separate pure-maturity multiplier favoring shorter long positions and longer short positions. It is intentionally excluded from the multi-commodity implementation PR.

@@ -21,6 +21,12 @@ from dataclasses import replace
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
+from maturity_scoring import (
+    BoundaryAnchors, RelativeAdjustment, adjusted_score, allocate_scores,
+    signed_distance,
+)
+from rate_change_attribution import InstrumentAttribution, build_rate_change_point
+
 MONTHS = dict(zip("FGHJKMNQUVXZ", range(1, 13)))
 TENORS = [(91, "DTB3"), (182, "DTB6"), (365, "DGS1"),
           (730, "DGS2"), (1095, "DGS3"), (1825, "DGS5")]
@@ -45,6 +51,7 @@ class Parameters:
     long_contract_selection: str = "shortest_maturity"
     long_maturity_line_intercept: float = 0.0
     long_maturity_line_slope_per_year: float = 0.004
+    long_relative_strength: float = 1.0
     long_maturity_bonus_per_year: float = 0.004
     long_extreme_qualification_rate: float = 0.08
     long_extreme_maturity_advantage_per_year: float = 0.005
@@ -56,6 +63,9 @@ class Parameters:
     short_contract_selection: str = "weighted_lease_rate"
     short_maturity_line_intercept: float = 0.0
     short_maturity_line_slope_per_year: float = 0.004
+    short_relative_strength: float = 1.0
+    score_rate_scale: float = 0.01
+    score_adjustment_clip: float = 3.0
     short_maturity_bonus_per_year: float = 0.004
     short_extreme_qualification_rate: float = -0.08
     short_extreme_maturity_advantage_per_year: float = 0.005
@@ -400,77 +410,62 @@ def build_market(root):
 
 
 def proportional_allocation(items, total):
-    """Allocate total across ``(key, score)`` items in proportion to score."""
-    if total <= 0 or not items:
-        return {}
-    positive_items = [(key, score) for key, score in items if score > 0]
-    score_sum = sum(score for _, score in positive_items)
-    if score_sum <= 0:
-        return {}
-    return {key: total * score / score_sum for key, score in positive_items}
+    """Compatibility adapter to the canonical score-to-weight converter."""
+    return allocate_scores(dict(items), total)
+
+
+def scoring_boundary(p, direction):
+    """Return the canonical two-anchor boundary in maturity-day units."""
+    intercept = getattr(p, f"{direction}_maturity_line_intercept")
+    slope = getattr(p, f"{direction}_maturity_line_slope_per_year")
+    return BoundaryAnchors.from_slope_intercept(
+        0.0, 365.0, slope / 365.0, intercept)
+
+
+def scoring_adjustment(p, direction):
+    return RelativeAdjustment(
+        strength=getattr(p, f"{direction}_relative_strength"),
+        rate_scale=p.score_rate_scale,
+        clip=p.score_adjustment_clip,
+    )
 
 
 def maturity_line_score(contract, p, direction):
-    """Signed vertical distance from the maturity/absolute-lease line."""
-    years = contract["days"] / 365
-    if direction == "long":
-        line = (p.long_maturity_line_intercept +
-                p.long_maturity_line_slope_per_year * years)
-        return contract["lease"] - line
-    line = (p.short_maturity_line_intercept +
-            p.short_maturity_line_slope_per_year * years)
-    return -contract["lease"] - line
+    """Compatibility adapter returning the canonical signed distance."""
+    return signed_distance(
+        contract["lease"], contract["days"], scoring_boundary(p, direction),
+        direction)
 
 
 def maturity_line_adjusted_score(base_score, contract, p, direction):
-    """Apply the maturity-line distance as a relative change to ``base_score``.
-
-    The signed distance has rate units, whereas ``base_score`` can have a
-    different scale depending on the candidates available that day.  Dividing
-    by the line converts the distance to a dimensionless relative adjustment.
-    A contract exactly on the line keeps its base score; one 20% above the line
-    receives 120% of its base score, and one 20% below receives 80%.
-    """
-    years = contract["days"] / 365
-    if direction == "long":
-        line = (p.long_maturity_line_intercept +
-                p.long_maturity_line_slope_per_year * years)
-    else:
-        line = (p.short_maturity_line_intercept +
-                p.short_maturity_line_slope_per_year * years)
-    if abs(line) <= 1e-12:
-        return base_score
-    relative_addition = maturity_line_score(contract, p, direction) / abs(line)
-    return base_score * (1.0 + relative_addition)
+    """Compatibility adapter to the one canonical relative scoring formula."""
+    return adjusted_score(
+        base_score, contract["lease"], contract["days"],
+        scoring_boundary(p, direction), scoring_adjustment(p, direction),
+        direction)
 
 
-def extreme_maturity_bonus(contract, candidates, p, direction):
-    """Conditional longer-maturity preference at an extreme lease signal.
-
-    A longer contract receives a bonus only when it is close to the configured
-    full-allocation lease boundary *and* improves on every shorter candidate by
-    at least the configured annualized advantage per extra year.
-    """
-    shorter = [x for x in candidates if x["days"] < contract["days"]]
-    if not shorter:
-        return 0.0
-    if direction == "long":
-        if contract["lease"] < p.long_extreme_qualification_rate:
-            return 0.0
-        best_shorter = max(shorter, key=lambda x: x["lease"])
-        extra_years = (contract["days"] - best_shorter["days"]) / 365
-        required = p.long_extreme_maturity_advantage_per_year * extra_years
-        if contract["lease"] - best_shorter["lease"] < required:
-            return 0.0
-        return p.long_extreme_maturity_bonus_per_year * extra_years
-    if contract["lease"] > p.short_extreme_qualification_rate:
-        return 0.0
-    best_shorter = min(shorter, key=lambda x: x["lease"])
-    extra_years = (contract["days"] - best_shorter["days"]) / 365
-    required = p.short_extreme_maturity_advantage_per_year * extra_years
-    if best_shorter["lease"] - contract["lease"] < required:
-        return 0.0
-    return p.short_extreme_maturity_bonus_per_year * extra_years
+def score_diagnostic(contract, p, direction, eligibility_threshold,
+                     target_weight=0.0):
+    """Explain a score using the same canonical primitives used for trading."""
+    rate = contract["lease"]
+    eligible = (rate >= eligibility_threshold if direction == "long"
+                else rate <= eligibility_threshold)
+    base = (rate - eligibility_threshold if direction == "long"
+            else eligibility_threshold - rate)
+    boundary = scoring_boundary(p, direction)
+    adjustment = scoring_adjustment(p, direction)
+    distance = signed_distance(rate, contract["days"], boundary, direction)
+    final = adjustment.score(max(0.0, base), distance) if eligible else 0.0
+    return {
+        "symbol": contract["symbol"], "direction": direction,
+        "maturity_days": contract["days"], "rate_pct": 100 * rate,
+        "boundary_pct": 100 * boundary.value(contract["days"]),
+        "eligible": eligible, "signed_distance_pct": 100 * distance,
+        "base_score": max(0.0, base),
+        "relative_multiplier": adjustment.multiplier(distance),
+        "final_score": final, "target_weight_pct": 100 * target_weight,
+    }
 
 
 def market_diagnostics_for_day(candidates, p):
@@ -554,10 +549,11 @@ def positions_for_day(candidates, p, previous=None):
         select_long = lambda contracts: min(
             contracts, key=lambda x: (x["days"], -x["volume"]))
     if p.long_contract_selection == "weighted_lease_rate":
-        lease_floor = min(x["lease"] for x in eligible)
         long_leg = proportional_allocation([
             (x["symbol"], maturity_line_adjusted_score(
-                max(1e-9, x["lease"] - lease_floor), x, p, "long"))
+                max(1e-9, x["lease"] - min(
+                    candidate["lease"] for candidate in eligible)),
+                x, p, "long"))
             for x in eligible
         ], 1.0)
     else:
@@ -614,10 +610,13 @@ def positions_for_day(candidates, p, previous=None):
     long_notional = (p.max_long_future * positive_strength
                      if p.enable_cash_long_futures_leg else 0.0)
     if long_candidates and p.long_contract_selection == "weighted_lease_rate":
-        lease_floor = min(x["lease"] for x in long_candidates)
+        long_score_threshold = (
+            min(x["lease"] for x in long_candidates) - 1e-9
+            if p.long_futures_entry_mode == "fixed"
+            else p.positive_entry_rate)
         base_longs = proportional_allocation([
             (x["symbol"], maturity_line_adjusted_score(
-                max(1e-9, x["lease"] - lease_floor), x, p, "long"))
+                x["lease"] - long_score_threshold, x, p, "long"))
             for x in long_candidates
         ], long_notional)
     elif selected_positive:
@@ -638,11 +637,14 @@ def positions_for_day(candidates, p, previous=None):
     negative = [x for x in eligible if x["lease"] < short_start_rate]
     short_candidates = (eligible if p.short_futures_entry_mode == "fixed"
                         else negative)
-    short_ceiling = max(x["lease"] for x in short_candidates) if short_candidates else 0.0
+    short_score_threshold = (
+        max(x["lease"] for x in short_candidates) + 1e-9
+        if short_candidates and p.short_futures_entry_mode == "fixed"
+        else short_start_rate)
     for x in short_candidates:
         # A short's lease edge is the magnitude of lease rate minus entry
         # threshold. It is positive because qualifying leases are below entry.
-        base_score = short_ceiling - x["lease"] + 1e-9
+        base_score = max(0.0, short_score_threshold - x["lease"])
         x["short_score"] = maturity_line_adjusted_score(
             base_score, x, p, "short")
     if short_candidates and p.short_contract_selection == "lowest_lease_rate":
@@ -678,16 +680,20 @@ def positions_for_day(candidates, p, previous=None):
     if shorts:
         short_leg = dict(shorts)
     else:
-        short_leg_candidates = []
-        for x in eligible:
-            score = max(0.0, short_start_rate - x["lease"]) + \
-                    p.short_maturity_bonus_per_year * x["days"] / 365
-            short_leg_candidates.append((x["symbol"], score + 1e-9))
         if p.short_contract_selection == "lowest_lease_rate":
             lowest = min(eligible, key=lambda x: (x["lease"], x["days"], -x["volume"]))
             short_leg = {lowest["symbol"]: 1.0}
         else:
-            short_leg = proportional_allocation(short_leg_candidates, 1.0)
+            # The diagnostic portfolio is threshold-independent, but it still
+            # uses the canonical relative scoring pipeline.  Setting the gate
+            # to the highest observed rate makes every available contract
+            # eligible without introducing a separate maturity formula.
+            diagnostic_threshold = max(x["lease"] for x in eligible) + 1e-12
+            short_leg = proportional_allocation([
+                (x["symbol"], maturity_line_adjusted_score(
+                    diagnostic_threshold - x["lease"], x, p, "short"))
+                for x in eligible
+            ], 1.0)
     if shorts:
         bond_days = sum(shorts[s] * contract_map[s]["days"] for s in shorts) / sum(shorts.values())
     elif selected_positive:
@@ -946,8 +952,42 @@ def run_backtest(spot, contracts, rates, by_day, p):
             lease_carry_component += weight * position["contracts"][symbol]["lease"] * elapsed / 365
         for symbol, weight in position["shorts"].items():
             lease_carry_component -= weight * position["contracts"][symbol]["lease"] * elapsed / 365
-        lease_repricing_component = (
-            futures_basis_component - lease_carry_component - roll_component)
+        rate_change_instruments = []
+        for direction, holdings in ((1.0, position["longs"]),
+                                    (-1.0, position["shorts"])):
+            for symbol, weight in holdings.items():
+                start = position["contracts"][symbol]
+                start_price = contracts.get(symbol, {}).get(execution_day)
+                end_price = contracts.get(symbol, {}).get(exit_day)
+                remaining_days = max(0, start["days"] - elapsed)
+                end_rate = usd_rate(rates, exit_day, remaining_days)
+                if not start_price or not end_price or end_rate is None:
+                    continue
+                # Freeze the start lease curve while allowing the observed spot
+                # and USD-rate legs to move.  This mirrors the engine's simple
+                # annualized premium convention: premium=(r-usd_lease)*T.
+                frozen_end_price = spot[exit_day] * (
+                    1 + (end_rate - start["lease"]) * remaining_days / 365)
+                rate_change_instruments.append(InstrumentAttribution(
+                    symbol=symbol,
+                    signed_notional=direction * weight,
+                    start_maturity=start["days"],
+                    observed_end_value=end_price / start_price,
+                    frozen_curve_end_value=frozen_end_price / start_price,
+                    rate_before=start["lease"],
+                    rate_after=(
+                        end_rate - (end_price / spot[exit_day] - 1) *
+                        365 / remaining_days if remaining_days else None),
+                ))
+        rate_change_points = [build_rate_change_point(
+            start_date=execution_day.isoformat(), end_date=exit_day.isoformat(),
+            leg=leg, commodity="commodity", instruments=[
+                item for item in rate_change_instruments
+                if (item.signed_notional > 0) == (leg == "long")],
+            portfolio_value=1.0)
+            for leg in ("long", "short")]
+        lease_repricing_component = sum(
+            point["rate_change_pnl"] for point in rate_change_points)
         attributed = (silver_price_component + slv_expense_component +
                       treasury_component + lease_carry_component +
                       lease_repricing_component + roll_component)
@@ -1062,6 +1102,7 @@ def run_backtest(spot, contracts, rates, by_day, p):
                        "treasury_return_contribution_pct": 100 * treasury_component,
                        "lease_carry_contribution_pct": 100 * lease_carry_component,
                        "lease_rate_change_contribution_pct": 100 * lease_repricing_component,
+                       "rate_change_attribution_points": rate_change_points,
                        "rolling_contribution_pct": 100 * roll_component,
                        "other_return_contribution_pct": 100 * attribution_residual,
                        "long_book_interval_return_pct": 100 * base_long_return,

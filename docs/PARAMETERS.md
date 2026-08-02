@@ -1,6 +1,8 @@
 # Parameters
 
-Parameter names in code may differ initially; this document defines their intended meaning.
+GUI rates and allocations are percentages; `silver_strategy_gui.parameters`
+converts them to decimal engine values. The scoring names below are the
+production parameter names.
 
 ## Global
 
@@ -26,11 +28,11 @@ Parameter names in code may differ initially; this document defines their intend
 
 | Parameter | Meaning |
 |---|---|
-| `long_line_intercept` | Long boundary value at zero maturity. |
-| `long_line_slope` | Long boundary change per year of maturity. |
+| `long_maturity_line_intercept` | Long boundary value at zero maturity. |
+| `long_maturity_line_slope_per_year` | Long boundary change per year of maturity. |
 | `long_relative_strength` | Relative score sensitivity to boundary distance. |
-| `short_line_intercept` | Short boundary value at zero maturity. |
-| `short_line_slope` | Short boundary change per year of maturity. |
+| `short_maturity_line_intercept` | Short boundary value at zero maturity. |
+| `short_maturity_line_slope_per_year` | Short boundary change per year of maturity. |
 | `short_relative_strength` | Relative score sensitivity to boundary distance. |
 | `score_rate_scale` | Rate scale used to make boundary distance dimensionless. |
 | `score_adjustment_clip` | Maximum absolute normalized adjustment. |
@@ -48,6 +50,24 @@ Parameter names in code may differ initially; this document defines their intend
 
 Treasury parameters should mirror commodity parameters where meaningful, replacing lease rate with interest rate. The GUI should support shortest-maturity rolling and weighted allocation across maturities.
 
+Implemented controls are `treasury_asset`, `treasury_allocation_mode`, and
+`bond_mode`. Treasury can be combined with commodities or run as a standalone
+portfolio.
+
+## Per-commodity overrides
+
+Global parameters are defaults for every sleeve. Any parameter can be overridden
+through `commodity_parameters`, for example:
+
+```json
+{"commodity_parameters": {"gold": {"positive_entry_rate": 2.0}}}
+```
+
+Flat keys such as `gold__positive_entry_rate` are also accepted. This avoids a
+product-specific scoring path and applies equally to any registered commodity.
+
 ## GUI requirements
 
-Every parameter must have a label, unit, tooltip, valid range, default, and reset behavior. Saved configurations should be versioned so renamed parameters can be migrated safely.
+Parameter schema version 2 supports automatic restore, named save/load, JSON
+export/import, and reset. The Sites host persists the current set across devices
+when its strategy-parameter endpoint is available.

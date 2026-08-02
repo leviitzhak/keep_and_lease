@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-08-02 — generalized multi-commodity production pipeline
+
+- Fast-forwarded `agent/multi-commodity-preview` to the architectural work in `master`.
+- Made `maturity_scoring.py` the single long/short scoring formula; retained helper names only as compatibility adapters.
+- Added rate-scale/clipping controls and inspected-day long/short score audits.
+- Added global defaults with nested or flat per-commodity overrides.
+- Added an independent Treasury/cash allocation, including Treasury-only portfolios.
+- Added contract-level observed-versus-frozen-curve attribution and commodity/Treasury maturity scatters.
+- Added schema-versioned current and named parameter sets with load, export, import, and reset.
+- Made unavailable or corrupt commodity archives non-fatal unless selected.
+- Kept the pure maturity multiplier explicitly deferred.
+
 ## 2026-07-29
 
 - Limited the active asset selector to silver, gold, Treasuries, and S&P 500.

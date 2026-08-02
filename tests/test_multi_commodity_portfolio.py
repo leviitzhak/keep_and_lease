@@ -133,6 +133,28 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
             self.assertAlmostEqual(
                 row[1], sum(row[7:]), places=11)
 
+    def test_treasury_can_run_as_standalone_portfolio(self):
+        result = gui.result({
+            "weight_silver": 0,
+            "weight_treasury": 100,
+            "min_days": 30,
+        })
+        self.assertEqual(result["portfolio"]["weights"], {"treasury": 1.0})
+        self.assertEqual(result["commodity_sleeves"], {})
+        for row in result["series"]:
+            self.assertAlmostEqual(row[1], row[7], places=11)
+
+    def test_product_specific_parameters_override_global_values(self):
+        payload = gui.product_payload({
+            "positive_entry_rate": 1,
+            "commodity_parameters": {
+                "gold": {"positive_entry_rate": 3},
+            },
+            "gold__max_long_future": 25,
+        }, "gold")
+        self.assertEqual(payload["positive_entry_rate"], 3)
+        self.assertEqual(payload["max_long_future"], 25)
+
     def test_unavailable_market_has_actionable_error(self):
         unavailable = next(
             (key for key in gui.PRODUCTS if key not in self.markets), None)
