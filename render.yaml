@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: keep-and-lease
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    autoDeployTrigger: commit
+    previews:
+      generation: automatic

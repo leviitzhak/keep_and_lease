@@ -3,7 +3,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const repositoryRoot = resolve(projectRoot, "..");
+const parentRoot = resolve(projectRoot, "..");
 const publicDir = join(projectRoot, "public");
 const pyodideDir = join(publicDir, "pyodide");
 
@@ -18,11 +18,19 @@ const repositoryAssets = [
 ];
 
 for (const name of repositoryAssets) {
-  const repositoryPath = join(repositoryRoot, name);
-  try {
-    await access(repositoryPath);
-    await copyFile(repositoryPath, join(publicDir, name));
-  } catch {
+  let copied = false;
+  for (const sourceRoot of [projectRoot, parentRoot]) {
+    const sourcePath = join(sourceRoot, name);
+    try {
+      await access(sourcePath);
+      await copyFile(sourcePath, join(publicDir, name));
+      copied = true;
+      break;
+    } catch {
+      // Try the next supported source layout.
+    }
+  }
+  if (!copied) {
     await access(join(publicDir, name));
   }
 }
