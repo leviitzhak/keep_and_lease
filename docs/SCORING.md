@@ -4,6 +4,8 @@
 
 Rank eligible futures using both economic attractiveness and maturity preference without allowing maturity to override the lease-rate eligibility rules.
 
+The canonical implementation is `public/maturity_scoring.py`. The deployed browser worker installs `public/canonical_scoring_adapter.py`, which routes the historical backtest's active scoring calls through that module. The older helper definitions retained in `backtest_silver_lease_strategy.py` are compatibility code and are not the deployed scoring implementation.
+
 ## Variables
 
 For contract `i` on decision date `t`:
@@ -13,7 +15,8 @@ For contract `i` on decision date `t`:
 - `b_i`: existing/base economic score before maturity adjustment.
 - `L(m_i)`: configured linear boundary in rate–maturity space.
 - `d_i`: signed vertical distance from the boundary.
-- `k`: relative adjustment strength.
+- `k`: boundary-relative adjustment strength.
+- `q`: independent pure-maturity preference strength.
 
 Define the boundary as:
 
@@ -23,7 +26,7 @@ L(m) = intercept + slope * m
 
 The intended geometry links a longer maturity with a larger absolute rate requirement. The exact slope sign therefore depends on whether the plotted quantity is the signed lease rate or its absolute adverse/favorable magnitude.
 
-## Long-side adjustment
+## Long-side boundary adjustment
 
 For a signed lease-rate representation, define:
 
@@ -33,17 +36,17 @@ d_long_i = r_i - L_long(m_i)
 
 A contract above the long boundary has a positive adjustment; one below it has a negative adjustment.
 
-The adjustment must be relative to the existing score, not an unrelated additive quantity. A recommended implementation is:
+The adjustment is relative to the existing score:
 
 ```text
-final_long_i = b_i * (1 + k_long * normalized(d_long_i))
+boundary_long_i = b_i * max(0, 1 + k_long * normalized(d_long_i))
 ```
 
-where `normalized(...)` is dimensionless and bounded or robustly scaled. Examples include division by a configured rate scale, cross-sectional robust scale, or clipping after standardization.
+where `normalized(...)` is dimensionless and bounded or robustly scaled.
 
-## Short-side adjustment
+## Short-side boundary adjustment
 
-The intended short-side signed distance is:
+The short-side signed distance is:
 
 ```text
 d_short_i = -r_i - L_short(m_i)
@@ -51,13 +54,37 @@ d_short_i = -r_i - L_short(m_i)
 
 This follows the project decision that a more negative lease rate should improve the short score while still trading off against maturity.
 
-A recommended relative combination is:
-
 ```text
-final_short_i = b_i * (1 + k_short * normalized(d_short_i))
+boundary_short_i = b_i * max(0, 1 + k_short * normalized(d_short_i))
 ```
 
-The base short score `b_i` should itself be positive for an economically attractive short candidate, for example from the magnitude by which the rate passes the short threshold.
+The base short score `b_i` is positive for an economically attractive short candidate, for example from the magnitude by which the rate passes the short threshold.
+
+## Independent pure-maturity multiplier
+
+The pure-maturity preference is computed only across eligible contracts. Let `m_min` and `m_max` be the shortest and longest eligible maturities. Map each maturity to a coordinate in `[-1, 1]`:
+
+```text
+u_long_i  = (midpoint - m_i) / half_range
+u_short_i = -u_long_i
+```
+
+If there is only one eligible maturity, both coordinates are zero.
+
+The multiplier is:
+
+```text
+M_long_i  = max(0, 1 + q_long  * u_long_i)
+M_short_i = max(0, 1 + q_short * u_short_i)
+```
+
+Thus positive `q_long` favors shorter long contracts, while positive `q_short` favors longer short contracts. Setting either strength to zero exactly preserves the boundary-adjusted ranking.
+
+The final score is:
+
+```text
+final_i = boundary_i * M_i
+```
 
 ## Eligibility gates
 
@@ -68,25 +95,23 @@ long eligible  := r_i >= long_eligibility_threshold
 short eligible := r_i <= short_eligibility_threshold
 ```
 
-An ineligible contract receives no allocation regardless of final score.
+An ineligible contract receives no allocation and does not affect the pure-maturity range.
 
-## Normalization requirements
+## Boundary normalization requirements
 
-The distance `d_i` has rate units, while the multiplier must be dimensionless. The implementation must expose or document the scale. Preferred properties:
+The boundary distance `d_i` has rate units, while its multiplier must be dimensionless. The implementation exposes a rate scale and clipping limit. Preferred properties:
 
 - stable across dates;
 - resistant to one outlier contract;
 - symmetric for equal distances around the boundary;
-- optionally clipped to prevent sign reversal or extreme leverage.
+- clipped to prevent sign reversal or extreme leverage.
 
-One explicit form is:
+The explicit implementation is:
 
 ```text
 z_i = clip(d_i / rate_scale, -z_max, z_max)
-final_i = b_i * max(0, 1 + k * z_i)
+boundary_i = b_i * max(0, 1 + k * z_i)
 ```
-
-The `max(0, ...)` protects against a negative ranking score unless negative scores have a separately defined meaning.
 
 ## Weight conversion
 
@@ -104,21 +129,28 @@ The inspected-day table and hover data should show:
 
 - contract identifier;
 - maturity and rate;
+- eligibility result;
 - boundary value;
 - signed distance;
 - base score;
-- relative multiplier;
+- boundary-relative multiplier;
+- boundary-adjusted score;
+- pure-maturity coordinate;
+- pure-maturity multiplier;
 - final score;
-- eligibility result;
 - final target weight.
 
 ## Tests
 
 At minimum, test that:
 
-1. increasing a long contract's rate while maturity is fixed increases its long adjustment;
-2. making a short contract's rate more negative while maturity is fixed increases its short adjustment;
-3. equal boundary distances produce equal relative multipliers;
-4. ineligible contracts never receive weight;
-5. setting `k = 0` reproduces the base-score ranking;
-6. normalization and clipping behave consistently at extreme values.
+1. increasing a long contract's rate while maturity is fixed increases its boundary adjustment;
+2. making a short contract's rate more negative while maturity is fixed increases its boundary adjustment;
+3. equal boundary distances produce equal boundary-relative multipliers;
+4. ineligible contracts never receive weight or affect the maturity range;
+5. setting boundary strength to zero removes the boundary adjustment;
+6. setting pure-maturity strength to zero preserves the boundary-adjusted ranking;
+7. equal-rate long contracts favor the shorter maturity when `q_long > 0`;
+8. equal-rate short contracts favor the longer maturity when `q_short > 0`;
+9. a single eligible maturity receives a neutral pure-maturity multiplier;
+10. normalization and clipping behave consistently at extreme values.

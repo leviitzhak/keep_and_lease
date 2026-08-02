@@ -1,0 +1,24 @@
+<!doctype html><meta charset="utf-8"><title>Keep and Lease</title>
+<script>
+(async()=>{
+  const response=await fetch('/silver_strategy_gui.html',{cache:'no-store'});
+  if(!response.ok)throw new Error('Could not load strategy GUI: HTTP '+response.status);
+  let html=await response.text();
+  const longControl='<label>Pure maturity strength<input name="long_pure_maturity_strength" type="number" value="0.25" min="0" step="0.05"></label>';
+  const shortControl='<label>Pure maturity strength<input name="short_pure_maturity_strength" type="number" value="0.25" min="0" step="0.05"></label>';
+  html=html.replace('<label>Entry rate (%)<input name="positive_entry_rate"',longControl+'<label>Entry rate (%)<input name="positive_entry_rate"');
+  html=html.replace('<label>Entry rate (%)<input name="negative_short_start_rate"',shortControl+'<label>Entry rate (%)<input name="negative_short_start_rate"');
+  html=html.replace('<div id="dailyMarketCurves"></div>','<div id="dailyMarketCurves"></div><div id="scoreAuditPanel"><h2>Contract score audit</h2><p class="statistics-note">Inspect a day to see eligibility, boundary, pure-maturity and final-weight calculations.</p><div id="scoreAuditTables"></div></div>');
+  html=html.replace('</head>','<style>#scoreAuditPanel{margin-top:16px}.score-audit-wrap{overflow:auto;margin:10px 0 20px}.score-audit-table{border-collapse:collapse;width:100%;font-size:12px}.score-audit-table th,.score-audit-table td{padding:6px 8px;border-bottom:1px solid #e3e7ee;text-align:right;white-space:nowrap}.score-audit-table th:first-child,.score-audit-table td:first-child{text-align:left}.score-audit-title{margin:14px 0 4px;font-size:14px}</style></head>');
+  html=html.replace("long_score_adjustment_clip:'Maximum absolute normalized adjustment.'","long_score_adjustment_clip:'Maximum absolute normalized adjustment.',long_pure_maturity_strength:'Independent rate-free preference strength. Positive values favor shorter long maturities; zero disables this multiplier.'");
+  html=html.replace("short_score_adjustment_clip:'Maximum absolute normalized short-score adjustment.'","short_score_adjustment_clip:'Maximum absolute normalized short-score adjustment.',short_pure_maturity_strength:'Independent rate-free preference strength. Positive values favor longer short maturities; zero disables this multiplier.'");
+  const prelude=`<script>
+  (()=>{const NativeWorker=window.Worker;window.Worker=class extends NativeWorker{set onmessage(fn){super.onmessage=e=>{window.dispatchEvent(new CustomEvent('keep-lease-worker-message',{detail:e.data}));fn(e)}}get onmessage(){return super.onmessage}};
+  const f=(v,d=4)=>v==null?'—':Number(v).toLocaleString(undefined,{maximumFractionDigits:d});
+  const renderRows=(rows)=>'<div class="score-audit-wrap"><table class="score-audit-table"><thead><tr><th>Contract</th><th>Eligible</th><th>Days</th><th>Rate %</th><th>Threshold %</th><th>Boundary %</th><th>Distance %</th><th>Base</th><th>Boundary ×</th><th>Boundary score</th><th>Maturity coordinate</th><th>Maturity ×</th><th>Final score</th><th>Weight %</th></tr></thead><tbody>'+rows.map(r=>'<tr><td>'+r.symbol+'</td><td>'+(r.eligible?'Yes':'No')+'</td><td>'+f(r.maturity,0)+'</td><td>'+f(100*r.rate)+'</td><td>'+f(100*r.eligibility_threshold)+'</td><td>'+f(100*r.boundary_value)+'</td><td>'+f(100*r.signed_distance)+'</td><td>'+f(r.base_score,6)+'</td><td>'+f(r.relative_multiplier)+'</td><td>'+f(r.boundary_adjusted_score,6)+'</td><td>'+f(r.pure_maturity_coordinate)+'</td><td>'+f(r.pure_maturity_multiplier)+'</td><td>'+f(r.final_score,6)+'</td><td>'+f(100*r.final_weight)+'</td></tr>').join('')+'</tbody></table></div>';
+  addEventListener('keep-lease-worker-message',e=>{const data=e.detail;if(!data||!data.result?.commodities)return;const root=document.getElementById('scoreAuditTables');if(!root)return;root.innerHTML=Object.values(data.result.commodities).map(c=>'<h3 class="score-audit-title">'+c.label+' · Long</h3>'+renderRows(c.score_audit?.long||[])+'<h3 class="score-audit-title">'+c.label+' · Short</h3>'+renderRows(c.score_audit?.short||[])).join('')});})();
+  <\/script>`;
+  html=html.replace('<script>\nconst $=',prelude+'<script>\nconst $=');
+  document.open();document.write(html);document.close();
+})().catch(error=>{document.body.innerHTML='<pre style="white-space:pre-wrap;color:#b42318">'+error.stack+'</pre>'});
+</script>

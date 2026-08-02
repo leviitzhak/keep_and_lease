@@ -8,6 +8,11 @@ This checklist reflects the application synchronized from the deployed Sites che
 - [x] Long and short linear maturity/rate boundaries are available.
 - [x] Boundary distance is normalized, clipped, and applied as a relative score multiplier.
 - [x] Short-side signed distance follows `-lease_rate - line`.
+- [x] The reusable scoring module implements an independent pure-maturity multiplier with shorter-long and longer-short preferences, separate strengths, neutral zero-strength behavior, diagnostics, and regression tests.
+- [x] The deployed browser worker installs the canonical scoring adapter, so active boundary and pure-maturity calculations run through `public/maturity_scoring.py`.
+- [x] The deployed worker removes the inactive legacy scoring-helper block from the Python source before import. The historical root source retains the old definitions only for backward compatibility with external local scripts.
+- [x] Visible pure-maturity long and short strength controls are persisted independently per commodity through profiles, presets, and saved parameters.
+- [x] Inspected-day score audit shows eligibility threshold, maturity floor, boundary value, signed distance, base score, boundary multiplier and score, pure-maturity coordinate and multiplier, final score, cap, and normalized final weight.
 - [x] Per-commodity leg parameters and saved browser strategy presets are available.
 - [x] Day inspection shows portfolio composition by commodity, leg, and contract.
 - [x] Common plots, calendar-year filtering, synchronized date inspection, and explicit plot diagnostics are implemented.
@@ -19,8 +24,6 @@ This checklist reflects the application synchronized from the deployed Sites che
 
 ## Priority 1 — scoring and attribution correctness
 
-- [ ] Consolidate the legacy root Python engine and the deployed `public/` engine so there is one canonical production implementation.
-- [ ] Add a complete inspected-day score audit: eligibility threshold, boundary value, signed distance, base timing score, relative multiplier, final score, caps, and final weight.
 - [ ] Verify the one-trading-day execution shift end to end with explicit regression tests.
 - [ ] Replace residual lease/basis-change attribution with observed-versus-frozen-curve valuation for every held contract.
 - [ ] Add attribution-versus-maturity scatter plots for each commodity and Treasury yield changes.
