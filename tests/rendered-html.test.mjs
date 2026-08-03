@@ -138,8 +138,23 @@ test("loads authenticated market assets sequentially with retries", async () => 
     new URL("../public/backtest-worker-v12.js", import.meta.url),
     "utf8",
   );
-  assert.match(worker, /for \(const name of DATA_FILES\)/);
+  assert.match(worker, /index < DATA_FILES\.length/);
   assert.match(worker, /credentials: "same-origin"/);
   assert.match(worker, /Could not load \$\{name\}/);
   assert.doesNotMatch(worker, /Promise\.all\(DATA_FILES/);
+});
+
+test("displays the application version and deployed commit", async () => {
+  const html = await readFile(
+    new URL("../public/silver_strategy_gui.html", import.meta.url),
+    "utf8",
+  );
+  const buildInfo = JSON.parse(await readFile(
+    new URL("../public/build-info.json", import.meta.url),
+    "utf8",
+  ));
+  assert.match(html, /fetch\('\/build-info\.json'/);
+  assert.match(html, /Version 1\.1/);
+  assert.equal(buildInfo.version, "1.1");
+  assert.match(buildInfo.commit, /^(?:[0-9a-f]{40}|unknown)$/);
 });

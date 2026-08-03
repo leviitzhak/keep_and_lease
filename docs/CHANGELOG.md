@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1
+
+- Display the branch version and exact deployed commit in the GUI header.
+- Generate `build-info.json` during deployment so preview freshness is directly verifiable.
+
 ## 2026-08-02 — generalized multi-commodity production pipeline
 
 - Fast-forwarded `agent/multi-commodity-preview` to the architectural work in `master`.

@@ -1,5 +1,9 @@
 # Keep & Lease Documentation
 
+The GUI displays an application version and deployed commit. Versions follow
+the branch lineage: the main line is `1`, a branch from it is `1.1`, and a
+branch from `1.1` is `1.1.1`. Commits within a branch do not change its version.
+
 Start with [PROJECT_STATE.md](PROJECT_STATE.md).
 
 ## Documents

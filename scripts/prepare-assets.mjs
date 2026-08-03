@@ -1,4 +1,5 @@
-import { access, copyFile, mkdir } from "node:fs/promises";
+import { access, copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -8,6 +9,27 @@ const publicDir = join(projectRoot, "public");
 const pyodideDir = join(publicDir, "pyodide");
 
 await mkdir(pyodideDir, { recursive: true });
+
+const version = (await readFile(join(projectRoot, "VERSION"), "utf8")).trim();
+let commit = process.env.RENDER_GIT_COMMIT
+  || process.env.VERCEL_GIT_COMMIT_SHA
+  || process.env.GITHUB_SHA
+  || "unknown";
+if (commit === "unknown") {
+  try {
+    commit = execFileSync("git", ["rev-parse", "HEAD"], {
+      cwd: projectRoot,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+  } catch {
+    // Source archives may not contain Git metadata.
+  }
+}
+await writeFile(
+  join(publicDir, "build-info.json"),
+  `${JSON.stringify({ version, commit }, null, 2)}\n`,
+);
 
 const repositoryAssets = [
   "gold_silver.zip", "si.zip", "gc.zip", "cl.zip", "w.zip", "c.zip",
