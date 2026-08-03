@@ -46,6 +46,7 @@ PRODUCTS = {
 
 
 def build_markets(root):
+    import time
     global MARKET_LOAD_ERRORS
     markets, MARKET_LOAD_ERRORS = {}, {}
     builders = {
@@ -59,10 +60,20 @@ def build_markets(root):
     for key, spec in PRODUCTS.items():
         builder = builders.get(key, lambda spec=spec: build_proxy_market(
             root, spec["archive"], spec["prefix"]))
+        started = time.monotonic()
+        print(f"Building {key} market…", flush=True)
         try:
             markets[key] = builder()
+            print(
+                f"Built {key} market in {time.monotonic() - started:.1f}s",
+                flush=True,
+            )
         except (BadZipFile, FileNotFoundError, OSError, ValueError) as exc:
             MARKET_LOAD_ERRORS[key] = str(exc)
+            print(
+                f"Skipped {key} market after {time.monotonic() - started:.1f}s: {exc}",
+                flush=True,
+            )
     return markets
 
 
