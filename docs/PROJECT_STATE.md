@@ -1,6 +1,6 @@
 # Keep & Lease — Project State
 
-_Last updated: 2026-08-02_
+_Last updated: 2026-08-09_
 
 ## Purpose
 
@@ -36,6 +36,8 @@ Build an interactive research and backtesting application for strategies that al
 - [TODO.md](TODO.md): prioritized implementation work.
 - [CHANGELOG.md](CHANGELOG.md): durable design decisions.
 - [ROADMAP.md](ROADMAP.md): staged development plan.
+- [DEPLOYMENT_ARCHITECTURE.md](DEPLOYMENT_ARCHITECTURE.md): current implementation pointer, planned server-computation API, and hosting design.
+- [CURRENT_WORK.md](CURRENT_WORK.md): single updatable pointer to the active unmerged change set.
 
 ## Current implementation state
 
@@ -46,6 +48,13 @@ Build an interactive research and backtesting application for strategies that al
 5. The GUI includes synchronized inspection, score audits, per-commodity and Treasury scatters, hierarchical decomposition, statistics, and versioned parameter sets.
 6. Unavailable or corrupt market archives are isolated and reported only if the user selects the affected commodity.
 7. The pure shorter-long/longer-short maturity multiplier remains explicitly deferred.
+
+## Active review and planned architecture
+
+- [CURRENT_WORK.md](CURRENT_WORK.md) is the maintained pointer to the current unmerged implementation and completion scope.
+- The exact preview revision is the version and commit displayed by the deployed GUI.
+- The next architectural direction is to send parameters from the browser to a server-side CPython job runner and return progress and result JSON. See [DEPLOYMENT_ARCHITECTURE.md](DEPLOYMENT_ARCHITECTURE.md).
+- The two-host AWS prototype now has a plan-first setup runbook and Terraform foundation in [AWS_SETUP.md](AWS_SETUP.md); it must not be treated as production-ready until the listed application, authentication, role-splitting, and deployment tasks are complete.
 
 ## Source-of-truth policy
 

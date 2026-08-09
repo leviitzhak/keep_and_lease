@@ -1,0 +1,9 @@
+output "production_ip" { value = aws_eip.production.public_ip }
+output "preview_ip" { value = var.retain_preview_elastic_ip ? aws_eip.preview[0].public_ip : aws_instance.preview.public_ip }
+output "production_instance_id" { value = aws_instance.production.id }
+output "preview_instance_id" { value = aws_instance.preview.id }
+output "github_production_role_arn" { value = aws_iam_role.github_production.arn }
+output "github_preview_role_arn" { value = aws_iam_role.github_preview.arn }
+output "production_ecr" { value = aws_ecr_repository.production.repository_url }
+output "preview_ecr" { value = aws_ecr_repository.preview.repository_url }
+output "preview_activity_parameter" { value = aws_ssm_parameter.preview_activity.name }

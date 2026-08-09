@@ -39,6 +39,10 @@
 
 ## Phase 5 — operationalization
 
+- Move the default calculation path from browser Pyodide to a versioned server-side asynchronous backtest API.
+- Preserve progress logs, result provenance, cancellation, resource limits, and identical-result caching.
+- Validate CPython/Pyodide equivalence before retiring the browser fallback.
+- Benchmark a two-instance AWS option: normally available production plus a shared, automatically stopped PR-preview host.
 - Separate research signals from broker execution interfaces.
 - Add dry-run and paper-trading modes.
 - Add risk limits, order reconciliation, and monitoring.

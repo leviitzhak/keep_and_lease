@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-08-09 — AWS setup automation and scale-out path
+
+- Added a plan-first Terraform foundation for VPC, production/preview EC2, ECR,
+  Systems Manager, repository-scoped GitHub OIDC, and scheduled preview idle stop.
+- Added bootstrap, infrastructure lifecycle, and preview-activity scripts plus a
+  security/operations runbook that distinguishes automated infrastructure from the
+  server API, authentication, container, and deployment work still required.
+- Documented a managed ECS/SQS/S3/DynamoDB scale-out alternative and the additional
+  durability, idempotency, autoscaling, observability, and migration work it needs.
+
+## 2026-08-03 — server-computation and deployment plan
+
+- Added `CURRENT_WORK.md` as the single updatable pointer to the active unmerged branch, PR, version, and completion scope; the GUI version and commit remain the authority for the deployed revision.
+- Planned migration from browser-side Pyodide calculation to a versioned asynchronous server-side CPython API with progress, provenance, limits, caching, and equivalence testing.
+- Clarified that server-side CPython is ordinary direct execution of the repository's Python files, contrasted with Pyodide's browser/WebAssembly port.
+- Documented a two-EC2 option with an available production service and a shared PR-preview host that starts on deployment and stops after verified inactivity.
+- Recorded the billing and wake-up caveats: stopped EC2 compute is not charged, persistent resources still are, and a stopped server requires an external component to start it.
+- Added an indicative fixed infrastructure estimate and separated it from production and preview compute usage.
+
 ## 1.1
 
 - Display the branch version and exact deployed commit in the GUI header.

@@ -43,6 +43,15 @@ This checklist reflects the application synchronized from the deployed Sites che
 
 ## Engineering
 
+- [ ] Define and implement the versioned browser-parameters/server-result API described in `DEPLOYMENT_ARCHITECTURE.md`.
+- [ ] Add an asynchronous backtest job runner with progress, cancellation, concurrency limits, and result provenance.
+- [ ] Add CPython-versus-Pyodide equivalence fixtures and retain Pyodide as a temporary fallback.
+- [ ] Measure warm/cold duration, peak memory, and result size before selecting server capacity.
+- [ ] Prototype production and shared PR-preview deployment, including PR-triggered start/deploy and idle preview shutdown.
+- [x] Add a plan-first Terraform foundation and AWS operator runbook for the two-host prototype.
+- [x] Split GitHub OIDC permissions into master-only production and PR-only preview roles.
+- [ ] Implement the Docker image, asynchronous server API, durable activity/job reconciliation, HTTPS/authentication, and GitHub deployment workflows required by `AWS_SETUP.md`.
+- [ ] If measured concurrency outgrows two EC2 hosts, implement the ECS/SQS/S3 durable scale-out design and load-test its retry/idempotency behavior.
 - [ ] Add GitHub Actions checks for Python tests, the production build, rendered tests, and artifact validation.
 - [ ] Remove obsolete generated worker versions and other duplicated deployment artifacts after confirming the canonical build path.
 - [ ] Keep `CHANGELOG.md`, parameter documentation, data manifest, and this checklist current with every durable behavior change.

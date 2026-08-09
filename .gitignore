@@ -62,3 +62,11 @@ next-env.d.ts
 /public/DTB6.csv
 /public/backtest_silver_lease_strategy.py
 /public/silver_strategy_gui.py
+
+# AWS/Terraform local state and credentials-bearing configuration.
+/infra/aws/.terraform/
+/infra/aws/backend.hcl
+/infra/aws/terraform.tfvars
+/infra/aws/tfplan
+/infra/aws/*.tfstate*
+**/__pycache__/
