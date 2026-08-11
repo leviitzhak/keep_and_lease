@@ -1,6 +1,6 @@
 # Keep and Lease web GUI
 
-This directory contains the hosted browser version of the silver lease strategy
+This repository contains the hosted browser version of the silver lease strategy
 GUI. It runs the repository's existing Python backtest in a Web Worker using
 Pyodide, so changing parameters and rerunning the strategy does not require a
 separate Python server.
@@ -12,7 +12,7 @@ separate Python server.
 
 ## Run locally
 
-From this `web` directory:
+From the repository root:
 
 ```bash
 npm ci
@@ -37,6 +37,6 @@ The hosting manifest connects this checkout to the deployed ChatGPT Site at
 
 - `app/page.tsx` embeds the strategy interface.
 - `public/silver_strategy_gui.html` contains the controls and charts.
-- `public/backtest-worker-v9.js` initializes Pyodide 0.29.4 / Python 3.13 and
+- `public/backtest-worker-v12.js` initializes Pyodide 0.29.4 / Python 3.13 and
   executes the existing Python strategy.
 - `scripts/prepare-assets.mjs` prepares generated runtime and data assets.

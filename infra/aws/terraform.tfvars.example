@@ -2,7 +2,7 @@ aws_region               = "eu-west-1"
 github_owner              = "leviitzhak"
 github_repository         = "keep_and_lease"
 production_instance_type = "t4g.small"
+production_instance_state = "stopped"
 preview_instance_type    = "t4g.small"
 preview_idle_minutes      = 60
 retain_preview_elastic_ip = false
-

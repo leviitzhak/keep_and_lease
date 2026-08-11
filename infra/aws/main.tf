@@ -91,6 +91,10 @@ resource "aws_instance" "production" {
   metadata_options { http_tokens = "required" }
   tags = { Name = "${var.project_name}-production", Environment = "production" }
 }
+resource "aws_ec2_instance_state" "production" {
+  instance_id = aws_instance.production.id
+  state       = var.production_instance_state
+}
 resource "aws_instance" "preview" {
   ami                    = data.aws_ami.al2023_arm.id
   instance_type          = var.preview_instance_type
@@ -117,4 +121,3 @@ resource "aws_ssm_parameter" "preview_activity" { name = local.activity_paramete
   type = "String"
   value = "0:0"
   lifecycle { ignore_changes = [value] } }
-

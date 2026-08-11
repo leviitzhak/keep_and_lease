@@ -23,6 +23,11 @@ AWS Systems Manager, so port 22 and SSH keys are unnecessary. Production has an
 Elastic IP. A preview Elastic IP is optional because retaining it while stopped is
 billable.
 
+Production is provisioned but has Terraform desired state `stopped` by default.
+The first apply may run it briefly while EC2 initializes it. Its disk, identity,
+and network resources remain available for later activation without ongoing EC2
+compute charges while stopped.
+
 ## Credentials and prerequisites
 
 Install AWS CLI v2, Terraform 1.7+, Git, and Docker locally. Create or select an AWS
@@ -62,7 +67,8 @@ cp infra/aws/terraform.tfvars.example infra/aws/terraform.tfvars
 ```
 
 Set `github_owner`, repository, instance types, idle interval, and whether the
-preview Elastic IP is retained. The default `t4g.small` choice is provisional;
+preview Elastic IP is retained. Leave `production_instance_state = "stopped"`
+until the production service is ready. The default `t4g.small` choice is provisional;
 benchmark the completed server engine before production. If a dependency lacks
 ARM64 support, change the AMI selection and instance types together before apply.
 
@@ -94,12 +100,18 @@ The configuration creates:
 - a five-minute EventBridge check and Lambda idle-stop function;
 - a fixed production IP and optionally a fixed preview IP.
 
+Terraform then enforces the configured production desired state, which defaults to
+`stopped`. A stopped instance still incurs EBS and retained public-IPv4 charges.
+
 Apply is repeatable. Terraform will show changes before making them. Do not run
 `destroy` casually; the wrapper requires an explicit project-name confirmation.
 
 ## 4. Verify host access and bootstrap
 
-Wait until the instances appear as managed nodes in Systems Manager, then use:
+The production host must be running before it can appear as a managed Systems
+Manager node. When production setup is ready, set
+`production_instance_state = "running"`, review the Terraform plan, and apply it.
+Then use:
 
 ```bash
 aws --profile keep-lease-admin --region eu-west-1 ssm start-session \
@@ -173,8 +185,10 @@ PR deployment can wake the server with `StartInstances`; a reviewer request cann
 reach a fully stopped server, so optional browser-triggered waking requires a small
 always-on API Gateway/Lambda endpoint with authentication and rate limits.
 
-Production is intentionally not auto-stopped. Stopping it would make the normal URL
-unavailable and invalidate in-memory jobs/caches.
+Production is not governed by the preview idle-stop Lambda. Its Terraform desired
+state is deliberately `stopped` for now; later switching that value to `running`
+keeps it available until an operator changes the desired state again. Stopping it
+makes the normal URL unavailable and invalidates in-memory jobs/caches.
 
 ## 8. Security and operational checklist
 

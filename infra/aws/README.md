@@ -17,3 +17,6 @@ uses OIDC and short-lived role credentials.
 Copy `terraform.tfvars.example` to an untracked `terraform.tfvars` and set the
 GitHub repository and capacity choices before applying.
 
+Production is created with desired state `stopped` by default. The first apply may
+briefly start it while EC2 performs initial provisioning. Set
+`production_instance_state = "running"` only when production deployment is ready.

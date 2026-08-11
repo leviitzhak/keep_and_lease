@@ -98,7 +98,7 @@ Two Amazon EC2 instances can support this project:
 
 | Instance | Purpose | Recommended availability |
 |---|---|---|
-| Production | Stable GUI/API and production backtests | Normally always running; stopping it creates downtime |
+| Production | Stable GUI/API and production backtests | Provisioned but stopped for now; normally always running after launch |
 | Preview | Shared host for a small number of PR deployments | Start on demand; stop automatically after inactivity |
 
 The preview instance can run one isolated container per open PR. A reverse proxy

@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-08-11 — legacy cleanup and stopped production default
+
+- Removed the obsolete duplicate `web/` tree, PR #15 standalone preview files,
+  and superseded browser workers v9–v11; v12 remains the canonical worker.
+- Made the provisioned production EC2 instance default to Terraform desired state
+  `stopped` until production deployment is explicitly activated.
+- Updated the root README and AWS runbook to match the canonical source layout and
+  production lifecycle.
+
 ## 2026-08-09 — AWS setup automation and scale-out path
 
 - Added a plan-first Terraform foundation for VPC, production/preview EC2, ECR,
