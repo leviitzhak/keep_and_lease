@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-08-13 — server-side computation API foundation (1.2)
+
+- Added a versioned, asynchronous CPython API that queues canonical engine runs,
+  reports progress and provenance, caches identical completed requests, enforces
+  request/result limits, supports cancellation requests, and returns the existing
+  result object unchanged.
+- Added the existing inspected-day operation to the API without duplicating its
+  calculation logic.
+- Added a server-first v13 browser adapter with explicit `server`, `pyodide`, and
+  automatic modes; the unchanged v12 Pyodide worker remains the fallback.
+- Added a Docker image, Render service definition, CORS/configuration support, API
+  tests, and updated architecture/current-state documentation.
+
 ## 2026-08-11 — legacy cleanup and stopped production default
 
 - Removed the obsolete duplicate `web/` tree, PR #15 standalone preview files,

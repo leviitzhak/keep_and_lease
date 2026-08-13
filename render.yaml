@@ -10,3 +10,22 @@ services:
     autoDeployTrigger: commit
     previews:
       generation: automatic
+    envVars:
+      - key: KEEP_AND_LEASE_COMPUTE_API_URL
+        value: https://keep-and-lease-api.onrender.com
+
+  - type: web
+    name: keep-and-lease-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile.api
+    healthCheckPath: /api/v1/health
+    autoDeployTrigger: commit
+    previews:
+      generation: automatic
+    envVars:
+      - key: KEEP_AND_LEASE_ALLOWED_ORIGINS
+        value: https://keep-and-lease.onrender.com,https://keep-and-lease.itzhakb.chatgpt.site
+      - key: KEEP_AND_LEASE_ALLOWED_ORIGIN_REGEX
+        value: https://keep-and-lease(?:-pr-[0-9]+)?\.onrender\.com

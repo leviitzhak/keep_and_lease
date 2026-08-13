@@ -1,9 +1,10 @@
 # Keep and Lease web GUI
 
-This repository contains the hosted browser version of the silver lease strategy
-GUI. It runs the repository's existing Python backtest in a Web Worker using
-Pyodide, so changing parameters and rerunning the strategy does not require a
-separate Python server.
+This repository contains the hosted browser version of the Keep & Lease strategy
+GUI. Its default calculation adapter uses the versioned server-side CPython API
+when configured and automatically retains the existing Pyodide Web Worker as a
+browser fallback. Both paths call the same Python modules and return the same
+result object.
 
 ## Requirements
 
@@ -39,4 +40,18 @@ The hosting manifest connects this checkout to the deployed ChatGPT Site at
 - `public/silver_strategy_gui.html` contains the controls and charts.
 - `public/backtest-worker-v12.js` initializes Pyodide 0.29.4 / Python 3.13 and
   executes the existing Python strategy.
+- `public/backtest-worker-v13.js` preserves the worker protocol while routing
+  calculations to the server API, with v12 as the fallback.
+- `server/` implements the queued `/api/v1` computation API.
+
+## Run the computation API locally
+
+```bash
+python -m pip install -r requirements.txt
+python server_main.py
+```
+
+Set `KEEP_AND_LEASE_COMPUTE_API_URL=http://localhost:8000` before building the
+GUI. Add `?engine=pyodide` to the GUI URL to explicitly use the preserved browser
+engine, or `?engine=server` to require the API without fallback.
 - `scripts/prepare-assets.mjs` prepares generated runtime and data assets.

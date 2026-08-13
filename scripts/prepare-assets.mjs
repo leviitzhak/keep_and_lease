@@ -30,6 +30,12 @@ await writeFile(
   join(publicDir, "build-info.json"),
   `${JSON.stringify({ version, commit }, null, 2)}\n`,
 );
+await writeFile(
+  join(publicDir, "compute-config.json"),
+  `${JSON.stringify({
+    apiBaseUrl: process.env.KEEP_AND_LEASE_COMPUTE_API_URL || "",
+  }, null, 2)}\n`,
+);
 
 const repositoryAssets = [
   "gold_silver.zip", "si.zip", "gc.zip", "cl.zip", "w.zip", "c.zip",
@@ -69,4 +75,4 @@ for (const name of runtimeAssets) {
   );
 }
 
-console.log("Prepared market data, Python strategy, and Pyodide runtime assets.");
+console.log("Prepared market data, Python strategy, computation config, and Pyodide runtime assets.");

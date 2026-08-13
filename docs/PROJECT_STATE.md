@@ -1,6 +1,6 @@
 # Keep & Lease — Project State
 
-_Last updated: 2026-08-09_
+_Last updated: 2026-08-13_
 
 ## Purpose
 
@@ -48,12 +48,18 @@ Build an interactive research and backtesting application for strategies that al
 5. The GUI includes synchronized inspection, score audits, per-commodity and Treasury scatters, hierarchical decomposition, statistics, and versioned parameter sets.
 6. Unavailable or corrupt market archives are isolated and reported only if the user selects the affected commodity.
 7. The pure shorter-long/longer-short maturity multiplier remains explicitly deferred.
+8. A queued `/api/v1` CPython service now calls the same canonical Python engine,
+   while the GUI's v13 adapter preserves the v12 Pyodide worker as an explicit or
+   automatic fallback.
 
 ## Active review and planned architecture
 
 - [CURRENT_WORK.md](CURRENT_WORK.md) is the maintained pointer to the current unmerged implementation and completion scope.
 - The exact preview revision is the version and commit displayed by the deployed GUI.
-- The next architectural direction is to send parameters from the browser to a server-side CPython job runner and return progress and result JSON. See [DEPLOYMENT_ARCHITECTURE.md](DEPLOYMENT_ARCHITECTURE.md).
+- The first server-computation implementation sends the existing parameter JSON
+  to a CPython job runner and returns the unchanged result JSON. Deployment and
+  equivalence benchmarking remain before it becomes the accepted production path.
+  See [DEPLOYMENT_ARCHITECTURE.md](DEPLOYMENT_ARCHITECTURE.md).
 - The two-host AWS prototype now has a plan-first setup runbook and Terraform foundation in [AWS_SETUP.md](AWS_SETUP.md); it must not be treated as production-ready until the listed application, authentication, role-splitting, and deployment tasks are complete.
 
 ## Source-of-truth policy

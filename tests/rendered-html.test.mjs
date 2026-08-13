@@ -144,6 +144,23 @@ test("loads authenticated market assets sequentially with retries", async () => 
   assert.doesNotMatch(worker, /Promise\.all\(DATA_FILES/);
 });
 
+test("uses the server adapter while preserving the Pyodide worker fallback", async () => {
+  const html = await readFile(
+    new URL("../public/silver_strategy_gui.html", import.meta.url),
+    "utf8",
+  );
+  const adapter = await readFile(
+    new URL("../public/backtest-worker-v13.js", import.meta.url),
+    "utf8",
+  );
+  assert.match(html, /backtest-worker-v13\.js/);
+  assert.match(adapter, /\/api\/v1\/backtests/);
+  assert.match(adapter, /\/api\/v1\/inspections/);
+  assert.match(adapter, /new Worker\("\/backtest-worker-v12\.js/);
+  assert.match(adapter, /requestedEngine === "pyodide"/);
+  assert.match(adapter, /requestedEngine === "server"/);
+});
+
 test("displays the application version and deployed commit", async () => {
   const html = await readFile(
     new URL("../public/silver_strategy_gui.html", import.meta.url),
@@ -154,7 +171,7 @@ test("displays the application version and deployed commit", async () => {
     "utf8",
   ));
   assert.match(html, /fetch\('\/build-info\.json'/);
-  assert.match(html, /Version 1\.1/);
-  assert.equal(buildInfo.version, "1.1");
+  assert.match(html, /Version 1\.2/);
+  assert.equal(buildInfo.version, "1.2");
   assert.match(buildInfo.commit, /^(?:[0-9a-f]{40}|unknown)$/);
 });

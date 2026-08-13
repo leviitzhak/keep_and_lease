@@ -9,7 +9,7 @@ branch._
 - Status: in review and planned for completion before merge
 - Pull request: [PR #22 — Complete generalized multi-commodity implementation](https://github.com/leviitzhak/keep_and_lease/pull/22)
 - Moving branch: [`agent/multi-commodity-preview`](https://github.com/leviitzhak/keep_and_lease/tree/agent/multi-commodity-preview)
-- Application version: `1.1`
+- Application version: `1.2`
 - Exact deployed revision: read `Version … · commit …` in the preview GUI
 
 ## Scope being completed
@@ -19,8 +19,8 @@ branch._
 - Multi-commodity GUI, plots, statistics, decomposition, inspected-day audit, and
   parameter persistence.
 - Detailed browser initialization diagnostics and startup improvements.
-- Documentation and design for moving backtest computation from Pyodide in the
-  browser to a server-side Python job API.
+- A versioned server-side CPython job API, Docker image, browser adapter, and
+  explicit Pyodide fallback using the same calculation modules and result shape.
 - Repeatable AWS infrastructure foundation, setup runbook, preview idle shutdown,
   and a managed-container scale-out alternative.
 
@@ -28,3 +28,5 @@ branch._
 
 - The pure shorter-long/longer-short maturity multiplier is planned for a later
   branch after this change set is merged.
+- Durable cross-restart job storage, authentication, deployment workflows, and
+  production capacity measurements remain deployment work.

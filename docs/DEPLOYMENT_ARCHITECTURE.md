@@ -11,18 +11,20 @@ The exact deployed revision must still be verified from `Version … · commit �
 the GUI, which is generated from `VERSION` and the deployment commit at build time.
 A commit SHA recorded in prose is only a historical snapshot.
 
-## Current browser-computation design
+## Current dual-computation design
 
-The deployed site contains the GUI, Pyodide runtime, Python source, and historical
-data as static assets. Each browser currently downloads the required assets, starts
-Python through Pyodide, builds the market objects, runs the backtest locally, and
-renders the returned Python result.
+The GUI now loads `backtest-worker-v13.js`, which keeps the existing worker message
+contract. It uses the configured server API when healthy and otherwise starts the
+unchanged v12 Pyodide worker in a nested worker. `?engine=server` requires the API;
+`?engine=pyodide` explicitly selects browser computation; `?engine=auto` is the
+default server-first behavior.
 
-This remains the working implementation until the server-computation migration is
-complete. Browser-startup optimizations may still be useful as a fallback, but they
-do not replace the migration below.
+The Pyodide runtime, Python sources, historical data, progress reporting, run
+operation, and day-inspection operation remain packaged exactly as before. They
+will remain available until server equivalence and operational reliability are
+accepted.
 
-## Planned browser-to-server computation
+## Implemented browser-to-server computation foundation
 
 The normal calculation path will move Python and historical data to the application
 server. The browser will retain the GUI and plotting code and exchange JSON with a
@@ -45,34 +47,35 @@ flowchart LR
     A -->|"status + result"| B
 ```
 
-### Proposed API contract
+### API contract
 
-1. `POST /api/v1/backtests` validates a parameter document and returns a job ID.
+1. `POST /api/v1/backtests` validates a versioned parameter document and returns a job ID.
 2. `GET /api/v1/backtests/{job_id}` returns queued/running/completed/failed status,
    calculation stage, elapsed time, and structured log messages.
-3. `GET /api/v1/backtests/{job_id}/result` returns the completed plotting,
-   statistics, decomposition, and inspected-day payload.
+3. `GET /api/v1/backtests/{job_id}/result` returns the canonical result object
+   unchanged, including plotting, statistics, and decomposition fields.
 4. `DELETE /api/v1/backtests/{job_id}` requests cancellation when supported.
 5. A canonical hash of engine version, data-manifest version, and parameters may
    reuse an identical cached result.
+6. `POST /api/v1/inspections` returns the existing inspected-day market and score
+   audit for a date and the same parameter document.
 
-The result must record application version, engine commit, data-manifest hash,
-normalized parameters, start/end timestamps, and calculation duration. The server
-must reject unsupported schema versions and impose bounds on date ranges, result
-size, concurrency, and runtime.
+Job status records application version, engine commit, data-manifest hash,
+parameters, timestamps, calculation duration, progress logs, and result size. The
+server rejects unsupported schema versions and imposes parameter/result-size and
+concurrency bounds. Date-range and runtime limits remain to be added after initial
+measurements.
 
 ### Server lifecycle
 
-- Load the Python modules, Treasury curves, and default markets when the service
-  starts, or lazily on their first job if startup memory is a concern.
+- The initial service loads Python modules immediately and market objects lazily on
+  the first run, then retains them for later jobs.
 - Retain constructed market objects across jobs.
-- Run backtests outside the HTTP request lifecycle so proxy/request timeouts do not
-  terminate long calculations.
-- Limit concurrent calculations initially to one per server, queueing later jobs,
-  until CPU time and peak memory have been measured.
+- Backtests run in a one-thread in-process queue outside the HTTP request lifecycle,
+  so proxy/request timeouts do not terminate calculations.
+- Concurrent calculations are limited to one per server; later jobs queue.
 - Stream or poll progress independently of the final result.
-- Keep Pyodide as a temporary, explicitly selected fallback until server results are
-  proven equivalent against regression fixtures.
+- Pyodide remains an explicitly selectable and automatic startup fallback.
 
 ### Migration sequence
 

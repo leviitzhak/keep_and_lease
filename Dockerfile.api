@@ -1,0 +1,18 @@
+FROM python:3.13-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    KEEP_AND_LEASE_DATA_ROOT=/app
+
+WORKDIR /app
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+COPY backtest_silver_lease_strategy.py silver_strategy_gui.py maturity_scoring.py rate_change_attribution.py ./
+COPY gold_silver.zip si.zip gc.zip cl.zip w.zip c.zip s.zip sp.zip DCOILWTICO.csv ./
+COPY DGS1.csv DGS2.csv DGS3.csv DGS5.csv DTB3.csv DTB6.csv ./
+COPY server ./server
+COPY server_main.py ./
+
+EXPOSE 8000
+CMD ["python", "server_main.py"]
+
