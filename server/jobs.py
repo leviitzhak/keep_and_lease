@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import hashlib
 import json
-import queue
 import os
+import queue
 import threading
 import time
 import uuid
@@ -87,7 +87,9 @@ class JobStore:
                 self.engine.provenance() if hasattr(self.engine, "provenance") else {}
             )
             job = Job(uuid.uuid4().hex, dict(parameters), digest, provenance=provenance)
-            job.logs.append({"at": job.created_at, "stage": job.stage, "detail": job.detail})
+            job.logs.append({
+                "at": job.created_at, "stage": job.stage, "detail": job.detail,
+            })
             self._jobs[job.id] = job
             self._queue.put(job.id)
             return job, False
@@ -107,6 +109,11 @@ class JobStore:
                 job.stage = "cancelled"
                 job.detail = "Cancelled before calculation started"
                 job.completed_at = time.time()
+                job.logs.append({
+                    "at": job.completed_at,
+                    "stage": job.stage,
+                    "detail": job.detail,
+                })
             return job
 
     def _progress(self, job: Job, stage: str, detail: str) -> None:
@@ -127,13 +134,21 @@ class JobStore:
                     job.stage = "starting"
                     job.detail = "Starting the server-side Python calculation"
                     job.started_at = time.time()
-                    job.logs.append({"at": job.started_at, "stage": job.stage, "detail": job.detail})
+                    job.logs.append({
+                        "at": job.started_at,
+                        "stage": job.stage,
+                        "detail": job.detail,
+                    })
                 result = self.engine.run_backtest(
                     job.parameters,
                     lambda stage, detail: self._progress(job, stage, detail),
                 )
-                encoded = json.dumps(result, allow_nan=False, separators=(",", ":")).encode("utf-8")
-                maximum = int(os.getenv("KEEP_AND_LEASE_MAX_RESULT_BYTES", str(100 * 1024 * 1024)))
+                encoded = json.dumps(
+                    result, allow_nan=False, separators=(",", ":")
+                ).encode("utf-8")
+                maximum = int(os.getenv(
+                    "KEEP_AND_LEASE_MAX_RESULT_BYTES", str(100 * 1024 * 1024)
+                ))
                 if len(encoded) > maximum:
                     raise ValueError(f"Backtest result exceeds the {maximum}-byte server limit")
                 with self._lock:
@@ -149,7 +164,11 @@ class JobStore:
                         job.stage = "completed"
                         job.detail = "Backtest completed"
                         self._completed_by_hash[job.parameter_hash] = job.id
-                    job.logs.append({"at": job.completed_at, "stage": job.stage, "detail": job.detail})
+                    job.logs.append({
+                        "at": job.completed_at,
+                        "stage": job.stage,
+                        "detail": job.detail,
+                    })
             except Exception as exc:  # API clients receive a stable error record.
                 with self._lock:
                     job.status = "failed"
@@ -157,6 +176,10 @@ class JobStore:
                     job.error = str(exc)
                     job.detail = str(exc)
                     job.completed_at = time.time()
-                    job.logs.append({"at": job.completed_at, "stage": job.stage, "detail": job.detail})
+                    job.logs.append({
+                        "at": job.completed_at,
+                        "stage": job.stage,
+                        "detail": job.detail,
+                    })
             finally:
                 self._queue.task_done()

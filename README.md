@@ -43,6 +43,7 @@ The hosting manifest connects this checkout to the deployed ChatGPT Site at
 - `public/backtest-worker-v13.js` preserves the worker protocol while routing
   calculations to the server API, with v12 as the fallback.
 - `server/` implements the queued `/api/v1` computation API.
+- `scripts/prepare-assets.mjs` prepares generated runtime and data assets.
 
 ## Run the computation API locally
 
@@ -54,4 +55,3 @@ python server_main.py
 Set `KEEP_AND_LEASE_COMPUTE_API_URL=http://localhost:8000` before building the
 GUI. Add `?engine=pyodide` to the GUI URL to explicitly use the preserved browser
 engine, or `?engine=server` to require the API without fallback.
-- `scripts/prepare-assets.mjs` prepares generated runtime and data assets.

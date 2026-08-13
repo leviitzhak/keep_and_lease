@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
+import json
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Response, status
@@ -36,11 +36,12 @@ def create_app(engine: StrategyEngine | None = None) -> FastAPI:
         for origin in os.getenv("KEEP_AND_LEASE_ALLOWED_ORIGINS", "").split(",")
         if origin.strip()
     ]
-    if allowed:
+    allowed_regex = os.getenv("KEEP_AND_LEASE_ALLOWED_ORIGIN_REGEX") or None
+    if allowed or allowed_regex:
         app.add_middleware(
             CORSMiddleware,
             allow_origins=allowed,
-            allow_origin_regex=os.getenv("KEEP_AND_LEASE_ALLOWED_ORIGIN_REGEX") or None,
+            allow_origin_regex=allowed_regex,
             allow_methods=["GET", "POST", "DELETE"],
             allow_headers=["content-type"],
         )
@@ -53,7 +54,6 @@ def create_app(engine: StrategyEngine | None = None) -> FastAPI:
     def create_backtest(request: BacktestRequest, response: Response) -> dict[str, Any]:
         if request.schema_version != 1:
             raise HTTPException(400, "Unsupported schema_version")
-        import json
         encoded_size = len(json.dumps(request.parameters).encode("utf-8"))
         if encoded_size > 100_000:
             raise HTTPException(413, "Parameter document is too large")
