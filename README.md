@@ -63,3 +63,10 @@ deploying one commit to a persistent GUI/API preview pair. Follow
 [`docs/RENDER_FIXED_PREVIEW.md`](docs/RENDER_FIXED_PREVIEW.md) to provision the
 services, store their deploy hooks, configure their stable URLs, verify commit
 provenance, or rebuild the preview from another workspace.
+
+The provisioned preview tracks deployments triggered from
+[`agent/multi-commodity-preview`](https://github.com/leviitzhak/keep_and_lease/tree/agent/multi-commodity-preview):
+
+- GUI: <https://keep-and-lease-fixed-preview.onrender.com>
+- API health and running commit: <https://keep-and-lease-fixed-preview-api.onrender.com/api/v1/health>
+- GUI build metadata: <https://keep-and-lease-fixed-preview.onrender.com/build-info.json>

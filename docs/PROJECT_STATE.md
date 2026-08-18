@@ -51,9 +51,10 @@ Build an interactive research and backtesting application for strategies that al
 8. A queued `/api/v1` CPython service now calls the same canonical Python engine,
    while the GUI's v13 adapter preserves the v12 Pyodide worker as an explicit or
    automatic fallback.
-9. A fixed Render preview deployment definition and GitHub deploy-hook workflow
-   deploy the GUI and API from one commit and verify their provenance before the
-   preview is accepted. External service and secret setup remains an operator step.
+9. The fixed Render GUI and API services are provisioned. The GitHub deploy-hook
+   workflow, repository secrets, and public URL variables are configured and have
+   verified a synchronized deployment from one exact commit. Render-native health
+   check paths remain to be entered on the two existing services.
 
 ## Active review and planned architecture
 
@@ -67,6 +68,9 @@ Build an interactive research and backtesting application for strategies that al
 - [RENDER_FIXED_PREVIEW.md](RENDER_FIXED_PREVIEW.md) is the reproducible setup,
   verification, failure-recovery, and rebuild runbook for the shared two-service
   Render preview.
+- The live fixed preview is <https://keep-and-lease-fixed-preview.onrender.com>;
+  the API reports its running revision at
+  <https://keep-and-lease-fixed-preview-api.onrender.com/api/v1/health>.
 
 ## Source-of-truth policy
 

@@ -25,6 +25,25 @@ The API uses `python -m pip install -r requirements.txt` as its build command an
 point as `Dockerfile.api`; the native runtime was used because the connected
 Render service-creation interface does not create Docker-backed services.
 
+## Current operational state
+
+The repository secrets, public URL variables, and both service-specific deploy
+hooks were configured on 2026-08-18. PR #23 merged the workflow into
+`agent/multi-commodity-preview`, and an empty commit then completed the first
+end-to-end synchronized deployment. Both Render deployment records and the public
+GUI/API metadata reported commit
+`eb88a46eaad0a462830155a5840bead3e710044c`.
+
+That SHA is a historical validation record, not a pinned deployment target. For
+the current revision, compare the GUI's `build-info.json` `commit` with the API
+health response's `engine_commit`; the workflow requires both to equal the pushed
+commit before succeeding.
+
+The existing Render services still name `agent/fixed-render-preview-deploys` as
+their configured source branch. This is their default only: the workflow runs on
+pushes to `agent/multi-commodity-preview` and supplies the exact pushed SHA as the
+deploy-hook `ref`, so both services deploy that same commit.
+
 ## Files and ownership
 
 | File or setting | Purpose | Maintained where |
@@ -52,7 +71,9 @@ Blueprint from
 2. Confirm that both services have **Auto-Deploy Off**. The workflow is the only
    deploy trigger.
 3. Set the GUI health check to `/` and the API health check to
-   `/api/v1/health` if they were not created through the Blueprint.
+   `/api/v1/health` if they were not created through the Blueprint. These paths
+   are still unset on the two existing services and are the remaining one-time
+   Render dashboard task.
 4. Copy each service's actual external URL. Render may add a suffix if a desired
    hostname is unavailable.
 5. Confirm the GUI environment variable
@@ -69,6 +90,10 @@ value manually, then use **Save, rebuild, and deploy**. The values remain stable
 for this fixed preview.
 
 ## One-time GitHub setup
+
+This setup was completed for `leviitzhak/keep_and_lease` on 2026-08-18. The
+following names are retained here for verification and rebuilds; secret values
+must never be written into documentation.
 
 Open the repository's **Settings → Secrets and variables → Actions** page.
 
