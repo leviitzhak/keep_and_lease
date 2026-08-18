@@ -55,3 +55,11 @@ python server_main.py
 Set `KEEP_AND_LEASE_COMPUTE_API_URL=http://localhost:8000` before building the
 GUI. Add `?engine=pyodide` to the GUI URL to explicitly use the preserved browser
 engine, or `?engine=server` to require the API without fallback.
+
+## Fixed Render preview
+
+The repository includes `render.preview.yaml` and a GitHub Actions workflow for
+deploying one commit to a persistent GUI/API preview pair. Follow
+[`docs/RENDER_FIXED_PREVIEW.md`](docs/RENDER_FIXED_PREVIEW.md) to provision the
+services, store their deploy hooks, configure their stable URLs, verify commit
+provenance, or rebuild the preview from another workspace.

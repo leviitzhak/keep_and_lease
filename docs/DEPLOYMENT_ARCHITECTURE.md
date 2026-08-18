@@ -24,6 +24,20 @@ operation, and day-inspection operation remain packaged exactly as before. They
 will remain available until server equivalence and operational reliability are
 accepted.
 
+## Fixed two-service Render preview
+
+The first server-computation deployment target is one persistent Render GUI and
+one persistent Render API. Both use stable public URLs and have automatic deploys
+disabled. `.github/workflows/deploy-fixed-render-preview.yml` passes the same Git
+commit to both secret deploy hooks, waits until the API health and GUI build
+metadata report that exact commit, and verifies that the generated GUI computation
+configuration points to the fixed API URL.
+
+`render.preview.yaml` recreates the two services. The required Render and GitHub
+operator setup, secret names, URL variables, diagnostics, and recovery procedure
+are maintained in [RENDER_FIXED_PREVIEW.md](RENDER_FIXED_PREVIEW.md). This shared
+preview is last-deployment-wins; it is not an isolated per-PR environment.
+
 ## Implemented browser-to-server computation foundation
 
 The normal calculation path will move Python and historical data to the application

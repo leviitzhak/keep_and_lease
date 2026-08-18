@@ -1,6 +1,6 @@
 # Keep & Lease — Project State
 
-_Last updated: 2026-08-13_
+_Last updated: 2026-08-18_
 
 ## Purpose
 
@@ -51,6 +51,9 @@ Build an interactive research and backtesting application for strategies that al
 8. A queued `/api/v1` CPython service now calls the same canonical Python engine,
    while the GUI's v13 adapter preserves the v12 Pyodide worker as an explicit or
    automatic fallback.
+9. A fixed Render preview deployment definition and GitHub deploy-hook workflow
+   deploy the GUI and API from one commit and verify their provenance before the
+   preview is accepted. External service and secret setup remains an operator step.
 
 ## Active review and planned architecture
 
@@ -61,6 +64,9 @@ Build an interactive research and backtesting application for strategies that al
   equivalence benchmarking remain before it becomes the accepted production path.
   See [DEPLOYMENT_ARCHITECTURE.md](DEPLOYMENT_ARCHITECTURE.md).
 - The two-host AWS prototype now has a plan-first setup runbook and Terraform foundation in [AWS_SETUP.md](AWS_SETUP.md); it must not be treated as production-ready until the listed application, authentication, role-splitting, and deployment tasks are complete.
+- [RENDER_FIXED_PREVIEW.md](RENDER_FIXED_PREVIEW.md) is the reproducible setup,
+  verification, failure-recovery, and rebuild runbook for the shared two-service
+  Render preview.
 
 ## Source-of-truth policy
 

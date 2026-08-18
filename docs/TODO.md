@@ -47,7 +47,13 @@ This checklist reflects the application synchronized from the deployed Sites che
 - [x] Add an asynchronous in-process backtest job runner with progress, queued/running cancellation semantics, one-worker concurrency, result limits, caching, and provenance.
 - [ ] Add full-data CPython-versus-Pyodide equivalence fixtures; the Pyodide v12 worker is retained as an explicit and automatic fallback.
 - [ ] Measure warm/cold duration, peak memory, and result size before selecting server capacity.
-- [ ] Prototype production and shared PR-preview deployment, including PR-triggered start/deploy and idle preview shutdown.
+- [x] Add a fixed two-service Render preview definition and GitHub deploy-hook
+  workflow that deploys and verifies the same commit on the GUI and API.
+- [ ] Provision the fixed Render services and configure their deploy-hook secrets
+  and public URL variables using `RENDER_FIXED_PREVIEW.md`.
+- [ ] Prototype production and shared PR-preview deployment with isolated
+  per-PR resources and idle preview shutdown if fixed shared preview is no longer
+  sufficient.
 - [x] Add a plan-first Terraform foundation and AWS operator runbook for the two-host prototype.
 - [x] Split GitHub OIDC permissions into master-only production and PR-only preview roles.
 - [ ] Extend the implemented Docker image and asynchronous API with durable activity/job reconciliation, HTTPS/authentication, and GitHub deployment workflows required by `AWS_SETUP.md`.
