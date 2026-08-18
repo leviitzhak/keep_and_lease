@@ -10,6 +10,21 @@ The latest deployment replaces the previous one. It avoids the paid
 multi-service Preview Environment feature while retaining separate memory and
 CPU allocations for the GUI and Python calculation service.
 
+## Current provisioned services
+
+The following free Frankfurt services were created on 2026-08-18 from
+`agent/fixed-render-preview-deploys`, with Auto-Deploy disabled:
+
+| Service | Runtime | Public URL |
+|---|---|---|
+| `keep-and-lease-fixed-preview` | Node | `https://keep-and-lease-fixed-preview.onrender.com` |
+| `keep-and-lease-fixed-preview-api` | Native Python/FastAPI | `https://keep-and-lease-fixed-preview-api.onrender.com` |
+
+The API uses `python -m pip install -r requirements.txt` as its build command and
+`python server_main.py` as its start command. This runs the same FastAPI entry
+point as `Dockerfile.api`; the native runtime was used because the connected
+Render service-creation interface does not create Docker-backed services.
+
 ## Files and ownership
 
 | File or setting | Purpose | Maintained where |
@@ -25,22 +40,28 @@ exposed.
 
 ## One-time Render setup
 
-1. In Render, create a new Blueprint from
+The services above are already provisioned. To recreate them, use a new Render
+Blueprint from
    `leviitzhak/keep_and_lease` and set the Blueprint spec path to
    `render.preview.yaml`.
-2. Link the Blueprint to `agent/multi-commodity-preview` and create both
+
+1. Link the Blueprint to `agent/fixed-render-preview-deploys` and create both
    declared services:
-   - `keep-and-lease-preview`
-   - `keep-and-lease-preview-api`
-3. Confirm that both services have **Auto-Deploy Off**. The workflow is the only
+   - `keep-and-lease-fixed-preview`
+   - `keep-and-lease-fixed-preview-api`
+2. Confirm that both services have **Auto-Deploy Off**. The workflow is the only
    deploy trigger.
+3. Set the GUI health check to `/` and the API health check to
+   `/api/v1/health` if they were not created through the Blueprint.
 4. Copy each service's actual external URL. Render may add a suffix if a desired
    hostname is unavailable.
 5. Confirm the GUI environment variable
    `KEEP_AND_LEASE_COMPUTE_API_URL` equals the API's `RENDER_EXTERNAL_URL`.
 6. Confirm the API environment variable `KEEP_AND_LEASE_ALLOWED_ORIGINS` equals
    the GUI's `RENDER_EXTERNAL_URL`.
-7. Open each service's Settings page and copy its secret deploy-hook URL.
+7. Open each service's Settings page and copy its secret deploy-hook URL. The
+   service-creation connection does not expose deploy-hook secrets, so this step
+   remains manual even when the services were created programmatically.
 
 If Render does not resolve a cross-service `RENDER_EXTERNAL_URL` reference during
 the first Blueprint sync, enter the corresponding full `https://...onrender.com`
