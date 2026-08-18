@@ -49,8 +49,10 @@ This checklist reflects the application synchronized from the deployed Sites che
 - [ ] Measure warm/cold duration, peak memory, and result size before selecting server capacity.
 - [x] Add a fixed two-service Render preview definition and GitHub deploy-hook
   workflow that deploys and verifies the same commit on the GUI and API.
-- [ ] Provision the fixed Render services and configure their deploy-hook secrets
+- [x] Provision the fixed Render services and configure their deploy-hook secrets
   and public URL variables using `RENDER_FIXED_PREVIEW.md`.
+- [ ] Set the existing Render GUI health-check path to `/` and the API health-check
+  path to `/api/v1/health`; the workflow already verifies both public endpoints.
 - [ ] Prototype production and shared PR-preview deployment with isolated
   per-PR resources and idle preview shutdown if fixed shared preview is no longer
   sufficient.

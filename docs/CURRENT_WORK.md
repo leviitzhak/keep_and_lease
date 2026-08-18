@@ -8,10 +8,10 @@ branch._
 
 - Status: in review and planned for completion before merge
 - Pull request: [PR #22 — Complete generalized multi-commodity implementation](https://github.com/leviitzhak/keep_and_lease/pull/22)
-- Parent implementation branch: [`agent/multi-commodity-preview`](https://github.com/leviitzhak/keep_and_lease/tree/agent/multi-commodity-preview)
-- Active deployment branch: [`agent/fixed-render-preview-deploys`](https://github.com/leviitzhak/keep_and_lease/tree/agent/fixed-render-preview-deploys)
+- Current implementation and fixed-preview trigger branch: [`agent/multi-commodity-preview`](https://github.com/leviitzhak/keep_and_lease/tree/agent/multi-commodity-preview)
+- Render services' configured source branch: [`agent/fixed-render-preview-deploys`](https://github.com/leviitzhak/keep_and_lease/tree/agent/fixed-render-preview-deploys). Deploy hooks override this default with the exact commit pushed to the current implementation branch.
 - Application version: `1.2`
-- Exact deployed revision: read `Version … · commit …` in the preview GUI
+- Exact deployed revision: read `Version … · commit …` in the [preview GUI](https://keep-and-lease-fixed-preview.onrender.com), or compare [`build-info.json`](https://keep-and-lease-fixed-preview.onrender.com/build-info.json) with the API [`engine_commit`](https://keep-and-lease-fixed-preview-api.onrender.com/api/v1/health).
 
 ## Scope being completed
 
@@ -24,14 +24,15 @@ branch._
   explicit Pyodide fallback using the same calculation modules and result shape.
 - Repeatable AWS infrastructure foundation, setup runbook, preview idle shutdown,
   and a managed-container scale-out alternative.
-- A fixed two-service Render preview Blueprint and deploy-hook workflow that
-  deploys and verifies the same commit on the GUI and computation API.
+- A provisioned fixed two-service Render preview and deploy-hook workflow that
+  deploys and verifies the same commit on the GUI and computation API. The first
+  complete synchronized deployment was validated on 2026-08-18.
 
 ## Explicitly deferred
 
 - The pure shorter-long/longer-short maturity multiplier is planned for a later
   branch after this change set is merged.
 - Durable cross-restart job storage, authentication, production deployment, and
-  capacity measurements remain deployment work. The fixed Render preview
-  workflow is implemented but requires the two external services, hooks, secrets,
-  and URL variables described in `RENDER_FIXED_PREVIEW.md`.
+  capacity measurements remain deployment work. The fixed Render services,
+  deploy-hook secrets, and public URL variables are configured; only the optional
+  Render-native health-check paths remain to be entered in the current services.
