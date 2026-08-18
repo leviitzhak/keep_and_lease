@@ -1,0 +1,37 @@
+# Fixed two-service preview environment. Create this as a separate Render
+# Blueprint whose spec path is render.preview.yaml. It intentionally does not
+# create per-PR service previews; deploy hooks update these two stable services.
+services:
+  - type: web
+    name: keep-and-lease-fixed-preview
+    runtime: node
+    plan: free
+    region: frankfurt
+    branch: agent/fixed-render-preview-deploys
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    autoDeployTrigger: off
+    envVars:
+      - key: KEEP_AND_LEASE_COMPUTE_API_URL
+        fromService:
+          type: web
+          name: keep-and-lease-fixed-preview-api
+          envVarKey: RENDER_EXTERNAL_URL
+
+  - type: web
+    name: keep-and-lease-fixed-preview-api
+    runtime: python
+    plan: free
+    region: frankfurt
+    branch: agent/fixed-render-preview-deploys
+    buildCommand: python -m pip install -r requirements.txt
+    startCommand: python server_main.py
+    healthCheckPath: /api/v1/health
+    autoDeployTrigger: off
+    envVars:
+      - key: KEEP_AND_LEASE_ALLOWED_ORIGINS
+        fromService:
+          type: web
+          name: keep-and-lease-fixed-preview
+          envVarKey: RENDER_EXTERNAL_URL
