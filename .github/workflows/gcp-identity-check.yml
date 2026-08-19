@@ -2,11 +2,6 @@ name: Google Cloud identity check
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - agent/google-cloud-run-design
-    paths:
-      - .github/workflows/gcp-identity-check.yml
 
 permissions:
   contents: read
