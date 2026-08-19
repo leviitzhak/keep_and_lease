@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-08-19 — Google Cloud Run intermittent-compute design
+
+- Documented a proposed scale-to-zero Cloud Run web service with separately sized,
+  durable Cloud Run Job executions for backtests.
+- Specified versioned Parquet market data queried through DuckDB/Arrow, immutable
+  manifests, compressed result storage, and durable cross-restart job metadata.
+- Added resource sizing, usage-cost estimates, least-privilege service identities,
+  OIDC deployment, observability, retention, migration steps, acceptance criteria,
+  and teardown requirements.
+- Kept the existing AWS infrastructure as an alternative; no Google Cloud resources
+  are represented as already provisioned.
+
 ## 2026-08-13 — server-side computation API foundation (1.2)
 
 - Added a versioned, asynchronous CPython API that queues canonical engine runs,
