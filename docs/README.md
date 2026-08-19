@@ -21,7 +21,8 @@ Start with [PROJECT_STATE.md](PROJECT_STATE.md).
 - [Roadmap](ROADMAP.md) — staged development plan.
 - [Deployment and calculation architecture](DEPLOYMENT_ARCHITECTURE.md) — current-change pointer, server-computation migration, and production/preview hosting.
 - [AWS setup](AWS_SETUP.md) — repeatable account provisioning, deployment prerequisites, idle shutdown, security, and operations.
-
+- [Google Cloud Run setup](GOOGLE_CLOUD_RUN_SETUP.md) — proposed scale-to-zero web service, durable calculation Jobs, analytical data storage, security, costs, and migration.
+ 
 ## Working convention
 
 Use these files as shared context across project chats. Durable changes should be reflected in the relevant specification and recorded in the design changelog. Unconfirmed values should remain marked as pending rather than being silently converted into defaults.
