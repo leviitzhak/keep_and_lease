@@ -107,6 +107,9 @@ test("shows exact maturity-line formulas and dynamic hierarchical attribution", 
     /name="short_score_rate_scale"[^>]*min="0\.01"[^>]*step="0\.01"/,
   );
   assert.match(html, /function scoreDiagnosticTable/);
+  assert.match(html, /name="long_pure_maturity_strength"/);
+  assert.match(html, /name="short_pure_maturity_strength"/);
+  assert.match(html, /Pure maturity multiplier/);
   assert.doesNotMatch(html, /name="long_maturity_line_intercept"/);
   assert.doesNotMatch(html, /name="short_maturity_line_intercept"/);
   assert.match(html, /id="dailyAttributionPanel"/);

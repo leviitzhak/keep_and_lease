@@ -73,6 +73,6 @@ This checklist reflects the application synchronized from the deployed Sites che
 - [ ] Remove obsolete generated worker versions and other duplicated deployment artifacts after confirming the canonical build path.
 - [ ] Keep `CHANGELOG.md`, parameter documentation, data manifest, and this checklist current with every durable behavior change.
 
-## Deferred to the next scoring change
+## Deferred scoring work
 
-- [ ] Add the separate pure-maturity multiplier favoring shorter long positions and longer short positions. It is intentionally excluded from the multi-commodity implementation PR.
+- [x] Add the separate pure-maturity multiplier favoring shorter long positions and longer short positions, with a zero-strength backward-compatible default.

@@ -113,6 +113,28 @@ def parameters(payload):
     pct = lambda name, default: number(payload, name, default) / 100
     flag = lambda name, default: str(payload.get(
         name, "true" if default else "false")).lower() == "true"
+    def boundary(direction):
+        anchor_names = (
+            f"{direction}_line_maturity_1", f"{direction}_line_rate_1",
+            f"{direction}_line_maturity_2", f"{direction}_line_rate_2")
+        if not any(name in payload for name in anchor_names):
+            return (
+                pct(f"{direction}_maturity_line_intercept", 0),
+                pct(f"{direction}_maturity_line_slope_per_year",
+                    payload.get(f"{direction}_maturity_bonus_per_year", 0.4)),
+            )
+        maturity_1 = number(payload, f"{direction}_line_maturity_1", 30, 0)
+        maturity_2 = number(payload, f"{direction}_line_maturity_2", 365, 0)
+        if maturity_2 <= maturity_1:
+            raise ValueError(
+                f"{direction} boundary maturity 2 must exceed maturity 1")
+        rate_1 = pct(f"{direction}_line_rate_1", 0.033)
+        rate_2 = pct(f"{direction}_line_rate_2", 0.4)
+        slope = (rate_2 - rate_1) * 365 / (maturity_2 - maturity_1)
+        return rate_1 - slope * maturity_1 / 365, slope
+
+    long_intercept, long_slope = boundary("long")
+    short_intercept, short_slope = boundary("short")
     p = Parameters(
         min_days=int(number(payload, "min_days", 10, 1, 2000)),
         roll_only_if_better=flag("roll_only_if_better", True),
@@ -132,13 +154,15 @@ def parameters(payload):
         positive_full_rate=pct("positive_full_rate", 15),
         long_contract_selection=str(payload.get(
             "long_contract_selection", "shortest_maturity")),
-        long_maturity_line_intercept=pct(
-            "long_maturity_line_intercept", 0),
-        long_maturity_line_slope_per_year=pct(
-            "long_maturity_line_slope_per_year",
-            payload.get("long_maturity_bonus_per_year", 0.4)),
+        long_maturity_line_intercept=long_intercept,
+        long_maturity_line_slope_per_year=long_slope,
         long_relative_strength=number(
             payload, "long_relative_strength", 1, 0, 100),
+        long_score_rate_scale=pct("long_score_rate_scale", 1),
+        long_score_adjustment_clip=number(
+            payload, "long_score_adjustment_clip", 3, 0, 100),
+        long_pure_maturity_strength=number(
+            payload, "long_pure_maturity_strength", 0, 0, 100),
         long_maturity_bonus_per_year=pct("long_maturity_bonus_per_year", 0.4),
         long_extreme_qualification_rate=pct(
             "long_extreme_qualification_rate",
@@ -154,16 +178,22 @@ def parameters(payload):
         max_short_fraction_of_slv=pct("max_short_fraction_of_slv", 50),
         short_contract_selection=str(payload.get(
             "short_contract_selection", "weighted_lease_rate")),
-        short_maturity_line_intercept=pct(
-            "short_maturity_line_intercept", 0),
-        short_maturity_line_slope_per_year=pct(
-            "short_maturity_line_slope_per_year",
-            payload.get("short_maturity_bonus_per_year", 0.4)),
+        short_maturity_line_intercept=short_intercept,
+        short_maturity_line_slope_per_year=short_slope,
         short_relative_strength=number(
             payload, "short_relative_strength", 1, 0, 100),
-        score_rate_scale=pct("score_rate_scale", 1),
+        short_score_rate_scale=pct("short_score_rate_scale", 1),
+        short_score_adjustment_clip=number(
+            payload, "short_score_adjustment_clip", 3, 0, 100),
+        short_pure_maturity_strength=number(
+            payload, "short_pure_maturity_strength", 0, 0, 100),
+        pure_maturity_scale_days=number(
+            payload, "pure_maturity_scale_days", 365, 1, 10000),
+        pure_maturity_clip=number(
+            payload, "pure_maturity_clip", 3, 0, 100),
+        score_rate_scale=pct("long_score_rate_scale", 1),
         score_adjustment_clip=number(
-            payload, "score_adjustment_clip", 3, 0, 100),
+            payload, "long_score_adjustment_clip", 3, 0, 100),
         short_maturity_bonus_per_year=pct("short_maturity_bonus_per_year", 0.4),
         short_extreme_qualification_rate=pct(
             "short_extreme_qualification_rate",

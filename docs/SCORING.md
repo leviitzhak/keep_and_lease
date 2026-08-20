@@ -88,6 +88,23 @@ final_i = b_i * max(0, 1 + k * z_i)
 
 The `max(0, ...)` protects against a negative ranking score unless negative scores have a separately defined meaning.
 
+## Separate pure-maturity multiplier
+
+After the rate/boundary multiplier, an optional independent multiplier can
+express a preference that does not depend on the lease-rate curve:
+
+```text
+u_i = clip(maturity_days_i / pure_maturity_scale_days, 0, pure_maturity_clip)
+pure_long_i  = max(0, 1 - long_pure_maturity_strength * u_i)
+pure_short_i = max(0, 1 + short_pure_maturity_strength * u_i)
+final_i = boundary_adjusted_score_i * pure_side_i
+```
+
+It therefore favors shorter contracts in the long book and longer contracts in
+the short book. Both strengths default to zero, which exactly preserves prior
+rankings. This multiplier is applied only after eligibility, so it cannot make
+an otherwise ineligible contract tradable.
+
 ## Weight conversion
 
 For eligible contracts with positive final scores:
@@ -108,6 +125,7 @@ The inspected-day table and hover data should show:
 - signed distance;
 - base score;
 - relative multiplier;
+- pure-maturity multiplier;
 - final score;
 - eligibility result;
 - final target weight.
@@ -122,3 +140,5 @@ At minimum, test that:
 4. ineligible contracts never receive weight;
 5. setting `k = 0` reproduces the base-score ranking;
 6. normalization and clipping behave consistently at extreme values.
+7. positive pure-maturity strength favors shorter longs and longer shorts;
+8. zero pure-maturity strength reproduces the previous score exactly.

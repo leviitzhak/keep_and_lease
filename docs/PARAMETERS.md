@@ -36,6 +36,10 @@ production parameter names.
 | `short_relative_strength` | Relative score sensitivity to boundary distance. |
 | `score_rate_scale` | Rate scale used to make boundary distance dimensionless. |
 | `score_adjustment_clip` | Maximum absolute normalized adjustment. |
+| `long_pure_maturity_strength` | Independent relative preference for shorter long maturities; `0` disables it. |
+| `short_pure_maturity_strength` | Independent relative preference for longer short maturities; `0` disables it. |
+| `pure_maturity_scale_days` | Days of maturity corresponding to one pure-maturity adjustment unit. |
+| `pure_maturity_clip` | Maximum normalized pure-maturity adjustment. |
 
 ## Gradual allocation
 

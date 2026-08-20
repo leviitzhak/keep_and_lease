@@ -80,6 +80,35 @@ class RollPolicyTests(unittest.TestCase):
                 0.20, {"lease": -0.036, "days": 365}, short_p, "short"),
             0.32)
 
+    def test_pure_maturity_prefers_shorter_longs(self):
+        p = Parameters(
+            min_days=10, long_relative_strength=0,
+            long_pure_maturity_strength=0.5,
+            pure_maturity_scale_days=365)
+        short = maturity_line_adjusted_score(
+            0.20, {"lease": 0.04, "days": 90}, p, "long")
+        long = maturity_line_adjusted_score(
+            0.20, {"lease": 0.04, "days": 365}, p, "long")
+        self.assertGreater(short, long)
+
+    def test_pure_maturity_prefers_longer_shorts(self):
+        p = Parameters(
+            min_days=10, short_relative_strength=0,
+            short_pure_maturity_strength=0.5,
+            pure_maturity_scale_days=365)
+        short = maturity_line_adjusted_score(
+            0.20, {"lease": -0.04, "days": 90}, p, "short")
+        long = maturity_line_adjusted_score(
+            0.20, {"lease": -0.04, "days": 365}, p, "short")
+        self.assertGreater(long, short)
+
+    def test_zero_pure_maturity_strength_is_backward_compatible(self):
+        p = Parameters(min_days=10, long_relative_strength=0)
+        self.assertAlmostEqual(
+            maturity_line_adjusted_score(
+                0.20, {"lease": 0.04, "days": 365}, p, "long"),
+            0.20)
+
 
 if __name__ == "__main__":
     unittest.main()

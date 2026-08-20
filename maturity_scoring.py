@@ -75,6 +75,33 @@ class RelativeAdjustment:
         return base_score * self.multiplier(signed_distance)
 
 
+@dataclass(frozen=True)
+class PureMaturityAdjustment:
+    """Rate-independent preference for shorter longs or longer shorts."""
+
+    strength: float = 0.0
+    scale_days: float = 365.0
+    clip: float = 3.0
+
+    def __post_init__(self) -> None:
+        if self.scale_days <= 0:
+            raise ValueError("scale_days must be positive")
+        if self.clip < 0:
+            raise ValueError("clip must be non-negative")
+
+    def normalized(self, maturity: float, direction: str) -> float:
+        normalized = max(-self.clip, min(self.clip, maturity / self.scale_days))
+        if direction == "long":
+            return -normalized
+        if direction == "short":
+            return normalized
+        raise ValueError("direction must be 'long' or 'short'")
+
+    def multiplier(self, maturity: float, direction: str) -> float:
+        return max(0.0, 1.0 + self.strength * self.normalized(
+            maturity, direction))
+
+
 def signed_distance(rate: float, maturity: float, boundary: BoundaryAnchors,
                     direction: str) -> float:
     """Return the canonical vertical distance for a long or short candidate."""
@@ -88,11 +115,15 @@ def signed_distance(rate: float, maturity: float, boundary: BoundaryAnchors,
 
 def adjusted_score(base_score: float, rate: float, maturity: float,
                    boundary: BoundaryAnchors, adjustment: RelativeAdjustment,
-                   direction: str) -> float:
-    return adjustment.score(
+                   direction: str,
+                   maturity_adjustment: PureMaturityAdjustment | None = None) -> float:
+    boundary_score = adjustment.score(
         base_score,
         signed_distance(rate, maturity, boundary, direction),
     )
+    if maturity_adjustment is None:
+        return boundary_score
+    return boundary_score * maturity_adjustment.multiplier(maturity, direction)
 
 
 def allocate_scores(scores: Mapping[str, float], target: float) -> dict[str, float]:
@@ -115,6 +146,7 @@ def score_contracts(
         contracts: Iterable[Mapping[str, float | str]], *, direction: str,
         eligibility_threshold: float, boundary: BoundaryAnchors,
         adjustment: RelativeAdjustment, target: float,
+        maturity_adjustment: PureMaturityAdjustment | None = None,
         rate_key: str = "lease", maturity_key: str = "days",
         symbol_key: str = "symbol") -> tuple[dict[str, float], list[dict]]:
     """Gate, score and allocate a contract universe with complete diagnostics.
@@ -134,8 +166,11 @@ def score_contracts(
         base = (rate - eligibility_threshold if direction == "long"
                 else eligibility_threshold - rate)
         distance = signed_distance(rate, maturity, boundary, direction)
-        multiplier = adjustment.multiplier(distance)
-        final = adjustment.score(base, distance) if eligible else 0.0
+        rate_multiplier = adjustment.multiplier(distance)
+        pure_multiplier = (maturity_adjustment.multiplier(maturity, direction)
+                           if maturity_adjustment else 1.0)
+        final = (max(0.0, base) * rate_multiplier * pure_multiplier
+                 if eligible else 0.0)
         if final > 0:
             scores[symbol] = final
         diagnostics.append({
@@ -146,7 +181,8 @@ def score_contracts(
             "boundary_value": boundary.value(maturity),
             "signed_distance": distance,
             "base_score": max(0.0, base),
-            "relative_multiplier": multiplier,
+            "relative_multiplier": rate_multiplier,
+            "pure_maturity_multiplier": pure_multiplier,
             "final_score": final,
             "target_weight": 0.0,
         })

@@ -6,14 +6,14 @@ branch._
 
 ## Active change set
 
-- Status: durable Cloud Run workloads deployed from `master`; authenticated health
-  and private operator GUI access work; bounded numerical, cancellation, and
-  replacement acceptance tests remain
-- Integration: fast-forwarded to `master` after the successful pre-merge deployment
-- Current implementation branch: [`master`](https://github.com/leviitzhak/keep_and_lease/tree/master)
+- Status: pure-maturity scoring multiplier implemented and locally verified;
+  review and deployment remain
+- Integration: based on the deployed `master` revision; not yet merged
+- Current implementation branch: `agent/pure-maturity-multiplier` (local; not yet
+  published)
 - Previous generalized application review: [PR #22 — Complete generalized multi-commodity implementation](https://github.com/leviitzhak/keep_and_lease/pull/22)
 - Render services' configured source branch: [`agent/fixed-render-preview-deploys`](https://github.com/leviitzhak/keep_and_lease/tree/agent/fixed-render-preview-deploys). Deploy hooks override this default with the exact commit pushed to the current implementation branch.
-- Application version: `1.2`
+- Application version: `1.3`
 - First verified Cloud Run revision:
   `fc4400e9a18a4e68846f250b64efee7fc0429ad7`
 - Current production deployment commit:
@@ -23,6 +23,7 @@ branch._
 ## Scope being completed
 
 - Generalized multi-commodity strategy and independent cash/Treasury sleeve.
+- Independent shorter-long/longer-short pure-maturity scoring multiplier.
 - One canonical scoring pipeline and removal of the duplicate legacy formula path.
 - Multi-commodity GUI, plots, statistics, decomposition, inspected-day audit, and
   parameter persistence.
@@ -40,8 +41,6 @@ branch._
 
 ## Explicitly deferred
 
-- The pure shorter-long/longer-short maturity multiplier is planned for a later
-  change set.
 - Cloud Run numerical/cancellation/replacement acceptance tests and capacity
   measurements remain deployment work. Direct Cloud Run IAP is the recommended
   next browser-access step. Anonymous access remains deferred until application

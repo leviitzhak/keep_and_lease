@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-08-20 — Pure-maturity scoring multiplier
+
+- Added independent, bounded multipliers that favor shorter long contracts and
+  longer short contracts after lease-rate eligibility and boundary scoring.
+- Kept both strengths at zero by default for exact ranking compatibility.
+- Exposed the controls per commodity and added the multiplier to inspected-day
+  score diagnostics.
+- Corrected GUI two-anchor boundary and side-specific rate-scale parsing so the
+  displayed controls reach the canonical Python engine.
+
 ## 2026-08-20 — Cloud Run operator access and publication plan
 
 - Recorded the successful `master` deployment and authenticated private operator

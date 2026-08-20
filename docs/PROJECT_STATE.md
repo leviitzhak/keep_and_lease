@@ -47,7 +47,8 @@ Build an interactive research and backtesting application for strategies that al
 4. `maturity_scoring.py` is the single formula implementation used by trading and inspected-day diagnostics.
 5. The GUI includes synchronized inspection, score audits, per-commodity and Treasury scatters, hierarchical decomposition, statistics, and versioned parameter sets.
 6. Unavailable or corrupt market archives are isolated and reported only if the user selects the affected commodity.
-7. The pure shorter-long/longer-short maturity multiplier remains explicitly deferred.
+7. The optional pure-maturity multiplier independently favors shorter long and
+   longer short contracts; zero strength preserves the previous scoring.
 8. A queued `/api/v1` CPython service now calls the same canonical Python engine,
    while the GUI's v13 adapter preserves the v12 Pyodide worker as an explicit or
    automatic fallback.
