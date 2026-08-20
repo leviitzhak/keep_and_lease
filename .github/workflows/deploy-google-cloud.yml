@@ -132,19 +132,34 @@ jobs:
           TF_VAR_worker_image: ${{ steps.images.outputs.worker_image }}
         run: terraform apply -input=false -auto-approve tfplan
 
+      - name: Resolve deployed web URI
+        id: web
+        working-directory: infra/gcp/workloads
+        run: echo "web_uri=$(terraform output -raw web_uri)" >> "$GITHUB_OUTPUT"
+
+      - name: Mint Cloud Run identity token
+        id: health_auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+          token_format: id_token
+          id_token_audience: ${{ steps.web.outputs.web_uri }}
+          id_token_include_email: true
+
       - name: Verify private web health
         id: verify
-        working-directory: infra/gcp/workloads
+        env:
+          IDENTITY_TOKEN: ${{ steps.health_auth.outputs.id_token }}
+          WEB_URI: ${{ steps.web.outputs.web_uri }}
         run: |
           set -euo pipefail
-          web_uri="$(terraform output -raw web_uri)"
-          identity_token="$(gcloud auth print-identity-token)"
           health="$(curl --fail --silent --show-error \
-            --header "Authorization: Bearer ${identity_token}" \
-            "${web_uri}/api/v1/health")"
+            --header "Authorization: Bearer ${IDENTITY_TOKEN}" \
+            "${WEB_URI}/api/v1/health")"
           test "$(jq -r '.status' <<<"$health")" = "ok"
           test "$(jq -r '.execution_backend' <<<"$health")" = "cloud-run-job"
-          echo "web_uri=${web_uri}" >> "$GITHUB_OUTPUT"
+          echo "web_uri=${WEB_URI}" >> "$GITHUB_OUTPUT"
           jq . <<<"$health"
 
       - name: Publish deployment summary

@@ -146,7 +146,9 @@ During pre-merge acceptance, a push to `agent/google-cloud-run-design` runs
 3. resolves immutable digests;
 4. initializes `infra/gcp/workloads/` against the dedicated workload-state bucket;
 5. runs `terraform fmt -check`, `validate`, `plan`, and `apply`;
-6. invokes the private health endpoint with an identity token; and
+6. mints a short-lived identity token for the deployed service's exact audience
+   through the existing GitHub OIDC trust, then invokes the private health
+   endpoint; and
 7. publishes the URI and immutable image references in the workflow summary.
 
 Required repository Actions variables remain:

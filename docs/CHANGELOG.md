@@ -5,6 +5,9 @@
 - Enabled the Google Cloud deployment workflow on pushes to
   `agent/google-cloud-run-design` while retaining manual dispatch, allowing the
   private Cloud Run service and calculation Job to be tested before merge.
+- Minted the private health-check ID token through a second OIDC auth exchange
+  scoped to the deployed Cloud Run URL, because external-account credentials do
+  not support `gcloud auth print-identity-token` directly.
 
 ## 2026-08-19 — Durable Cloud Run web and calculation Job implementation
 
