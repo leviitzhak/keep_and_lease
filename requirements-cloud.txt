@@ -1,0 +1,4 @@
+-r requirements.txt
+google-cloud-firestore>=2.19,<3
+google-cloud-run>=0.10,<1
+google-cloud-storage>=3,<4

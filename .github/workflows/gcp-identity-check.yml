@@ -1,0 +1,32 @@
+name: Google Cloud identity check
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  identity:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Verify federated identity and project access
+        run: |
+          gcloud config set project "${{ vars.GCP_PROJECT_ID }}"
+          gcloud auth list --filter=status:ACTIVE --format='value(account)'
+          gcloud artifacts repositories describe keep-and-lease \
+            --location="${{ vars.GCP_REGION }}" \
+            --format='value(name)'

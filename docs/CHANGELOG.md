@@ -1,5 +1,46 @@
 # Changelog
 
+## 2026-08-20 — First Cloud Run deployment and production trigger
+
+- Enabled the Google Cloud deployment workflow on pushes to
+  `agent/google-cloud-run-design` while retaining manual dispatch, allowing the
+  private Cloud Run service and calculation Job to be tested before merge.
+- Minted the private health-check ID token through a second OIDC auth exchange
+  scoped to the deployed Cloud Run URL, because external-account credentials do
+  not support `gcloud auth print-identity-token` directly.
+- Deployed the private web service and calculation Job from commit `fc4400e9`, then
+  verified `status=ok`, application version `1.2`, and the `cloud-run-job` backend.
+- Moved the automatic deployment trigger to pushes on `master`; manual dispatch
+  remains available for controlled redeployment.
+
+## 2026-08-19 — Durable Cloud Run web and calculation Job implementation
+
+- Replaced process-local cloud execution with transactional Firestore jobs/cache,
+  a Cloud Run Job launcher, a one-shot worker, durable heartbeats and stale-lease
+  failure states, and Cloud Run execution cancellation.
+- Added immutable gzip results in Cloud Storage with create-only writes, CRC32C
+  transport checking, SHA-256 provenance, streamed HTTP delivery, stage timings,
+  and peak-RSS recording.
+- Added separate minimal web and data-bearing worker images, Cloud Run v2 workload
+  Terraform in an independent state prefix, least-privilege runtime bindings, and a
+  manual GitHub OIDC workflow that deploys digest-qualified images and verifies the
+  private health endpoint.
+- Retained the in-memory queue for local/Render compatibility and explicitly
+  deferred cloud day inspection plus Parquet/DuckDB/Arrow input migration until
+  after the first bounded numerical proof.
+
+## 2026-08-19 — Google Cloud Run intermittent-compute design
+
+- Documented a proposed scale-to-zero Cloud Run web service with separately sized,
+  durable Cloud Run Job executions for backtests.
+- Specified versioned Parquet market data queried through DuckDB/Arrow, immutable
+  manifests, compressed result storage, and durable cross-restart job metadata.
+- Added resource sizing, usage-cost estimates, least-privilege service identities,
+  OIDC deployment, observability, retention, migration steps, acceptance criteria,
+  and teardown requirements.
+- Kept the existing AWS infrastructure as an alternative. This entry describes the
+  initial design; the later entry above records its implementation.
+
 ## 2026-08-13 — server-side computation API foundation (1.2)
 
 - Added a versioned, asynchronous CPython API that queues canonical engine runs,

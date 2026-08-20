@@ -56,6 +56,15 @@ Set `KEEP_AND_LEASE_COMPUTE_API_URL=http://localhost:8000` before building the
 GUI. Add `?engine=pyodide` to the GUI URL to explicitly use the preserved browser
 engine, or `?engine=server` to require the API without fallback.
 
+## Durable Google Cloud execution
+
+The Google Cloud path replaces the process-local queue with Firestore metadata,
+one Cloud Run Job per calculation, and immutable gzip results in Cloud Storage.
+Separate web/worker images, Cloud Run v2 Terraform, and the keyless GitHub
+deployment workflow are implemented. The foundation is provisioned; follow
+[`docs/GOOGLE_CLOUD_RUN_SETUP.md`](docs/GOOGLE_CLOUD_RUN_SETUP.md) for deployment
+operations and the remaining private calculation acceptance tests.
+
 ## Fixed Render preview
 
 The repository includes `render.preview.yaml` and a GitHub Actions workflow for

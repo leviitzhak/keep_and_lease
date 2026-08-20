@@ -1,4 +1,4 @@
-"""Small in-process job queue used by the initial single-server deployment."""
+"""In-process job service retained for local development and compatibility tests."""
 
 from __future__ import annotations
 
@@ -9,52 +9,10 @@ import queue
 import threading
 import time
 import uuid
-from dataclasses import dataclass, field
 from typing import Any
 
 from .engine import StrategyEngine
-
-
-FINAL_STATES = {"completed", "failed", "cancelled"}
-
-
-@dataclass
-class Job:
-    id: str
-    parameters: dict[str, Any]
-    parameter_hash: str
-    status: str = "queued"
-    stage: str = "queued"
-    detail: str = "Waiting for the calculation worker"
-    created_at: float = field(default_factory=time.time)
-    started_at: float | None = None
-    completed_at: float | None = None
-    result: dict[str, Any] | None = None
-    error: str | None = None
-    cancellation_requested: bool = False
-    result_size_bytes: int | None = None
-    logs: list[dict[str, Any]] = field(default_factory=list)
-    provenance: dict[str, Any] = field(default_factory=dict)
-
-    def public(self) -> dict[str, Any]:
-        now = self.completed_at or time.time()
-        return {
-            "job_id": self.id,
-            "status": self.status,
-            "stage": self.stage,
-            "detail": self.detail,
-            "parameter_hash": self.parameter_hash,
-            "created_at": self.created_at,
-            "started_at": self.started_at,
-            "completed_at": self.completed_at,
-            "elapsed_seconds": max(0.0, now - (self.started_at or self.created_at)),
-            "error": self.error,
-            "cancellation_requested": self.cancellation_requested,
-            "result_size_bytes": self.result_size_bytes,
-            "parameters": self.parameters,
-            "provenance": self.provenance,
-            "logs": list(self.logs),
-        }
+from .job_models import FINAL_STATES, Job
 
 
 class JobStore:
@@ -97,6 +55,9 @@ class JobStore:
     def get(self, job_id: str) -> Job | None:
         with self._lock:
             return self._jobs.get(job_id)
+
+    def result(self, job: Job) -> dict[str, Any] | None:
+        return job.result
 
     def cancel(self, job_id: str) -> Job | None:
         with self._lock:
@@ -141,7 +102,9 @@ class JobStore:
                     })
                 result = self.engine.run_backtest(
                     job.parameters,
-                    lambda stage, detail: self._progress(job, stage, detail),
+                    lambda stage, detail, current=job: self._progress(
+                        current, stage, detail
+                    ),
                 )
                 encoded = json.dumps(
                     result, allow_nan=False, separators=(",", ":")
@@ -169,7 +132,7 @@ class JobStore:
                         "stage": job.stage,
                         "detail": job.detail,
                     })
-            except Exception as exc:  # API clients receive a stable error record.
+            except Exception as exc:  # noqa: BLE001 - persist a stable API error.
                 with self._lock:
                     job.status = "failed"
                     job.stage = "failed"

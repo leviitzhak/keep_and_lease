@@ -1,0 +1,17 @@
+.git
+.github
+.next
+.terraform
+.wrangler
+node_modules
+dist
+docs
+infra
+public/*
+!public/silver_strategy_gui.html
+!public/backtest-worker-v13.js
+tests
+work
+outputs
+*.tfstate*
+__pycache__
