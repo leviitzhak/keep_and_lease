@@ -41,7 +41,7 @@ identity for workload state only.
 | Job metadata | `FirestoreJobRepository` | Firestore `backtests` and `backtest_cache` |
 | Results | `GcsResultStore` | immutable `jobs/<job-id>/result.json.gz` objects |
 | Workloads | `infra/gcp/workloads/` | `gs://keep-and-lease-terraform-workloads/cloud-run` state |
-| Deployment | `.github/workflows/deploy-google-cloud.yml` | manual OIDC build/push/plan/apply/health check |
+| Deployment | `.github/workflows/deploy-google-cloud.yml` | branch-push or manual OIDC build/push/plan/apply/health check |
 
 The local and Render modes retain `JobStore`, the existing in-process queue. Cloud
 mode is selected with `KEEP_AND_LEASE_JOB_BACKEND=cloud`; it never starts the
@@ -135,9 +135,11 @@ terraform apply
 The foundation state remains under `foundation`; Cloud Run resources use the
 separate protected workload-state bucket.
 
-### 2. Run the manual GitHub workflow
+### 2. Run the GitHub workflow
 
-Run **Deploy Google Cloud workloads** for the reviewed commit. It:
+During pre-merge acceptance, a push to `agent/google-cloud-run-design` runs
+**Deploy Google Cloud workloads** automatically. The workflow also retains
+`workflow_dispatch` so a reviewed commit can be deployed manually. It:
 
 1. authenticates with the existing OIDC provider;
 2. builds and pushes separate web/worker images;

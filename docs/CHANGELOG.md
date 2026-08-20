@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-08-20 — Pre-merge Cloud Run deployment trigger
+
+- Enabled the Google Cloud deployment workflow on pushes to
+  `agent/google-cloud-run-design` while retaining manual dispatch, allowing the
+  private Cloud Run service and calculation Job to be tested before merge.
+
 ## 2026-08-19 — Durable Cloud Run web and calculation Job implementation
 
 - Replaced process-local cloud execution with transactional Firestore jobs/cache,

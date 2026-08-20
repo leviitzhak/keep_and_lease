@@ -1,6 +1,9 @@
 name: Deploy Google Cloud workloads
 
 on:
+  push:
+    branches:
+      - agent/google-cloud-run-design
   workflow_dispatch:
 
 concurrency:
