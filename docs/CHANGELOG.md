@@ -1,6 +1,6 @@
 # Changelog
 
-## 2026-08-20 — Pre-merge Cloud Run deployment trigger
+## 2026-08-20 — First Cloud Run deployment and production trigger
 
 - Enabled the Google Cloud deployment workflow on pushes to
   `agent/google-cloud-run-design` while retaining manual dispatch, allowing the
@@ -8,6 +8,10 @@
 - Minted the private health-check ID token through a second OIDC auth exchange
   scoped to the deployed Cloud Run URL, because external-account credentials do
   not support `gcloud auth print-identity-token` directly.
+- Deployed the private web service and calculation Job from commit `fc4400e9`, then
+  verified `status=ok`, application version `1.2`, and the `cloud-run-job` backend.
+- Moved the automatic deployment trigger to pushes on `master`; manual dispatch
+  remains available for controlled redeployment.
 
 ## 2026-08-19 — Durable Cloud Run web and calculation Job implementation
 

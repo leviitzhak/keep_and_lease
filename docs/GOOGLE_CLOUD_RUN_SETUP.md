@@ -1,11 +1,12 @@
 # Google Cloud Run deployment design and implementation state
 
-## Current state — 2026-08-19
+## Current state — 2026-08-20
 
 The Google Cloud foundation is provisioned and verified. The durable application
-split, containers, workload Terraform, and keyless deployment workflow are now
-implemented on `agent/google-cloud-run-design`; the Cloud Run workloads still need
-their first deployment and bounded numerical smoke test.
+split, containers, workload Terraform, and keyless deployment workflow are
+implemented. The private web service and calculation Job were first deployed from
+commit `fc4400e9a18a4e68846f250b64efee7fc0429ad7`; the authenticated health check
+passed. The bounded operator calculation smoke test remains.
 
 ### Provisioned foundation
 
@@ -27,10 +28,9 @@ their first deployment and bounded numerical smoke test.
 - GitHub OIDC authentication has been tested successfully; no service-account JSON
   key is stored.
 
-Before the first workload deployment, apply the small foundation delta that grants
-the runtime identities Artifact Registry read access and creates the protected
-`gs://keep-and-lease-terraform-workloads` bucket accessible to the deployment
-identity for workload state only.
+The foundation delta is applied. It grants the runtime identities Artifact Registry
+read access and creates the protected `gs://keep-and-lease-terraform-workloads`
+bucket accessible to the deployment identity for workload state only.
 
 ### Implemented application split
 
@@ -41,7 +41,7 @@ identity for workload state only.
 | Job metadata | `FirestoreJobRepository` | Firestore `backtests` and `backtest_cache` |
 | Results | `GcsResultStore` | immutable `jobs/<job-id>/result.json.gz` objects |
 | Workloads | `infra/gcp/workloads/` | `gs://keep-and-lease-terraform-workloads/cloud-run` state |
-| Deployment | `.github/workflows/deploy-google-cloud.yml` | branch-push or manual OIDC build/push/plan/apply/health check |
+| Deployment | `.github/workflows/deploy-google-cloud.yml` | `master` push or manual OIDC build/push/plan/apply/health check |
 
 The local and Render modes retain `JobStore`, the existing in-process queue. Cloud
 mode is selected with `KEEP_AND_LEASE_JOB_BACKEND=cloud`; it never starts the
@@ -115,11 +115,12 @@ into every request hash. The worker receives its own digest as runtime
 configuration and refuses a mismatch. Completed metadata therefore identifies the
 exact code, data, parameters, and result bytes.
 
-## First deployment
+## Deployment and acceptance
 
-### 1. Apply the foundation IAM delta
+### 1. Maintain the foundation IAM delta
 
-Run as the project owner from the existing authenticated Cloud Shell checkout:
+The initial delta was applied on 2026-08-20. For future foundation changes, run as
+the project owner from an authenticated Cloud Shell checkout:
 
 ```bash
 cd ~/keep_and_lease
@@ -137,9 +138,9 @@ separate protected workload-state bucket.
 
 ### 2. Run the GitHub workflow
 
-During pre-merge acceptance, a push to `agent/google-cloud-run-design` runs
-**Deploy Google Cloud workloads** automatically. The workflow also retains
-`workflow_dispatch` so a reviewed commit can be deployed manually. It:
+A push to `master` runs **Deploy Google Cloud workloads** automatically. The
+workflow also retains `workflow_dispatch` so a reviewed commit can be deployed
+manually. It:
 
 1. authenticates with the existing OIDC provider;
 2. builds and pushes separate web/worker images;

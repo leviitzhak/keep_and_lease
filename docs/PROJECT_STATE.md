@@ -58,11 +58,13 @@ Build an interactive research and backtesting application for strategies that al
 10. The Google Cloud foundation is provisioned. Durable Firestore jobs, immutable
     compressed GCS results, a scale-to-zero Cloud Run web service, one-shot
     calculation Job, containers, Terraform, and OIDC deployment workflow are
-    implemented; first private deployment and acceptance testing remain.
+    implemented and deployed. The private health check passed; bounded calculation,
+    cancellation, and replacement acceptance tests remain.
 
 ## Active review and planned architecture
 
-- [CURRENT_WORK.md](CURRENT_WORK.md) is the maintained pointer to the current unmerged implementation and completion scope.
+- [CURRENT_WORK.md](CURRENT_WORK.md) is the maintained pointer to the current
+  implementation and completion scope.
 - The exact preview revision is the version and commit displayed by the deployed GUI.
 - The first server-computation implementation sends the existing parameter JSON
   to a CPython job runner and returns the unchanged result JSON. Deployment and

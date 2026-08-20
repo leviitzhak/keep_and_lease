@@ -122,8 +122,8 @@ The cloud job/result adapters, one-shot worker, separate containers, Cloud Run v
 Terraform, immutable-digest OIDC deployment, cancellation, heartbeats, stale-lease
 reconciliation, compressed result streaming, checksums, timing, and peak-RSS
 measurement are implemented. The durable foundation is provisioned; the private
-Cloud Run service and Job still require their first deployment and numerical smoke
-test.
+Cloud Run service and Job are deployed and their authenticated health check passes.
+The bounded numerical smoke test remains.
 
 The initial worker is 1 vCPU and 4 GiB, with one task, a 30-minute timeout and zero
 automatic retries. The current worker image intentionally bundles the small
