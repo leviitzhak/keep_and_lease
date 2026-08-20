@@ -132,6 +132,17 @@ jobs:
           TF_VAR_worker_image: ${{ steps.images.outputs.worker_image }}
         run: terraform apply -input=false -auto-approve tfplan
 
+      - name: Report failed Cloud Run startup logs
+        if: failure()
+        run: |
+          gcloud logging read \
+            'resource.type="cloud_run_revision" AND resource.labels.service_name="keep-and-lease-web"' \
+            --project="$PROJECT_ID" \
+            --freshness=15m \
+            --limit=50 \
+            --order=desc \
+            --format='table(timestamp,severity,resource.labels.revision_name,textPayload,jsonPayload.message)'
+
       - name: Resolve deployed web URI
         id: web
         working-directory: infra/gcp/workloads
