@@ -103,13 +103,14 @@ measurements.
 6. Remove the browser calculation path only after the server path is operationally
    reliable.
 
-## Google Cloud Run scale-to-zero option
+## Google Cloud Run scale-to-zero implementation
 
-The proposed Google Cloud implementation is specified in
+The Google Cloud implementation and first-deployment runbook are specified in
 [GOOGLE_CLOUD_RUN_SETUP.md](GOOGLE_CLOUD_RUN_SETUP.md). It separates the
 scale-to-zero GUI/API service from durable, independently sized Cloud Run Job
 executions. Versioned Parquet market data and compressed results live in Cloud
-Storage; durable job metadata replaces the current in-process job dictionary.
+Storage in the target data design; compressed results and durable job metadata are
+implemented now, while the Parquet input migration remains pending.
 
 This design is especially suitable for intermittent use because no worker remains
 allocated between calculations and an incoming request automatically wakes the web
@@ -117,11 +118,19 @@ service. It requires an application change: a Cloud Run service must not depend 
 a background thread continuing after the submission request returns. The web
 service instead creates a durable record and invokes a Job.
 
-The documented initial worker size is 1 vCPU and 4 GiB, with one calculation at a
-time. Published free-tier allowances are expected to cover early intermittent use,
-but the selected region must be priced and benchmarked before provisioning. Google
-Cloud resources are not yet created; Cloud Run remains a proposed alternative
-alongside the existing AWS infrastructure foundation.
+The cloud job/result adapters, one-shot worker, separate containers, Cloud Run v2
+Terraform, immutable-digest OIDC deployment, cancellation, heartbeats, stale-lease
+reconciliation, compressed result streaming, checksums, timing, and peak-RSS
+measurement are implemented. The durable foundation is provisioned; the private
+Cloud Run service and Job still require their first deployment and numerical smoke
+test.
+
+The initial worker is 1 vCPU and 4 GiB, with one task, a 30-minute timeout and zero
+automatic retries. The current worker image intentionally bundles the small
+calculation-ready ZIP/CSV set for the first equivalence test. Versioned
+Parquet/DuckDB/Arrow access through the market-data bucket remains the next data
+phase. The Cloud Run web service does not load histories; synchronous day inspection
+therefore remains deferred.
 
 ## AWS production and PR-preview option
 

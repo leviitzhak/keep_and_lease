@@ -1,6 +1,6 @@
 # Keep & Lease — Project State
 
-_Last updated: 2026-08-18_
+_Last updated: 2026-08-19_
 
 ## Purpose
 
@@ -55,6 +55,10 @@ Build an interactive research and backtesting application for strategies that al
    workflow, repository secrets, and public URL variables are configured and have
    verified a synchronized deployment from one exact commit. Render-native health
    check paths remain to be entered on the two existing services.
+10. The Google Cloud foundation is provisioned. Durable Firestore jobs, immutable
+    compressed GCS results, a scale-to-zero Cloud Run web service, one-shot
+    calculation Job, containers, Terraform, and OIDC deployment workflow are
+    implemented; first private deployment and acceptance testing remain.
 
 ## Active review and planned architecture
 

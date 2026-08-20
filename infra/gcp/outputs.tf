@@ -5,3 +5,4 @@ output "web_service_account" { value = google_service_account.web.email }
 output "worker_service_account" { value = google_service_account.worker.email }
 output "deployment_service_account" { value = google_service_account.deploy.email }
 output "workload_identity_provider" { value = google_iam_workload_identity_pool_provider.github.name }
+output "workload_terraform_state_bucket" { value = google_storage_bucket.workload_terraform_state.name }

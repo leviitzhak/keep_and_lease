@@ -59,6 +59,15 @@ This checklist reflects the application synchronized from the deployed Sites che
 - [x] Add a plan-first Terraform foundation and AWS operator runbook for the two-host prototype.
 - [x] Split GitHub OIDC permissions into master-only production and PR-only preview roles.
 - [ ] Extend the implemented Docker image and asynchronous API with durable activity/job reconciliation, HTTPS/authentication, and GitHub deployment workflows required by `AWS_SETUP.md`.
+- [x] Implement the Google Cloud durable Firestore job/cache repository, immutable
+  gzip result adapter, Cloud Run Job launcher/cancellation, worker heartbeat and
+  stale-lease reconciliation, separate web/worker images, workload Terraform, and
+  keyless immutable-digest deployment workflow.
+- [ ] Apply the Google Cloud foundation IAM delta, deploy the private Cloud Run
+  workloads, and complete the bounded numerical/cancellation/container-replacement
+  acceptance tests in `GOOGLE_CLOUD_RUN_SETUP.md`.
+- [ ] Move calculation-ready cloud inputs from the worker image to versioned
+  Parquet/DuckDB/Arrow objects and restore durable cloud day inspection.
 - [ ] If measured concurrency outgrows two EC2 hosts, implement the ECS/SQS/S3 durable scale-out design and load-test its retry/idempotency behavior.
 - [ ] Add GitHub Actions checks for Python tests, the production build, rendered tests, and artifact validation.
 - [ ] Remove obsolete generated worker versions and other duplicated deployment artifacts after confirming the canonical build path.

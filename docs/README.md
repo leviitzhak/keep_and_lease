@@ -21,7 +21,9 @@ Start with [PROJECT_STATE.md](PROJECT_STATE.md).
 - [Roadmap](ROADMAP.md) — staged development plan.
 - [Deployment and calculation architecture](DEPLOYMENT_ARCHITECTURE.md) — current-change pointer, server-computation migration, and production/preview hosting.
 - [AWS setup](AWS_SETUP.md) — repeatable account provisioning, deployment prerequisites, idle shutdown, security, and operations.
-- [Google Cloud Run setup](GOOGLE_CLOUD_RUN_SETUP.md) — proposed scale-to-zero web service, durable calculation Jobs, analytical data storage, security, costs, and migration.
+- [Google Cloud Run setup](GOOGLE_CLOUD_RUN_SETUP.md) — provisioned foundation,
+  implemented scale-to-zero web service and durable calculation Job, deployment,
+  security boundaries, acceptance work, and analytical-data migration.
  
 ## Working convention
 

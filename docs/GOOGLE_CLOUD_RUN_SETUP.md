@@ -1,159 +1,186 @@
 # Google Cloud Run deployment design and implementation state
 
-## Current deployed foundation — 2026-08-19
+## Current state — 2026-08-19
 
-The Google Cloud foundation is now provisioned and verified for Keep & Lease.
+The Google Cloud foundation is provisioned and verified. The durable application
+split, containers, workload Terraform, and keyless deployment workflow are now
+implemented on `agent/google-cloud-run-design`; the Cloud Run workloads still need
+their first deployment and bounded numerical smoke test.
+
+### Provisioned foundation
 
 - Google Cloud project: `keep-and-lease` (project number `989708711229`).
 - Primary region: Tel Aviv `me-west1`.
-- Billing is linked and required APIs are enabled.
-- Terraform configuration: `infra/gcp/`.
-- Terraform remote backend: `gs://keep-and-lease-terraform-state/foundation`.
-- Terraform state bucket has uniform bucket-level access, public-access prevention,
-  and object versioning enabled.
+- Foundation Terraform: `infra/gcp/`, with remote state at
+  `gs://keep-and-lease-terraform-state/foundation`.
 - Artifact Registry: `me-west1-docker.pkg.dev/keep-and-lease/keep-and-lease`.
-- Market-data bucket: `gs://keep-and-lease-market-data`.
-- Result bucket: `gs://keep-and-lease-results`, with a 90-day lifecycle rule.
-- Firestore Native `(default)` database: `me-west1`.
+- Market data: `gs://keep-and-lease-market-data` with object versioning.
+- Results: `gs://keep-and-lease-results` with a 90-day lifecycle rule.
+- Firestore Native `(default)` database in `me-west1`.
 - Runtime identities:
   - `keep-lease-web@keep-and-lease.iam.gserviceaccount.com`;
   - `keep-lease-worker@keep-and-lease.iam.gserviceaccount.com`.
-- Deployment identity: `keep-lease-github@keep-and-lease.iam.gserviceaccount.com`.
+- Deployment identity:
+  `keep-lease-github@keep-and-lease.iam.gserviceaccount.com`.
 - GitHub Workload Identity provider:
   `projects/989708711229/locations/global/workloadIdentityPools/github/providers/github`.
-- GitHub OIDC authentication has been tested successfully from GitHub Actions;
-  no service-account JSON key is stored.
-- Repository Actions variables are used for the project, region, provider, and
-  deployment identity. These values are configuration, not secrets.
+- GitHub OIDC authentication has been tested successfully; no service-account JSON
+  key is stored.
 
-A post-migration `terraform plan` reports no changes. The persistent cloud
-foundation and remote state are therefore the current source of truth.
+Before the first workload deployment, apply the small foundation delta that grants
+the runtime identities Artifact Registry read access and creates the protected
+`gs://keep-and-lease-terraform-workloads` bucket accessible to the deployment
+identity for workload state only.
 
-## Reproducible bootstrap
+### Implemented application split
 
-The account owner must create/link the project and billing account. Then run
-`scripts/gcp-bootstrap.sh`, which enables the required APIs including Cloud
-Resource Manager. The Terraform state bucket is a bootstrap resource because the
-GCS backend must exist before Terraform can initialize against it.
+| Component | Implementation | Initial resources |
+|---|---|---:|
+| Web GUI/API | `Dockerfile.web`, `server.app`, `CloudJobService` | 1 vCPU, 1 GiB, scale to zero |
+| Calculation | `Dockerfile.worker`, `cloud_worker_main.py`, `WorkerRunner` | 1 vCPU, 4 GiB, one task |
+| Job metadata | `FirestoreJobRepository` | Firestore `backtests` and `backtest_cache` |
+| Results | `GcsResultStore` | immutable `jobs/<job-id>/result.json.gz` objects |
+| Workloads | `infra/gcp/workloads/` | `gs://keep-and-lease-terraform-workloads/cloud-run` state |
+| Deployment | `.github/workflows/deploy-google-cloud.yml` | manual OIDC build/push/plan/apply/health check |
 
-Create it once with:
+The local and Render modes retain `JobStore`, the existing in-process queue. Cloud
+mode is selected with `KEEP_AND_LEASE_JOB_BACKEND=cloud`; it never starts the
+background calculation thread. The web image serves the standalone GUI and v13
+server adapter but contains no market archives or Pyodide fallback payload.
+
+## Durable execution contract
+
+1. `POST /api/v1/backtests` validates the versioned parameter document.
+2. A Firestore transaction calculates the canonical parameter/provenance hash,
+   reuses an active or completed identical job when present, or creates a new
+   `queued` record and cache pointer.
+3. Only after the record exists, the web identity executes the named Cloud Run Job
+   with a per-execution `KEEP_AND_LEASE_JOB_ID` override.
+4. The one-shot worker transactionally claims the record, stores its Cloud Run
+   execution name and lease owner, changes it to `running`, and starts a durable
+   heartbeat.
+5. The worker runs the canonical `StrategyEngine` once. It checks that application,
+   engine, data-manifest, and worker-image provenance match the submitted immutable
+   identifiers.
+6. Strict JSON encoding enforces the configured result limit. The worker creates a
+   deterministic gzip object with `if_generation_match=0`, CRC32C transport
+   checking, and SHA-256 checksums for compressed and uncompressed bytes.
+7. A final Firestore transaction records `completed`, the `gs://` result pointer,
+   checksums, timings, peak RSS, execution name, and exact provenance.
+8. `GET /api/v1/backtests/{id}` reads Firestore. It also converts expired queued
+   leases or worker heartbeats into a durable `failed/worker_lost` state.
+9. `GET /api/v1/backtests/{id}/result` checks the completed record and streams the
+   gzip object from the configured result bucket; the browser receives the same
+   canonical JSON object after HTTP decompression.
+10. `DELETE /api/v1/backtests/{id}` durably requests cancellation. Queued work is
+    cancelled before claim; running work uses the recorded execution name to call
+    Cloud Run cancellation and the worker treats SIGTERM during cancellation as a
+    durable `cancelled` state.
+
+Launch errors, calculation errors, serialization limits, SIGTERM interruption,
+expired heartbeats, cancellation, and rejected remote-cancellation calls are written
+to Firestore rather than existing only in container memory. Logs are bounded to the
+latest 100 stage messages.
+
+Cloud Run has no automatic worker retry initially. Result creation is immutable,
+but a complete retry/reconciliation policy must be proven before enabling platform
+retries.
+
+## Identity boundaries
+
+- The web identity can read/update job metadata, read result objects, and execute or
+  cancel only `keep-and-lease-calculation` with per-run overrides.
+- The worker identity can read market data, read/update job metadata, and create
+  result objects.
+- The GitHub identity can push images, manage Cloud Run workloads, impersonate only
+  the web/worker runtime identities for deployment, and access the dedicated
+  workload Terraform state bucket without access to foundation state.
+- The first web service is private. `allow_unauthenticated=false` is the Terraform
+  default. Do not make billable submission public before application
+  authentication, quotas, and abuse controls exist.
+
+The runtime Firestore permission is currently the predefined `roles/datastore.user`
+role, which is broader than per-collection access. Revisit it if custom IAM support
+or a separate metadata project becomes worthwhile.
+
+## Container provenance
+
+The deployment workflow builds two images from the same commit, pushes SHA-tagged
+images, resolves their Artifact Registry digests, and supplies digest-qualified
+references to Terraform. It also calculates a deterministic hash over the current
+calculation-ready archives and rate files.
+
+The web writes the worker digest, engine commit, data hash, and application version
+into every request hash. The worker receives its own digest as runtime
+configuration and refuses a mismatch. Completed metadata therefore identifies the
+exact code, data, parameters, and result bytes.
+
+## First deployment
+
+### 1. Apply the foundation IAM delta
+
+Run as the project owner from the existing authenticated Cloud Shell checkout:
 
 ```bash
-gcloud storage buckets create gs://keep-and-lease-terraform-state \
-  --project=keep-and-lease --location=me-west1 --uniform-bucket-level-access
-gcloud storage buckets update gs://keep-and-lease-terraform-state \
-  --public-access-prevention=enforced
-gcloud storage buckets update gs://keep-and-lease-terraform-state --versioning
-```
-
-Then:
-
-```bash
+cd ~/keep_and_lease
+git pull
 cd infra/gcp
 terraform init
+terraform fmt -check
+terraform validate
 terraform plan
 terraform apply
 ```
 
-For migration from an existing local state, use `terraform init -migrate-state`.
-Never commit `terraform.tfstate`, credentials, or private variable files. Commit
-`.terraform.lock.hcl` so provider selection is reproducible.
+The foundation state remains under `foundation`; Cloud Run resources use the
+separate protected workload-state bucket.
 
-## Target application architecture
+### 2. Run the manual GitHub workflow
 
-The target remains two independently scalable workloads:
+Run **Deploy Google Cloud workloads** for the reviewed commit. It:
 
-| Component | Cloud Run product | Initial resources | Purpose |
-|---|---|---:|---|
-| Web | Cloud Run service | 1 vCPU, 1 GiB | GUI, validation, submission, status, result access |
-| Calculation | Cloud Run Job | 1 vCPU, 4 GiB | One durable backtest execution |
-| Market/result storage | Cloud Storage | usage based | Versioned analytical inputs and compressed results |
-| Job metadata | Firestore | usage based | Durable status, progress, hashes, ownership, result pointer |
-| Images | Artifact Registry | usage based | Immutable web and worker images |
-| Build/deploy | GitHub Actions + OIDC | usage based | Keyless tested deployments |
+1. authenticates with the existing OIDC provider;
+2. builds and pushes separate web/worker images;
+3. resolves immutable digests;
+4. initializes `infra/gcp/workloads/` against the dedicated workload-state bucket;
+5. runs `terraform fmt -check`, `validate`, `plan`, and `apply`;
+6. invokes the private health endpoint with an identity token; and
+7. publishes the URI and immutable image references in the workflow summary.
 
-Both Cloud Run workloads must scale to zero. The worker starts with one task,
-1 vCPU, 4 GiB memory, a 30-minute timeout and no automatic retry until execution
-is proven idempotent.
+Required repository Actions variables remain:
 
-## Why the existing API cannot simply be deployed
+- `GCP_PROJECT_ID=keep-and-lease`
+- `GCP_REGION=me-west1`
+- `GCP_WORKLOAD_IDENTITY_PROVIDER=projects/989708711229/locations/global/workloadIdentityPools/github/providers/github`
+- `GCP_DEPLOY_SERVICE_ACCOUNT=keep-lease-github@keep-and-lease.iam.gserviceaccount.com`
 
-The current server starts a background Python thread and retains job status and
-results in process memory. A Cloud Run service instance can disappear after a
-request, so this is not durable.
+These are identifiers, not secrets.
 
-The next implementation must preserve the HTTP contract while replacing process
-memory with durable interfaces:
+### 3. Private operator smoke test
 
-1. `POST /api/v1/backtests` validates parameters and creates a Firestore `queued`
-   record.
-2. The web service starts the named Cloud Run Job with a job ID and immutable
-   version identifiers.
-3. The worker changes the record to `running`, loads market data, executes the
-   canonical strategy and publishes bounded progress.
-4. The worker writes a compressed result to Cloud Storage and atomically records
-   `completed`, checksum, result URI, timing and peak RSS in Firestore.
-5. `GET /api/v1/backtests/{id}` reads durable status.
-6. `GET /api/v1/backtests/{id}/result` authorizes and streams the stored result.
-7. Failures, interruption and cancellation must become durable actionable states.
+From an identity with Cloud Run invoke permission:
 
-The web service must not load complete market histories.
+```bash
+WEB_URI="$(gcloud run services describe keep-and-lease-web \
+  --region=me-west1 --format='value(status.url)')"
+TOKEN="$(gcloud auth print-identity-token)"
 
-## Storage and data direction
+curl --fail --header "Authorization: Bearer ${TOKEN}" \
+  "${WEB_URI}/api/v1/health"
 
-Use immutable, versioned calculated-ready market data under
-`gs://keep-and-lease-market-data`. Raw source archives remain available for audit,
-but ZIP parsing should not be the normal calculation path. The planned analytical
-format is partitioned Parquet queried with DuckDB, projecting only required dates,
-commodities and columns and converting to Arrow/NumPy structures rather than
-per-cell Python objects.
+curl --fail --header "Authorization: Bearer ${TOKEN}" \
+  --header 'Content-Type: application/json' \
+  --data '{"schema_version":1,"parameters":{"weight_silver":100}}' \
+  "${WEB_URI}/api/v1/backtests"
+```
 
-Results live under `gs://keep-and-lease-results/jobs/<job-id>/`. Every completed
-result records the exact engine commit/image digest, data-manifest hash, parameters
-and result checksum.
+Poll the returned `status_url` with the same token, download `result_url`, verify
+the SHA-256 header against the decompressed bytes, and compare a bounded fixture to
+the local canonical engine before treating the deployment as accepted.
 
-## Identity boundaries
+## Terraform operator checks
 
-The web identity may update job metadata, execute only the calculation Job and read
-result objects. The worker may read market data, update its job metadata and write
-results. The GitHub deployment identity may deploy Cloud Run workloads, push images
-and impersonate only the two runtime identities as required for deployment.
-
-The existing Terraform foundation establishes the initial IAM bindings. Tighten
-roles further as application calls become concrete. Production must add application
-authentication, parameter/result limits, quotas and abuse controls before exposing
-billable job creation publicly.
-
-## Next implementation sequence
-
-1. Add a cloud-neutral durable job/result abstraction while preserving the current
-   API contract and local/test implementation.
-2. Implement Firestore job metadata and Cloud Storage result adapters.
-3. Split web and worker entry points; the worker must execute one supplied job and
-   exit.
-4. Add the web-to-Cloud-Run-Job launcher and cancellation path.
-5. Add worker peak-RSS/stage timing and durable heartbeat/lease handling.
-6. Add separate web/worker container images.
-7. Add Terraform Cloud Run service and Job resources with least-privilege IAM.
-8. Add GitHub Actions build/push/deploy using the verified OIDC identity.
-9. Deploy a private proof of concept and run a bounded numerical smoke test.
-10. Introduce versioned Parquet ingestion and DuckDB/Arrow market access.
-11. Benchmark cold start, data retrieval, calculation, serialization, memory and
-    billed time; compare `me-west1` with a European region if useful.
-12. Add budgets/alerts, authentication, quotas, retention checks and rollback, then
-    validate scale-to-zero and repeat-run caching.
-
-## Acceptance criteria
-
-The deployment is acceptable only when jobs/results survive container replacement,
-a cold submission requires no manual wake-up, the intended commodity set stays
-below 80% of worker memory, canonical numerical fixtures match within documented
-tolerances, exact code/data/parameter/result provenance is recoverable, interrupted
-jobs have durable status, and budgets/authentication/quotas/rollback are tested.
-
-## Operator checks
-
-Useful verification commands:
+Foundation:
 
 ```bash
 cd infra/gcp
@@ -163,14 +190,73 @@ terraform plan
 terraform output
 ```
 
-The expected steady-state plan is `No changes. Your infrastructure matches the
-configuration.` The manual `.github/workflows/gcp-identity-check.yml` workflow can
-be used after it is available on the default branch to verify GitHub federation.
+Workloads require the exact images that are in state. Normally inspect them through
+the GitHub workflow. For a manual plan:
+
+```bash
+cd infra/gcp/workloads
+terraform init
+terraform state show google_cloud_run_v2_service.web
+terraform state show google_cloud_run_v2_job.calculation
+terraform output
+```
+
+Do not run a workload plan with invented image variables: doing so proposes a new
+revision. Read the current digest-qualified image values from state or Artifact
+Registry.
+
+## Data direction and current limitation
+
+The deployed worker image currently carries the repository's small calculation-ready
+ZIP/CSV set so the first durable numerical proof can reproduce the existing engine
+without changing formulas and data access simultaneously. The provisioned market
+bucket is ready but is not yet the normal read path.
+
+The next data phase remains immutable versioned Parquet under
+`gs://keep-and-lease-market-data`, projected with DuckDB/Arrow by required dates,
+commodities, and columns. Raw source archives remain available for audit. This
+migration must create a manifest and numerical equivalence fixtures before the
+bundled inputs are removed.
+
+The synchronous `POST /api/v1/inspections` endpoint also remains local/Render-only;
+the scale-to-zero web service returns `503` because it must not load full market
+histories. Cloud inspection should be derived from a completed result or submitted
+as a durable operation in a later API version.
+
+## Remaining acceptance work
+
+- Deploy the private service and Job and run the bounded numerical smoke test.
+- Verify a result survives web/worker replacement and that a second identical
+  request reuses it.
+- Exercise queued and running cancellation plus forced worker interruption.
+- Confirm stale heartbeat reconciliation and result lifecycle behavior.
+- Measure cold start, load, calculation, gzip/upload, download, peak RSS, and billed
+  execution time; keep peak RSS below 80% of 4 GiB.
+- Add application authentication, ownership, parameter/date/result limits, quotas,
+  budgets/alerts, retention checks, and a tested rollback procedure.
+- Migrate calculation-ready inputs to versioned Parquet/DuckDB/Arrow.
+- Restore cloud day inspection without loading histories in the web service.
+
+## Reproducible foundation bootstrap
+
+The account owner must create/link the project and billing account. Then run
+`scripts/gcp-bootstrap.sh`. The Terraform state bucket is a bootstrap resource
+because the GCS backend must exist before Terraform can initialize:
+
+```bash
+gcloud storage buckets create gs://keep-and-lease-terraform-state \
+  --project=keep-and-lease --location=me-west1 --uniform-bucket-level-access
+gcloud storage buckets update gs://keep-and-lease-terraform-state \
+  --public-access-prevention=enforced
+gcloud storage buckets update gs://keep-and-lease-terraform-state --versioning
+```
+
+For migration from local state, use `terraform init -migrate-state`. Never commit
+state, credentials, or private variable files. Commit `.terraform.lock.hcl`.
 
 ## Teardown
 
 Do not make deletion of canonical data or Terraform state an implicit application
-teardown step. Export required results first. Cloud Run workloads and temporary
-application resources may be destroyed separately; raw data, published manifests,
-required analytical versions, audit information and Terraform state require an
-explicit retention decision.
+teardown step. Cloud Run workloads can be destroyed independently from
+`infra/gcp/workloads/`. Raw data, manifests, required results, audit metadata, and
+both Terraform state buckets require an explicit retention decision.

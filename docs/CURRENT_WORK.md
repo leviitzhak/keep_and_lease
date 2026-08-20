@@ -6,9 +6,11 @@ branch._
 
 ## Active change set
 
-- Status: in review and planned for completion before merge
-- Pull request: [PR #22 — Complete generalized multi-commodity implementation](https://github.com/leviitzhak/keep_and_lease/pull/22)
-- Current implementation and fixed-preview trigger branch: [`agent/multi-commodity-preview`](https://github.com/leviitzhak/keep_and_lease/tree/agent/multi-commodity-preview)
+- Status: Google Cloud foundation provisioned; durable Cloud Run workloads
+  implemented and pending first private deployment/acceptance test
+- Pull request: not opened yet for this deployment change
+- Current implementation branch: [`agent/google-cloud-run-design`](https://github.com/leviitzhak/keep_and_lease/tree/agent/google-cloud-run-design)
+- Previous generalized application review: [PR #22 — Complete generalized multi-commodity implementation](https://github.com/leviitzhak/keep_and_lease/pull/22)
 - Render services' configured source branch: [`agent/fixed-render-preview-deploys`](https://github.com/leviitzhak/keep_and_lease/tree/agent/fixed-render-preview-deploys). Deploy hooks override this default with the exact commit pushed to the current implementation branch.
 - Application version: `1.2`
 - Exact deployed revision: read `Version … · commit …` in the [preview GUI](https://keep-and-lease-fixed-preview.onrender.com), or compare [`build-info.json`](https://keep-and-lease-fixed-preview.onrender.com/build-info.json) with the API [`engine_commit`](https://keep-and-lease-fixed-preview-api.onrender.com/api/v1/health).
@@ -27,12 +29,18 @@ branch._
 - A provisioned fixed two-service Render preview and deploy-hook workflow that
   deploys and verifies the same commit on the GUI and computation API. The first
   complete synchronized deployment was validated on 2026-08-18.
+- A provisioned Google Cloud foundation plus implemented durable Firestore/GCS job
+  persistence, scale-to-zero web service, one-shot 4 GiB calculation Job, separate
+  containers, workload Terraform, and GitHub OIDC deployment workflow.
 
 ## Explicitly deferred
 
 - The pure shorter-long/longer-short maturity multiplier is planned for a later
   branch after this change set is merged.
-- Durable cross-restart job storage, authentication, production deployment, and
-  capacity measurements remain deployment work. The fixed Render services,
+- The first private Cloud Run deployment, numerical/cancellation/replacement
+  acceptance tests, application authentication, and capacity measurements remain
+  deployment work. The fixed Render services,
   deploy-hook secrets, and public URL variables are configured; only the optional
   Render-native health-check paths remain to be entered in the current services.
+- Versioned Parquet/DuckDB/Arrow cloud inputs and cloud day inspection remain after
+  the durable execution proof; the first worker image keeps the current input set.

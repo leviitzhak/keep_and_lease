@@ -1,6 +1,11 @@
 # Google Cloud infrastructure
 
-This directory is the source of truth for the persistent Keep & Lease Google Cloud foundation described in `docs/GOOGLE_CLOUD_RUN_SETUP.md`.
+This directory contains two independently managed Terraform roots described in
+`docs/GOOGLE_CLOUD_RUN_SETUP.md`.
+
+- `infra/gcp/` is the persistent foundation and uses GCS state prefix `foundation`.
+- `infra/gcp/workloads/` is the replaceable Cloud Run web service and calculation
+  Job and uses `gs://keep-and-lease-terraform-workloads/cloud-run`.
 
 The first apply runs from an authenticated Google Cloud Shell and creates storage, Artifact Registry, Firestore, least-privilege runtime identities, and GitHub Workload Identity Federation. No service-account JSON key is required.
 
@@ -16,4 +21,12 @@ terraform output
 
 Defaults target project `keep-and-lease` and region `me-west1`. Review the plan before approving it, especially the Firestore location.
 
-Cloud Run service/job resources are intentionally deferred until the application has separate durable web and worker entry points; the current in-memory background-thread server must not be treated as the final Cloud Run architecture.
+After pulling the durable web/worker implementation, apply the foundation once more
+to grant runtime image-read access and GitHub access to workload state. Then run the
+manual **Deploy Google Cloud workloads** GitHub Actions workflow. It builds and
+pushes immutable images before planning and applying `workloads/`; do not attempt a
+first workload apply before those image digests exist.
+
+The web service is private by default. Public billable job creation requires
+`allow_unauthenticated=true`, which must remain disabled until application
+authentication and quotas are implemented.

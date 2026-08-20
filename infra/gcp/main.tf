@@ -51,6 +51,17 @@ resource "google_storage_bucket" "results" {
   }
 }
 
+resource "google_storage_bucket" "workload_terraform_state" {
+  name                        = "${var.project_id}-terraform-workloads"
+  location                    = var.region
+  uniform_bucket_level_access = true
+  public_access_prevention    = "enforced"
+
+  versioning {
+    enabled = true
+  }
+}
+
 resource "google_service_account" "web" {
   account_id   = "keep-lease-web"
   display_name = "Keep & Lease Cloud Run web"
@@ -154,4 +165,24 @@ resource "google_service_account_iam_member" "deploy_use_worker" {
   service_account_id = google_service_account.worker.name
   role               = "roles/iam.serviceAccountUser"
   member             = "serviceAccount:${google_service_account.deploy.email}"
+}
+
+resource "google_artifact_registry_repository_iam_member" "web_image_reader" {
+  location   = google_artifact_registry_repository.containers.location
+  repository = google_artifact_registry_repository.containers.name
+  role       = "roles/artifactregistry.reader"
+  member     = "serviceAccount:${google_service_account.web.email}"
+}
+
+resource "google_artifact_registry_repository_iam_member" "worker_image_reader" {
+  location   = google_artifact_registry_repository.containers.location
+  repository = google_artifact_registry_repository.containers.name
+  role       = "roles/artifactregistry.reader"
+  member     = "serviceAccount:${google_service_account.worker.email}"
+}
+
+resource "google_storage_bucket_iam_member" "deploy_terraform_state" {
+  bucket = google_storage_bucket.workload_terraform_state.name
+  role   = "roles/storage.objectAdmin"
+  member = "serviceAccount:${google_service_account.deploy.email}"
 }
