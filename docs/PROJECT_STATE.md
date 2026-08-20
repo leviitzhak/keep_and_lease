@@ -1,6 +1,6 @@
 # Keep & Lease — Project State
 
-_Last updated: 2026-08-19_
+_Last updated: 2026-08-20_
 
 ## Purpose
 
@@ -58,8 +58,11 @@ Build an interactive research and backtesting application for strategies that al
 10. The Google Cloud foundation is provisioned. Durable Firestore jobs, immutable
     compressed GCS results, a scale-to-zero Cloud Run web service, one-shot
     calculation Job, containers, Terraform, and OIDC deployment workflow are
-    implemented and deployed. The private health check passed; bounded calculation,
-    cancellation, and replacement acceptance tests remain.
+    implemented and deployed from `master`. The authenticated health check and
+    private operator GUI path work; bounded calculation, cancellation, and
+    replacement acceptance tests remain. Direct Cloud Run IAP is the planned
+    selected-user browser access mode; anonymous access remains gated on application
+    authentication, ownership, quotas, and abuse/spending controls.
 
 ## Active review and planned architecture
 

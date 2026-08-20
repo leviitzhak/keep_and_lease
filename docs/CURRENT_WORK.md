@@ -6,15 +6,18 @@ branch._
 
 ## Active change set
 
-- Status: durable Cloud Run workloads deployed; authenticated private health check
-  passed; bounded operator acceptance tests remain
+- Status: durable Cloud Run workloads deployed from `master`; authenticated health
+  and private operator GUI access work; bounded numerical, cancellation, and
+  replacement acceptance tests remain
 - Integration: fast-forwarded to `master` after the successful pre-merge deployment
 - Current implementation branch: [`master`](https://github.com/leviitzhak/keep_and_lease/tree/master)
 - Previous generalized application review: [PR #22 — Complete generalized multi-commodity implementation](https://github.com/leviitzhak/keep_and_lease/pull/22)
 - Render services' configured source branch: [`agent/fixed-render-preview-deploys`](https://github.com/leviitzhak/keep_and_lease/tree/agent/fixed-render-preview-deploys). Deploy hooks override this default with the exact commit pushed to the current implementation branch.
 - Application version: `1.2`
-- Pre-merge verified Cloud Run revision:
+- First verified Cloud Run revision:
   `fc4400e9a18a4e68846f250b64efee7fc0429ad7`
+- Current production deployment commit:
+  `d98fae3781015c00664a602e075029bbb5d4c5f8`
 - Exact deployed revision: read `Version … · commit …` in the [preview GUI](https://keep-and-lease-fixed-preview.onrender.com), or compare [`build-info.json`](https://keep-and-lease-fixed-preview.onrender.com/build-info.json) with the API [`engine_commit`](https://keep-and-lease-fixed-preview-api.onrender.com/api/v1/health).
 
 ## Scope being completed
@@ -39,8 +42,10 @@ branch._
 
 - The pure shorter-long/longer-short maturity multiplier is planned for a later
   change set.
-- Cloud Run numerical/cancellation/replacement acceptance tests, application
-  authentication, and capacity measurements remain deployment work. The fixed
+- Cloud Run numerical/cancellation/replacement acceptance tests and capacity
+  measurements remain deployment work. Direct Cloud Run IAP is the recommended
+  next browser-access step. Anonymous access remains deferred until application
+  authentication, ownership, quotas, and spending/abuse controls exist. The fixed
   Render services, deploy-hook secrets, and public URL variables are configured;
   only the optional Render-native health-check paths remain to be entered in the
   current services.

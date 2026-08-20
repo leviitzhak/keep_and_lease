@@ -5,8 +5,10 @@
 The Google Cloud foundation is provisioned and verified. The durable application
 split, containers, workload Terraform, and keyless deployment workflow are
 implemented. The private web service and calculation Job were first deployed from
-commit `fc4400e9a18a4e68846f250b64efee7fc0429ad7`; the authenticated health check
-passed. The bounded operator calculation smoke test remains.
+commit `fc4400e9a18a4e68846f250b64efee7fc0429ad7`; the production workflow now
+deploys `master`, currently commit `d98fae3781015c00664a602e075029bbb5d4c5f8`.
+The authenticated health check and private operator GUI path work. Bounded
+calculation, cancellation, and replacement acceptance tests remain.
 
 ### Provisioned foundation
 
@@ -96,7 +98,8 @@ retries.
   the web/worker runtime identities for deployment, and access the dedicated
   workload Terraform state bucket without access to foundation state.
 - The first web service is private. `allow_unauthenticated=false` is the Terraform
-  default. Do not make billable submission public before application
+  default. Its `run.app` URL returning `403 Forbidden` in an unauthenticated browser
+  is expected. Do not make billable submission anonymous before application
   authentication, quotas, and abuse controls exist.
 
 The runtime Firestore permission is currently the predefined `roles/datastore.user`
@@ -161,7 +164,24 @@ Required repository Actions variables remain:
 
 These are identifiers, not secrets.
 
-### 3. Private operator smoke test
+### 3. Open the private GUI
+
+The deployed service URL is currently
+<https://keep-and-lease-web-vfk2j2rgoq-zf.a.run.app>. Until browser authentication
+is added, use the authenticated Cloud SDK proxy from Cloud Shell:
+
+```bash
+gcloud run services proxy keep-and-lease-web \
+  --project=keep-and-lease \
+  --region=me-west1 \
+  --port=8080
+```
+
+Leave the command running and select **Web preview > Preview on port 8080** in
+Cloud Shell. The proxy attaches the caller's Google identity to requests. This is
+an operator path, not a public application URL.
+
+### 4. Bounded operator calculation smoke test
 
 From an identity with Cloud Run invoke permission:
 
@@ -182,6 +202,70 @@ curl --fail --header "Authorization: Bearer ${TOKEN}" \
 Poll the returned `status_url` with the same token, download `result_url`, verify
 the SHA-256 header against the decompressed bytes, and compare a bounded fixture to
 the local canonical engine before treating the deployment as accepted.
+
+## Browser access and public URL plan
+
+“Public URL” has two materially different meanings for this application.
+
+### Recommended next step: internet URL with Google sign-in
+
+Use [Identity-Aware Proxy (IAP) directly on the Cloud Run
+service](https://docs.cloud.google.com/run/docs/securing/identity-aware-proxy-cloud-run).
+The existing `run.app` URL then opens in a normal browser, redirects to Google
+sign-in, and admits only selected users or groups. Cloud Run remains
+`--no-allow-unauthenticated`; the service is browser-accessible but not anonymous.
+This is the recommended mode for the current research application.
+
+Implementation requires:
+
+1. Enable `iap.googleapis.com` in foundation Terraform.
+2. If the project is not attached to a Google organization, perform the first IAP
+   enablement in the Cloud Console and configure an **External** OAuth consent
+   screen/client. Google does not support creating that first OAuth client
+   programmatically for a no-organization project.
+3. Set `iap_enabled = true` on `google_cloud_run_v2_service.web` in workload
+   Terraform.
+4. Grant `roles/run.invoker` on the web service to
+   `service-989708711229@gcp-sa-iap.iam.gserviceaccount.com`.
+5. Grant each approved user or group `roles/iap.httpsResourceAccessor` on the IAP
+   Cloud Run resource. If GitHub Terraform will manage this policy, grant its
+   deployment identity the narrowly required IAP policy-administration permission
+   in the foundation first.
+6. Adapt the deployment health check to authenticate through IAP rather than minting
+   its current Cloud Run audience token, then test allowed and denied browser users.
+
+A custom domain is optional. Direct IAP protects the default `run.app` URL as well
+as load-balanced ingress.
+
+### Truly anonymous GUI
+
+Setting `allow_unauthenticated=true` would immediately remove the `403`, but must
+not be done on the current combined GUI/API service: every anonymous visitor would
+also reach the endpoint that starts billable calculation Jobs.
+
+Before an anonymous launch, implement and test all of the following:
+
+- split the public static GUI from a private calculation API, with an authenticated
+  backend-for-frontend or equivalent trusted service between them;
+- end-user authentication, per-job ownership checks, and authorization on status,
+  result, and cancellation endpoints;
+- strict date/parameter/result limits, per-user and per-IP quotas, bounded concurrent
+  Job executions, idempotency, and cache reuse;
+- budget and usage alerts, operational dashboards, audit logs, retention cleanup,
+  and a tested disable/rollback switch;
+- CSRF/CORS/session-cookie and security-header hardening; and
+- abuse and authorization-bypass tests in addition to numerical acceptance.
+
+For a custom public hostname, TLS policy, centralized routing, or edge controls,
+place a [global external Application Load Balancer with a serverless
+NEG](https://docs.cloud.google.com/load-balancing/docs/https/setup-global-ext-https-serverless)
+in front and attach Cloud Armor rate-limiting/WAF rules. A load balancer and Cloud
+Armor are defense in depth; they do not replace application authentication,
+ownership, or spending limits.
+
+Google's [Cloud Run authentication overview](https://docs.cloud.google.com/run/docs/authenticating/overview)
+should remain the authority when choosing between IAM service authentication, IAP
+browser authentication, and application-managed end-user authentication.
 
 ## Terraform operator checks
 
@@ -230,15 +314,19 @@ as a durable operation in a later API version.
 
 ## Remaining acceptance work
 
-- Deploy the private service and Job and run the bounded numerical smoke test.
+- Complete the bounded numerical smoke test and compare its fixture with the local
+  canonical engine.
 - Verify a result survives web/worker replacement and that a second identical
   request reuses it.
 - Exercise queued and running cancellation plus forced worker interruption.
 - Confirm stale heartbeat reconciliation and result lifecycle behavior.
 - Measure cold start, load, calculation, gzip/upload, download, peak RSS, and billed
   execution time; keep peak RSS below 80% of 4 GiB.
-- Add application authentication, ownership, parameter/date/result limits, quotas,
-  budgets/alerts, retention checks, and a tested rollback procedure.
+- Add direct Cloud Run IAP and selected-user access if a normal browser URL is
+  required before anonymous publication.
+- Before any anonymous access, add application authentication, ownership,
+  parameter/date/result limits, quotas, budgets/alerts, retention checks, and a
+  tested rollback procedure.
 - Migrate calculation-ready inputs to versioned Parquet/DuckDB/Arrow.
 - Restore cloud day inspection without loading histories in the web service.
 

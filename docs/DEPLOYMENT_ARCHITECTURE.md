@@ -122,8 +122,16 @@ The cloud job/result adapters, one-shot worker, separate containers, Cloud Run v
 Terraform, immutable-digest OIDC deployment, cancellation, heartbeats, stale-lease
 reconciliation, compressed result streaming, checksums, timing, and peak-RSS
 measurement are implemented. The durable foundation is provisioned; the private
-Cloud Run service and Job are deployed and their authenticated health check passes.
-The bounded numerical smoke test remains.
+Cloud Run service and Job are deployed from `master`, and their authenticated
+health and operator GUI paths work. The bounded numerical, cancellation, and
+replacement smoke tests remain.
+
+Direct Cloud Run IAP is the recommended next step for a normal browser URL limited
+to approved Google identities. Truly anonymous access must wait until the public
+GUI is separated from the private calculation API and application authentication,
+job ownership, quotas, spending limits, and abuse controls are implemented. The
+detailed access plan is maintained in
+[GOOGLE_CLOUD_RUN_SETUP.md](GOOGLE_CLOUD_RUN_SETUP.md).
 
 The initial worker is 1 vCPU and 4 GiB, with one task, a 30-minute timeout and zero
 automatic retries. The current worker image intentionally bundles the small

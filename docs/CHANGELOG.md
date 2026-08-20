@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-08-20 — Cloud Run operator access and publication plan
+
+- Recorded the successful `master` deployment and authenticated private operator
+  GUI path through the Cloud SDK proxy.
+- Selected direct Cloud Run IAP as the next normal-browser access mode for approved
+  Google identities, including the no-organization OAuth setup and deployment
+  health-check changes it requires.
+- Kept anonymous access deferred until the public GUI is separated from the private
+  calculation API and authentication, ownership, quotas, budget controls, and abuse
+  protections are implemented and tested.
+
 ## 2026-08-20 — First Cloud Run deployment and production trigger
 
 - Enabled the Google Cloud deployment workflow on pushes to
