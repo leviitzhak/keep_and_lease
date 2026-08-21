@@ -1,14 +1,19 @@
 # Google Cloud Run deployment design and implementation state
 
-## Current state — 2026-08-20
+## Current state — 2026-08-21
 
 The Google Cloud foundation is provisioned and verified. The durable application
 split, containers, workload Terraform, and keyless deployment workflow are
 implemented. The private web service and calculation Job were first deployed from
-commit `fc4400e9a18a4e68846f250b64efee7fc0429ad7`; the production workflow now
-deploys `master`, currently commit `d98fae3781015c00664a602e075029bbb5d4c5f8`.
-The authenticated health check and private operator GUI path work. Bounded
-calculation, cancellation, and replacement acceptance tests remain.
+commit `fc4400e9a18a4e68846f250b64efee7fc0429ad7`. The unmerged
+`agent/pure-maturity-multiplier` branch was deployed for inspection and then returned
+to private access on 2026-08-21. The running images were built from commit
+`08b583696f52314b54e3be6bd6f1d39497b10a1c`, whose application content matches
+`a3d457516bda8b74a8b23db3f5bb2f491296ea10`; the difference is only the temporary
+workflow trigger used to revoke anonymous access. The public URL now returns `403`
+without authentication. The authenticated health check and private operator GUI
+path work. Bounded calculation, cancellation, and replacement acceptance tests
+remain.
 
 ### Provisioned foundation
 
@@ -143,7 +148,9 @@ separate protected workload-state bucket.
 
 A push to `master` runs **Deploy Google Cloud workloads** automatically. The
 workflow also retains `workflow_dispatch` so a reviewed commit can be deployed
-manually. It:
+manually. Manual runs expose an explicit `allow_unauthenticated` input that defaults
+to `false`; it must remain false until the planned authentication and abuse controls
+are implemented. It:
 
 1. authenticates with the existing OIDC provider;
 2. builds and pushes separate web/worker images;
@@ -242,6 +249,12 @@ as load-balanced ingress.
 Setting `allow_unauthenticated=true` would immediately remove the `403`, but must
 not be done on the current combined GUI/API service: every anonymous visitor would
 also reach the endpoint that starts billable calculation Jobs.
+
+The option was used briefly on 2026-08-21 to inspect the GUI. Automatic calculation
+on initial page load was removed first, and a subsequent private deployment removed
+the `allUsers` invoker binding. A direct unauthenticated request was then verified to
+return `403`. This was a temporary diagnostic deployment, not an approved public
+operating mode.
 
 Before an anonymous launch, implement and test all of the following:
 
