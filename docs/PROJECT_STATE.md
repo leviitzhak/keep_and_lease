@@ -1,6 +1,6 @@
 # Keep & Lease — Project State
 
-_Last updated: 2026-08-20_
+_Last updated: 2026-08-21_
 
 ## Purpose
 
@@ -59,11 +59,13 @@ Build an interactive research and backtesting application for strategies that al
 10. The Google Cloud foundation is provisioned. Durable Firestore jobs, immutable
     compressed GCS results, a scale-to-zero Cloud Run web service, one-shot
     calculation Job, containers, Terraform, and OIDC deployment workflow are
-    implemented and deployed from `master`. The authenticated health check and
-    private operator GUI path work; bounded calculation, cancellation, and
-    replacement acceptance tests remain. Direct Cloud Run IAP is the planned
-    selected-user browser access mode; anonymous access remains gated on application
-    authentication, ownership, quotas, and abuse/spending controls.
+    implemented and deployed. The `agent/pure-maturity-multiplier` revision was
+    temporarily exposed for GUI inspection, then returned to private Cloud Run IAM
+    access on 2026-08-21; unauthenticated requests now return `403`. The authenticated
+    health check and private operator GUI path work; bounded calculation,
+    cancellation, and replacement acceptance tests remain. Selected-user browser
+    authentication/allowlisting is deferred; anonymous calculation access remains
+    disabled.
 
 ## Active review and planned architecture
 
