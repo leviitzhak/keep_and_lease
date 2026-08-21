@@ -6,19 +6,24 @@ branch._
 
 ## Active change set
 
-- Status: pure-maturity scoring multiplier implemented and locally verified;
-  review and deployment remain
+- Status: pure-maturity scoring multiplier implemented, verified, published, and
+  deployed to the private Google Cloud preview; review and merge remain
 - Integration: based on the deployed `master` revision; not yet merged
-- Current implementation branch: `agent/pure-maturity-multiplier` (local; not yet
-  published)
+- Current implementation branch: [`agent/pure-maturity-multiplier`](https://github.com/leviitzhak/keep_and_lease/tree/agent/pure-maturity-multiplier)
+  (published; not yet merged)
 - Previous generalized application review: [PR #22 — Complete generalized multi-commodity implementation](https://github.com/leviitzhak/keep_and_lease/pull/22)
 - Render services' configured source branch: [`agent/fixed-render-preview-deploys`](https://github.com/leviitzhak/keep_and_lease/tree/agent/fixed-render-preview-deploys). Deploy hooks override this default with the exact commit pushed to the current implementation branch.
 - Application version: `1.3`
 - First verified Cloud Run revision:
   `fc4400e9a18a4e68846f250b64efee7fc0429ad7`
-- Current production deployment commit:
-  `d98fae3781015c00664a602e075029bbb5d4c5f8`
-- Exact deployed revision: read `Version … · commit …` in the [preview GUI](https://keep-and-lease-fixed-preview.onrender.com), or compare [`build-info.json`](https://keep-and-lease-fixed-preview.onrender.com/build-info.json) with the API [`engine_commit`](https://keep-and-lease-fixed-preview-api.onrender.com/api/v1/health).
+- Current private Cloud Run deployment commit:
+  `08b583696f52314b54e3be6bd6f1d39497b10a1c` (same application content as
+  `a3d457516bda8b74a8b23db3f5bb2f491296ea10`; the extra commit only supplied the
+  temporary private-deployment trigger)
+- Cloud Run URL: <https://keep-and-lease-web-vfk2j2rgoq-zf.a.run.app>. Anonymous
+  requests return `403 Forbidden`; use the authenticated Cloud SDK proxy until
+  selected-user browser authentication is implemented.
+- For the separate Render preview, read `Version … · commit …` in the [preview GUI](https://keep-and-lease-fixed-preview.onrender.com), or compare [`build-info.json`](https://keep-and-lease-fixed-preview.onrender.com/build-info.json) with the API [`engine_commit`](https://keep-and-lease-fixed-preview-api.onrender.com/api/v1/health).
 
 ## Scope being completed
 
