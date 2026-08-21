@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - agent/pure-maturity-multiplier
   workflow_dispatch:
     inputs:
       allow_unauthenticated:
