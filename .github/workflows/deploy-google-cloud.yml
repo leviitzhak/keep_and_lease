@@ -5,6 +5,12 @@ on:
     branches:
       - master
   workflow_dispatch:
+    inputs:
+      allow_unauthenticated:
+        description: Expose the web GUI and API without Cloud Run IAM authentication
+        required: true
+        type: boolean
+        default: false
 
 concurrency:
   group: google-cloud-production
@@ -117,6 +123,7 @@ jobs:
           TF_VAR_region: ${{ vars.GCP_REGION }}
           TF_VAR_web_image: ${{ steps.images.outputs.web_image }}
           TF_VAR_worker_image: ${{ steps.images.outputs.worker_image }}
+          TF_VAR_allow_unauthenticated: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_unauthenticated || false }}
         run: |
           terraform init -input=false
           terraform fmt -check
@@ -130,6 +137,7 @@ jobs:
           TF_VAR_region: ${{ vars.GCP_REGION }}
           TF_VAR_web_image: ${{ steps.images.outputs.web_image }}
           TF_VAR_worker_image: ${{ steps.images.outputs.worker_image }}
+          TF_VAR_allow_unauthenticated: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_unauthenticated || false }}
         run: terraform apply -input=false -auto-approve tfplan
 
       - name: Report failed Cloud Run startup logs
