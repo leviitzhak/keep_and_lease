@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-08-21 — Cloud Run preview inspection and return to private access
+
+- Deployed the unmerged `agent/pure-maturity-multiplier` branch to Cloud Run and
+  repaired corrupted strategy and GUI assets discovered in the deployed image.
+- Added an explicit, default-false `allow_unauthenticated` manual-workflow input and
+  removed automatic backtest submission on a visitor's first page load.
+- Temporarily enabled anonymous invocation to inspect the normal browser GUI, then
+  redeployed with `allow_unauthenticated=false` and verified that the `run.app` URL
+  returns `403 Forbidden` without authentication.
+- Restored the deployment workflow to `master` push plus manual dispatch only. The
+  branch remains unmerged; selected-user authentication and allowlisting are
+  deferred to the next access-control change.
+
 ## 2026-08-20 — Pure-maturity scoring multiplier
 
 - Added independent, bounded multipliers that favor shorter long contracts and
