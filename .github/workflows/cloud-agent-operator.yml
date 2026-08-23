@@ -122,6 +122,7 @@ jobs:
         if: always()
         shell: bash
         run: |
+          printf '{"status":"%s"}\n' "${{ job.status }}" > "$OUTPUT_DIR/run.json"
           {
             echo "## Keep & Lease cloud operator"
             echo
@@ -136,6 +137,7 @@ jobs:
             fi
             if test -f "$OUTPUT_DIR/gui-report.json"; then
               echo "- GUI HTTP status: \`$(jq -r '.responseStatus' "$OUTPUT_DIR/gui-report.json")\`"
+              echo "- GUI page errors: \`$(jq '.pageErrors | length' "$OUTPUT_DIR/gui-report.json")\`"
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 

@@ -12,6 +12,15 @@
   internal URIs, execution names, and error text from one-day artifacts.
 - Documented the one-time foundation apply, request schema, evidence boundary,
   revocation path, and the need for a private control plane for deeper diagnostics.
+- Applied the foundation delta and verified the first autonomous private run:
+  health returned `status=ok` on the `cloud-run-job` backend and the GUI rendered
+  with HTTP 200 at application version `1.3`, commit `08b583696f52`.
+- Fixed the GUI artifact path after the first run revealed that a relative path
+  followed Playwright into its isolated temporary directory; the successful rerun
+  captured the screenshot and structured browser report.
+- Recorded two initial-load HTTP 404 console messages and a `portfolio_series`
+  null-reference page error for follow-up; neither prevented the ready server GUI
+  from rendering.
 
 
 ## 2026-08-20 — Cloud Run operator access and publication plan

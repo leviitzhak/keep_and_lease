@@ -6,17 +6,18 @@ branch._
 
 ## Active change set
 
-- Status: keyless cloud-agent GUI/API access implemented; one-time foundation IAM
-  apply and first operator workflow verification remain
+- Status: keyless cloud-agent GUI/API access activated and verified end-to-end
 - Integration: unmerged; production deployment remains on `master`
 - Current implementation branch: [`agent/cloud-autonomous-access`](https://github.com/leviitzhak/keep_and_lease/tree/agent/cloud-autonomous-access)
 - Previous generalized application review: [PR #22 — Complete generalized multi-commodity implementation](https://github.com/leviitzhak/keep_and_lease/pull/22)
 - Render services' configured source branch: [`agent/fixed-render-preview-deploys`](https://github.com/leviitzhak/keep_and_lease/tree/agent/fixed-render-preview-deploys). Deploy hooks override this default with the exact commit pushed to the current implementation branch.
-- Application version: `1.2`
+- Application version: `1.3`
 - First verified Cloud Run revision:
   `fc4400e9a18a4e68846f250b64efee7fc0429ad7`
-- Current production deployment commit:
-  `d98fae3781015c00664a602e075029bbb5d4c5f8`
+- Current production deployment commit verified by the private operator:
+  `08b583696f52314b54e3be6bd6f1d39497b10a1c`
+- First successful autonomous private health/GUI run:
+  [Cloud agent operator #2](https://github.com/leviitzhak/keep_and_lease/actions/runs/32643381753)
 - Exact deployed revision: read `Version … · commit …` in the [preview GUI](https://keep-and-lease-fixed-preview.onrender.com), or compare [`build-info.json`](https://keep-and-lease-fixed-preview.onrender.com/build-info.json) with the API [`engine_commit`](https://keep-and-lease-fixed-preview-api.onrender.com/api/v1/health).
 
 ## Scope being completed
@@ -44,8 +45,10 @@ branch._
 
 - The pure shorter-long/longer-short maturity multiplier is planned for a later
   change set.
-- Apply the reviewed `infra/gcp/codex_operator.tf` foundation delta once, then
-  trigger and verify the first non-billable cloud-agent health/GUI request.
+- Investigate the initial private GUI's two HTTP 404 console messages and
+  `portfolio_series` null-reference page error. The page still renders with HTTP
+  200 and reports the server engine ready; the operator artifact preserves the
+  diagnostic without exposing credentials.
 - Cloud Run numerical/cancellation/replacement acceptance tests and capacity
   measurements remain deployment work. Direct Cloud Run IAP is the recommended
   next browser-access step. Anonymous access remains deferred until application
