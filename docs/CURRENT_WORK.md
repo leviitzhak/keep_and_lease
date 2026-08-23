@@ -6,20 +6,20 @@ branch._
 
 ## Active change set
 
-- Status: pure-maturity scoring multiplier implemented, verified, published, and
-  deployed to the private Google Cloud preview; review and merge remain
-- Integration: based on the deployed `master` revision; not yet merged
-- Current implementation branch: [`agent/pure-maturity-multiplier`](https://github.com/leviitzhak/keep_and_lease/tree/agent/pure-maturity-multiplier)
-  (published; not yet merged)
+- Status: keyless cloud-agent GUI/API access and the pure-maturity scoring
+  multiplier are implemented and merged; approved-user direct Cloud Run IAP is
+  documented but not yet implemented
+- Integration: merged into `master` on 2026-08-23
 - Previous generalized application review: [PR #22 — Complete generalized multi-commodity implementation](https://github.com/leviitzhak/keep_and_lease/pull/22)
 - Render services' configured source branch: [`agent/fixed-render-preview-deploys`](https://github.com/leviitzhak/keep_and_lease/tree/agent/fixed-render-preview-deploys). Deploy hooks override this default with the exact commit pushed to the current implementation branch.
 - Application version: `1.3`
 - First verified Cloud Run revision:
   `fc4400e9a18a4e68846f250b64efee7fc0429ad7`
-- Current private Cloud Run deployment commit:
+- Current private Cloud Run deployment commit verified by the private operator:
   `08b583696f52314b54e3be6bd6f1d39497b10a1c` (same application content as
-  `a3d457516bda8b74a8b23db3f5bb2f491296ea10`; the extra commit only supplied the
-  temporary private-deployment trigger)
+  `a3d457516bda8b74a8b23db3f5bb2f491296ea10`)
+- First successful autonomous private health/GUI run:
+  [Cloud agent operator #2](https://github.com/leviitzhak/keep_and_lease/actions/runs/32643381753)
 - Cloud Run URL: <https://keep-and-lease-web-vfk2j2rgoq-zf.a.run.app>. Anonymous
   requests return `403 Forbidden`; use the authenticated Cloud SDK proxy until
   selected-user browser authentication is implemented.
@@ -43,15 +43,27 @@ branch._
 - A provisioned Google Cloud foundation plus implemented durable Firestore/GCS job
   persistence, scale-to-zero web service, one-shot 4 GiB calculation Job, separate
   containers, workload Terraform, and GitHub OIDC deployment workflow.
+- A branch-restricted, keyless GitHub OIDC operator that can collect non-secret
+  health/build evidence, render the private GUI, and run sanitized fixed-fixture
+  API smoke tests without exposing a Google credential to Codex.
+- A documented direct Cloud Run IAP migration that keeps the existing
+  internet-reachable `run.app` URL, allowlists approved Google users and machine
+  identities, preserves the keyless operator, and keeps anonymous access disabled.
 
 ## Explicitly deferred
 
+- Investigate the initial private GUI's two HTTP 404 console messages and
+  `portfolio_series` null-reference page error. The page still renders with HTTP
+  200 and reports the server engine ready; the operator artifact preserves the
+  diagnostic without exposing credentials.
+- Implement the reviewed direct Cloud Run IAP cutover: complete the one-time
+  no-organization External OAuth setup in the console; add the approved-user,
+  operator, deployment, and IAP-service-agent policies; switch machine-token
+  audiences; and verify allowed, denied, operator, and deployment paths before
+  removing direct operator invocation. Anonymous access remains disabled.
 - Cloud Run numerical/cancellation/replacement acceptance tests and capacity
-  measurements remain deployment work. Direct Cloud Run IAP is the recommended
-  next browser-access step. Anonymous access remains deferred until application
-  authentication, ownership, quotas, and spending/abuse controls exist. The fixed
-  Render services, deploy-hook secrets, and public URL variables are configured;
-  only the optional Render-native health-check paths remain to be entered in the
-  current services.
+  measurements remain deployment work. The fixed Render services, deploy-hook
+  secrets, and public URL variables are configured; only the optional
+  Render-native health-check paths remain to be entered in the current services.
 - Versioned Parquet/DuckDB/Arrow cloud inputs and cloud day inspection remain after
   the durable execution proof; the first worker image keeps the current input set.

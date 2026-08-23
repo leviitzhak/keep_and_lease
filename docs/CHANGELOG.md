@@ -1,5 +1,41 @@
 # Changelog
 
+## 2026-08-23 — Approved-user Cloud Run IAP cutover plan
+
+- Documented direct IAP on the existing `run.app` URL as the approved-user browser
+  mode: Google sign-in and an explicit allowlist, with anonymous access still
+  disabled.
+- Defined roles for approved human users, the Codex operator, the deployment health
+  check, and the IAP service agent.
+- Recorded the no-organization project's one-time External OAuth console setup,
+  Terraform resources, `GCP_IAP_CLIENT_ID` variable, and keyless machine-token
+  changes.
+- Added a safe cutover order, rollback boundary, and acceptance matrix so enabling
+  IAP cannot silently break the verified autonomous operator or deployment health
+  check.
+
+## 2026-08-23 — Keyless autonomous Cloud Run operator
+
+- Added a dedicated `keep-lease-codex-operator` identity with Cloud Run invoke
+  permission only and GitHub impersonation restricted to the permanent operator
+  branch.
+- Added a bounded GitHub Actions control path for private health/build checks,
+  authenticated Playwright GUI screenshots, and fixed-fixture API smoke tests.
+- Kept Google credentials out of Codex and GitHub secrets. Because the repository
+  is public, rejected arbitrary parameters and omitted raw logs, result bodies,
+  internal URIs, execution names, and error text from one-day artifacts.
+- Documented the one-time foundation apply, request schema, evidence boundary,
+  revocation path, and the need for a private control plane for deeper diagnostics.
+- Applied the foundation delta and verified the first autonomous private run:
+  health returned `status=ok` on the `cloud-run-job` backend and the GUI rendered
+  with HTTP 200 at application version `1.3`, commit `08b583696f52`.
+- Fixed the GUI artifact path after the first run revealed that a relative path
+  followed Playwright into its isolated temporary directory; the successful rerun
+  captured the screenshot and structured browser report.
+- Recorded two initial-load HTTP 404 console messages and a `portfolio_series`
+  null-reference page error for follow-up; neither prevented the ready server GUI
+  from rendering.
+
 ## 2026-08-21 — Cloud Run preview inspection and return to private access
 
 - Deployed the unmerged `agent/pure-maturity-multiplier` branch to Cloud Run and
@@ -22,7 +58,6 @@
   score diagnostics.
 - Corrected GUI two-anchor boundary and side-specific rate-scale parsing so the
   displayed controls reach the canonical Python engine.
-
 ## 2026-08-20 — Cloud Run operator access and publication plan
 
 - Recorded the successful `master` deployment and authenticated private operator

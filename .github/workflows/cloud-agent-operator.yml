@@ -1,0 +1,151 @@
+name: Cloud agent operator
+
+on:
+  push:
+    branches:
+      - agent/cloud-autonomous-access
+    paths:
+      - .cloud-agent/requests/current.json
+  workflow_dispatch:
+    inputs:
+      request_path:
+        description: Repository-relative bounded request JSON
+        required: true
+        default: .cloud-agent/request.example.json
+
+concurrency:
+  group: keep-and-lease-cloud-agent-operator
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  operate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PROJECT_ID: keep-and-lease
+      REGION: me-west1
+      WEB_URI: https://keep-and-lease-web-vfk2j2rgoq-zf.a.run.app
+      OPERATOR_SERVICE_ACCOUNT: keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com
+      OUTPUT_DIR: cloud-agent-output
+
+    steps:
+      - name: Check out operator branch
+        uses: actions/checkout@v4
+
+      - name: Resolve and validate request path
+        id: request
+        shell: bash
+        env:
+          DISPATCH_REQUEST_PATH: ${{ inputs.request_path }}
+        run: |
+          set -euo pipefail
+          request_path="${DISPATCH_REQUEST_PATH:-.cloud-agent/requests/current.json}"
+          case "$request_path" in
+            .cloud-agent/*.json|.cloud-agent/requests/*.json) ;;
+            *) echo "Request path is outside .cloud-agent" >&2; exit 2 ;;
+          esac
+          test -f "$request_path"
+          echo "path=$request_path" >> "$GITHUB_OUTPUT"
+          echo "gui=$(jq -r '.actions | index("gui") != null' "$request_path")" >> "$GITHUB_OUTPUT"
+
+      - name: Initialize sanitized evidence directory
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p "$OUTPUT_DIR"
+          printf '{"status":"started"}\n' > "$OUTPUT_DIR/run.json"
+
+      - name: Prepare isolated browser runtime
+        if: steps.request.outputs.gui == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          browser_dir="${RUNNER_TEMP}/keep-lease-browser"
+          mkdir -p "$browser_dir"
+          cp scripts/cloud-agent-browser.cjs "$browser_dir/run.cjs"
+          cd "$browser_dir"
+          npm init --yes >/dev/null
+          npm install --no-save --no-package-lock playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Authenticate as bounded Cloud Run operator
+        id: google_auth
+        uses: google-github-actions/auth@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.OPERATOR_SERVICE_ACCOUNT }}
+          token_format: id_token
+          id_token_audience: ${{ env.WEB_URI }}
+          id_token_include_email: true
+
+      - name: Validate bounded request
+        env:
+          KEEP_AND_LEASE_WEB_URI: ${{ env.WEB_URI }}
+          KEEP_AND_LEASE_ID_TOKEN: ${{ steps.google_auth.outputs.id_token }}
+        run: |
+          python scripts/cloud-agent-operator.py \
+            --request "${{ steps.request.outputs.path }}" \
+            --output-dir "$OUTPUT_DIR"
+
+      - name: Refresh browser identity token
+        if: steps.request.outputs.gui == 'true'
+        id: google_auth_browser
+        uses: google-github-actions/auth@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.OPERATOR_SERVICE_ACCOUNT }}
+          token_format: id_token
+          id_token_audience: ${{ env.WEB_URI }}
+          id_token_include_email: true
+
+      - name: Check rendered private GUI
+        if: steps.request.outputs.gui == 'true'
+        shell: bash
+        env:
+          REQUEST_PATH: ${{ steps.request.outputs.path }}
+          KEEP_AND_LEASE_WEB_URI: ${{ env.WEB_URI }}
+          KEEP_AND_LEASE_ID_TOKEN: ${{ steps.google_auth_browser.outputs.id_token }}
+          KEEP_AND_LEASE_OUTPUT_DIR: ${{ github.workspace }}/${{ env.OUTPUT_DIR }}
+        run: |
+          set -euo pipefail
+          browser_dir="${RUNNER_TEMP}/keep-lease-browser"
+          cd "$browser_dir"
+          node run.cjs
+
+      - name: Publish operator summary
+        if: always()
+        shell: bash
+        run: |
+          printf '{"status":"%s"}\n' "${{ job.status }}" > "$OUTPUT_DIR/run.json"
+          {
+            echo "## Keep & Lease cloud operator"
+            echo
+            echo "- Request: \`${{ steps.request.outputs.path }}\`"
+            echo "- Commit: \`${GITHUB_SHA}\`"
+            if test -f "$OUTPUT_DIR/health.json"; then
+              echo "- Health: \`$(jq -r '.status' "$OUTPUT_DIR/health.json")\`"
+              echo "- Backend: \`$(jq -r '.execution_backend' "$OUTPUT_DIR/health.json")\`"
+            fi
+            if test -f "$OUTPUT_DIR/build-info.json"; then
+              echo "- Deployed commit: \`$(jq -r '.commit' "$OUTPUT_DIR/build-info.json")\`"
+            fi
+            if test -f "$OUTPUT_DIR/gui-report.json"; then
+              echo "- GUI HTTP status: \`$(jq -r '.responseStatus' "$OUTPUT_DIR/gui-report.json")\`"
+              echo "- GUI page errors: \`$(jq '.pageErrors | length' "$OUTPUT_DIR/gui-report.json")\`"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload operator evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloud-agent-${{ github.run_id }}
+          path: ${{ env.OUTPUT_DIR }}
+          if-no-files-found: error
+          retention-days: 1

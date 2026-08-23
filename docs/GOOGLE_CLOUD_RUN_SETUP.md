@@ -1,19 +1,19 @@
 # Google Cloud Run deployment design and implementation state
 
-## Current state — 2026-08-21
+## Current state — 2026-08-23
 
 The Google Cloud foundation is provisioned and verified. The durable application
 split, containers, workload Terraform, and keyless deployment workflow are
 implemented. The private web service and calculation Job were first deployed from
-commit `fc4400e9a18a4e68846f250b64efee7fc0429ad7`. The unmerged
-`agent/pure-maturity-multiplier` branch was deployed for inspection and then returned
-to private access on 2026-08-21. The running images were built from commit
-`08b583696f52314b54e3be6bd6f1d39497b10a1c`, whose application content matches
-`a3d457516bda8b74a8b23db3f5bb2f491296ea10`; the difference is only the temporary
-workflow trigger used to revoke anonymous access. The public URL now returns `403`
-without authentication. The authenticated health check and private operator GUI
-path work. Bounded calculation, cancellation, and replacement acceptance tests
-remain.
+commit `fc4400e9a18a4e68846f250b64efee7fc0429ad7`; the production workflow now
+deploys `master`, currently verified by the private operator at commit
+`08b583696f52314b54e3be6bd6f1d39497b10a1c` (application version `1.3`).
+The branch-restricted keyless operator has been applied and verified end-to-end:
+the API returned `status=ok` and the private GUI rendered with HTTP 200. Direct
+Cloud Run IAP for approved human users is documented below but is not yet enabled.
+The pure-maturity branch was inspected on Cloud Run and the service was returned
+to private access; anonymous requests to the public URL return `403`. Bounded
+calculation, cancellation, and replacement acceptance tests remain.
 
 ### Provisioned foundation
 
@@ -30,6 +30,9 @@ remain.
   - `keep-lease-worker@keep-and-lease.iam.gserviceaccount.com`.
 - Deployment identity:
   `keep-lease-github@keep-and-lease.iam.gserviceaccount.com`.
+- Autonomous operator identity:
+  `keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com`, with GitHub
+  impersonation restricted to `refs/heads/agent/cloud-autonomous-access`.
 - GitHub Workload Identity provider:
   `projects/989708711229/locations/global/workloadIdentityPools/github/providers/github`.
 - GitHub OIDC authentication has been tested successfully; no service-account JSON
@@ -214,35 +217,85 @@ the local canonical engine before treating the deployment as accepted.
 
 “Public URL” has two materially different meanings for this application.
 
-### Recommended next step: internet URL with Google sign-in
+### Planned next change: internet-reachable URL with an approved-user allowlist
 
-Use [Identity-Aware Proxy (IAP) directly on the Cloud Run
+Enable [Identity-Aware Proxy (IAP) directly on the Cloud Run
 service](https://docs.cloud.google.com/run/docs/securing/identity-aware-proxy-cloud-run).
-The existing `run.app` URL then opens in a normal browser, redirects to Google
-sign-in, and admits only selected users or groups. Cloud Run remains
-`--no-allow-unauthenticated`; the service is browser-accessible but not anonymous.
-This is the recommended mode for the current research application.
+The existing
+`https://keep-and-lease-web-vfk2j2rgoq-zf.a.run.app` URL remains reachable from
+the internet, but IAP redirects browser users to Google sign-in and admits only
+explicitly approved Google identities. Cloud Run remains
+`--no-allow-unauthenticated`: this is a public address with private access, not an
+anonymous application.
 
-Implementation requires:
+Direct IAP protects every ingress path to the service, including the default
+`run.app` URL. A load balancer or custom domain is not required.
+
+#### Identity and role mapping
+
+| Principal | Authentication path | Required access after IAP |
+|---|---|---|
+| Owner and approved users | Google browser sign-in and IAP session cookie | `roles/iap.httpsResourceAccessor` on this Cloud Run IAP resource |
+| Codex operator | Short-lived keyless service-account token issued through GitHub OIDC | `roles/iap.httpsResourceAccessor`; token audience changed to the IAP OAuth client ID |
+| Deployment health check | Short-lived keyless deployment service-account token | `roles/iap.httpsResourceAccessor`; token audience changed to the IAP OAuth client ID |
+| IAP service agent | IAP forwards an approved request to Cloud Run | `roles/run.invoker` on `keep-and-lease-web` |
+
+The IAP service agent is
+`service-989708711229@gcp-sa-iap.iam.gserviceaccount.com`. After the IAP cutover
+is verified, the operator's direct `roles/run.invoker` binding can be removed:
+IAP, rather than the original caller, invokes the service.
+
+#### Required implementation
 
 1. Enable `iap.googleapis.com` in foundation Terraform.
-2. If the project is not attached to a Google organization, perform the first IAP
-   enablement in the Cloud Console and configure an **External** OAuth consent
-   screen/client. Google does not support creating that first OAuth client
-   programmatically for a no-organization project.
-3. Set `iap_enabled = true` on `google_cloud_run_v2_service.web` in workload
+2. Because project `keep-and-lease` is not attached to a Google organization,
+   perform the first IAP/OAuth activation in the Google Cloud console. Configure an
+   **External** OAuth audience and let the console auto-generate the project OAuth
+   client, or configure an equivalent custom client. Google does not support
+   creating that first no-organization OAuth client entirely through Terraform.
+3. Record the non-secret IAP OAuth client ID as the GitHub repository variable
+   `GCP_IAP_CLIENT_ID`. Do not store the OAuth client secret in the repository,
+   GitHub Actions artifacts, or the Codex environment.
+4. Set `iap_enabled = true` on `google_cloud_run_v2_service.web` in workload
    Terraform.
-4. Grant `roles/run.invoker` on the web service to
-   `service-989708711229@gcp-sa-iap.iam.gserviceaccount.com`.
-5. Grant each approved user or group `roles/iap.httpsResourceAccessor` on the IAP
-   Cloud Run resource. If GitHub Terraform will manage this policy, grant its
-   deployment identity the narrowly required IAP policy-administration permission
-   in the foundation first.
-6. Adapt the deployment health check to authenticate through IAP rather than minting
-   its current Cloud Run audience token, then test allowed and denied browser users.
+5. Grant `roles/run.invoker` on the web service to the IAP service agent.
+6. Manage approved users, groups, the Codex operator, and the deployment identity
+   with `google_iap_web_cloud_run_service_iam_member` or an authoritative
+   `google_iap_web_cloud_run_service_iam_binding`.
+7. Update both the deployment health check and
+   `.github/workflows/cloud-agent-operator.yml` to request an ID token whose
+   audience is `GCP_IAP_CLIENT_ID`, with the service-account email claim included.
+   Keep a reviewed direct/IAP mode switch during migration so IAP is not enabled
+   before both machine callers are ready.
 
-A custom domain is optional. Direct IAP protects the default `run.app` URL as well
-as load-balanced ingress.
+A Google-managed IAP OAuth client is sufficient for normal browser access. The
+planned machine path uses the configured IAP client ID. If a client configuration
+does not support that OIDC flow, use Google's documented keyless service-account
+signed-JWT path instead; do not introduce a service-account key.
+
+#### Safe cutover order
+
+1. Prepare and review the Terraform and dual-mode workflow changes while the
+   service still uses direct Cloud Run IAM.
+2. Complete the one-time console OAuth/IAP configuration and record
+   `GCP_IAP_CLIENT_ID`.
+3. Add the human and service-account IAP allowlist entries and the IAP service-agent
+   Cloud Run invoker binding.
+4. Enable IAP and switch both machine workflows to the IAP audience.
+5. Verify all acceptance cases below before removing the operator's old direct
+   Cloud Run invoker binding. If a machine check fails, disable IAP and restore the
+   direct audience while correcting the policy; no application data is affected.
+
+#### Acceptance criteria
+
+- an approved Google account opens the existing `run.app` URL and reaches the GUI;
+- an unapproved or signed-out browser is denied;
+- the Codex operator still obtains health/build evidence and an authenticated GUI
+  screenshot without any stored Google key;
+- the `master` deployment workflow still completes its private health check;
+- the Cloud Run IAM policy contains no `allUsers` or
+  `allAuthenticatedUsers` invoker grant; and
+- billable calculation endpoints remain behind the same IAP allowlist.
 
 ### Truly anonymous GUI
 
