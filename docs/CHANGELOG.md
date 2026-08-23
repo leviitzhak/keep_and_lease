@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-08-23 — Approved-user Cloud Run IAP cutover plan
+
+- Documented direct IAP on the existing `run.app` URL as the approved-user browser
+  mode: Google sign-in and an explicit allowlist, with anonymous access still
+  disabled.
+- Defined roles for approved human users, the Codex operator, the deployment health
+  check, and the IAP service agent.
+- Recorded the no-organization project's one-time External OAuth console setup,
+  Terraform resources, `GCP_IAP_CLIENT_ID` variable, and keyless machine-token
+  changes.
+- Added a safe cutover order, rollback boundary, and acceptance matrix so enabling
+  IAP cannot silently break the verified autonomous operator or deployment health
+  check.
+
 ## 2026-08-23 — Keyless autonomous Cloud Run operator
 
 - Added a dedicated `keep-lease-codex-operator` identity with Cloud Run invoke

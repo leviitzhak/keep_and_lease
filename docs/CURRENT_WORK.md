@@ -6,7 +6,8 @@ branch._
 
 ## Active change set
 
-- Status: keyless cloud-agent GUI/API access activated and verified end-to-end
+- Status: keyless cloud-agent GUI/API access activated and verified end-to-end;
+  approved-user direct Cloud Run IAP cutover documented but not implemented
 - Integration: unmerged; production deployment remains on `master`
 - Current implementation branch: [`agent/cloud-autonomous-access`](https://github.com/leviitzhak/keep_and_lease/tree/agent/cloud-autonomous-access)
 - Previous generalized application review: [PR #22 — Complete generalized multi-commodity implementation](https://github.com/leviitzhak/keep_and_lease/pull/22)
@@ -40,6 +41,9 @@ branch._
 - A branch-restricted, keyless GitHub OIDC operator that can collect non-secret
   health/build evidence, render the private GUI, and run sanitized fixed-fixture
   API smoke tests without exposing a Google credential to Codex.
+- A documented direct Cloud Run IAP migration that keeps the existing
+  internet-reachable `run.app` URL, allowlists approved Google users and machine
+  identities, preserves the keyless operator, and keeps anonymous access disabled.
 
 ## Explicitly deferred
 
@@ -49,12 +53,14 @@ branch._
   `portfolio_series` null-reference page error. The page still renders with HTTP
   200 and reports the server engine ready; the operator artifact preserves the
   diagnostic without exposing credentials.
+- Implement the reviewed direct Cloud Run IAP cutover: complete the one-time
+  no-organization External OAuth setup in the console; add the approved-user,
+  operator, deployment, and IAP-service-agent policies; switch machine-token
+  audiences; and verify allowed, denied, operator, and deployment paths before
+  removing direct operator invocation. Anonymous access remains disabled.
 - Cloud Run numerical/cancellation/replacement acceptance tests and capacity
-  measurements remain deployment work. Direct Cloud Run IAP is the recommended
-  next browser-access step. Anonymous access remains deferred until application
-  authentication, ownership, quotas, and spending/abuse controls exist. The fixed
-  Render services, deploy-hook secrets, and public URL variables are configured;
-  only the optional Render-native health-check paths remain to be entered in the
-  current services.
+  measurements remain deployment work. The fixed Render services, deploy-hook
+  secrets, and public URL variables are configured; only the optional
+  Render-native health-check paths remain to be entered in the current services.
 - Versioned Parquet/DuckDB/Arrow cloud inputs and cloud day inspection remain after
   the durable execution proof; the first worker image keeps the current input set.

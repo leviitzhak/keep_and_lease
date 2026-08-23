@@ -122,6 +122,31 @@ parameters, raw Cloud Logging entries, result bodies, credentials, or other priv
 data to this workflow. Deeper private diagnostics require a private control plane,
 such as a private repository workflow or an authenticated MCP tunnel.
 
+## Planned IAP compatibility
+
+The verified operator currently sends a Cloud Run audience token directly to the
+private `run.app` origin and holds `roles/run.invoker`. Enabling IAP without
+changing this workflow first would block the operator even though its Cloud Run IAM
+binding still exists, because IAP authenticates the request before Cloud Run IAM.
+
+During the approved-user IAP migration:
+
+1. add the operator service account to the IAP allowlist with
+   `roles/iap.httpsResourceAccessor`;
+2. set the non-secret `GCP_IAP_CLIENT_ID` repository variable;
+3. change both Google authentication steps in
+   `.github/workflows/cloud-agent-operator.yml` to use that client ID as the ID
+   token audience while retaining the email claim;
+4. keep the browser's origin-only Authorization-header rule, so the IAP token is
+   never sent to third-party origins; and
+5. run a non-billable `health + gui` request before removing the old direct
+   `roles/run.invoker` binding.
+
+The operator must use programmatic IAP authentication; it does not use the human
+Google sign-in screen. The workflow must remain keyless. Google's
+[programmatic IAP authentication guide](https://docs.cloud.google.com/iap/docs/authentication-howto)
+is the authority for the OIDC-client and signed-JWT alternatives.
+
 ## Rotation and removal
 
 Delete the permanent operator branch or change `codex_operator_branch` and reapply
