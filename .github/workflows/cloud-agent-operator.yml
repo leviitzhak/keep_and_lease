@@ -65,6 +65,10 @@ jobs:
           npm install --no-save --no-package-lock playwright@1.55.0
           npx playwright install --with-deps chromium
 
+      - name: Initialize sanitized evidence directory
+        shell: bash
+        run: mkdir -p "$OUTPUT_DIR"
+
       - name: Authenticate as bounded Cloud Run operator
         id: google_auth
         uses: google-github-actions/auth@v2
@@ -85,13 +89,25 @@ jobs:
             --request "${{ steps.request.outputs.path }}" \
             --output-dir "$OUTPUT_DIR"
 
+      - name: Refresh browser identity token
+        if: steps.request.outputs.gui == 'true'
+        id: google_auth_browser
+        uses: google-github-actions/auth@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.OPERATOR_SERVICE_ACCOUNT }}
+          token_format: id_token
+          id_token_audience: ${{ env.WEB_URI }}
+          id_token_include_email: true
+
       - name: Check rendered private GUI
         if: steps.request.outputs.gui == 'true'
         shell: bash
         env:
           REQUEST_PATH: ${{ steps.request.outputs.path }}
           KEEP_AND_LEASE_WEB_URI: ${{ env.WEB_URI }}
-          KEEP_AND_LEASE_ID_TOKEN: ${{ steps.google_auth.outputs.id_token }}
+          KEEP_AND_LEASE_ID_TOKEN: ${{ steps.google_auth_browser.outputs.id_token }}
           KEEP_AND_LEASE_OUTPUT_DIR: ${{ env.OUTPUT_DIR }}
         run: |
           set -euo pipefail

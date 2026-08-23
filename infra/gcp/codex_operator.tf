@@ -7,7 +7,7 @@ variable "codex_operator_branch" {
 resource "google_service_account" "codex_operator" {
   account_id   = "keep-lease-codex-operator"
   display_name = "Keep & Lease Codex cloud operator"
-  description  = "Bounded keyless identity for private health, GUI, API, and log checks."
+  description  = "Bounded keyless identity for private health, GUI, and API checks."
 }
 
 resource "google_service_account_iam_member" "codex_operator_github_wif" {
