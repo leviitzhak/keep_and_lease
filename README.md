@@ -56,26 +56,26 @@ Set `KEEP_AND_LEASE_COMPUTE_API_URL=http://localhost:8000` before building the
 GUI. Add `?engine=pyodide` to the GUI URL to explicitly use the preserved browser
 engine, or `?engine=server` to require the API without fallback.
 
-## Durable Google Cloud execution
+## Active deployment: Google Cloud
+
+**Google Cloud Run is the current and authoritative deployment path.** Production
+and deployment previews should use the Google Cloud infrastructure and
+`.github/workflows/deploy-google-cloud.yml`; do not create or use Render services
+for current deployments or previews.
 
 The Google Cloud path replaces the process-local queue with Firestore metadata,
 one Cloud Run Job per calculation, and immutable gzip results in Cloud Storage.
 Separate web/worker images, Cloud Run v2 Terraform, and the keyless GitHub
 deployment workflow are implemented. The foundation is provisioned; follow
-[`docs/GOOGLE_CLOUD_RUN_SETUP.md`](docs/GOOGLE_CLOUD_RUN_SETUP.md) for deployment
-operations and the remaining private calculation acceptance tests.
+[`docs/GOOGLE_CLOUD_RUN_SETUP.md`](docs/GOOGLE_CLOUD_RUN_SETUP.md) for deployment,
+preview/access operations, and remaining acceptance tests.
 
-## Fixed Render preview
+## Render (legacy / retired)
 
-The repository includes `render.preview.yaml` and a GitHub Actions workflow for
-deploying one commit to a persistent GUI/API preview pair. Follow
-[`docs/RENDER_FIXED_PREVIEW.md`](docs/RENDER_FIXED_PREVIEW.md) to provision the
-services, store their deploy hooks, configure their stable URLs, verify commit
-provenance, or rebuild the preview from another workspace.
+The repository still contains historical Render configuration and documentation
+for provenance and possible cleanup. **The Render deployment workflow has been
+discarded and is not an active deployment target.** Render URLs, deploy hooks,
+`render.preview.yaml`, and Render-specific workflows must not be treated as the
+current preview or production procedure.
 
-The provisioned preview tracks deployments triggered from
-[`agent/multi-commodity-preview`](https://github.com/leviitzhak/keep_and_lease/tree/agent/multi-commodity-preview):
-
-- GUI: <https://keep-and-lease-fixed-preview.onrender.com>
-- API health and running commit: <https://keep-and-lease-fixed-preview-api.onrender.com/api/v1/health>
-- GUI build metadata: <https://keep-and-lease-fixed-preview.onrender.com/build-info.json>
+See the Google Cloud documentation above for all new deployment and preview work.
