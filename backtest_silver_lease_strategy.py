@@ -26,6 +26,10 @@ from maturity_scoring import (
     signed_distance,
 )
 from rate_change_attribution import InstrumentAttribution, build_rate_change_point
+from market_data_store import (
+    ASSET_BY_PREFIX, data_directory, read_cached_asset, read_contract_csvs,
+    read_spot_csv,
+)
 
 MONTHS = dict(zip("FGHJKMNQUVXZ", range(1, 13)))
 TENORS = [(91, "DTB3"), (182, "DTB6"), (365, "DGS1"),
@@ -122,6 +126,14 @@ def read_generic_contracts(root, archive_name, symbol_prefix):
     decimal exchange prices.  A prefix filter also excludes the stray CC
     (cocoa) file bundled in the corn archive.
     """
+    asset = ASSET_BY_PREFIX.get(symbol_prefix.upper())
+    if asset:
+        cached = read_cached_asset(Path(root), asset)
+        if cached is not None:
+            return cached[1], cached[2]
+        materialized = data_directory(Path(root)) / asset / "futures"
+        if materialized.is_dir():
+            return read_contract_csvs(Path(root), asset, symbol_prefix)
     contracts, volumes = {}, {}
     with zipfile.ZipFile(root / archive_name) as archive:
         for filename in archive.namelist():
@@ -249,10 +261,20 @@ def read_csv_spot(root, filename, value_column):
 
 
 def read_spot(root):
+    cached = read_cached_asset(Path(root), "silver")
+    if cached is not None:
+        return cached[0]
+    if (data_directory(Path(root)) / "silver").is_dir():
+        return read_spot_csv(Path(root), "silver")
     return read_zip_spot(root, "silver_price.csv")
 
 
 def read_contracts(root, spot):
+    cached = read_cached_asset(Path(root), "silver")
+    if cached is not None:
+        return cached[1], cached[2]
+    if (data_directory(Path(root)) / "silver" / "futures").is_dir():
+        return read_contract_csvs(Path(root), "silver", "SI", spot)
     contracts = {}
     volumes = {}
     with zipfile.ZipFile(root / "si.zip") as archive:
