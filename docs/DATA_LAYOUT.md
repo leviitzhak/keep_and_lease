@@ -14,6 +14,18 @@ contracts and whether ETF OHLCV, distributions, and both price and total-return
 indices are retained. Compression can be used for transfer, but not as the
 canonical on-disk schema.
 
+Server images compile these CSVs at image-build time into the immutable local
+`data/market.sqlite3` cache. The strategy reads that cache once per process and
+retains the decoded snapshot in memory for subsequent runs. SQLite is an image
+local startup optimization, not a second authoritative dataset; deleting it
+and rebuilding the image deterministically recreates it from the CSVs. This is
+faster and cheaper than issuing one Firestore or network-database query per
+quote, while preserving plain CSVs for audit and data refreshes.
+
+The damaged legacy root-level `gc.zip` is no longer copied into server images.
+ZIP readers remain only as compatibility fallbacks for assets that have not
+yet been migrated to the canonical layout.
+
 Available today:
 
 - Silver: legacy spot/fixing, 272 individual futures, refreshed continuous
