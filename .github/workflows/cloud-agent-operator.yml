@@ -111,7 +111,7 @@ jobs:
           REQUEST_PATH: ${{ steps.request.outputs.path }}
           KEEP_AND_LEASE_WEB_URI: ${{ env.WEB_URI }}
           KEEP_AND_LEASE_ID_TOKEN: ${{ steps.google_auth_browser.outputs.id_token }}
-          KEEP_AND_LEASE_OUTPUT_DIR: ${{ env.OUTPUT_DIR }}
+          KEEP_AND_LEASE_OUTPUT_DIR: ${{ github.workspace }}/${{ env.OUTPUT_DIR }}
         run: |
           set -euo pipefail
           browser_dir="${RUNNER_TEMP}/keep-lease-browser"
