@@ -74,3 +74,5 @@ next-env.d.ts
 
 # Temporary credential file created by google-github-actions/auth.
 gha-creds-*.json
+public/data/*.sqlite3
+public/data/*.tmp
