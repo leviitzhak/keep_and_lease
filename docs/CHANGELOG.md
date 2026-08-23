@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-08-23 — Canonical market database cache
+
+- Switched silver, gold, and S&P 500 server loading from legacy ZIP archives to
+  their common materialized CSV layout.
+- Added a deterministic build-time SQLite cache and process-local decoded cache
+  so repeated calculations reuse the same market snapshot without network I/O.
+- Removed the truncated `gc.zip` from Cloud Run API and worker images; valid
+  gold data now comes from all 214 materialized contract files.
+
 ## 2026-08-23 — Approved-user Cloud Run IAP cutover plan
 
 - Documented direct IAP on the existing `run.app` URL as the approved-user browser
