@@ -52,6 +52,13 @@ jobs:
           echo "path=$request_path" >> "$GITHUB_OUTPUT"
           echo "gui=$(jq -r '.actions | index("gui") != null' "$request_path")" >> "$GITHUB_OUTPUT"
 
+      - name: Initialize sanitized evidence directory
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p "$OUTPUT_DIR"
+          printf '{"status":"started"}\n' > "$OUTPUT_DIR/run.json"
+
       - name: Prepare isolated browser runtime
         if: steps.request.outputs.gui == 'true'
         shell: bash
@@ -64,10 +71,6 @@ jobs:
           npm init --yes >/dev/null
           npm install --no-save --no-package-lock playwright@1.55.0
           npx playwright install --with-deps chromium
-
-      - name: Initialize sanitized evidence directory
-        shell: bash
-        run: mkdir -p "$OUTPUT_DIR"
 
       - name: Authenticate as bounded Cloud Run operator
         id: google_auth
