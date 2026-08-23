@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-08-23 — Keyless autonomous Cloud Run operator
+
+- Added a dedicated `keep-lease-codex-operator` identity with Cloud Run invoke
+  permission only and GitHub impersonation restricted to the permanent operator
+  branch.
+- Added a bounded GitHub Actions control path for private health/build checks,
+  authenticated Playwright GUI screenshots, and fixed-fixture API smoke tests.
+- Kept Google credentials out of Codex and GitHub secrets. Because the repository
+  is public, rejected arbitrary parameters and omitted raw logs, result bodies,
+  internal URIs, execution names, and error text from one-day artifacts.
+- Documented the one-time foundation apply, request schema, evidence boundary,
+  revocation path, and the need for a private control plane for deeper diagnostics.
+
+
 ## 2026-08-20 — Cloud Run operator access and publication plan
 
 - Recorded the successful `master` deployment and authenticated private operator

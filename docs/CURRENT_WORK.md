@@ -6,11 +6,10 @@ branch._
 
 ## Active change set
 
-- Status: durable Cloud Run workloads deployed from `master`; authenticated health
-  and private operator GUI access work; bounded numerical, cancellation, and
-  replacement acceptance tests remain
-- Integration: fast-forwarded to `master` after the successful pre-merge deployment
-- Current implementation branch: [`master`](https://github.com/leviitzhak/keep_and_lease/tree/master)
+- Status: keyless cloud-agent GUI/API access implemented; one-time foundation IAM
+  apply and first operator workflow verification remain
+- Integration: unmerged; production deployment remains on `master`
+- Current implementation branch: [`agent/cloud-autonomous-access`](https://github.com/leviitzhak/keep_and_lease/tree/agent/cloud-autonomous-access)
 - Previous generalized application review: [PR #22 — Complete generalized multi-commodity implementation](https://github.com/leviitzhak/keep_and_lease/pull/22)
 - Render services' configured source branch: [`agent/fixed-render-preview-deploys`](https://github.com/leviitzhak/keep_and_lease/tree/agent/fixed-render-preview-deploys). Deploy hooks override this default with the exact commit pushed to the current implementation branch.
 - Application version: `1.2`
@@ -37,11 +36,16 @@ branch._
 - A provisioned Google Cloud foundation plus implemented durable Firestore/GCS job
   persistence, scale-to-zero web service, one-shot 4 GiB calculation Job, separate
   containers, workload Terraform, and GitHub OIDC deployment workflow.
+- A branch-restricted, keyless GitHub OIDC operator that can collect non-secret
+  health/build evidence, render the private GUI, and run sanitized fixed-fixture
+  API smoke tests without exposing a Google credential to Codex.
 
 ## Explicitly deferred
 
 - The pure shorter-long/longer-short maturity multiplier is planned for a later
   change set.
+- Apply the reviewed `infra/gcp/codex_operator.tf` foundation delta once, then
+  trigger and verify the first non-billable cloud-agent health/GUI request.
 - Cloud Run numerical/cancellation/replacement acceptance tests and capacity
   measurements remain deployment work. Direct Cloud Run IAP is the recommended
   next browser-access step. Anonymous access remains deferred until application

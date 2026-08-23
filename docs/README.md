@@ -24,6 +24,8 @@ Start with [PROJECT_STATE.md](PROJECT_STATE.md).
 - [Google Cloud Run setup](GOOGLE_CLOUD_RUN_SETUP.md) — provisioned foundation,
   implemented scale-to-zero web service and durable calculation Job, deployment,
   security boundaries, acceptance work, and analytical-data migration.
+- [Cloud-agent access](CLOUD_AGENT_ACCESS.md) — keyless, branch-restricted private
+  GUI/API diagnostics through GitHub OIDC.
  
 ## Working convention
 
