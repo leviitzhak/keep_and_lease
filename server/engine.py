@@ -77,9 +77,10 @@ class StrategyEngine:
         else:
             manifest = hashlib.sha256()
             for name in (
-                "gold_silver.zip", "si.zip", "gc.zip", "cl.zip", "w.zip",
+                "gold_silver.zip", "si.zip", "cl.zip", "w.zip",
                 "c.zip", "s.zip", "sp.zip", "DCOILWTICO.csv", "DGS1.csv",
                 "DGS2.csv", "DGS3.csv", "DGS5.csv", "DTB3.csv", "DTB6.csv",
+                "data/manifest.json", "data/market.sqlite3",
             ):
                 path = self.data_root / name
                 manifest.update(name.encode("utf-8"))
