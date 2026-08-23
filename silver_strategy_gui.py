@@ -13,6 +13,7 @@ from backtest_silver_lease_strategy import (
     Parameters, build_market, build_proxy_market, build_spot_market,
     TENORS, asof_rate, positions_for_day, read_csv_spot, read_zip_spot,
     run_backtest, score_diagnostic)
+from market_data_store import data_directory, read_cached_asset, read_spot_csv
 
 ROOT = Path(__file__).resolve().parent
 PAGE = ROOT / "silver_strategy_gui.html"
@@ -52,7 +53,7 @@ def build_markets(root):
     builders = {
         "silver": lambda: build_market(root),
         "gold": lambda: build_spot_market(
-            root, "gc.zip", "GC", read_zip_spot(root, "gold_price.csv")),
+            root, "gc.zip", "GC", _asset_spot(root, "gold", "gold_price.csv")),
         "oil": lambda: build_spot_market(
             root, "cl.zip", "CL",
             read_csv_spot(root, "DCOILWTICO.csv", "DCOILWTICO")),
@@ -75,6 +76,15 @@ def build_markets(root):
                 flush=True,
             )
     return markets
+
+
+def _asset_spot(root, asset, legacy_member):
+    cached = read_cached_asset(Path(root), asset)
+    if cached is not None:
+        return cached[0]
+    if (data_directory(Path(root)) / asset).is_dir():
+        return read_spot_csv(Path(root), asset)
+    return read_zip_spot(root, legacy_member)
 
 
 def number(payload, name, default, low=None, high=None):
