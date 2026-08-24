@@ -14,6 +14,12 @@ provider "google" {
   region  = var.region
 }
 
+resource "google_project_service" "iap" {
+  project            = var.project_id
+  service            = "iap.googleapis.com"
+  disable_on_destroy = false
+}
+
 locals {
   prefix = "keep-and-lease"
 }
@@ -146,6 +152,12 @@ resource "google_service_account_iam_member" "github_wif" {
 resource "google_project_iam_member" "deploy_run" {
   project = var.project_id
   role    = "roles/run.admin"
+  member  = "serviceAccount:${google_service_account.deploy.email}"
+}
+
+resource "google_project_iam_member" "deploy_iap_admin" {
+  project = var.project_id
+  role    = "roles/iap.admin"
   member  = "serviceAccount:${google_service_account.deploy.email}"
 }
 

@@ -1,6 +1,6 @@
 # Google Cloud Run deployment design and implementation state
 
-## Current state — 2026-08-23
+## Current state — 2026-08-24
 
 The Google Cloud foundation is provisioned and verified. The durable application
 split, containers, workload Terraform, and keyless deployment workflow are
@@ -10,7 +10,10 @@ deploys `master`, currently verified by the private operator at commit
 `08b583696f52314b54e3be6bd6f1d39497b10a1c` (application version `1.3`).
 The branch-restricted keyless operator has been applied and verified end-to-end:
 the API returned `status=ok` and the private GUI rendered with HTTP 200. Direct
-Cloud Run IAP for approved human users is documented below but is not yet enabled.
+Cloud Run IAP Terraform, explicit human/machine allowlisting, and dual-mode
+deployment/operator token audiences are implemented on
+`agent/market-data-sqlite-cache`. Activation still requires the one-time
+no-organization OAuth setup and repository variables described below.
 The pure-maturity branch was inspected on Cloud Run and the service was returned
 to private access; anonymous requests to the public URL return `403`. Bounded
 calculation, cancellation, and replacement acceptance tests remain.
@@ -172,7 +175,15 @@ Required repository Actions variables remain:
 - `GCP_WORKLOAD_IDENTITY_PROVIDER=projects/989708711229/locations/global/workloadIdentityPools/github/providers/github`
 - `GCP_DEPLOY_SERVICE_ACCOUNT=keep-lease-github@keep-and-lease.iam.gserviceaccount.com`
 
-These are identifiers, not secrets.
+IAP activation additionally requires:
+
+- `GCP_IAP_ENABLED=true`
+- `GCP_IAP_CLIENT_ID=<OAuth client ID created by the IAP console setup>`
+
+These are identifiers, not secrets. Human identities are managed only in the
+Google Cloud IAP policy so personal email addresses do not enter this public
+repository or its public Actions logs. Keep `GCP_IAP_ENABLED` absent or `false`
+until the foundation delta, OAuth setup, client ID, and human allowlist are ready.
 
 ### 3. Open the private GUI
 
@@ -217,7 +228,7 @@ the local canonical engine before treating the deployment as accepted.
 
 “Public URL” has two materially different meanings for this application.
 
-### Planned next change: internet-reachable URL with an approved-user allowlist
+### Internet-reachable URL with an approved-user allowlist
 
 Enable [Identity-Aware Proxy (IAP) directly on the Cloud Run
 service](https://docs.cloud.google.com/run/docs/securing/identity-aware-proxy-cloud-run).
@@ -245,31 +256,31 @@ The IAP service agent is
 is verified, the operator's direct `roles/run.invoker` binding can be removed:
 IAP, rather than the original caller, invokes the service.
 
-#### Required implementation
+#### Activation procedure
 
-1. Enable `iap.googleapis.com` in foundation Terraform.
+1. Apply the foundation Terraform delta. It enables `iap.googleapis.com` and grants
+   the deployment identity `roles/iap.admin`.
 2. Because project `keep-and-lease` is not attached to a Google organization,
    perform the first IAP/OAuth activation in the Google Cloud console. Configure an
    **External** OAuth audience and let the console auto-generate the project OAuth
    client, or configure an equivalent custom client. Google does not support
    creating that first no-organization OAuth client entirely through Terraform.
-3. Record the non-secret IAP OAuth client ID as the GitHub repository variable
-   `GCP_IAP_CLIENT_ID`. Do not store the OAuth client secret in the repository,
-   GitHub Actions artifacts, or the Codex environment.
-4. Set `iap_enabled = true` on `google_cloud_run_v2_service.web` in workload
-   Terraform.
-5. Grant `roles/run.invoker` on the web service to the IAP service agent.
-6. Manage approved users, groups, the Codex operator, and the deployment identity
-   with `google_iap_web_cloud_run_service_iam_member` or an authoritative
-   `google_iap_web_cloud_run_service_iam_binding`.
-7. Update both the deployment health check and
-   `.github/workflows/cloud-agent-operator.yml` to request an ID token whose
-   audience is `GCP_IAP_CLIENT_ID`, with the service-account email claim included.
-   Keep a reviewed direct/IAP mode switch during migration so IAP is not enabled
-   before both machine callers are ready.
+3. In the service's **Security → IAP → Edit policy** page, add each approved human
+   Google account with `roles/iap.httpsResourceAccessor`. Keep this human list in
+   Google Cloud rather than the public repository.
+4. Set the two `GCP_IAP_*` repository variables listed above. Do not store the OAuth
+   client secret in the repository, GitHub Actions artifacts, or the Codex
+   environment.
+5. Run **Deploy Google Cloud workloads** with `allow_unauthenticated=false`.
+   Terraform enables direct IAP, grants the IAP service agent Cloud Run invocation,
+   and adds the Codex operator and deployment identities to the IAP policy without
+   replacing the human entries managed in Google Cloud.
+6. The deployment and operator workflows automatically switch their keyless ID
+   token audience from the Cloud Run URI to `GCP_IAP_CLIENT_ID` when
+   `GCP_IAP_ENABLED=true`.
 
 A Google-managed IAP OAuth client is sufficient for normal browser access. The
-planned machine path uses the configured IAP client ID. If a client configuration
+machine path uses the configured IAP client ID. If a client configuration
 does not support that OIDC flow, use Google's documented keyless service-account
 signed-JWT path instead; do not introduce a service-account key.
 
@@ -277,10 +288,9 @@ signed-JWT path instead; do not introduce a service-account key.
 
 1. Prepare and review the Terraform and dual-mode workflow changes while the
    service still uses direct Cloud Run IAM.
-2. Complete the one-time console OAuth/IAP configuration and record
-   `GCP_IAP_CLIENT_ID`.
-3. Add the human and service-account IAP allowlist entries and the IAP service-agent
-   Cloud Run invoker binding.
+2. Complete the one-time console OAuth/IAP configuration, add the approved human
+   identities, and record `GCP_IAP_CLIENT_ID`.
+3. Apply the machine IAP entries and IAP service-agent Cloud Run invoker binding.
 4. Enable IAP and switch both machine workflows to the IAP audience.
 5. Verify all acceptance cases below before removing the operator's old direct
    Cloud Run invoker binding. If a machine check fails, disable IAP and restore the

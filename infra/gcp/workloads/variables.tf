@@ -29,6 +29,12 @@ variable "allow_unauthenticated" {
   default     = false
 }
 
+variable "iap_enabled" {
+  description = "Protect every Cloud Run ingress path with Identity-Aware Proxy."
+  type        = bool
+  default     = false
+}
+
 variable "allowed_origins" {
   type    = string
   default = "https://keep-and-lease-fixed-preview.onrender.com,https://keep-and-lease.itzhakb.chatgpt.site"

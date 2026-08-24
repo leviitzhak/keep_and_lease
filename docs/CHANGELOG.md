@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-08-24 — Direct Cloud Run IAP implementation
+
+- Added foundation-managed IAP API enablement and IAP administration for the
+  keyless deployment identity.
+- Added direct Cloud Run IAP and additive machine access bindings for the Codex
+  operator and deployment identity; human entries remain private in the Google
+  Cloud IAP policy.
+- Added repository-variable-controlled IAP activation and automatic IAP OAuth
+  client audiences for both deployment health checks and the bounded operator.
+- Kept activation fail-closed: IAP requires a non-empty client ID and cannot
+  coexist with anonymous invocation.
+- Left the no-organization OAuth console activation and end-to-end acceptance
+  checks as explicit one-time deployment steps.
+
 ## 2026-08-23 — Canonical market database cache
 
 - Switched silver, gold, and S&P 500 server loading from legacy ZIP archives to

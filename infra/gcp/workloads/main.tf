@@ -14,6 +14,10 @@ provider "google" {
   region  = var.region
 }
 
+data "google_project" "current" {
+  project_id = var.project_id
+}
+
 locals {
   prefix                 = "keep-and-lease"
   web_service_account    = "keep-lease-web@${var.project_id}.iam.gserviceaccount.com"
@@ -89,6 +93,7 @@ resource "google_cloud_run_v2_service" "web" {
   location            = var.region
   deletion_protection = false
   ingress             = "INGRESS_TRAFFIC_ALL"
+  iap_enabled         = var.iap_enabled
 
   template {
     service_account                  = local.web_service_account
@@ -161,6 +166,13 @@ resource "google_cloud_run_v2_service" "web" {
   depends_on = [google_cloud_run_v2_job_iam_member.web_executes_calculation]
 }
 
+check "exclusive_web_authentication_mode" {
+  assert {
+    condition     = !(var.iap_enabled && var.allow_unauthenticated)
+    error_message = "IAP and unauthenticated Cloud Run invocation cannot be enabled together."
+  }
+}
+
 resource "google_cloud_run_v2_service_iam_member" "public_web" {
   count = var.allow_unauthenticated ? 1 : 0
 
@@ -177,4 +189,29 @@ resource "google_cloud_run_v2_service_iam_member" "deploy_invoker" {
   name     = google_cloud_run_v2_service.web.name
   role     = "roles/run.servicesInvoker"
   member   = "serviceAccount:keep-lease-github@${var.project_id}.iam.gserviceaccount.com"
+}
+
+resource "google_cloud_run_v2_service_iam_member" "iap_service_agent_invoker" {
+  count = var.iap_enabled ? 1 : 0
+
+  project  = var.project_id
+  location = google_cloud_run_v2_service.web.location
+  name     = google_cloud_run_v2_service.web.name
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:service-${data.google_project.current.number}@gcp-sa-iap.iam.gserviceaccount.com"
+}
+
+resource "google_iap_web_cloud_run_service_iam_member" "machine_accessors" {
+  for_each = var.iap_enabled ? toset([
+    "serviceAccount:keep-lease-codex-operator@${var.project_id}.iam.gserviceaccount.com",
+    "serviceAccount:keep-lease-github@${var.project_id}.iam.gserviceaccount.com",
+  ]) : toset([])
+
+  project                = var.project_id
+  location               = google_cloud_run_v2_service.web.location
+  cloud_run_service_name = google_cloud_run_v2_service.web.name
+  role                   = "roles/iap.httpsResourceAccessor"
+  member                 = each.value
+
+  depends_on = [google_cloud_run_v2_service_iam_member.iap_service_agent_invoker]
 }
