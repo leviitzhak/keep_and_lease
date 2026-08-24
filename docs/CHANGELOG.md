@@ -7,6 +7,9 @@
 - Added direct Cloud Run IAP and additive machine access bindings for the Codex
   operator and deployment identity; human entries remain private in the Google
   Cloud IAP policy.
+- Updated the workload-only Google Terraform provider constraint to 7.x, where
+  direct Cloud Run `iap_enabled` is supported; foundation state remains on its
+  independent provider constraint.
 - Added repository-variable-controlled IAP activation and automatic IAP OAuth
   client audiences for both deployment health checks and the bounded operator.
 - Kept activation fail-closed: IAP requires a non-empty client ID and cannot
