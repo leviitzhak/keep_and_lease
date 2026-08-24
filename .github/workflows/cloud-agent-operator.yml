@@ -29,6 +29,8 @@ jobs:
       PROJECT_ID: keep-and-lease
       REGION: me-west1
       WEB_URI: https://keep-and-lease-web-vfk2j2rgoq-zf.a.run.app
+      IAP_ENABLED: ${{ vars.GCP_IAP_ENABLED == 'true' }}
+      TOKEN_AUDIENCE: ${{ vars.GCP_IAP_ENABLED == 'true' && vars.GCP_IAP_CLIENT_ID || 'https://keep-and-lease-web-vfk2j2rgoq-zf.a.run.app' }}
       OPERATOR_SERVICE_ACCOUNT: keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com
       OUTPUT_DIR: cloud-agent-output
 
@@ -80,7 +82,7 @@ jobs:
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ env.OPERATOR_SERVICE_ACCOUNT }}
           token_format: id_token
-          id_token_audience: ${{ env.WEB_URI }}
+          id_token_audience: ${{ env.TOKEN_AUDIENCE }}
           id_token_include_email: true
 
       - name: Validate bounded request
@@ -101,7 +103,7 @@ jobs:
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ env.OPERATOR_SERVICE_ACCOUNT }}
           token_format: id_token
-          id_token_audience: ${{ env.WEB_URI }}
+          id_token_audience: ${{ env.TOKEN_AUDIENCE }}
           id_token_include_email: true
 
       - name: Check rendered private GUI
