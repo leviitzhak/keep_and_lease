@@ -67,12 +67,12 @@ This checklist reflects the application synchronized from the deployed Sites che
   workloads with an authenticated health check.
 - [ ] Complete the bounded numerical, cancellation, cache-reuse, and
   container-replacement acceptance tests in `GOOGLE_CLOUD_RUN_SETUP.md`.
-- [x] Implement direct Cloud Run IAP, additive machine allowlist bindings, private
-  human allowlist instructions, and dual-mode keyless deployment/operator token
-  audiences.
-- [ ] Complete the one-time no-organization OAuth activation, add approved humans
-  in the Google Cloud IAP policy, set the `GCP_IAP_*` repository variables, deploy
-  the IAP cutover, and verify the full acceptance
+- [x] Implement direct Cloud Run IAP, private manual human/machine allowlist
+  instructions, and dual-mode keyless deployment/operator token audiences.
+- [ ] Complete the one-time no-organization OAuth activation, manually add approved
+  humans plus the operator and deployment identities in the Google Cloud IAP
+  policy, set the `GCP_IAP_*` repository variables, deploy the IAP cutover, and
+  verify the full acceptance
   matrix; keep anonymous Cloud Run invocation disabled in the meantime.
 - [ ] Move calculation-ready cloud inputs from the worker image to versioned
   Parquet/DuckDB/Arrow objects and restore durable cloud day inspection.

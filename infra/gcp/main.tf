@@ -155,12 +155,6 @@ resource "google_project_iam_member" "deploy_run" {
   member  = "serviceAccount:${google_service_account.deploy.email}"
 }
 
-resource "google_project_iam_member" "deploy_iap_admin" {
-  project = var.project_id
-  role    = "roles/iap.admin"
-  member  = "serviceAccount:${google_service_account.deploy.email}"
-}
-
 resource "google_project_iam_member" "deploy_artifact" {
   project = var.project_id
   role    = "roles/artifactregistry.writer"

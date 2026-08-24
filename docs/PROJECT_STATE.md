@@ -64,8 +64,9 @@ Build an interactive research and backtesting application for strategies that al
     access on 2026-08-21; unauthenticated requests now return `403`. The authenticated
     health check and private operator GUI path work; bounded calculation,
     cancellation, and replacement acceptance tests remain. Direct IAP Terraform,
-    an explicit human/machine allowlist, and dual-mode keyless workflow audiences
-    are implemented; one-time OAuth activation and acceptance verification remain.
+    manual human/machine allowlist instructions, and dual-mode keyless workflow
+    audiences are implemented; one-time OAuth activation, manual policy setup, and
+    acceptance verification remain.
     Anonymous calculation access remains disabled.
 
 ## Active review and planned architecture

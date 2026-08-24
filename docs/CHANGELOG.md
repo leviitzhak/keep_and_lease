@@ -2,11 +2,11 @@
 
 ## 2026-08-24 — Direct Cloud Run IAP implementation
 
-- Added foundation-managed IAP API enablement and IAP administration for the
-  keyless deployment identity.
-- Added direct Cloud Run IAP and additive machine access bindings for the Codex
-  operator and deployment identity; human entries remain private in the Google
-  Cloud IAP policy.
+- Added foundation-managed IAP API enablement without granting the keyless
+  deployment identity permission to administer IAP policy.
+- Added direct Cloud Run IAP and its service-agent invocation binding. Human,
+  Codex operator, and deployment accessors are all managed manually in the private
+  Google Cloud IAP policy.
 - Updated the workload-only Google Terraform provider constraint to 7.x, where
   direct Cloud Run `iap_enabled` is supported; foundation state remains on its
   independent provider constraint.
@@ -16,6 +16,8 @@
   coexist with anonymous invocation.
 - Left the no-organization OAuth console activation and end-to-end acceptance
   checks as explicit one-time deployment steps.
+- Added an idempotent, checksum-verified Terraform `1.15.9` installer that persists
+  in `$HOME/.local/bin` across Google Cloud Shell sessions.
 
 ## 2026-08-23 — Canonical market database cache
 

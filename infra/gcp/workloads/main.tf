@@ -200,18 +200,3 @@ resource "google_cloud_run_v2_service_iam_member" "iap_service_agent_invoker" {
   role     = "roles/run.invoker"
   member   = "serviceAccount:service-${data.google_project.current.number}@gcp-sa-iap.iam.gserviceaccount.com"
 }
-
-resource "google_iap_web_cloud_run_service_iam_member" "machine_accessors" {
-  for_each = var.iap_enabled ? toset([
-    "serviceAccount:keep-lease-codex-operator@${var.project_id}.iam.gserviceaccount.com",
-    "serviceAccount:keep-lease-github@${var.project_id}.iam.gserviceaccount.com",
-  ]) : toset([])
-
-  project                = var.project_id
-  location               = google_cloud_run_v2_service.web.location
-  cloud_run_service_name = google_cloud_run_v2_service.web.name
-  role                   = "roles/iap.httpsResourceAccessor"
-  member                 = each.value
-
-  depends_on = [google_cloud_run_v2_service_iam_member.iap_service_agent_invoker]
-}

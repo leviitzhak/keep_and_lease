@@ -7,8 +7,8 @@ branch._
 ## Active change set
 
 - Status: the market-data SQLite cache branch is deployed; direct Cloud Run IAP
-  Terraform, explicit human/machine allowlisting, and dual-mode keyless workflow
-  audiences are implemented, with one-time OAuth activation still pending
+  Terraform, manual human/machine allowlist instructions, and dual-mode keyless
+  workflow audiences are implemented, with one-time OAuth activation still pending
 - Active branch: `agent/market-data-sqlite-cache`
 - Previous generalized application review: [PR #22 — Complete generalized multi-commodity implementation](https://github.com/leviitzhak/keep_and_lease/pull/22)
 - Render services' configured source branch: [`agent/fixed-render-preview-deploys`](https://github.com/leviitzhak/keep_and_lease/tree/agent/fixed-render-preview-deploys). Deploy hooks override this default with the exact commit pushed to the current implementation branch.
@@ -56,12 +56,11 @@ branch._
   `portfolio_series` null-reference page error. The page still renders with HTTP
   200 and reports the server engine ready; the operator artifact preserves the
   diagnostic without exposing credentials.
-- Complete the one-time no-organization External OAuth setup, add approved humans
-  in the Google Cloud IAP policy, set the two `GCP_IAP_*` repository variables,
-  apply the foundation delta, deploy the
-  implemented IAP policy, and verify allowed, denied, operator, and deployment
-  paths before removing direct operator invocation. Anonymous access remains
-  disabled.
+- Complete the one-time no-organization External OAuth setup, manually add approved
+  humans plus the operator and deployment identities in the Google Cloud IAP
+  policy, set the two `GCP_IAP_*` repository variables, apply the foundation delta,
+  deploy direct IAP, and verify allowed, denied, operator, and deployment paths
+  before removing direct operator invocation. Anonymous access remains disabled.
 - Cloud Run numerical/cancellation/replacement acceptance tests and capacity
   measurements remain deployment work. The fixed Render services, deploy-hook
   secrets, and public URL variables are configured; only the optional

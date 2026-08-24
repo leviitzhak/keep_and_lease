@@ -12,12 +12,18 @@ The first apply runs from an authenticated Google Cloud Shell and creates storag
 ```bash
 cd ~/keep_and_lease
 git pull
+./scripts/install-terraform-cloud-shell.sh
+export PATH="$HOME/.local/bin:$PATH"
 cd infra/gcp
 terraform init
 terraform plan
 terraform apply
 terraform output
 ```
+
+The installer pins Terraform `1.15.9` in persistent Cloud Shell storage at
+`$HOME/.local/bin`, verifies the HashiCorp checksum, and is safe to rerun. Run the
+printed `export PATH=...` command once in the current shell after first install.
 
 Defaults target project `keep-and-lease` and region `me-west1`. Review the plan before approving it, especially the Firestore location.
 

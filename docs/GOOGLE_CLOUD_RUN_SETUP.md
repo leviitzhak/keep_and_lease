@@ -10,7 +10,7 @@ deploys `master`, currently verified by the private operator at commit
 `08b583696f52314b54e3be6bd6f1d39497b10a1c` (application version `1.3`).
 The branch-restricted keyless operator has been applied and verified end-to-end:
 the API returned `status=ok` and the private GUI rendered with HTTP 200. Direct
-Cloud Run IAP Terraform, explicit human/machine allowlisting, and dual-mode
+Cloud Run IAP Terraform, manual human/machine allowlisting, and dual-mode
 deployment/operator token audiences are implemented on
 `agent/market-data-sqlite-cache`. Activation still requires the one-time
 no-organization OAuth setup and repository variables described below.
@@ -139,6 +139,8 @@ the project owner from an authenticated Cloud Shell checkout:
 ```bash
 cd ~/keep_and_lease
 git pull
+./scripts/install-terraform-cloud-shell.sh
+export PATH="$HOME/.local/bin:$PATH"
 cd infra/gcp
 terraform init
 terraform fmt -check
@@ -147,8 +149,11 @@ terraform plan
 terraform apply
 ```
 
-The foundation state remains under `foundation`; Cloud Run resources use the
-separate protected workload-state bucket.
+The installer pins Terraform `1.15.9` under persistent Cloud Shell storage at
+`$HOME/.local/bin` and adds that directory to future Bash sessions. Run the printed
+`export PATH=...` command once in the current session. The foundation state remains
+under `foundation`; Cloud Run resources use the separate protected workload-state
+bucket.
 
 ### 2. Run the GitHub workflow
 
@@ -180,10 +185,12 @@ IAP activation additionally requires:
 - `GCP_IAP_ENABLED=true`
 - `GCP_IAP_CLIENT_ID=<OAuth client ID created by the IAP console setup>`
 
-These are identifiers, not secrets. Human identities are managed only in the
-Google Cloud IAP policy so personal email addresses do not enter this public
-repository or its public Actions logs. Keep `GCP_IAP_ENABLED` absent or `false`
-until the foundation delta, OAuth setup, client ID, and human allowlist are ready.
+These are identifiers, not secrets. All IAP accessors—human and machine—are
+managed only in the Google Cloud IAP policy. This keeps personal email addresses
+out of the public repository and its public Actions logs, and lets an owner add or
+remove a user without a Terraform deployment. Keep `GCP_IAP_ENABLED` absent or
+`false` until the foundation delta, OAuth setup, client ID, and complete allowlist
+are ready.
 
 ### 3. Open the private GUI
 
@@ -258,23 +265,26 @@ IAP, rather than the original caller, invokes the service.
 
 #### Activation procedure
 
-1. Apply the foundation Terraform delta. It enables `iap.googleapis.com` and grants
-   the deployment identity `roles/iap.admin`.
+1. Apply the foundation Terraform delta. It only enables `iap.googleapis.com`; the
+   deployment identity is deliberately not allowed to administer IAP policy.
 2. Because project `keep-and-lease` is not attached to a Google organization,
    perform the first IAP/OAuth activation in the Google Cloud console. Configure an
    **External** OAuth audience and let the console auto-generate the project OAuth
    client, or configure an equivalent custom client. Google does not support
    creating that first no-organization OAuth client entirely through Terraform.
-3. In the service's **Security → IAP → Edit policy** page, add each approved human
-   Google account with `roles/iap.httpsResourceAccessor`. Keep this human list in
-   Google Cloud rather than the public repository.
+3. In the service's **Security → IAP → Edit policy** page, grant
+   `roles/iap.httpsResourceAccessor` to every approved human Google account and to
+   both machine principals:
+   `serviceAccount:keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com`
+   and
+   `serviceAccount:keep-lease-github@keep-and-lease.iam.gserviceaccount.com`.
+   Keep the complete list in Google Cloud rather than the public repository.
 4. Set the two `GCP_IAP_*` repository variables listed above. Do not store the OAuth
    client secret in the repository, GitHub Actions artifacts, or the Codex
    environment.
 5. Run **Deploy Google Cloud workloads** with `allow_unauthenticated=false`.
-   Terraform enables direct IAP, grants the IAP service agent Cloud Run invocation,
-   and adds the Codex operator and deployment identities to the IAP policy without
-   replacing the human entries managed in Google Cloud.
+   Terraform enables direct IAP and grants the IAP service agent Cloud Run
+   invocation. It does not read or modify the IAP access policy.
 6. The deployment and operator workflows automatically switch their keyless ID
    token audience from the Cloud Run URI to `GCP_IAP_CLIENT_ID` when
    `GCP_IAP_ENABLED=true`.
@@ -288,9 +298,10 @@ signed-JWT path instead; do not introduce a service-account key.
 
 1. Prepare and review the Terraform and dual-mode workflow changes while the
    service still uses direct Cloud Run IAM.
-2. Complete the one-time console OAuth/IAP configuration, add the approved human
-   identities, and record `GCP_IAP_CLIENT_ID`.
-3. Apply the machine IAP entries and IAP service-agent Cloud Run invoker binding.
+2. Complete the one-time console OAuth/IAP configuration, manually add every human
+   and machine accessor listed above, and record `GCP_IAP_CLIENT_ID`.
+3. Apply the IAP service-agent Cloud Run invoker binding through workload
+   Terraform.
 4. Enable IAP and switch both machine workflows to the IAP audience.
 5. Verify all acceptance cases below before removing the operator's old direct
    Cloud Run invoker binding. If a machine check fails, disable IAP and restore the
