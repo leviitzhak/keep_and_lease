@@ -173,6 +173,22 @@ are implemented. It:
    endpoint; and
 7. publishes the URI and immutable image references in the workflow summary.
 
+#### Feature-branch preview convention
+
+After validated application changes, push the feature branch and manually dispatch
+**Deploy Google Cloud workloads** for that exact branch, with
+`allow_unauthenticated=false`, unless the user explicitly opts out of a preview.
+Documentation-only changes do not require a runtime deployment.
+
+This is a controlled inspection deployment, not an isolated preview environment:
+it temporarily replaces the revision serving the private, IAP-protected Cloud Run
+URL. Record the feature branch and exact commit SHA before dispatch. A successful
+preview requires both the workflow's authenticated health check and confirmation
+that the deployment summary or GUI version footer reports that same SHA. Report
+the workflow run and private URL with the change handoff. When the preview is
+finished, restore production by dispatching the same workflow on `master` and
+verify the restored `master` SHA.
+
 Required repository Actions variables remain:
 
 - `GCP_PROJECT_ID=keep-and-lease`
