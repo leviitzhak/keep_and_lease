@@ -7,6 +7,7 @@ SERVICE_NAME="${SERVICE_NAME:-keep-and-lease-preview-web}"
 CONFIGURATION_NAME="${CONFIGURATION_NAME:-keep-and-lease}"
 PERSISTENT_GCLOUD_CONFIG="${PERSISTENT_GCLOUD_CONFIG:-$HOME/.config/gcloud}"
 SHELL_RC="${SHELL_RC:-$HOME/.bashrc}"
+CLOUD_SHELL_INIT="${CLOUD_SHELL_INIT:-$HOME/.config/keep-and-lease/cloud-shell-init.sh}"
 account_email=""
 assume_yes=false
 
@@ -26,7 +27,7 @@ Options:
 
 Environment overrides:
   PROJECT_ID, REGION, SERVICE_NAME, CONFIGURATION_NAME,
-  PERSISTENT_GCLOUD_CONFIG, SHELL_RC
+  PERSISTENT_GCLOUD_CONFIG, SHELL_RC, CLOUD_SHELL_INIT
 EOF
 }
 
@@ -83,12 +84,10 @@ if [[ ! "$SERVICE_NAME" =~ ^[a-z][a-z0-9-]{0,62}$ ]]; then
   exit 2
 fi
 
-mkdir -p "$(dirname "$SHELL_RC")" "$PERSISTENT_GCLOUD_CONFIG"
-config_line='export CLOUDSDK_CONFIG="$HOME/.config/gcloud"'
-if [[ "$PERSISTENT_GCLOUD_CONFIG" == "$HOME/.config/gcloud" ]] &&
-  ! grep -Fqx "$config_line" "$SHELL_RC" 2>/dev/null; then
-  printf '\n%s\n' "$config_line" >>"$SHELL_RC"
-fi
+mkdir -p \
+  "$(dirname "$SHELL_RC")" \
+  "$PERSISTENT_GCLOUD_CONFIG" \
+  "$(dirname "$CLOUD_SHELL_INIT")"
 export CLOUDSDK_CONFIG="$PERSISTENT_GCLOUD_CONFIG"
 
 if gcloud config configurations list \
@@ -110,6 +109,22 @@ gcloud config set core/account "$account_email"
 gcloud config set core/project "$PROJECT_ID"
 gcloud config set run/region "$REGION"
 gcloud projects describe "$PROJECT_ID" --format='value(projectId)' >/dev/null
+
+# Cloud Shell can select the Console's current project after starting a new
+# session. Source a small private initializer from .bashrc so this repository's
+# named configuration wins consistently in every future interactive shell.
+{
+  printf 'export CLOUDSDK_CONFIG=%q\n' "$PERSISTENT_GCLOUD_CONFIG"
+  printf 'gcloud config configurations activate %q --quiet >/dev/null 2>&1 || true\n' "$CONFIGURATION_NAME"
+  printf 'gcloud config set core/account %q --quiet >/dev/null 2>&1 || true\n' "$account_email"
+  printf 'gcloud config set core/project %q --quiet >/dev/null 2>&1 || true\n' "$PROJECT_ID"
+  printf 'gcloud config set run/region %q --quiet >/dev/null 2>&1 || true\n' "$REGION"
+} >"$CLOUD_SHELL_INIT"
+chmod 600 "$CLOUD_SHELL_INIT"
+printf -v source_line 'source %q' "$CLOUD_SHELL_INIT"
+if ! grep -Fqx "$source_line" "$SHELL_RC" 2>/dev/null; then
+  printf '\n%s\n' "$source_line" >>"$SHELL_RC"
+fi
 
 principals=(
   "user:${account_email}"

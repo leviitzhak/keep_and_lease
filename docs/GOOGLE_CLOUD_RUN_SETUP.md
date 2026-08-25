@@ -229,7 +229,9 @@ configuration under the user's persistent Cloud Shell home directory, prompts fo
 the human account instead of storing it in the repository, selects this project and
 region, authenticates when necessary, and adds the human plus the two standard
 machine principals to the named service. The permission changes are additive and
-the script asks for confirmation before applying them.
+the script asks for confirmation before applying them. It also installs a private
+shell initializer so Cloud Shell cannot leave a later session on the Console's
+unrelated launch project.
 
 From the repository root:
 

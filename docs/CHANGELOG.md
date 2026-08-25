@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-08-25 — Firestore routing regression mitigation
+
+- Pinned `google-api-core[grpc]` to `2.34.0` after the newly released `2.35.0`
+  percent-encoded Firestore's `(default)` database ID as `%28default%29`, causing
+  both stable and preview strategy requests to return HTTP 500 before a
+  calculation Job could launch.
+- Added a dependency regression test so an unconstrained rebuild cannot silently
+  reintroduce the broken routing client.
+- Strengthened the Cloud Shell helper with a private startup initializer that
+  reactivates the Keep & Lease account, project, region, and persistent Cloud SDK
+  configuration in each new shell.
+
 ## 2026-08-25 — GUI result, curve, and market-loading stabilization
 
 - Added `GET /api/v1/backtests/latest` so the GUI restores the newest completed
