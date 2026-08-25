@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - "agent/**"
   workflow_dispatch:
     inputs:
       deployment_target:
@@ -21,7 +22,7 @@ on:
         default: false
 
 concurrency:
-  group: google-cloud-${{ github.event_name == 'push' && 'stable' || inputs.deployment_target }}
+  group: google-cloud-${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'stable' || github.event_name == 'push' && 'preview' || inputs.deployment_target }}
   cancel-in-progress: false
 
 permissions:
@@ -37,7 +38,7 @@ jobs:
       REGION: ${{ vars.GCP_REGION }}
       IAP_ENABLED: ${{ vars.GCP_IAP_ENABLED == 'true' }}
       IAP_CLIENT_ID: ${{ vars.GCP_IAP_CLIENT_ID }}
-      DEPLOYMENT_TARGET: ${{ github.event_name == 'push' && 'stable' || inputs.deployment_target }}
+      DEPLOYMENT_TARGET: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'stable' || github.event_name == 'push' && 'preview' || inputs.deployment_target }}
 
     steps:
       - name: Check out repository

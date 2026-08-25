@@ -158,9 +158,10 @@ bucket.
 ### 2. Run the GitHub workflow
 
 A push to `master` runs **Deploy Google Cloud workloads** automatically against the
-`stable` target. The workflow also retains `workflow_dispatch` so a reviewed commit
-can be deployed to the separate `preview` target. Manual runs expose an explicit
-`deployment_target` choice that defaults to `preview` and an
+`stable` target. A push to an `agent/**` branch automatically deploys that commit
+to the separate `preview` target. The workflow also retains `workflow_dispatch`
+for other reviewed refs. Manual runs expose an explicit `deployment_target` choice
+that defaults to `preview` and an
 `allow_unauthenticated` input that defaults to `false`; the latter must remain false
 until the planned authentication and abuse controls are implemented. A stable run
 is rejected unless its selected ref is `master`. The workflow:
@@ -177,11 +178,12 @@ is rejected unless its selected ref is `master`. The workflow:
 
 #### Feature-branch preview convention
 
-After validated application changes, push the feature branch and manually dispatch
-**Deploy Google Cloud workloads** for that exact branch, with
-`deployment_target=preview` and `allow_unauthenticated=false`, unless the user
-explicitly opts out of a preview. Documentation-only changes do not require a
-runtime deployment.
+After validated application changes, push the `agent/**` feature branch; the push
+automatically runs **Deploy Google Cloud workloads** for that exact commit against
+the private preview target, unless the user explicitly opts out of a preview.
+For another branch pattern, dispatch it manually with
+`deployment_target=preview` and `allow_unauthenticated=false`. Documentation-only
+changes do not require a runtime deployment.
 
 The targets remain available at two independent links:
 

@@ -8,8 +8,10 @@ Documentation-only changes do not require a new runtime deployment.
 
 The authoritative preview path is the GitHub Actions workflow **Deploy Google
 Cloud workloads** (`.github/workflows/deploy-google-cloud.yml`). Push the feature
-branch, manually dispatch that workflow for the exact branch with
-`deployment_target=preview`, and keep `allow_unauthenticated=false`.
+branch under `agent/**`; the push automatically deploys that exact commit to the
+preview target with private access. For another branch pattern, manually dispatch
+the workflow with `deployment_target=preview` and
+`allow_unauthenticated=false`.
 
 The preview target is a separate private, IAP-protected Cloud Run service and
 calculation Job, with separate Firestore job/cache collections. It must never
