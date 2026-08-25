@@ -157,16 +157,18 @@ bucket.
 
 ### 2. Run the GitHub workflow
 
-A push to `master` runs **Deploy Google Cloud workloads** automatically. The
-workflow also retains `workflow_dispatch` so a reviewed commit can be deployed
-manually. Manual runs expose an explicit `allow_unauthenticated` input that defaults
-to `false`; it must remain false until the planned authentication and abuse controls
-are implemented. It:
+A push to `master` runs **Deploy Google Cloud workloads** automatically against the
+`stable` target. The workflow also retains `workflow_dispatch` so a reviewed commit
+can be deployed to the separate `preview` target. Manual runs expose an explicit
+`deployment_target` choice that defaults to `preview` and an
+`allow_unauthenticated` input that defaults to `false`; the latter must remain false
+until the planned authentication and abuse controls are implemented. A stable run
+is rejected unless its selected ref is `master`. The workflow:
 
 1. authenticates with the existing OIDC provider;
 2. builds and pushes separate web/worker images;
 3. resolves immutable digests;
-4. initializes `infra/gcp/workloads/` against the dedicated workload-state bucket;
+4. initializes `infra/gcp/workloads/` against the target's separate state prefix;
 5. runs `terraform fmt -check`, `validate`, `plan`, and `apply`;
 6. mints a short-lived identity token for the deployed service's exact audience
    through the existing GitHub OIDC trust, then invokes the private health
@@ -177,17 +179,26 @@ are implemented. It:
 
 After validated application changes, push the feature branch and manually dispatch
 **Deploy Google Cloud workloads** for that exact branch, with
-`allow_unauthenticated=false`, unless the user explicitly opts out of a preview.
-Documentation-only changes do not require a runtime deployment.
+`deployment_target=preview` and `allow_unauthenticated=false`, unless the user
+explicitly opts out of a preview. Documentation-only changes do not require a
+runtime deployment.
 
-This is a controlled inspection deployment, not an isolated preview environment:
-it temporarily replaces the revision serving the private, IAP-protected Cloud Run
-URL. Record the feature branch and exact commit SHA before dispatch. A successful
-preview requires both the workflow's authenticated health check and confirmation
-that the deployment summary or GUI version footer reports that same SHA. Report
-the workflow run and private URL with the change handoff. When the preview is
-finished, restore production by dispatching the same workflow on `master` and
-verify the restored `master` SHA.
+The targets remain available at two independent links:
+
+- `stable` uses `keep-and-lease-web`, `keep-and-lease-calculation`, Terraform state
+  prefix `cloud-run`, and Firestore collections `backtests`/`backtest_cache`;
+- `preview` uses `keep-and-lease-preview-web`,
+  `keep-and-lease-preview-calculation`, Terraform state prefix
+  `cloud-run-preview`, and Firestore collections
+  `backtests_preview`/`backtest_cache_preview`.
+
+Both targets share immutable container storage, market inputs, and the results
+bucket, but preview deployment and job state cannot replace stable resources or
+reuse/cancel stable jobs. Record the feature branch and exact commit SHA before
+dispatch. A successful preview requires both the workflow's authenticated health
+check and confirmation that the deployment summary or GUI version footer reports
+that same SHA. Report the workflow run and private preview URL with the change
+handoff.
 
 Required repository Actions variables remain:
 
@@ -208,11 +219,16 @@ remove a user without a Terraform deployment. Keep `GCP_IAP_ENABLED` absent or
 `false` until the foundation delta, OAuth setup, client ID, and complete allowlist
 are ready.
 
-### 3. Open the private GUI
+### 3. Open the two private GUIs
 
-The deployed service URL is currently
+The stable working-version URL is
 <https://keep-and-lease-web-vfk2j2rgoq-zf.a.run.app>. Until browser authentication
-is added, use the authenticated Cloud SDK proxy from Cloud Shell:
+is added, use the authenticated Cloud SDK proxy from Cloud Shell. The preview URL
+is created on its first preview deployment and is published in that workflow's
+summary. Both services must have the same approved human and machine identities in
+their IAP access policies.
+
+Stable proxy:
 
 ```bash
 gcloud run services proxy keep-and-lease-web \
@@ -221,7 +237,16 @@ gcloud run services proxy keep-and-lease-web \
   --port=8080
 ```
 
-Leave the command running and select **Web preview > Preview on port 8080** in
+Preview proxy:
+
+```bash
+gcloud run services proxy keep-and-lease-preview-web \
+  --project=keep-and-lease \
+  --region=me-west1 \
+  --port=8081
+```
+
+Leave the selected command running and select **Web preview** for its port in
 Cloud Shell. The proxy attaches the caller's Google identity to requests. This is
 an operator path, not a public application URL.
 

@@ -58,10 +58,10 @@ engine, or `?engine=server` to require the API without fallback.
 
 ## Active deployment: Google Cloud
 
-**Google Cloud Run is the current and authoritative deployment path.** Production
-and deployment previews should use the Google Cloud infrastructure and
-`.github/workflows/deploy-google-cloud.yml`; do not create or use Render services
-for current deployments or previews.
+**Google Cloud Run is the current and authoritative deployment path.** The stable
+working version and the separate feature-branch preview should use the Google
+Cloud infrastructure and `.github/workflows/deploy-google-cloud.yml`; do not
+create or use Render services for current deployments or previews.
 
 The Google Cloud path replaces the process-local queue with Firestore metadata,
 one Cloud Run Job per calculation, and immutable gzip results in Cloud Storage.

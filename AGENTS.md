@@ -8,16 +8,18 @@ Documentation-only changes do not require a new runtime deployment.
 
 The authoritative preview path is the GitHub Actions workflow **Deploy Google
 Cloud workloads** (`.github/workflows/deploy-google-cloud.yml`). Push the feature
-branch, manually dispatch that workflow for the exact branch, and keep
-`allow_unauthenticated=false`.
+branch, manually dispatch that workflow for the exact branch with
+`deployment_target=preview`, and keep `allow_unauthenticated=false`.
 
-This workflow updates the same private, IAP-protected Cloud Run service used by
-production; it does not create an isolated preview service. Before dispatching,
-state that the selected branch temporarily replaces the deployed revision. After
-the run, verify the authenticated health check and that the deployed commit is the
-feature branch's exact SHA, then report the workflow run and private preview URL.
-Restore `master` by dispatching the same workflow on `master` when the preview is
-finished or whenever the user requests restoration.
+The preview target is a separate private, IAP-protected Cloud Run service and
+calculation Job, with separate Firestore job/cache collections. It must never
+replace the stable working service. After the run, verify the authenticated health
+check and that the deployed commit is the feature branch's exact SHA, then report
+the workflow run and private preview URL.
+
+The stable working target deploys automatically from `master`. A manual stable
+deployment must use `deployment_target=stable` and is rejected unless the selected
+ref is `master`.
 
 Do not use the retired Render preview workflow. See
 `docs/GOOGLE_CLOUD_RUN_SETUP.md` for the deployment and access runbook.

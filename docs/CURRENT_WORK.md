@@ -7,7 +7,7 @@ branch._
 ## Active change set
 
 - Status: GUI stabilization is implemented on top of the market-data SQLite/IAP
-  branch; deployment verification remains after the code and regression checks
+  branch; separate stable/preview Cloud Run targets are being deployed and verified
 - Active branch: `agent/gui-stabilization`
 - Previous generalized application review: [PR #22 — Complete generalized multi-commodity implementation](https://github.com/leviitzhak/keep_and_lease/pull/22)
 - Render services' configured source branch: [`agent/fixed-render-preview-deploys`](https://github.com/leviitzhak/keep_and_lease/tree/agent/fixed-render-preview-deploys). Deploy hooks override this default with the exact commit pushed to the current implementation branch.

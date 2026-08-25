@@ -86,15 +86,16 @@ input storage/cache optimization continues separately.
 The cloud job/result adapters, one-shot worker, separate containers, Cloud Run v2
 Terraform, immutable-digest OIDC deployment, cancellation, heartbeats, stale-lease
 reconciliation, compressed result streaming, checksums, timing, and peak-RSS
-measurement are implemented. The durable foundation is provisioned; the private
-Cloud Run service and Job are deployed from `master`, and their authenticated
-health and operator GUI paths work.
+measurement are implemented. The durable foundation is provisioned. The `stable`
+target keeps the private working-version service and Job deployed from `master`;
+the `preview` target keeps a separate private service, Job, Terraform state, and
+Firestore job/cache namespace for feature-branch inspection.
 
 The GitHub deployment workflow is `.github/workflows/deploy-google-cloud.yml`.
-Production deployment is from `master`; manual workflow dispatch is the controlled
-mechanism for deploying another revision for inspection. A branch preview must not
-silently replace the production revision: preview/inspection procedures should
-identify the exact branch/SHA and verify the GUI's displayed commit before merge.
+Stable deployment is automatic from `master`; manual workflow dispatch with the
+default `preview` target deploys another revision for inspection without replacing
+the stable link. Preview procedures identify the exact branch/SHA and verify the
+GUI's displayed commit before merge.
 
 Direct Cloud Run IAP is the planned normal browser access path limited to approved
 Google identities. Truly anonymous access must wait until the public GUI is

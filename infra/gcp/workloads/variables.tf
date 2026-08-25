@@ -8,6 +8,17 @@ variable "region" {
   default = "me-west1"
 }
 
+variable "deployment_target" {
+  description = "Stable production resources or isolated feature-branch preview resources."
+  type        = string
+  default     = "stable"
+
+  validation {
+    condition     = contains(["stable", "preview"], var.deployment_target)
+    error_message = "deployment_target must be either stable or preview."
+  }
+}
+
 variable "web_image" {
   description = "Immutable Artifact Registry web image reference."
   type        = string

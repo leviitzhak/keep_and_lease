@@ -19,11 +19,14 @@ data "google_project" "current" {
 }
 
 locals {
-  prefix                 = "keep-and-lease"
+  preview                = var.deployment_target == "preview"
+  prefix                 = local.preview ? "keep-and-lease-preview" : "keep-and-lease"
   web_service_account    = "keep-lease-web@${var.project_id}.iam.gserviceaccount.com"
   worker_service_account = "keep-lease-worker@${var.project_id}.iam.gserviceaccount.com"
   market_data_bucket     = "${var.project_id}-market-data"
   results_bucket         = "${var.project_id}-results"
+  firestore_collection   = local.preview ? "backtests_preview" : "backtests"
+  cache_collection       = local.preview ? "backtest_cache_preview" : "backtest_cache"
 }
 
 resource "google_cloud_run_v2_job" "calculation" {
@@ -66,6 +69,14 @@ resource "google_cloud_run_v2_job" "calculation" {
         env {
           name  = "KEEP_AND_LEASE_RESULTS_BUCKET"
           value = local.results_bucket
+        }
+        env {
+          name  = "KEEP_AND_LEASE_FIRESTORE_COLLECTION"
+          value = local.firestore_collection
+        }
+        env {
+          name  = "KEEP_AND_LEASE_FIRESTORE_CACHE_COLLECTION"
+          value = local.cache_collection
         }
         env {
           name  = "KEEP_AND_LEASE_MARKET_DATA_BUCKET"
@@ -137,6 +148,14 @@ resource "google_cloud_run_v2_service" "web" {
       env {
         name  = "KEEP_AND_LEASE_RESULTS_BUCKET"
         value = local.results_bucket
+      }
+      env {
+        name  = "KEEP_AND_LEASE_FIRESTORE_COLLECTION"
+        value = local.firestore_collection
+      }
+      env {
+        name  = "KEEP_AND_LEASE_FIRESTORE_CACHE_COLLECTION"
+        value = local.cache_collection
       }
       env {
         name  = "KEEP_AND_LEASE_WORKER_IMAGE_REF"

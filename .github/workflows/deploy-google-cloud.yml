@@ -6,6 +6,14 @@ on:
       - master
   workflow_dispatch:
     inputs:
+      deployment_target:
+        description: Stable working version or feature-branch preview
+        required: true
+        type: choice
+        options:
+          - preview
+          - stable
+        default: preview
       allow_unauthenticated:
         description: Expose the web GUI and API without Cloud Run IAM authentication
         required: true
@@ -13,7 +21,7 @@ on:
         default: false
 
 concurrency:
-  group: google-cloud-production
+  group: google-cloud-${{ github.event_name == 'push' && 'stable' || inputs.deployment_target }}
   cancel-in-progress: false
 
 permissions:
@@ -29,6 +37,7 @@ jobs:
       REGION: ${{ vars.GCP_REGION }}
       IAP_ENABLED: ${{ vars.GCP_IAP_ENABLED == 'true' }}
       IAP_CLIENT_ID: ${{ vars.GCP_IAP_CLIENT_ID }}
+      DEPLOYMENT_TARGET: ${{ github.event_name == 'push' && 'stable' || inputs.deployment_target }}
 
     steps:
       - name: Check out repository
@@ -50,6 +59,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          case "$DEPLOYMENT_TARGET" in
+            stable|preview) ;;
+            *) echo "Invalid deployment target: $DEPLOYMENT_TARGET" >&2; exit 2 ;;
+          esac
+          if [[ "$DEPLOYMENT_TARGET" == "stable" && "$GITHUB_REF" != "refs/heads/master" ]]; then
+            echo "The stable target may only be deployed from master." >&2
+            exit 2
+          fi
           if [[ "$IAP_ENABLED" == "true" ]]; then
             test -n "$IAP_CLIENT_ID"
           fi
@@ -133,10 +150,15 @@ jobs:
           TF_VAR_region: ${{ vars.GCP_REGION }}
           TF_VAR_web_image: ${{ steps.images.outputs.web_image }}
           TF_VAR_worker_image: ${{ steps.images.outputs.worker_image }}
+          TF_VAR_deployment_target: ${{ env.DEPLOYMENT_TARGET }}
           TF_VAR_allow_unauthenticated: ${{ vars.GCP_IAP_ENABLED != 'true' && github.event_name == 'workflow_dispatch' && inputs.allow_unauthenticated || false }}
           TF_VAR_iap_enabled: ${{ vars.GCP_IAP_ENABLED == 'true' }}
         run: |
-          terraform init -input=false
+          state_prefix="cloud-run"
+          if [[ "$DEPLOYMENT_TARGET" == "preview" ]]; then
+            state_prefix="cloud-run-preview"
+          fi
+          terraform init -input=false -reconfigure -backend-config="prefix=${state_prefix}"
           terraform fmt -check
           terraform validate
           terraform plan -input=false -out=tfplan
@@ -148,6 +170,7 @@ jobs:
           TF_VAR_region: ${{ vars.GCP_REGION }}
           TF_VAR_web_image: ${{ steps.images.outputs.web_image }}
           TF_VAR_worker_image: ${{ steps.images.outputs.worker_image }}
+          TF_VAR_deployment_target: ${{ env.DEPLOYMENT_TARGET }}
           TF_VAR_allow_unauthenticated: ${{ vars.GCP_IAP_ENABLED != 'true' && github.event_name == 'workflow_dispatch' && inputs.allow_unauthenticated || false }}
           TF_VAR_iap_enabled: ${{ vars.GCP_IAP_ENABLED == 'true' }}
         run: terraform apply -input=false -auto-approve tfplan
@@ -155,8 +178,12 @@ jobs:
       - name: Report failed Cloud Run startup logs
         if: failure()
         run: |
+          service_name="keep-and-lease-web"
+          if [[ "$DEPLOYMENT_TARGET" == "preview" ]]; then
+            service_name="keep-and-lease-preview-web"
+          fi
           gcloud logging read \
-            'resource.type="cloud_run_revision" AND resource.labels.service_name="keep-and-lease-web"' \
+            "resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"${service_name}\"" \
             --project="$PROJECT_ID" \
             --freshness=30m \
             --limit=100 \
@@ -190,6 +217,7 @@ jobs:
             "${WEB_URI}/api/v1/health")"
           test "$(jq -r '.status' <<<"$health")" = "ok"
           test "$(jq -r '.execution_backend' <<<"$health")" = "cloud-run-job"
+          test "$(jq -r '.engine_commit' <<<"$health")" = "$GITHUB_SHA"
           echo "web_uri=${WEB_URI}" >> "$GITHUB_OUTPUT"
           jq . <<<"$health"
 
@@ -202,10 +230,11 @@ jobs:
           {
             echo "## Google Cloud deployment"
             echo
+            echo "- Target: \`${DEPLOYMENT_TARGET}\`"
             echo "- Commit: \`${GITHUB_SHA}\`"
             echo "- Private web service: ${WEB_URI}"
             echo "- IAP enabled: \`${IAP_ENABLED}\`"
             echo "- Web image: \`${WEB_IMAGE}\`"
             echo "- Worker image: \`${WORKER_IMAGE}\`"
-            echo "- Calculation Job: \`keep-and-lease-calculation\`"
+            echo "- Calculation Job: \`$(terraform -chdir=infra/gcp/workloads output -raw calculation_job)\`"
           } >> "$GITHUB_STEP_SUMMARY"
