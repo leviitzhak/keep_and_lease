@@ -31,6 +31,15 @@ class MarketDataStoreTests(unittest.TestCase):
             self.assertGreaterEqual(len(contracts), 210)
             self.assertTrue(volumes)
 
+    def test_unreadable_cache_has_an_actionable_error(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = root / "data" / "market.sqlite3"
+            target.parent.mkdir()
+            target.write_text("not a sqlite database", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "SQLite cache is unreadable"):
+                read_cached_asset(root, "gold")
+
 
 if __name__ == "__main__":
     unittest.main()

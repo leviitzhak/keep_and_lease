@@ -16,6 +16,12 @@ This checklist reflects the application synchronized from the deployed Sites che
 - [x] Daily hierarchical return attribution reconciles to total return.
 - [x] Annual statistics, headline drawdowns, and extreme-return inspection are present.
 - [x] Silver, gold, Treasury, and S&P 500 data are organized as plain CSV with a coverage and hash manifest.
+- [x] Restore the latest completed Firestore/GCS result and its parameters on GUI
+  startup, without recalculation or obsolete state-route requests.
+- [x] Display every commodity and Treasury rate-change scatter, filter its points
+  with the selected plot period, and show an explicit empty-data state.
+- [x] Load the default GUI markets from the canonical materialized/SQLite path
+  without probing damaged optional legacy archives.
 
 ## Priority 1 — scoring and attribution correctness
 

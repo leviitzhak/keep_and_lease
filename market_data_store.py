@@ -97,16 +97,21 @@ def read_cached_asset(root: Path, asset: str):
     spot: dict[date, float] = {}
     contracts: dict[str, dict[date, float]] = {}
     volumes: dict[tuple[str, date], float] = {}
-    with sqlite3.connect(f"file:{path}?mode=ro", uri=True) as connection:
-        for day, value in connection.execute(
-                "SELECT day, price FROM spot WHERE asset=? ORDER BY day", (asset,)):
-            spot[date.fromisoformat(day)] = value
-        for symbol, day, close, volume in connection.execute(
-                "SELECT symbol, day, close, volume FROM future "
-                "WHERE asset=? ORDER BY symbol, day", (asset,)):
-            parsed_day = date.fromisoformat(day)
-            contracts.setdefault(symbol, {})[parsed_day] = close
-            volumes[(symbol, parsed_day)] = volume
+    try:
+        with sqlite3.connect(f"file:{path}?mode=ro", uri=True) as connection:
+            for day, value in connection.execute(
+                    "SELECT day, price FROM spot WHERE asset=? ORDER BY day", (asset,)):
+                spot[date.fromisoformat(day)] = value
+            for symbol, day, close, volume in connection.execute(
+                    "SELECT symbol, day, close, volume FROM future "
+                    "WHERE asset=? ORDER BY symbol, day", (asset,)):
+                parsed_day = date.fromisoformat(day)
+                contracts.setdefault(symbol, {})[parsed_day] = close
+                volumes[(symbol, parsed_day)] = volume
+    except sqlite3.DatabaseError as exc:
+        raise ValueError(f"Market SQLite cache is unreadable: {exc}") from exc
+    if not spot or not contracts:
+        return None
     return spot, contracts, volumes
 
 

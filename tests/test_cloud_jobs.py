@@ -10,6 +10,7 @@ from server.app import create_app
 from server.cloud import (
     CloudJobService,
     CloudRunJobLauncher,
+    FirestoreJobRepository,
     GcsResultStore,
     parameter_hash,
 )
@@ -26,11 +27,18 @@ class FakeRepository:
         self.cancellation_error = None
         self.launch_operation = None
 
-    def submit(self, parameters, provenance):
-        if self.job and self.job.status in {"queued", "running", "completed"}:
+    def submit(self, parameters, provenance, owner_id=None):
+        if (
+            self.job
+            and self.job.owner_id == owner_id
+            and self.job.status in {"queued", "running", "completed"}
+        ):
             return self.job, self.job.status == "completed", False
-        digest = parameter_hash(parameters, provenance)
-        self.job = Job("a" * 32, dict(parameters), digest, provenance=provenance)
+        digest = parameter_hash(parameters, provenance, owner_id)
+        self.job = Job(
+            "a" * 32, dict(parameters), digest,
+            owner_id=owner_id, provenance=provenance,
+        )
         return self.job, False, True
 
     def record_launch(self, _job_id, operation_name):
@@ -62,6 +70,15 @@ class FakeRepository:
 
     def get(self, _job_id):
         return self.job
+
+    def latest_completed(self, owner_id=None):
+        return (
+            self.job
+            if self.job
+            and self.job.status == "completed"
+            and self.job.owner_id == owner_id
+            else None
+        )
 
     def complete(self, _job_id, _lease_owner, stored, peak_rss, timings, provenance):
         self.completed = (stored, peak_rss, timings, provenance)
@@ -187,6 +204,27 @@ class FakeStorageClient:
         return self.value
 
 
+class FakeSnapshot:
+    def __init__(self, job):
+        self.id = job.id
+        self.value = FirestoreJobRepository._document(job)
+
+    def to_dict(self):
+        return self.value
+
+
+class FakeCompletedQuery:
+    def __init__(self, jobs):
+        self.jobs = jobs
+
+    def where(self, field, operator, value):
+        assert (field, operator, value) == ("status", "==", "completed")
+        return self
+
+    def stream(self):
+        return [FakeSnapshot(job) for job in self.jobs if job.status == "completed"]
+
+
 class FakeWebJobService:
     def __init__(self):
         self.job = Job("d" * 32, {}, "hash", status="completed")
@@ -197,6 +235,9 @@ class FakeWebJobService:
 
     def get(self, _job_id):
         return self.job
+
+    def latest_completed(self, owner_id=None):
+        return self.job if self.job.owner_id == owner_id else None
 
     def result(self, _job):
         return ResultStream(
@@ -214,8 +255,12 @@ class CloudJobTests(unittest.TestCase):
         first = parameter_hash({"weight": 1}, {"engine_commit": "a"})
         same = parameter_hash({"weight": 1}, {"engine_commit": "a"})
         changed = parameter_hash({"weight": 1}, {"engine_commit": "b"})
+        other_owner = parameter_hash(
+            {"weight": 1}, {"engine_commit": "a"}, "accounts.google.com:user-2"
+        )
         self.assertEqual(first, same)
         self.assertNotEqual(first, changed)
+        self.assertNotEqual(first, other_owner)
 
     def test_web_persists_before_launch_and_records_operation(self):
         repository = FakeRepository()
@@ -230,6 +275,20 @@ class CloudJobTests(unittest.TestCase):
         self.assertFalse(cached)
         self.assertEqual(launcher.launched, [job.id])
         self.assertEqual(repository.launch_operation, "operations/launch-1")
+
+    def test_repository_finds_newest_completed_durable_result(self):
+        older = Job(
+            "1" * 32, {}, "older", status="completed", completed_at=10,
+            result_uri=f"gs://results/jobs/{'1' * 32}/result.json.gz",
+        )
+        newer = Job(
+            "2" * 32, {}, "newer", status="completed", completed_at=20,
+            result_uri=f"gs://results/jobs/{'2' * 32}/result.json.gz",
+        )
+        failed = Job("3" * 32, {}, "failed", status="failed", completed_at=30)
+        repository = object.__new__(FirestoreJobRepository)
+        repository.jobs = FakeCompletedQuery([failed, older, newer])
+        self.assertEqual(repository.latest_completed().id, newer.id)
 
     def test_cloud_run_launcher_passes_only_the_durable_job_id_override(self):
         jobs = FakeRunClient()
@@ -333,6 +392,13 @@ class CloudJobTests(unittest.TestCase):
         self.assertIn("Multi-asset lease strategy", client.get("/").text)
         self.assertIn("Server-first calculation adapter", client.get("/backtest-worker-v13.js").text)
         self.assertEqual(client.get("/compute-config.json").json(), {"apiBaseUrl": ""})
+        latest = client.get("/api/v1/backtests/latest")
+        self.assertEqual(latest.status_code, 200)
+        self.assertEqual(latest.json()["job_id"], "d" * 32)
+        self.assertEqual(
+            latest.json()["result_url"],
+            f"/api/v1/backtests/{'d' * 32}/result",
+        )
         result = client.get(f"/api/v1/backtests/{'d' * 32}/result")
         self.assertEqual(result.json(), {"durable": True})
         inspection = client.post(

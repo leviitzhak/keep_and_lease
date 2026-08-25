@@ -80,6 +80,27 @@ test("reinitializes and applies plot periods to every visible data source", asyn
     html,
     /sleeve\.statistics_points=source\.statisticsPoints\.filter/,
   );
+  assert.match(
+    html,
+    /sleeve\.rate_change_attribution_points=source\.rateChangePoints\.filter/,
+  );
+  assert.match(
+    html,
+    /last\.treasury_rate_change_points=plotRangeSource\.treasuryRateChangePoints\.filter/,
+  );
+});
+
+test("restores the latest durable run and renders every rate-change curve", async () => {
+  const html = await readFile(
+    new URL("../public/silver_strategy_gui.html", import.meta.url),
+    "utf8",
+  );
+  assert.match(html, /\/api\/v1\/backtests\/latest/);
+  assert.doesNotMatch(html, /\/api\/strategy-state/);
+  assert.match(html, /treasury_rate_change_points/);
+  assert.match(html, /Frozen-curve rate-change return vs\. maturity/);
+  assert.match(html, /Yield-change return vs\. maturity/);
+  assert.match(html, /No observations are available for this graph/);
 });
 
 test("shows exact maturity-line formulas and dynamic hierarchical attribution", async () => {
@@ -174,7 +195,7 @@ test("displays the application version and deployed commit", async () => {
     "utf8",
   ));
   assert.match(html, /fetch\('\/build-info\.json'/);
-  assert.match(html, /Version 1\.2/);
-  assert.equal(buildInfo.version, "1.2");
+  assert.match(html, /Version 1\.3/);
+  assert.equal(buildInfo.version, "1.3");
   assert.match(buildInfo.commit, /^(?:[0-9a-f]{40}|unknown)$/);
 });

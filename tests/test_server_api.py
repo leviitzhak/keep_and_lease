@@ -44,6 +44,41 @@ class ServerApiTests(unittest.TestCase):
         self.assertEqual(state["status"], "completed")
         result = self.client.get(created.json()["result_url"])
         self.assertEqual(result.json()["parameters"], {"weight_silver": 100})
+        latest = self.client.get("/api/v1/backtests/latest")
+        self.assertEqual(latest.status_code, 200)
+        self.assertEqual(latest.json()["job_id"], created.json()["job_id"])
+        restored = self.client.get(latest.json()["result_url"])
+        self.assertEqual(restored.json(), result.json())
+
+    def test_latest_result_is_empty_before_a_completed_run(self):
+        client = TestClient(create_app(FakeEngine()))
+        self.assertEqual(client.get("/api/v1/backtests/latest").status_code, 204)
+
+    def test_latest_result_and_job_access_are_scoped_to_iap_identity(self):
+        owner = {"x-goog-authenticated-user-id": "accounts.google.com:user-1"}
+        other = {"x-goog-authenticated-user-id": "accounts.google.com:user-2"}
+        created = self.client.post(
+            "/api/v1/backtests",
+            headers=owner,
+            json={"schema_version": 1, "parameters": {"weight_gold": 100}},
+        ).json()
+        for _ in range(100):
+            state = self.client.get(created["status_url"], headers=owner).json()
+            if state["status"] == "completed":
+                break
+            time.sleep(0.01)
+        self.assertEqual(
+            self.client.get("/api/v1/backtests/latest", headers=owner).json()["job_id"],
+            created["job_id"],
+        )
+        self.assertEqual(
+            self.client.get("/api/v1/backtests/latest", headers=other).status_code,
+            204,
+        )
+        self.assertEqual(
+            self.client.get(created["result_url"], headers=other).status_code,
+            404,
+        )
 
     def test_identical_completed_request_reuses_cached_job(self):
         request = {"schema_version": 1, "parameters": {"min_days": 30}}
@@ -79,4 +114,3 @@ class ServerApiTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

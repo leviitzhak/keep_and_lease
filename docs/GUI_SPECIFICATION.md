@@ -44,3 +44,19 @@ hover, click, or mobile tap. Details include date, contract or tenor, maturity,
 the plotted values, and next-observation details where applicable. Treasury
 maturity statistics plot the observed Treasury **yield**, not a price or a
 generic rate label.
+
+Commodity frozen-curve rate-change and Treasury yield-change scatters are part of
+the required result set. Calendar-year and custom-range filtering applies to their
+point collections as well as to the main time series. A plot with no finite points
+must state that no observations are available rather than appearing silently blank.
+
+## Session restoration
+
+On startup, the server-first GUI requests the latest completed durable backtest,
+downloads its canonical result from the existing result endpoint, restores the run
+parameters, and rebuilds all summaries, tables, and plots without recalculation.
+This is server-side Firestore/GCS persistence, so refresh, close/reopen, and another
+device using the same approved Google identity see that identity's latest completed
+run. Another allowlisted identity cannot list, poll, download, or cancel it. Browser
+storage remains responsible only for lightweight unsaved parameter edits, named
+presets, plot range, and chart order.

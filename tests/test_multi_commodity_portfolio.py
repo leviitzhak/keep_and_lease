@@ -20,7 +20,7 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
         gui.MARKET = cls.markets["silver"]
 
     def test_available_downloaded_markets_have_curves(self):
-        self.assertIn("silver", self.markets)
+        self.assertEqual(set(self.markets), {"silver", "gold", "sp500"})
         for market in self.markets.values():
             self.assertTrue(market[0])
             self.assertTrue(market[1])
@@ -29,6 +29,10 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
             set(gui.PRODUCTS) - set(self.markets),
             set(gui.MARKET_LOAD_ERRORS),
         )
+        self.assertTrue(all(
+            "not enabled in this deployment" in gui.MARKET_LOAD_ERRORS[key]
+            for key in ("oil", "wheat", "corn", "soybeans")
+        ))
 
     def test_gold_and_oil_use_independent_spot_series(self):
         for key in ("gold", "oil"):

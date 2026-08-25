@@ -6,10 +6,9 @@ branch._
 
 ## Active change set
 
-- Status: the market-data SQLite cache branch is deployed; direct Cloud Run IAP
-  Terraform, manual human/machine allowlist instructions, and dual-mode keyless
-  workflow audiences are implemented, with one-time OAuth activation still pending
-- Active branch: `agent/market-data-sqlite-cache`
+- Status: GUI stabilization is implemented on top of the market-data SQLite/IAP
+  branch; deployment verification remains after the code and regression checks
+- Active branch: `agent/gui-stabilization`
 - Previous generalized application review: [PR #22 — Complete generalized multi-commodity implementation](https://github.com/leviitzhak/keep_and_lease/pull/22)
 - Render services' configured source branch: [`agent/fixed-render-preview-deploys`](https://github.com/leviitzhak/keep_and_lease/tree/agent/fixed-render-preview-deploys). Deploy hooks override this default with the exact commit pushed to the current implementation branch.
 - Application version: `1.3`
@@ -49,13 +48,12 @@ branch._
 - A documented direct Cloud Run IAP migration that keeps the existing
   internet-reachable `run.app` URL, allowlists approved Google users and machine
   identities, preserves the keyless operator, and keeps anonymous access disabled.
+- Cross-session restoration of the latest completed durable backtest, complete
+  rate-change plots, explicit empty-plot states, and canonical loading of the
+  three GUI-selectable materialized markets.
 
 ## Explicitly deferred
 
-- Investigate the initial private GUI's two HTTP 404 console messages and
-  `portfolio_series` null-reference page error. The page still renders with HTTP
-  200 and reports the server engine ready; the operator artifact preserves the
-  diagnostic without exposing credentials.
 - Complete the one-time no-organization External OAuth setup, manually add approved
   humans plus the operator and deployment identities in the Google Cloud IAP
   policy, set the two `GCP_IAP_*` repository variables, apply the foundation delta,

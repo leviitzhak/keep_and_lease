@@ -67,10 +67,13 @@ flowchart LR
 2. `GET /api/v1/backtests/{job_id}` returns queued/running/completed/failed status,
    calculation stage, elapsed time, and structured log messages.
 3. `GET /api/v1/backtests/{job_id}/result` returns the canonical result object.
-4. `DELETE /api/v1/backtests/{job_id}` requests cancellation when supported.
-5. A canonical hash of engine version, data-manifest version, and parameters may
+4. `GET /api/v1/backtests/latest` returns metadata and the result URL for the most
+   recently completed durable run owned by the current IAP identity, or `204` when
+   none exists. New job status, result, and cancellation access uses the same owner.
+5. `DELETE /api/v1/backtests/{job_id}` requests cancellation when supported.
+6. A canonical hash of engine version, data-manifest version, and parameters may
    reuse an identical cached result.
-6. `POST /api/v1/inspections` returns the existing inspected-day market and score audit.
+7. `POST /api/v1/inspections` returns the existing inspected-day market and score audit.
 
 ## Google Cloud Run scale-to-zero implementation
 

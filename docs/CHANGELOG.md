@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-08-25 — GUI result, curve, and market-loading stabilization
+
+- Added `GET /api/v1/backtests/latest` so the GUI restores the newest completed
+  Firestore/GCS result, including its parameters, after refresh, close/reopen,
+  and from another browser using the approved Cloud Run application.
+- Scoped new job caches, latest-result selection, status, result download, and
+  cancellation to the authenticated IAP identity; unowned local development
+  remains supported.
+- Removed obsolete GUI calls to the nonexistent `/api/strategy-state` and
+  `/api/strategy-parameters` routes; lightweight parameter edits remain local,
+  while the latest completed run is the cross-session server source of truth.
+- Restored commodity frozen-curve and Treasury yield-change scatter plots,
+  carried their source points through date filtering, and made empty plots show
+  an explicit no-observations message instead of a blank canvas.
+- Made the default deployment load only the three materialized GUI markets
+  (silver, gold, and S&P 500), retained opt-in extensibility through
+  `KEEP_AND_LEASE_PRODUCTS`, and removed the duplicate silver load.
+- Added cache-corruption diagnostics plus API, market-cache, and rendered-GUI
+  regression coverage for the fixes.
+
 ## 2026-08-24 — Direct Cloud Run IAP implementation
 
 - Added foundation-managed IAP API enablement without granting the keyless

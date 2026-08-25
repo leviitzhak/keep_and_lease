@@ -2,6 +2,7 @@
 """Local browser GUI for the parameterized silver lease strategy backtest."""
 
 import json
+import os
 from statistics import median
 from dataclasses import replace
 from datetime import date
@@ -45,11 +46,22 @@ PRODUCTS = {
               "etf": "SPY / IVV", "replication": "equity-backed"},
 }
 
+DEFAULT_DEPLOYMENT_PRODUCTS = ("silver", "gold", "sp500")
 
-def build_markets(root):
+
+def build_markets(root, enabled_products=None):
     import time
     global MARKET_LOAD_ERRORS
     markets, MARKET_LOAD_ERRORS = {}, {}
+    if enabled_products is None:
+        configured = os.getenv(
+            "KEEP_AND_LEASE_PRODUCTS", ",".join(DEFAULT_DEPLOYMENT_PRODUCTS)
+        )
+        enabled_products = {
+            item.strip() for item in configured.split(",") if item.strip()
+        }
+    else:
+        enabled_products = set(enabled_products)
     builders = {
         "silver": lambda: build_market(root),
         "gold": lambda: build_spot_market(
@@ -59,6 +71,12 @@ def build_markets(root):
             read_csv_spot(root, "DCOILWTICO.csv", "DCOILWTICO")),
     }
     for key, spec in PRODUCTS.items():
+        if key not in enabled_products:
+            MARKET_LOAD_ERRORS[key] = (
+                "not enabled in this deployment; materialize its spot and "
+                "contract histories before adding it to KEEP_AND_LEASE_PRODUCTS"
+            )
+            continue
         builder = builders.get(key, lambda spec=spec: build_proxy_market(
             root, spec["archive"], spec["prefix"]))
         started = time.monotonic()
