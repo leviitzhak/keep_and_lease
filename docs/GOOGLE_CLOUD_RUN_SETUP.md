@@ -221,6 +221,28 @@ remove a user without a Terraform deployment. Keep `GCP_IAP_ENABLED` absent or
 `false` until the foundation delta, OAuth setup, client ID, and complete allowlist
 are ready.
 
+#### Persistent Cloud Shell and IAP allowlist helper
+
+Use `scripts/configure-cloud-run-iap-access.sh` for the one-time setup of a new
+Cloud Run service or to restore Cloud Shell configuration. It keeps the Cloud SDK
+configuration under the user's persistent Cloud Shell home directory, prompts for
+the human account instead of storing it in the repository, selects this project and
+region, authenticates when necessary, and adds the human plus the two standard
+machine principals to the named service. The permission changes are additive and
+the script asks for confirmation before applying them.
+
+From the repository root:
+
+```bash
+scripts/configure-cloud-run-iap-access.sh \
+  --account=your-google-account@example.com \
+  --service=keep-and-lease-preview-web
+```
+
+The service defaults to `keep-and-lease-preview-web`, so `--service` may be
+omitted for the normal preview setup. The script is safe to rerun and prints the
+resulting IAP policy.
+
 ### 3. Open the two private GUIs
 
 The stable working-version URL is
