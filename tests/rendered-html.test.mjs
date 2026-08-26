@@ -109,16 +109,15 @@ test("shows exact maturity-line formulas and dynamic hierarchical attribution", 
     "utf8",
   );
   assert.match(html, /Maturity-line allocation formulas/);
-  assert.match(html, /LineLong\(Dᵢ\)/);
-  assert.match(html, /LineShort\(Dᵢ\)/);
-  assert.match(html, /AddedRelativeᵢ/);
-  assert.match(html, /−Lᵢ − LineShort/);
-  assert.match(html, /above its line adds a positive score/);
+  assert.match(html, /LineLong\(T\)/);
+  assert.match(html, /LineShort\(T\)/);
+  assert.match(html, /P\(T,r\) = R × M/);
+  assert.match(html, /−r − LineShort/);
   assert.match(html, /name="long_line_maturity_1"/);
   assert.match(html, /name="long_line_rate_2"/);
   assert.match(html, /name="short_line_maturity_1"/);
   assert.match(html, /name="short_line_rate_2"/);
-  assert.match(html, /configured rate scale/);
+  assert.match(html, /Score rate scale/);
   assert.match(
     html,
     /name="long_score_rate_scale"[^>]*min="0\.01"[^>]*step="0\.01"/,
@@ -145,6 +144,77 @@ test("shows exact maturity-line formulas and dynamic hierarchical attribution", 
   assert.match(html, /name="long_line_rate_1"[^>]*step="0\.001"/);
   assert.match(html, /function drawDailyAttribution/);
   assert.match(html, /Effective start-of-day weight/);
+});
+
+test("previews long and short parameter-only weighting independently", async () => {
+  const html = await readFile(
+    new URL("../public/silver_strategy_gui.html", import.meta.url),
+    "utf8",
+  );
+  assert.match(html, /id="previewLongScore"/);
+  assert.match(html, /id="previewShortScore"/);
+  assert.match(html, /id="scorePreviewDialog"/);
+  assert.match(html, /heatmap colour is the parameter-only multiplier/i);
+  assert.match(html, /function drawScoreParameterHeatmap/);
+  assert.match(html, /function scorePreviewConfig/);
+  assert.match(html, /P<sub>.*<\/sub>\(T,r\) = R<sub>/);
+  assert.match(html, /q<sub>i<\/sub> = B<sub>i<\/sub>/);
+  assert.match(html, /w<sub>i<\/sub> = Q<sub>/);
+  assert.match(html, /before the daily lease-edge base score/);
+  assert.match(html, /updateScorePreviewButtons/);
+});
+
+test("parameter-only preview matches the canonical long and short multipliers", async () => {
+  const html = await readFile(
+    new URL("../public/silver_strategy_gui.html", import.meta.url),
+    "utf8",
+  );
+  const source = html.slice(
+    html.indexOf("function scoreField"),
+    html.indexOf("function scoreHeatColor"),
+  );
+  const values = {
+    min_days: 10,
+    pure_maturity_scale_days: 365,
+    pure_maturity_clip: 3,
+    long_line_maturity_1: 30,
+    long_line_rate_1: 0.033,
+    long_line_maturity_2: 365,
+    long_line_rate_2: 0.4,
+    long_relative_strength: 1,
+    long_score_rate_scale: 1,
+    long_score_adjustment_clip: 3,
+    long_pure_maturity_strength: 0.5,
+    long_futures_entry_mode: "fixed",
+    positive_entry_rate: 0,
+    max_long_future: 50,
+    short_line_maturity_1: 30,
+    short_line_rate_1: 0.033,
+    short_line_maturity_2: 365,
+    short_line_rate_2: 0.4,
+    short_relative_strength: 1,
+    short_score_rate_scale: 1,
+    short_score_adjustment_clip: 3,
+    short_pure_maturity_strength: 0.5,
+    short_futures_entry_mode: "fixed",
+    negative_short_start_rate: -0.5,
+    max_short_fraction_of_slv: 50,
+  };
+  const form = {
+    elements: { namedItem: (name) => ({ value: values[name] }) },
+  };
+  const scorePreviewConfig = new Function(
+    "form",
+    `${source}; return scorePreviewConfig;`,
+  )(form);
+  const long = scorePreviewConfig("long").components(365, 1.4);
+  const short = scorePreviewConfig("short").components(365, -1.4);
+  assert.equal(long.rateMultiplier, 2);
+  assert.equal(long.pureMultiplier, 0.5);
+  assert.equal(long.multiplier, 1);
+  assert.equal(short.rateMultiplier, 2);
+  assert.equal(short.pureMultiplier, 1.5);
+  assert.equal(short.multiplier, 3);
 });
 
 test("bundles Python dependencies required by the browser worker", async () => {

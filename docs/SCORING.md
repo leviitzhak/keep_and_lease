@@ -130,6 +130,27 @@ The inspected-day table and hover data should show:
 - eligibility result;
 - final target weight.
 
+## Parameter-only preview
+
+The GUI provides separate previews beside the long and short weighted-selection
+controls.  Each heatmap shows only the parameter-driven multiplier
+
+```text
+P_side(T, r) = rate_boundary_multiplier_side(T, r)
+               * pure_maturity_multiplier_side(T)
+```
+
+against signed annualized lease rate and days to maturity.  It does not portray
+the lease-edge base score, the contracts available on a particular date, the
+normalization across those contracts, or the total book notional.  The preview
+must label this distinction and show the complete raw-score and normalized-weight
+formulas alongside the heatmap, mapping each formula symbol to its GUI control.
+
+This definition keeps the preview exact in both gradual and fixed-maximum modes.
+In fixed-maximum mode the omitted base score depends on that day's cross-sectional
+minimum long or maximum short lease rate, so an exact contract-weight preview
+would require an actual dated curve.
+
 ## Tests
 
 At minimum, test that:
