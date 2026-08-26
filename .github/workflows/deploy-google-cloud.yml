@@ -32,7 +32,7 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     env:
       PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
       REGION: ${{ vars.GCP_REGION }}
@@ -222,11 +222,71 @@ jobs:
           echo "web_uri=${WEB_URI}" >> "$GITHUB_OUTPUT"
           jq . <<<"$health"
 
+      - name: Prepare browser smoke-test runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          browser_dir="${RUNNER_TEMP}/keep-lease-browser"
+          mkdir -p "$browser_dir"
+          cp scripts/cloud-agent-browser.cjs "$browser_dir/run.cjs"
+          cd "$browser_dir"
+          npm init --yes >/dev/null
+          npm install --no-save --no-package-lock playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Check rendered GUI and run multi-commodity strategy
+        env:
+          KEEP_AND_LEASE_WEB_URI: ${{ steps.verify.outputs.web_uri }}
+          KEEP_AND_LEASE_ID_TOKEN: ${{ steps.health_auth.outputs.id_token }}
+          KEEP_AND_LEASE_EXPECTED_COMMIT: ${{ github.sha }}
+          KEEP_AND_LEASE_RUN_SMOKE_STRATEGY: "true"
+          KEEP_AND_LEASE_OUTPUT_DIR: ${{ runner.temp }}/deployment-smoke
+        run: |
+          set -euo pipefail
+          browser_dir="${RUNNER_TEMP}/keep-lease-browser"
+          mkdir -p "$KEEP_AND_LEASE_OUTPUT_DIR"
+          cd "$browser_dir"
+          node run.cjs
+
+      - name: Report failed deployment verification logs
+        if: failure()
+        run: |
+          service_name="keep-and-lease-web"
+          calculation_job="keep-and-lease-calculation"
+          if [[ "$DEPLOYMENT_TARGET" == "preview" ]]; then
+            service_name="keep-and-lease-preview-web"
+            calculation_job="keep-and-lease-preview-calculation"
+          fi
+          gcloud logging read \
+            "resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"${service_name}\"" \
+            --project="$PROJECT_ID" \
+            --freshness=30m \
+            --limit=100 \
+            --order=desc \
+            --format=json
+          gcloud logging read \
+            "resource.type=\"cloud_run_job\" AND resource.labels.job_name=\"${calculation_job}\"" \
+            --project="$PROJECT_ID" \
+            --freshness=30m \
+            --limit=100 \
+            --order=desc \
+            --format=json
+
+      - name: Upload deployment smoke-test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-smoke-${{ env.DEPLOYMENT_TARGET }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/deployment-smoke
+          if-no-files-found: warn
+          retention-days: 7
+
       - name: Publish deployment summary
         env:
           WEB_URI: ${{ steps.verify.outputs.web_uri }}
           WEB_IMAGE: ${{ steps.images.outputs.web_image }}
           WORKER_IMAGE: ${{ steps.images.outputs.worker_image }}
+          SMOKE_REPORT: ${{ runner.temp }}/deployment-smoke/gui-report.json
         run: |
           {
             echo "## Google Cloud deployment"
@@ -238,4 +298,7 @@ jobs:
             echo "- Web image: \`${WEB_IMAGE}\`"
             echo "- Worker image: \`${WORKER_IMAGE}\`"
             echo "- Calculation Job: \`$(terraform -chdir=infra/gcp/workloads output -raw calculation_job)\`"
+            echo "- GUI smoke check: \`passed\`"
+            echo "- Multi-commodity smoke job: \`$(jq -r '.strategy.jobId' "$SMOKE_REPORT")\`"
+            echo "- Smoke-test observations: \`$(jq -r '.strategy.observations' "$SMOKE_REPORT")\`"
           } >> "$GITHUB_STEP_SUMMARY"

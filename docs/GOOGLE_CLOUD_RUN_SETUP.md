@@ -1,6 +1,6 @@
 # Google Cloud Run deployment design and implementation state
 
-## Current state — 2026-08-24
+## Current state — 2026-08-25
 
 The Google Cloud foundation is provisioned and verified. The durable application
 split, containers, workload Terraform, and keyless deployment workflow are
@@ -16,7 +16,9 @@ deployment/operator token audiences are implemented on
 no-organization OAuth setup and repository variables described below.
 The pure-maturity branch was inspected on Cloud Run and the service was returned
 to private access; anonymous requests to the public URL return `403`. Bounded
-calculation, cancellation, and replacement acceptance tests remain.
+deployment acceptance now renders the authenticated GUI and runs a three-commodity
+strategy after every stable or preview deployment. Cancellation and replacement
+acceptance tests remain.
 
 ### Provisioned foundation
 
@@ -54,7 +56,7 @@ bucket accessible to the deployment identity for workload state only.
 | Job metadata | `FirestoreJobRepository` | Firestore `backtests` and `backtest_cache` |
 | Results | `GcsResultStore` | immutable `jobs/<job-id>/result.json.gz` objects |
 | Workloads | `infra/gcp/workloads/` | `gs://keep-and-lease-terraform-workloads/cloud-run` state |
-| Deployment | `.github/workflows/deploy-google-cloud.yml` | `master` push or manual OIDC build/push/plan/apply/health check |
+| Deployment | `.github/workflows/deploy-google-cloud.yml` | `master`/`agent/**` push or manual OIDC build/push/plan/apply/GUI and strategy smoke test |
 
 The local and Render modes retain `JobStore`, the existing in-process queue. Cloud
 mode is selected with `KEEP_AND_LEASE_JOB_BACKEND=cloud`; it never starts the
@@ -173,8 +175,14 @@ is rejected unless its selected ref is `master`. The workflow:
 5. runs `terraform fmt -check`, `validate`, `plan`, and `apply`;
 6. mints a short-lived identity token for the deployed service's exact audience
    through the existing GitHub OIDC trust, then invokes the private health
-   endpoint; and
-7. publishes the URI and immutable image references in the workflow summary.
+   endpoint;
+7. opens the private GUI in authenticated headless Chromium, confirms that its
+   build metadata is the exact deployed SHA and that the server engine is ready;
+8. submits a daily-rebalanced 30% silver, 30% gold, 30% S&P 500, and 10% Treasury
+   strategy through the GUI, then verifies non-empty calculation sleeves and
+   rendered lease-rate canvases for all three commodities; and
+9. retains the browser report and screenshot for seven days and publishes the URI,
+   immutable images, smoke job ID, and observation count in the workflow summary.
 
 #### Feature-branch preview convention
 
@@ -198,9 +206,28 @@ Both targets share immutable container storage, market inputs, and the results
 bucket, but preview deployment and job state cannot replace stable resources or
 reuse/cancel stable jobs. Record the feature branch and exact commit SHA before
 dispatch. A successful preview requires both the workflow's authenticated health
-check and confirmation that the deployment summary or GUI version footer reports
-that same SHA. Report the workflow run and private preview URL with the change
-handoff.
+check and its rendered-GUI/multi-commodity smoke test. The browser check also
+confirms that the GUI version footer reports the same SHA. Report the workflow run
+and private preview URL with the change handoff.
+
+#### Commit identity and SHA preservation
+
+A normal authenticated `git push` transfers the existing Git commit objects and
+therefore preserves their SHAs exactly. GitHub does not rewrite those commits.
+Creating equivalent changes through GitHub file/tree/commit APIs is a different
+operation: the API creates new commit objects on the current remote parent using
+the GitHub account's author/committer identity and a new timestamp. Even when the
+file tree and message are identical, those changed fields produce different SHAs.
+
+Prefer normal `git push` when deployment provenance must retain a locally reported
+SHA. If a connected GitHub app must create the remote commit instead, fetch it
+immediately and treat the GitHub-generated SHA as canonical; do not maintain a
+parallel local history with equivalent content and different commit IDs.
+
+The existing public commit history and its author email metadata are accepted for
+now and will not be rewritten solely for privacy. For future commits, prefer
+GitHub's ID-based `noreply` commit address and enable the account setting that
+keeps email addresses private. This changes future commit metadata only.
 
 Required repository Actions variables remain:
 
@@ -276,7 +303,11 @@ Leave the selected command running and select **Web preview** for its port in
 Cloud Shell. The proxy attaches the caller's Google identity to requests. This is
 an operator path, not a public application URL.
 
-### 4. Bounded operator calculation smoke test
+### 4. Manual bounded operator calculation smoke test
+
+The deployment workflow now performs the stronger rendered-GUI and
+multi-commodity check automatically. The commands below remain useful for an
+independent operator diagnosis.
 
 From an identity with Cloud Run invoke permission:
 

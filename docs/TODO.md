@@ -84,6 +84,9 @@ This checklist reflects the application synchronized from the deployed Sites che
   Parquet/DuckDB/Arrow objects and restore durable cloud day inspection.
 - [ ] If measured concurrency outgrows two EC2 hosts, implement the ECS/SQS/S3 durable scale-out design and load-test its retry/idempotency behavior.
 - [ ] Add GitHub Actions checks for Python tests, the production build, rendered tests, and artifact validation.
+- [ ] Prefer GitHub's ID-based `noreply` identity for future GitHub API/web and
+  command-line commits; leave existing public commit history unchanged unless a
+  separate history-rewrite decision is made.
 - [ ] Remove obsolete generated worker versions and other duplicated deployment artifacts after confirming the canonical build path.
 - [ ] Keep `CHANGELOG.md`, parameter documentation, data manifest, and this checklist current with every durable behavior change.
 
