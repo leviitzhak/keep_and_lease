@@ -92,14 +92,26 @@ async function main() {
     }
 
     if (runSmokeStrategy) {
-      const resultResponsePromise = page.waitForResponse((candidate) => {
-        const target = new URL(candidate.url());
-        return target.origin === origin
-          && /^\/api\/v1\/backtests\/[0-9a-f]{32}\/result$/.test(target.pathname);
-      }, { timeout: 15 * 60 * 1000 });
-      // If submission itself fails, closing the page will reject this pending
-      // wait. Attach a handler now while preserving the original promise below.
+      let submittedJobId = null;
+      const observedResultResponses = new Map();
+      let settleResultResponse;
+      const resultResponsePromise = new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error("Timed out waiting for the submitted backtest result")), 15 * 60 * 1000);
+        timeout.unref();
+        settleResultResponse = (response) => {
+          clearTimeout(timeout);
+          resolve(response);
+        };
+      });
       resultResponsePromise.catch(() => {});
+      page.on("response", (candidate) => {
+        const target = new URL(candidate.url());
+        if (target.origin !== origin) return;
+        const match = target.pathname.match(/^\/api\/v1\/backtests\/([0-9a-f]{32})\/result$/);
+        if (!match) return;
+        observedResultResponses.set(match[1], candidate);
+        if (match[1] === submittedJobId) settleResultResponse(candidate);
+      });
       const submissionResponsePromise = page.waitForResponse((candidate) => {
         const target = new URL(candidate.url());
         return target.origin === origin
@@ -126,6 +138,10 @@ async function main() {
       const submission = await submissionResponse.json();
       if (!/^[0-9a-f]{32}$/.test(submission.job_id || "")) {
         throw new Error("Backtest submission did not return a valid job ID");
+      }
+      submittedJobId = submission.job_id;
+      if (observedResultResponses.has(submittedJobId)) {
+        settleResultResponse(observedResultResponses.get(submittedJobId));
       }
       if (expectedCommit && submission.provenance?.engine_commit !== expectedCommit) {
         throw new Error(`Backtest uses commit ${submission.provenance?.engine_commit || "unknown"}, expected ${expectedCommit}`);
