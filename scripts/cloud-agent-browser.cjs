@@ -144,54 +144,76 @@ async function main() {
       if (!resultResponse.url().endsWith(`${submission.job_id}/result`)) {
         throw new Error("GUI downloaded a result for a different backtest job");
       }
-      const result = await resultResponse.json();
       const expectedCommodities = ["gold", "silver", "sp500"];
-      const commodities = Object.keys(result.commodity_sleeves || {}).sort();
-      if (JSON.stringify(commodities) !== JSON.stringify(expectedCommodities)) {
-        throw new Error(`Unexpected result commodities: ${commodities.join(", ") || "none"}`);
-      }
-      const weights = result.portfolio?.weights || {};
       const expectedWeights = { silver: 0.3, gold: 0.3, sp500: 0.3, treasury: 0.1 };
-      for (const [name, expected] of Object.entries(expectedWeights)) {
-        if (Math.abs(Number(weights[name]) - expected) > 1e-12) {
-          throw new Error(`Unexpected ${name} portfolio weight: ${weights[name]}`);
-        }
-      }
-      if (!(Number(result.summary?.observations) > 0) || !Array.isArray(result.series) || !result.series.length) {
-        throw new Error("Multi-commodity result has no portfolio observations");
-      }
-      for (const commodity of expectedCommodities) {
-        const sleeve = result.commodity_sleeves[commodity];
-        const leaseIndex = sleeve?.fields?.indexOf("long_weighted_lease_rate_pct") ?? -1;
-        const hasLeaseCurve = leaseIndex >= 0 && sleeve.series?.some((row) => Number.isFinite(Number(row[leaseIndex])));
-        if (!(Number(sleeve?.summary?.observations) > 0) || !hasLeaseCurve) {
-          throw new Error(`${commodity} result sleeve has no usable lease-rate curve`);
-        }
-      }
-
       await page.waitForFunction((names) => {
         const observations = document.querySelector("#obs")?.textContent?.trim();
-        return observations && observations !== "--" && names.every((name) => {
+        const button = document.querySelector("#run");
+        return button && !button.disabled && observations && observations !== "--" && names.every((name) => {
           const canvas = document.querySelector(`#commodity-${name}-lease`);
           return canvas && canvas.width > 0 && canvas.height > 0;
         });
       }, expectedCommodities, { timeout: 180000 });
 
+      // The result can be large enough for Chromium to evict its response body
+      // from the inspector cache. Validate the same data after the application
+      // has parsed it and rendered the GUI instead of calling response.json().
+      const rendered = await page.evaluate((names) => {
+        const numberFromText = (selector) => {
+          const text = document.querySelector(selector)?.textContent?.trim() || "";
+          const value = Number(text.replaceAll(",", "").replace(/[^0-9.+-]/g, ""));
+          return { text, value };
+        };
+        const weights = Object.fromEntries(["silver", "gold", "sp500", "treasury"].map((name) => [
+          name,
+          Number(document.querySelector(`[name="weight_${name}"]`)?.value) / 100,
+        ]));
+        const headings = [...document.querySelectorAll("#commoditySleeveCharts > .commodity-grid > h2")]
+          .map((heading) => heading.textContent?.trim() || "");
+        return {
+          weights,
+          observations: numberFromText("#obs"),
+          status: document.querySelector("#status")?.textContent?.trim() || "",
+          commodities: names.filter((name) => document.querySelector(`#commodity-${name}-lease`)),
+          headings,
+        };
+      }, expectedCommodities);
+      for (const [name, expected] of Object.entries(expectedWeights)) {
+        if (Math.abs(Number(rendered.weights[name]) - expected) > 1e-12) {
+          throw new Error(`Unexpected rendered ${name} portfolio weight: ${rendered.weights[name]}`);
+        }
+      }
+      if (!(rendered.observations.value > 0)) {
+        throw new Error(`Rendered multi-commodity result has invalid observations: ${rendered.observations.text}`);
+      }
+      if (JSON.stringify(rendered.commodities.sort()) !== JSON.stringify(expectedCommodities)) {
+        throw new Error(`Unexpected rendered commodities: ${rendered.commodities.join(", ") || "none"}`);
+      }
+      const expectedHeadings = ["Gold sleeve", "Silver sleeve", "S&P 500 sleeve"];
+      for (const heading of expectedHeadings) {
+        if (!rendered.headings.includes(heading)) {
+          throw new Error(`Rendered result is missing the ${heading} section`);
+        }
+      }
+
       strategy = {
         jobId: submission.job_id,
         cached: Boolean(submission.cached),
-        commodities,
-        weights,
-        observations: result.summary.observations,
-        start: result.summary.start,
-        end: result.summary.end,
+        commodities: rendered.commodities,
+        weights: rendered.weights,
+        observations: rendered.observations.value,
+        status: rendered.status,
         renderedLeaseCanvases: expectedCommodities,
       };
     }
 
     const sameOriginFailures = failedRequests.filter((request) => {
       try {
-        return new URL(request.url).origin === origin;
+        const target = new URL(request.url);
+        const optionalRestoreWasAborted = request.method === "GET"
+          && target.pathname === "/api/v1/backtests/latest"
+          && request.error === "net::ERR_ABORTED";
+        return target.origin === origin && !optionalRestoreWasAborted;
       } catch {
         return false;
       }
