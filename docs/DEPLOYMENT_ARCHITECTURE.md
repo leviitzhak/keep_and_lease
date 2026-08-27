@@ -92,10 +92,12 @@ the `preview` target keeps a separate private service, Job, Terraform state, and
 Firestore job/cache namespace for feature-branch inspection.
 
 The GitHub deployment workflow is `.github/workflows/deploy-google-cloud.yml`.
-Stable deployment is automatic from `master`; pushes to `agent/**` automatically
-deploy to the separate preview target. Manual workflow dispatch with the default
-`preview` target supports other reviewed refs. Preview procedures identify the
-exact branch/SHA and verify the GUI's displayed commit before merge.
+Stable deployment is automatic from `master`; a push to any other branch
+automatically deploys to the separate shared preview target. Manual workflow
+dispatch remains available for reruns. Because all non-`master` branches share
+one preview service, a later branch push replaces the commit shown there. Preview
+procedures identify the exact branch/SHA and verify the GUI's displayed commit
+before merge.
 
 Direct Cloud Run IAP is the planned normal browser access path limited to approved
 Google identities. Truly anonymous access must wait until the public GUI is

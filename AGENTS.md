@@ -2,16 +2,16 @@
 
 ## Preview deployment after changes
 
-After implementing and validating application changes, deploy the resulting
-feature-branch commit for preview unless the user explicitly asks not to deploy.
-Documentation-only changes do not require a new runtime deployment.
+Every push to a non-`master` branch automatically deploys that exact commit to
+the shared preview target. Every push to `master` automatically deploys that exact
+commit to stable. Because the workflow intentionally covers every branch push,
+documentation-only pushes also redeploy their corresponding target.
 
 The authoritative preview path is the GitHub Actions workflow **Deploy Google
-Cloud workloads** (`.github/workflows/deploy-google-cloud.yml`). Push the feature
-branch under `agent/**`; the push automatically deploys that exact commit to the
-preview target with private access. For another branch pattern, manually dispatch
-the workflow with `deployment_target=preview` and
-`allow_unauthenticated=false`.
+Cloud workloads** (`.github/workflows/deploy-google-cloud.yml`). Push any
+non-`master` branch; the push automatically deploys that exact commit to the
+preview target with private access. Manual dispatch remains available for reruns,
+with `deployment_target=preview` and `allow_unauthenticated=false`.
 
 The preview target is a separate private, IAP-protected Cloud Run service and
 calculation Job, with separate Firestore job/cache collections. It must never
