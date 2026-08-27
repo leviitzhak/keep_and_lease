@@ -154,13 +154,17 @@ test("previews long and short parameter-only weighting independently", async () 
   assert.match(html, /id="previewLongScore"/);
   assert.match(html, /id="previewShortScore"/);
   assert.match(html, /id="scorePreviewDialog"/);
+  assert.match(html, /id="scorePreviewIncludeEntry"/);
   assert.match(html, /heatmap colour is the parameter-only multiplier/i);
+  assert.match(html, /SCORE_PREVIEW_MAX_DAYS=3652\.5/);
+  assert.match(html, /Years to maturity T/);
+  assert.match(html, /silver and gold observations reach about 5 years/i);
   assert.match(html, /function drawScoreParameterHeatmap/);
   assert.match(html, /function scorePreviewConfig/);
   assert.match(html, /P<sub>.*<\/sub>\(T,r\) = R<sub>/);
   assert.match(html, /q<sub>i<\/sub> = B<sub>i<\/sub>/);
   assert.match(html, /w<sub>i<\/sub> = Q<sub>/);
-  assert.match(html, /before the daily lease-edge base score/);
+  assert.match(html, /complete gradual-mode raw score/);
   assert.match(html, /updateScorePreviewButtons/);
 });
 
@@ -212,9 +216,13 @@ test("parameter-only preview matches the canonical long and short multipliers", 
   assert.equal(long.rateMultiplier, 2);
   assert.equal(long.pureMultiplier, 0.5);
   assert.equal(long.multiplier, 1);
+  assert.equal(long.entryBase, 1.4);
+  assert.equal(long.entryScore, 1.4);
   assert.equal(short.rateMultiplier, 2);
   assert.equal(short.pureMultiplier, 1.5);
   assert.equal(short.multiplier, 3);
+  assert.ok(Math.abs(short.entryBase - 0.9) < 1e-12);
+  assert.ok(Math.abs(short.entryScore - 2.7) < 1e-12);
 });
 
 test("bundles Python dependencies required by the browser worker", async () => {

@@ -133,23 +133,54 @@ The inspected-day table and hover data should show:
 ## Parameter-only preview
 
 The GUI provides separate previews beside the long and short weighted-selection
-controls.  Each heatmap shows only the parameter-driven multiplier
+controls. By default, each heatmap shows only the parameter-driven multiplier
 
 ```text
 P_side(T, r) = rate_boundary_multiplier_side(T, r)
                * pure_maturity_multiplier_side(T)
 ```
 
-against signed annualized lease rate and days to maturity.  It does not portray
-the lease-edge base score, the contracts available on a particular date, the
-normalization across those contracts, or the total book notional.  The preview
-must label this distinction and show the complete raw-score and normalized-weight
-formulas alongside the heatmap, mapping each formula symbol to its GUI control.
+against signed annualized lease rate and maturity. A preview-only toggle can
+instead include the configured entry-rate base score:
 
-This definition keeps the preview exact in both gradual and fixed-maximum modes.
-In fixed-maximum mode the omitted base score depends on that day's cross-sectional
-minimum long or maximum short lease rate, so an exact contract-weight preview
-would require an actual dated curve.
+```text
+B_entry_long(r)  = max(0, r - r_entry_long)
+B_entry_short(r) = max(0, r_entry_short - r)
+q_entry(T, r)    = B_entry(r) * P_side(T, r)
+```
+
+In gradual mode, `q_entry` is the complete pre-normalization contract score. In
+fixed-maximum mode it is a parameter-only diagnostic, not the actual raw score:
+the fixed-mode base score depends on the minimum long or maximum short lease rate
+in that date's available curve. Neither view includes normalization, total leg
+notional, or roll and holding constraints.
+
+The maturity surface covers at least ten years so long-horizon parameter behavior
+is visible. The current materialized archives are shorter: observed silver and
+gold contracts reach about five years to expiry, while S&P 500 contracts reach
+about two years. The ten-year portion beyond those observations is explicitly a
+formula extrapolation, not evidence that contracts were historically listed
+there. The preview shows the complete raw-score and normalized-weight formulas
+alongside the heatmap and maps each symbol to its GUI control.
+
+The multiplier-only view remains exact in both gradual and fixed-maximum modes.
+An exact fixed-mode contract-score or normalized-weight preview would require an
+actual dated curve.
+
+## Planned historical parameter fitting
+
+The current scoring parameters are user-selected research inputs. A future
+research phase will fit the entry thresholds, boundary anchors, relative strength,
+rate scale and clip, and pure-maturity parameters to historical curve data.
+
+Fitting must use chronological training, validation, and genuinely held-out test
+periods, preferably with rolling or expanding walk-forward evaluation. The
+objective must include turnover, transaction costs, liquidity and concentration
+constraints rather than maximizing in-sample return alone. Results should report
+parameter stability and sensitivity, compare pooled versus commodity- and
+side-specific fits, and preserve a simple fixed-parameter benchmark. No parameter
+selected using future observations may be applied retrospectively to earlier
+decisions.
 
 ## Tests
 

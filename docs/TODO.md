@@ -44,6 +44,10 @@ This checklist reflects the application synchronized from the deployed Sites che
 - [x] Add schema-versioned current and named strategy presets, including server persistence where available and JSON import/export.
 - [ ] Add scenario comparison between saved strategies.
 - [ ] Add sensitivity surfaces, walk-forward/out-of-sample evaluation, and transaction-cost/liquidity stress tests.
+- [ ] Fit weighted-lease entry, boundary, relative-strength, scaling/clipping, and
+  pure-maturity parameters to historical curves with chronological
+  train/validation/test splits and walk-forward evaluation; retain a simple fixed
+  benchmark and report stability, turnover, costs, liquidity, and concentration.
 - [ ] Validate coexistence of short-term long and long-term short books across commodities.
 - [ ] Complete previous/next trading-day controls wherever inspection still requires date entry.
 

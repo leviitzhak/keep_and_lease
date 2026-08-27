@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-08-27 — Extended weighting preview and calibration plan
+
+- Extended the parameter-only maturity surface to at least ten years and labelled
+  the portion beyond the archived five-year metal and two-year S&P 500 contract
+  observations as formula extrapolation.
+- Added a preview toggle between the multiplier `P(T,r)` and the entry-rate score
+  `q_entry(T,r)`, with explicit gradual- versus fixed-maximum semantics.
+- Recorded historical parameter fitting as future research requiring
+  chronological validation, walk-forward testing, stability diagnostics, and
+  turnover, cost, liquidity, and concentration controls.
+
 ## 2026-08-25 — Firestore routing regression mitigation
 
 - Pinned `google-api-core[grpc]` to `2.34.0` after the newly released `2.35.0`
