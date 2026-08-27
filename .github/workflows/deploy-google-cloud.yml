@@ -3,8 +3,7 @@ name: Deploy Google Cloud workloads
 on:
   push:
     branches:
-      - master
-      - "agent/**"
+      - "**"
   workflow_dispatch:
     inputs:
       deployment_target:
