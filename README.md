@@ -79,3 +79,10 @@ discarded and is not an active deployment target.** Render URLs, deploy hooks,
 current preview or production procedure.
 
 See the Google Cloud documentation above for all new deployment and preview work.
+
+
+## Commodity-leg allocation semantics
+
+Each configured commodity proportion is the **full long commodity leg**. Within that leg, the replicating fund and the Treasury-collateralized long-futures replication are complementary: if `a(r)` is the futures+Treasuries share, the replicating-fund share is `1 - a(r)`. The parameter `max_futures_treasury_fraction` caps `a(r)`, so `1 - max_futures_treasury_fraction` is the minimum replicating-fund share when both implementations are enabled.
+
+The short parameter `max_short_fraction_of_long_leg` is measured against the full long commodity leg, not against only the fund or only the futures portion. A short position is paired with an equal-sized extension of the complete long commodity implementation.

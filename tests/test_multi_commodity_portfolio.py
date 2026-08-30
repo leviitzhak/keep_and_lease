@@ -154,10 +154,10 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
             "commodity_parameters": {
                 "gold": {"positive_entry_rate": 3},
             },
-            "gold__max_long_future": 25,
+            "gold__max_futures_treasury_fraction": 25,
         }, "gold")
         self.assertEqual(payload["positive_entry_rate"], 3)
-        self.assertEqual(payload["max_long_future"], 25)
+        self.assertEqual(payload["max_futures_treasury_fraction"], 25)
 
     def test_unavailable_market_has_actionable_error(self):
         unavailable = next(

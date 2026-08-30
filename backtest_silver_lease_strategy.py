@@ -63,10 +63,10 @@ class Parameters:
     long_extreme_qualification_rate: float = 0.08
     long_extreme_maturity_advantage_per_year: float = 0.005
     long_extreme_maturity_bonus_per_year: float = 0.01
-    max_long_future: float = 0.50
+    max_futures_treasury_fraction: float = 0.50
     negative_short_start_rate: float = -0.005
     negative_short_full_rate: float = -0.15
-    max_short_fraction_of_slv: float = 0.50
+    max_short_fraction_of_long_leg: float = 0.50
     short_contract_selection: str = "weighted_lease_rate"
     short_maturity_line_intercept: float = 0.0
     short_maturity_line_slope_per_year: float = 0.004
@@ -639,21 +639,24 @@ def positions_for_day(candidates, p, previous=None):
         (short_start_rate - p.negative_short_full_rate))
     if p.short_futures_entry_mode == "fixed":
         negative_strength = 1.0
-    slv_weight = clamp(
-        (p.slv_start_rate - long_signal) /
-        (p.slv_start_rate - p.slv_full_rate))
-    if p.slv_entry_mode == "fixed":
-        slv_weight = 1.0
-    if not p.enable_slv_leg:
+    # The configured commodity sleeve is the complete long commodity leg.
+    # A share of that leg is implemented by Treasury collateral + long futures;
+    # the complementary share is held in the replicating fund.  Therefore,
+    # whenever both implementations are enabled, fund + futures replication = 1.
+    futures_treasury_share = (
+        p.max_futures_treasury_fraction * positive_strength
+        if p.enable_cash_long_futures_leg else 0.0)
+    futures_treasury_share = clamp(futures_treasury_share)
+    if p.enable_slv_leg:
+        slv_weight = 1.0 - futures_treasury_share
+    else:
         slv_weight = 0.0
-    treasury_weight = ((1.0 - slv_weight)
-                       if p.enable_cash_long_futures_leg else 0.0)
+    treasury_weight = futures_treasury_share
 
-    # Treasury and SLV form the fully invested base, while long futures are an
-    # overlay sized independently by their positive lease signal.
+    # Long-futures notional equals the Treasury-funded replication share; it is
+    # no longer an independent overlay on top of a fully invested base.
     base_longs = {}
-    long_notional = (p.max_long_future * positive_strength
-                     if p.enable_cash_long_futures_leg else 0.0)
+    long_notional = futures_treasury_share
     if long_candidates and p.long_contract_selection == "weighted_lease_rate":
         long_score_threshold = (
             min(x["lease"] for x in long_candidates) - 1e-9
@@ -667,12 +670,12 @@ def positions_for_day(candidates, p, previous=None):
     elif selected_positive:
         base_longs[selected_positive["symbol"]] = (
             long_notional)
-    total_short = (p.max_short_fraction_of_slv * negative_strength
+    total_short = (p.max_short_fraction_of_long_leg * negative_strength
                    if p.enable_short_book else 0.0)
     # The short book is defined as short futures plus an equal-sized extension
     # of the active base long book.  If both long sleeves are inactive there is
     # no composition to extend, so the complete short book must also be zero.
-    if treasury_weight + slv_weight + sum(base_longs.values()) <= 0:
+    if slv_weight + sum(base_longs.values()) <= 0:
         total_short = 0.0
 
     # Score trades off negative lease edge against a preference for longer
@@ -709,9 +712,10 @@ def positions_for_day(candidates, p, previous=None):
         contract_map, {x["symbol"] for x in short_candidates}, "short", p)
 
     # A short-futures position is paired with an equally sized extension of
-    # the complete base long book.  The extension retains the same relative
-    # mix of long futures, SLV, and Treasuries.
-    base_long_total = treasury_weight + slv_weight + sum(base_longs.values())
+    # the complete long commodity leg.  Treasury collateral is not counted as
+    # a second long leg: fund exposure + long-futures exposure is the commodity
+    # leg against which the short fraction is defined.
+    base_long_total = slv_weight + sum(base_longs.values())
     long_extension = total_short
     extension_ratio = long_extension / base_long_total if base_long_total else 0.0
     treasury = treasury_weight * (1.0 + extension_ratio)
@@ -1265,7 +1269,8 @@ def parse_args():
                                  "weighted_lease_rate"],
                         default="shortest_maturity",
                         help="How to select among long contracts above the entry rate")
-    parser.add_argument("--max-long-future", type=float, default=0.50)
+    parser.add_argument("--max-futures-treasury-fraction", type=float, default=0.50,
+                        help="Maximum fraction of the full commodity leg implemented with Treasury collateral + long futures")
     parser.add_argument("--long-maturity-bonus-per-year", type=float, default=0.004,
                         help="Added long score per year shorter than the longest candidate")
     parser.add_argument("--negative-short-start-rate", type=float, default=-0.005,
@@ -1297,10 +1302,10 @@ def main():
                                 positive_full_rate=args.positive_full_rate,
                                 long_contract_selection=args.long_contract_selection,
                                 long_maturity_bonus_per_year=args.long_maturity_bonus_per_year,
-                                max_long_future=args.max_long_future,
+                                max_futures_treasury_fraction=args.max_futures_treasury_fraction,
                                 negative_short_start_rate=args.negative_short_start_rate,
                                 negative_short_full_rate=args.negative_short_full_rate,
-                                max_short_fraction_of_slv=args.max_short_fraction_of_slv,
+                                max_short_fraction_of_long_leg=args.max_short_fraction_of_long_leg,
                                 short_contract_selection=args.short_contract_selection,
                                 short_maturity_bonus_per_year=args.short_maturity_bonus_per_year,
                                 bond_mode=args.bond_mode,

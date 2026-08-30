@@ -17,7 +17,7 @@
 <label>Treasuries (%)<input name="weight_treasury" type="number" value="0" min="0" step="1"></label>
 <label>Rebalance<select name="portfolio_rebalancing"><option value="daily">Daily / constant proportions</option><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option><option value="annual">Annual</option><option value="none">Never / let weights drift</option></select></label>
 <p class="statistics-note">Positive commodity and Treasury proportions are normalized together to 100%. Each enabled commodity runs a complete independent copy of the direct-asset, Treasury, long-futures and short-futures legs before portfolio rebalancing.</p>
-<details><summary>Per-commodity parameter overrides</summary><p class="statistics-note">Optional JSON object keyed by any registered commodity. Each value overrides the global controls for that sleeve, for example <code>{"gold":{"positive_entry_rate":2,"max_long_future":30}}</code>.</p><textarea name="commodity_parameters_json" rows="5" style="width:100%" placeholder='{"gold":{"positive_entry_rate":2}}'></textarea></details>
+<details><summary>Per-commodity parameter overrides</summary><p class="statistics-note">Optional JSON object keyed by any registered commodity. Each value overrides the global controls for that sleeve, for example <code>{"gold":{"positive_entry_rate":2,"max_futures_treasury_fraction":30}}</code>.</p><textarea name="commodity_parameters_json" rows="5" style="width:100%" placeholder='{"gold":{"positive_entry_rate":2}}'></textarea></details>
 <div class="parameter-actions"><button id="saveProfile" type="button">Save named set</button><button id="loadProfile" type="button">Load set</button><button id="exportProfile" type="button">Export</button><button id="importProfile" type="button">Import</button><button id="resetProfile" type="reset">Reset</button><input id="importProfileFile" type="file" accept="application/json" hidden></div>
 <h2>Contract selection</h2>
 <label>Minimum days<input name="min_days" type="number" value="10" min="1"></label>
@@ -38,7 +38,7 @@
 <label title="Relative sensitivity of the economic score to distance from the long rate–maturity boundary">Relative score strength<input name="long_relative_strength" type="number" value="1" step="0.1" min="0"></label>
 <label>Entry rate (%)<input name="positive_entry_rate" type="number" value="0" step="0.1"></label>
 <label>Full rate (%)<input name="positive_full_rate" type="number" value="15" step="1"></label>
-<label>Maximum notional (%)<input name="max_long_future" type="number" value="50" step="1"></label>
+<label>Maximum notional (%)<input name="max_futures_treasury_fraction" type="number" value="50" step="1"></label>
 <h2>Short futures</h2>
 <label>Short book<select name="enable_short_book"><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
 <label>Short futures allocation<select name="short_futures_entry_mode"><option value="gradual">Gradual</option><option value="fixed">Fixed maximum (no entry condition)</option></select></label>
@@ -48,7 +48,7 @@
 <label title="Relative sensitivity of the economic score to distance from the short rate–maturity boundary">Relative score strength<input name="short_relative_strength" type="number" value="1" step="0.1" min="0"></label>
 <label>Entry rate (%)<input name="negative_short_start_rate" type="number" value="-0.5" step="0.1"></label>
 <label>Full rate (%)<input name="negative_short_full_rate" type="number" value="-15" step="1"></label>
-<label>Maximum short notional (% of capital)<input name="max_short_fraction_of_slv" type="number" value="50" step="1"></label>
+<label>Maximum short notional (% of capital)<input name="max_short_fraction_of_long_leg" type="number" value="50" step="1"></label>
 <h2>Score normalization</h2>
 <label title="Rate distance corresponding to one normalized unit; stabilizes the multiplier across dates">Score rate scale (%)<input name="score_rate_scale" type="number" value="1" step="0.1" min="0.0001"></label>
 <label title="Maximum absolute normalized boundary distance before relative scoring is applied">Normalized adjustment clip<input name="score_adjustment_clip" type="number" value="3" step="0.1" min="0"></label>

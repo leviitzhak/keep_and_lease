@@ -200,10 +200,10 @@ def parameters(payload):
             "long_extreme_maturity_advantage_per_year", 0.5),
         long_extreme_maturity_bonus_per_year=pct(
             "long_extreme_maturity_bonus_per_year", 1),
-        max_long_future=pct("max_long_future", 50),
+        max_futures_treasury_fraction=pct("max_futures_treasury_fraction", 50),
         negative_short_start_rate=pct("negative_short_start_rate", -0.5),
         negative_short_full_rate=pct("negative_short_full_rate", -15),
-        max_short_fraction_of_slv=pct("max_short_fraction_of_slv", 50),
+        max_short_fraction_of_long_leg=pct("max_short_fraction_of_long_leg", 50),
         short_contract_selection=str(payload.get(
             "short_contract_selection", "weighted_lease_rate")),
         short_maturity_line_intercept=short_intercept,

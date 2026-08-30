@@ -26,9 +26,9 @@ class LegAndEntryModeTests(unittest.TestCase):
             long_futures_entry_mode="fixed", short_futures_entry_mode="fixed")
         position = positions_for_day(self.candidates, p)
         self.assertEqual(position["base_slv"], 1.0)
-        self.assertAlmostEqual(sum(position["base_longs"].values()), p.max_long_future)
+        self.assertAlmostEqual(sum(position["base_longs"].values()), p.max_futures_treasury_fraction)
         self.assertAlmostEqual(sum(position["shorts"].values()),
-                               p.max_short_fraction_of_slv)
+                               p.max_short_fraction_of_long_leg)
 
     def test_fixed_modes_ignore_all_entry_conditions(self):
         p = Parameters(
@@ -39,9 +39,9 @@ class LegAndEntryModeTests(unittest.TestCase):
         position = positions_for_day(self.candidates, p)
         self.assertEqual(position["base_slv"], 1.0)
         self.assertAlmostEqual(sum(position["base_longs"].values()),
-                               p.max_long_future)
+                               p.max_futures_treasury_fraction)
         self.assertAlmostEqual(sum(position["shorts"].values()),
-                               p.max_short_fraction_of_slv)
+                               p.max_short_fraction_of_long_leg)
 
     def test_slv_can_be_disabled_independently(self):
         position = positions_for_day(
