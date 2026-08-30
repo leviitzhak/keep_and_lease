@@ -13,10 +13,14 @@ recreate or cherry-pick only the intended patch onto a branch based on GitHub
 `master`; never push an unrelated Sites history to GitHub.
 
 ChatGPT Sites and GitHub are separate repositories and are not automatically
-synchronized. Automated deployment of the Sites preview from GitHub is planned
-future work; do not assume it exists or implement it unless requested. When
-reporting a push, state the GitHub branch and full commit SHA, and distinguish the
-Git remote from the deployed preview URL.
+synchronized. Treat the Sites working copy and its local preview as optional
+pre-push validation: validate there first when useful, then transfer the tested
+patch onto a branch based on GitHub `master` and push it to GitHub. The local
+Sites preview is not a deployment target. Automatically deploying a hosted Sites
+preview from GitHub is possible future work; do not assume that automation exists
+or implement it unless requested. When reporting a push, state the GitHub branch
+and full commit SHA, and distinguish the Git remote, the local Sites preview, and
+the deployed GCP preview URL.
 
 ## Preview deployment after changes
 
