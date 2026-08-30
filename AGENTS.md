@@ -1,5 +1,23 @@
 # Repository working conventions
 
+## Canonical repository
+
+Treat `https://github.com/leviitzhak/keep_and_lease` as the canonical repository.
+Base application changes on the current GitHub `master` branch and push feature
+branches to that GitHub repository. Do not push application changes only to the
+ChatGPT Sites internal `git.chatgpt-team.site` repository.
+
+Before transferring work from a ChatGPT Sites working copy, fetch GitHub and
+compare histories. If the histories are unrelated or commits were rewritten,
+recreate or cherry-pick only the intended patch onto a branch based on GitHub
+`master`; never push an unrelated Sites history to GitHub.
+
+ChatGPT Sites and GitHub are separate repositories and are not automatically
+synchronized. Automated deployment of the Sites preview from GitHub is planned
+future work; do not assume it exists or implement it unless requested. When
+reporting a push, state the GitHub branch and full commit SHA, and distinguish the
+Git remote from the deployed preview URL.
+
 ## Preview deployment after changes
 
 Every push to a non-`master` branch automatically deploys that exact commit to
