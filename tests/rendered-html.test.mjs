@@ -154,6 +154,7 @@ test("bundles Python dependencies required by the browser worker", async () => {
   );
   assert.match(worker, /"maturity_scoring\.py"/);
   assert.match(worker, /"rate_change_attribution\.py"/);
+  assert.match(worker, /"market_data_store\.py"/);
   assert.match(worker, /sys\.path\.insert\(0, "\/data"\)/);
 });
 
