@@ -99,6 +99,15 @@ one preview service, a later branch push replaces the commit shown there. Previe
 procedures identify the exact branch/SHA and verify the GUI's displayed commit
 before merge.
 
+### Local Sites-preview rule
+
+The Sites checkout is an optional local inspection surface, not a deployment
+source. Before any Sites preview is started, synchronize that checkout to the
+intended GitHub branch and commit and verify `HEAD` matches the intended SHA.
+If it does not, update the checkout first. The authoritative branch preview is
+still the GitHub-triggered Cloud Run deployment, whose displayed GUI commit must
+be verified separately.
+
 Direct Cloud Run IAP is the planned normal browser access path limited to approved
 Google identities. Truly anonymous access must wait until the public GUI is
 separated from the private calculation API and application authentication, job

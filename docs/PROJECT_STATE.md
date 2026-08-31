@@ -15,7 +15,7 @@ Build an interactive research and backtesting application for strategies that al
 
 ## Core design decisions
 
-1. Signals are calculated on day `t`; trades are executed on day `t+1`.
+1. Signals are calculated and trades are executed at the close of day `t`; the resulting position earns the following close-to-close interval return.
 2. Long and short futures books may coexist at different maturities.
 3. A long futures contract remains eligible only when its lease rate satisfies the long-side eligibility rule.
 4. A short futures contract remains eligible only when its lease rate satisfies the short-side eligibility rule; a maturity bonus must not make an otherwise ineligible contract tradable.
