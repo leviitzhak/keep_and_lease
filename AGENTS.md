@@ -21,16 +21,25 @@ deployed GCP preview URL.
 
 ### Required development and deployment sequence
 
-1. Implement and test new GUI/API features in the Sites working copy; inspect
-   and analyse the resulting strategy outputs there when needed.
-2. Transfer the tested patch onto a feature branch based on GitHub `master` and
-   push it to GitHub. That push automatically deploys the GCP **preview** site.
-3. Verify the preview represents the pushed GitHub SHA. After approval, merge
-   the feature branch into GitHub `master`; that merge automatically deploys the
-   GCP **stable** site.
+1. Implement new GUI/API features in the Sites working copy.
+2. Before any GCP preview deployment, run the local Sites preview and inspect or
+   test the changes there, including strategy results and analysis when needed.
+3. If the preview needs changes, modify and retest the Sites working copy
+   locally. Do not push merely to preserve an intermediate workspace version,
+   and do not use GCP preview deployments as the normal source-iteration loop.
+4. Keep the tested version local until the user explicitly decides to preserve
+   and deploy that workspace version. Only after that decision, transfer the
+   tested patch onto a feature branch based on GitHub `master` and push it to
+   GitHub. That push automatically deploys the GCP **preview** site.
+5. Verify the GCP preview represents the pushed GitHub SHA. After explicit
+   approval, merge the feature branch into GitHub `master`; that merge
+   automatically deploys the GCP **stable** site.
 
 Do not treat a Sites preview as a substitute for either GCP deployment, and do
-not implement Sites-from-GitHub deployment automation unless requested.
+not treat a GCP deployment as a substitute for the local Sites review stage.
+Do not push, deploy, or merge an intermediate version unless the user has made
+the corresponding decision. Do not implement Sites-from-GitHub deployment
+automation unless requested.
 
 ### Required Sites checkout freshness check
 

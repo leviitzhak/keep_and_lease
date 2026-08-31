@@ -8,7 +8,7 @@ production parameter names.
 
 | Parameter | Meaning |
 |---|---|
-| `execution_delay_days` | Trading-day delay between signal and execution; default `1`. |
+| `execution_delay_days` | Historical placeholder; the current engine executes at the same observed close (delay `0`). |
 | `max_total_exposure` | Maximum portfolio gross exposure. |
 | `max_long_exposure` | Maximum long-book exposure. |
 | `max_short_exposure` | Maximum short-book exposure. |
@@ -49,6 +49,18 @@ production parameter names.
 | `full_allocation_threshold` | Signal magnitude reaching maximum allocation. |
 | `allocation_shape` | Linear or another explicitly documented interpolation. |
 | `etf_transition_band` | Gradual Treasury/ETF transition band; intended default about ±1 percentage point around expense ratio. |
+
+## Allocation smoothing and reactivity
+
+| Parameter | Meaning |
+| --- | --- |
+| `reactivity` | `same_day` executes the close-derived signal at that close; `next_day` executes it at the following available close. The default is `same_day`. |
+| `long_allocation_half_life_days` | Calendar-day half-life for moving the replicating-fund versus Treasury-plus-long-futures allocation toward its current target. `0` disables smoothing. |
+| `short_allocation_half_life_days` | Calendar-day half-life for moving total short-book notional toward its current target. `0` disables smoothing. |
+
+Smoothing is applied to allocation sizes after the current curve has produced
+its targets. It does not average lease-rate inputs or delay current contract
+ranking. After one half-life, half of the gap to the current target remains.
 
 ## Treasury selection
 

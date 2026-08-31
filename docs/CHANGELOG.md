@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-08-31 — Allocation smoothing and configurable reactivity
+
+- Added a same-day/next-day reactivity parameter. Same-day is the default;
+  next-day preserves the prior one-observation execution lag.
+- Added independent calendar-day half-lives for the long implementation mix
+  and short-book allocation. Smoothing changes exposure sizes without averaging
+  lease inputs or delaying current contract ranking.
+- Aligned output dates, trade diagnostics, and market diagnostics with that
+  execution close in both timing modes.
+- Added timing, smoothing, non-trading-day, and no-look-ahead regression coverage.
+
 ## 2026-08-25 — Firestore routing regression mitigation
 
 - Pinned `google-api-core[grpc]` to `2.34.0` after the newly released `2.35.0`

@@ -70,6 +70,11 @@ deployment workflow are implemented. The foundation is provisioned; follow
 [`docs/GOOGLE_CLOUD_RUN_SETUP.md`](docs/GOOGLE_CLOUD_RUN_SETUP.md) for deployment,
 preview/access operations, and remaining acceptance tests.
 
+The Sites checkout may be used for a local agent preview only. Before starting
+one, synchronize it with the intended GitHub branch and commit, then verify the
+checkout's `HEAD` equals that commit. A Sites preview is never a deployment
+source and must not substitute for the GitHub-to-Cloud-Run preview workflow.
+
 ## Render (legacy / retired)
 
 The repository still contains historical Render configuration and documentation

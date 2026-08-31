@@ -16,6 +16,7 @@
 <label>S&amp;P 500 (%)<input name="weight_sp500" type="number" value="0" min="0" step="1"></label>
 <label>Treasuries (%)<input name="weight_treasury" type="number" value="0" min="0" step="1"></label>
 <label>Rebalance<select name="portfolio_rebalancing"><option value="daily">Daily / constant proportions</option><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option><option value="annual">Annual</option><option value="none">Never / let weights drift</option></select></label>
+<label>Strategy reactivity<select name="reactivity"><option value="same_day">Same day</option><option value="next_day">Next day</option></select></label>
 <p class="statistics-note">Positive commodity and Treasury proportions are normalized together to 100%. Each enabled commodity runs a complete independent copy of the direct-asset, Treasury, long-futures and short-futures legs before portfolio rebalancing.</p>
 <details><summary>Per-commodity parameter overrides</summary><p class="statistics-note">Optional JSON object keyed by any registered commodity. Each value overrides the global controls for that sleeve, for example <code>{"gold":{"positive_entry_rate":2,"max_futures_treasury_fraction":30}}</code>.</p><textarea name="commodity_parameters_json" rows="5" style="width:100%" placeholder='{"gold":{"positive_entry_rate":2}}'></textarea></details>
 <div class="parameter-actions"><button id="saveProfile" type="button">Save named set</button><button id="loadProfile" type="button">Load set</button><button id="exportProfile" type="button">Export</button><button id="importProfile" type="button">Import</button><button id="resetProfile" type="reset">Reset</button><input id="importProfileFile" type="file" accept="application/json" hidden></div>
@@ -23,6 +24,9 @@
 <label>Minimum days<input name="min_days" type="number" value="10" min="1"></label>
 <label>Roll only for better lease<select name="roll_only_if_better"><option value="true">Yes</option><option value="false">No</option></select></label>
 <label>Force roll at minimum days<select name="force_roll_at_min_days"><option value="true">Yes</option><option value="false">No</option></select></label>
+<label>Long allocation half-life (days)<input name="long_allocation_half_life_days" type="number" value="0" min="0" step="1"></label>
+<label>Short allocation half-life (days)<input name="short_allocation_half_life_days" type="number" value="0" min="0" step="1"></label>
+<p class="statistics-note">Allocation smoothing changes total exposure only; contract selection continues to use the current lease curve. Zero days disables smoothing.</p>
 <h2>Cash and replicating fund</h2>
 <label>Replicating-fund leg<select name="enable_slv_leg"><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
 <label>Fund allocation<select name="slv_entry_mode"><option value="gradual">Gradual</option><option value="fixed">Fixed at 100% (no entry condition)</option></select></label>
@@ -146,7 +150,7 @@
 <div class="annual-table-wrap"><table class="annual-table"><thead><tr><th>Rank</th><th>Date</th><th>Strategy daily return</th><th>Breakdown</th></tr></thead><tbody id="lowestReturns"></tbody></table></div>
 <div id="extremeReturnDetail" class="statistics-note" style="padding:12px;background:#f7f9fc;border-radius:9px;margin-top:12px">Select an extreme day for verification details.</div>
 <h3>How the daily-return decomposition is calculated</h3>
-<p class="statistics-note">All components use the positions held over the interval from execution date <em>t</em> to the next available quoted date <em>t+1</em>. Weights are fractions of portfolio capital and every component is a return contribution—not a standalone asset return. The displayed components add exactly to the strategy daily return.</p>
+<p class="statistics-note">Same-day reactivity executes the close-<em>t</em> signal at that close; next-day reactivity executes it at the following available close. Returns are then measured to the next quoted close. Weights are fractions of portfolio capital and every component is a return contribution—not a standalone asset return. The displayed components add exactly to the strategy daily return.</p>
 <div class="annual-table-wrap"><table class="annual-table"><thead><tr><th>Component</th><th>Daily calculation</th><th>Interpretation</th></tr></thead><tbody>
 <tr><td>Silver price</td><td><code>(wSLV + ΣwLong − ΣwShort) × (Spot[t+1] / Spot[t] − 1)</code></td><td>The spot-silver move applied to the portfolio’s net silver exposure.</td></tr>
 <tr><td>Lease carry</td><td><code>(Σ wLong × leaseLong − Σ wShort × leaseShort) × elapsedDays / 365</code></td><td>The lease rate observed when the position was selected, accrued linearly over the holding interval.</td></tr>

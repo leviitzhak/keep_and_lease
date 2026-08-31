@@ -165,6 +165,11 @@ def parameters(payload):
     short_intercept, short_slope = boundary("short")
     p = Parameters(
         min_days=int(number(payload, "min_days", 10, 1, 2000)),
+        reactivity=str(payload.get("reactivity", "same_day")),
+        long_allocation_half_life_days=number(
+            payload, "long_allocation_half_life_days", 0, 0, 10000),
+        short_allocation_half_life_days=number(
+            payload, "short_allocation_half_life_days", 0, 0, 10000),
         roll_only_if_better=flag("roll_only_if_better", True),
         force_roll_at_min_days=flag("force_roll_at_min_days", True),
         enable_short_book=flag("enable_short_book", True),
@@ -238,6 +243,8 @@ def parameters(payload):
     )
     if p.bond_mode not in {"accrual", "zero_coupon_mtm"}:
         raise ValueError("Invalid bond mode")
+    if p.reactivity not in {"same_day", "next_day"}:
+        raise ValueError("Invalid strategy reactivity")
     if p.treasury_asset not in {"matched_maturity", "sgov_proxy"}:
         raise ValueError("Invalid Treasury instrument")
     if p.treasury_allocation_mode not in {

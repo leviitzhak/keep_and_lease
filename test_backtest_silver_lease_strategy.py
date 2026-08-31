@@ -34,8 +34,9 @@ class StandaloneLegReturnTests(unittest.TestCase):
     def test_leg_returns_ignore_zero_portfolio_weights(self):
         rows, _ = run_backtest(
             self.spot, self.contracts, self.rates, self.by_day,
-            Parameters(min_days=1, slv_start_rate=-0.20,
-                       slv_full_rate=-0.30, slv_expense=0))
+            Parameters(min_days=1, enable_slv_leg=False,
+                       enable_cash_long_futures_leg=False,
+                       enable_short_book=False, slv_expense=0))
         self.assertTrue(all(row["slv_weight_pct"] == 0 for row in rows))
         self.assertTrue(all(row["long_futures_notional_pct"] == 0 for row in rows))
         self.assertTrue(all(row["short_futures_notional_pct"] == 0 for row in rows))
@@ -81,7 +82,13 @@ class StandaloneLegReturnTests(unittest.TestCase):
         negative = [{"symbol": "negative", "days": 30, "future": 100,
                      "spot": 100, "rate": 0, "premium": 0,
                      "lease": -0.0775, "volume": 10}]
-        self.assertEqual(1.0, positions_for_day(positive, Parameters(min_days=1))["treasury"])
+        positive_position = positions_for_day(positive, Parameters(min_days=1))
+        self.assertAlmostEqual(
+            1.0,
+            positive_position["base_slv"] +
+            positive_position["base_treasury"],
+        )
+        self.assertAlmostEqual(0.25, positive_position["base_treasury"])
         self.assertEqual(1.0, positions_for_day(negative, Parameters(min_days=1))["base_slv"])
 
     def test_long_can_select_highest_lease_rate_instead_of_shortest_maturity(self):
@@ -207,8 +214,24 @@ class StandaloneLegReturnTests(unittest.TestCase):
                      "lease": 0, "volume": 10}
         by_day = {day: [dict(candidate)] for day in days}
         rows, _ = run_backtest(spot, contracts, rates, by_day, Parameters(min_days=1))
-        self.assertEqual([tuesday.isoformat()], [row["date"] for row in rows])
-        self.assertEqual(monday.isoformat(), rows[0]["execution_date"])
+        self.assertEqual(
+            [friday.isoformat(), monday.isoformat()],
+            [row["date"] for row in rows])
+        self.assertEqual(friday.isoformat(), rows[0]["signal_date"])
+        self.assertEqual(friday.isoformat(), rows[0]["execution_date"])
+
+    def test_reactivity_selects_same_or_next_available_execution_day(self):
+        same_day, _ = run_backtest(
+            self.spot, self.contracts, self.rates, self.by_day,
+            Parameters(min_days=1, reactivity="same_day"))
+        next_day, _ = run_backtest(
+            self.spot, self.contracts, self.rates, self.by_day,
+            Parameters(min_days=1, reactivity="next_day"))
+        self.assertEqual(self.days[0].isoformat(), same_day[0]["signal_date"])
+        self.assertEqual(self.days[0].isoformat(), same_day[0]["execution_date"])
+        self.assertEqual(self.days[0].isoformat(), next_day[0]["signal_date"])
+        self.assertEqual(self.days[1].isoformat(), next_day[0]["execution_date"])
+        self.assertEqual(len(same_day) - 1, len(next_day))
 
     def test_future_quote_perturbation_cannot_change_earlier_decisions(self):
         baseline, _ = run_backtest(
@@ -225,7 +248,7 @@ class StandaloneLegReturnTests(unittest.TestCase):
             self.spot, changed_contracts, self.rates, changed_by_day,
             Parameters(min_days=1))
         decision_fields = ("signal_date", "execution_date", "mode",
-                           "long_futures_symbols", "short_futures_symbols")
+                           "long_symbols", "short_symbols")
         for before, after in zip(baseline[:-1], changed[:-1]):
             self.assertEqual(
                 tuple(before[field] for field in decision_fields),
@@ -283,9 +306,9 @@ class StandaloneLegReturnTests(unittest.TestCase):
         rows, _ = run_backtest(
             self.spot, self.contracts, self.rates, self.by_day,
             Parameters(min_days=1, slv_expense=0))
-        self.assertEqual(self.days[2].isoformat(), rows[0]["date"])
-        self.assertAlmostEqual(8.0, rows[0]["long_weighted_lease_rate_pct"])
-        self.assertEqual(28, rows[0]["available_futures_min_maturity_days"])
+        self.assertEqual(self.days[0].isoformat(), rows[0]["date"])
+        self.assertAlmostEqual(-5.0, rows[0]["long_weighted_lease_rate_pct"])
+        self.assertEqual(30, rows[0]["available_futures_min_maturity_days"])
 
     def test_rate_change_attribution_is_contract_level_and_reconciled(self):
         rows, _ = run_backtest(

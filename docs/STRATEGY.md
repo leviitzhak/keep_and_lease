@@ -20,10 +20,18 @@ Long and short futures are separate books. They may both be active when differen
 
 1. Observe prices, rates, maturities, and eligibility on trading day `t`.
 2. Compute target allocations using information available on day `t` only.
-3. Execute the target change on trading day `t+1`.
-4. Attribute day `t+1` return to the positions actually held during that day.
+3. Optionally smooth the long implementation mix and short-book size toward
+   those targets using their independent calendar-day half-lives. Contract
+   selection still uses the current curve.
+4. Execute either at close `t` (`same_day`) or at the next available close
+   (`next_day`), according to the reactivity parameter.
+5. Attribute the following close-to-close interval return to the position
+   established on the execution day.
 
-This one-day shift is mandatory to avoid look-ahead bias.
+Same-day mode is a research convention: it assumes the day `t` curve can be
+observed and traded at that close. It must not be interpreted as a claim that a
+broker order can be filled before the closing data is known. Next-day mode keeps
+the prior conservative one-observation execution lag.
 
 ## Eligibility before ranking
 

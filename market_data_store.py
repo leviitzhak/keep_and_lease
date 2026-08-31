@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import csv
-import sqlite3
+try:
+    import sqlite3
+except ModuleNotFoundError:  # Pyodide omits the optional SQLite module.
+    sqlite3 = None
 from collections import Counter
 from datetime import date, datetime
 from functools import lru_cache
@@ -91,6 +94,8 @@ def read_contract_csvs(
 
 @lru_cache(maxsize=None)
 def read_cached_asset(root: Path, asset: str):
+    if sqlite3 is None:
+        return None
     path = database_path(root)
     if not path.exists():
         return None
@@ -116,6 +121,8 @@ def read_cached_asset(root: Path, asset: str):
 
 
 def build_database(root: Path, target: Path | None = None) -> Path:
+    if sqlite3 is None:
+        raise RuntimeError("SQLite support is unavailable in this Python runtime")
     target = target or database_path(root)
     target.parent.mkdir(parents=True, exist_ok=True)
     temporary = target.with_suffix(".tmp")

@@ -99,11 +99,52 @@ one preview service, a later branch push replaces the commit shown there. Previe
 procedures identify the exact branch/SHA and verify the GUI's displayed commit
 before merge.
 
+### Local Sites-preview rule
+
+The Sites checkout is an optional local inspection surface, not a deployment
+source. Before any Sites preview is started, synchronize that checkout to the
+intended GitHub branch and commit and verify `HEAD` matches the intended SHA.
+If it does not, update the checkout first. The authoritative branch preview is
+still the GitHub-triggered Cloud Run deployment, whose displayed GUI commit must
+be verified separately.
+
 Direct Cloud Run IAP is the planned normal browser access path limited to approved
 Google identities. Truly anonymous access must wait until the public GUI is
 separated from the private calculation API and application authentication, job
 ownership, quotas, spending limits, and abuse controls are implemented. See
 [GOOGLE_CLOUD_RUN_SETUP.md](GOOGLE_CLOUD_RUN_SETUP.md) for the current access state.
+
+## Future work — one GUI and calculation path across previews
+
+Sites and Google Cloud are currently independent publication systems. A Sites
+publish does not update the GitHub branch or Cloud Run preview, and a GitHub push
+does not publish a new Sites version. They can therefore display different commits
+even when both were produced from this repository.
+
+Unify the two preview surfaces as follows:
+
+1. Keep one canonical GUI source and build both Sites and Cloud Run from the same
+   explicitly selected Git commit. Remove or generate duplicate GUI entry points
+   so they cannot drift.
+2. The displayed status must include the GUI commit, API engine commit, and actual
+   execution engine.
+3. Keep one versioned calculation API contract. Cloud Run may call it directly;
+   Sites should call it through a same-origin server-side proxy or another approved
+   authenticated route, rather than depending on cross-origin browser credentials.
+4. Define explicit service authentication, allowed origins, job ownership, quotas,
+   and rate limits before exposing that API to a published Site. A private IAP
+   endpoint alone is not sufficient for an unauthenticated Sites runtime to call.
+5. Configure published previews in strict server mode. If the shared API or its
+   expected schema/engine revision is unavailable, show a diagnostic and do not
+   silently start `backtest-worker-v12.js`. Retain Pyodide only as an explicitly
+   selected development/offline mode until it is deliberately retired.
+6. Add deployment checks that load each preview, assert the expected GUI and API
+   commits, confirm `engine=server`, and verify the smoothing and reactivity controls
+   before a preview is accepted.
+
+Until this work is complete, the two displayed commit identifiers describe two
+separate publications, and `engine=auto` can still conceal API configuration or
+authentication failures by selecting Pyodide.
 
 The initial worker is 1 vCPU and 4 GiB, with one task, a 30-minute timeout and zero
 automatic retries. The Cloud Run web service does not load histories; synchronous
