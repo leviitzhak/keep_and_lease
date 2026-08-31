@@ -200,3 +200,17 @@ test("displays the application version and deployed commit", async () => {
   assert.equal(buildInfo.version, "1.3");
   assert.match(buildInfo.commit, /^(?:[0-9a-f]{40}|unknown)$/);
 });
+
+test("downloads and loads strategy parameters as JSON", async () => {
+  const html = await readFile(
+    new URL("../public/silver_strategy_gui.html", import.meta.url),
+    "utf8",
+  );
+  assert.match(html, />Download JSON</);
+  assert.match(html, />Load JSON</);
+  assert.match(html, /keep-and-lease-parameters\.json/);
+  assert.match(html, /schema_version:PARAM_SCHEMA_VERSION,parameters:values\(\)/);
+  assert.match(html, /The selected file is not valid JSON/);
+  assert.match(html, /contains no recognized strategy parameters/);
+  assert.match(html, /e\.target\.value=''/);
+});
