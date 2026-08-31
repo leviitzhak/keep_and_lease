@@ -1,5 +1,48 @@
 # Repository working conventions
 
+## Canonical repository
+
+Treat `https://github.com/leviitzhak/keep_and_lease` as the canonical repository.
+Base application changes on the current GitHub `master` branch and push feature
+branches to that GitHub repository. Do not push application changes only to the
+ChatGPT Sites internal `git.chatgpt-team.site` repository.
+
+Before transferring work from a ChatGPT Sites working copy, fetch GitHub and
+compare histories. If the histories are unrelated or commits were rewritten,
+recreate or cherry-pick only the intended patch onto a branch based on GitHub
+`master`; never push an unrelated Sites history to GitHub.
+
+ChatGPT Sites and GitHub are separate repositories and are not automatically
+synchronized. Treat the Sites working copy and its local preview as optional
+development, GUI/API testing, and result-analysis environment. The local Sites
+preview is not a deployment target. When reporting a push, state the GitHub
+branch and full commit SHA, and distinguish the local Sites preview from the
+deployed GCP preview URL.
+
+### Required development and deployment sequence
+
+1. Implement and test new GUI/API features in the Sites working copy; inspect
+   and analyse the resulting strategy outputs there when needed.
+2. Transfer the tested patch onto a feature branch based on GitHub `master` and
+   push it to GitHub. That push automatically deploys the GCP **preview** site.
+3. Verify the preview represents the pushed GitHub SHA. After approval, merge
+   the feature branch into GitHub `master`; that merge automatically deploys the
+   GCP **stable** site.
+
+Do not treat a Sites preview as a substitute for either GCP deployment, and do
+not implement Sites-from-GitHub deployment automation unless requested.
+
+### Required Sites checkout freshness check
+
+Before editing application code in a ChatGPT Sites working copy, identify the
+intended GitHub branch and commit, fetch GitHub, and verify that the Sites
+checkout is based on that exact revision. If it is behind or based on a different
+history, first transfer/rebase the intended patch onto a branch based on the
+current GitHub revision; do not begin a new implementation on stale Sites code.
+Preserve any existing uncommitted user work while doing so. Before starting a
+local Sites preview, repeat the check and report the GitHub branch and SHA that
+the preview represents.
+
 ## Preview deployment after changes
 
 Every push to a non-`master` branch automatically deploys that exact commit to
