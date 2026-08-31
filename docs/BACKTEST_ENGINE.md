@@ -2,7 +2,11 @@
 
 ## Time convention
 
-Signals use information available at the close of day `t`. Position changes are executed on the next available trading day. Missing calendar dates must be handled using each instrument's actual trading calendar rather than a fixed one-day timedelta.
+Signals use information available at the close of day `t`. The `reactivity`
+parameter executes changes either at that close (`same_day`) or at the following
+available close (`next_day`). Returns are measured from execution to the next
+available trading-day close. Missing calendar dates use each instrument's actual
+trading calendar rather than a fixed one-day timedelta.
 
 ## Daily sequence
 
@@ -10,9 +14,10 @@ Signals use information available at the close of day `t`. Position changes are 
 2. Compute derived rates and eligibility.
 3. Compute base and adjusted scores.
 4. Convert scores to target weights.
-5. Queue target changes for execution.
-6. Execute queued changes on the next valid trading day.
-7. Calculate mark-to-market return from positions held.
+5. Apply the configured allocation half-lives to the long implementation mix
+   and short-book size; do not smooth curve inputs or contract ranking.
+6. Execute target changes according to `reactivity`.
+7. Calculate mark-to-market return to the next valid trading-day close from the position just established.
 8. Apply transaction costs, fees, financing, ETF expenses, and roll effects.
 9. Persist diagnostics and attribution.
 
@@ -56,7 +61,7 @@ Benchmarks must use the same date range and return convention. Any benchmark exp
 ## Validation tests
 
 - No-look-ahead test using deliberately perturbed future values.
-- One-trading-day execution-delay test.
+- Same-day signal/execution timing test.
 - Position and weight-cap invariants.
 - Return attribution reconciliation.
 - Roll continuity and contract identity tests.

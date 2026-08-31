@@ -25,7 +25,8 @@ class LegAndEntryModeTests(unittest.TestCase):
             min_days=10, slv_entry_mode="fixed",
             long_futures_entry_mode="fixed", short_futures_entry_mode="fixed")
         position = positions_for_day(self.candidates, p)
-        self.assertEqual(position["base_slv"], 1.0)
+        self.assertEqual(position["base_slv"],
+                         1.0 - p.max_futures_treasury_fraction)
         self.assertAlmostEqual(sum(position["base_longs"].values()), p.max_futures_treasury_fraction)
         self.assertAlmostEqual(sum(position["shorts"].values()),
                                p.max_short_fraction_of_long_leg)
@@ -37,7 +38,8 @@ class LegAndEntryModeTests(unittest.TestCase):
             slv_start_rate=-1.0, positive_entry_rate=1.0,
             negative_short_start_rate=-1.0)
         position = positions_for_day(self.candidates, p)
-        self.assertEqual(position["base_slv"], 1.0)
+        self.assertEqual(position["base_slv"],
+                         1.0 - p.max_futures_treasury_fraction)
         self.assertAlmostEqual(sum(position["base_longs"].values()),
                                p.max_futures_treasury_fraction)
         self.assertAlmostEqual(sum(position["shorts"].values()),
@@ -47,7 +49,9 @@ class LegAndEntryModeTests(unittest.TestCase):
         position = positions_for_day(
             self.candidates, Parameters(min_days=10, enable_slv_leg=False))
         self.assertEqual(position["base_slv"], 0.0)
-        self.assertEqual(position["base_treasury"], 1.0)
+        self.assertGreater(position["base_treasury"], 0.0)
+        self.assertAlmostEqual(position["base_treasury"],
+                               sum(position["base_longs"].values()))
 
     def test_cash_and_long_futures_can_be_disabled_independently(self):
         position = positions_for_day(
@@ -65,6 +69,34 @@ class LegAndEntryModeTests(unittest.TestCase):
                        enable_cash_long_futures_leg=False))
         self.assertEqual(position["shorts"], {})
         self.assertEqual(position["long_extension"], 0.0)
+
+    def test_long_allocation_half_life_smooths_total_not_contract_ranking(self):
+        p = Parameters(
+            min_days=10, positive_entry_rate=0.0, positive_full_rate=0.10,
+            long_allocation_half_life_days=1, enable_short_book=False)
+        full = positions_for_day([
+            {"symbol": "positive", "lease": 0.10, "days": 90, "volume": 50},
+        ], p)
+        reduced = positions_for_day([
+            {"symbol": "new", "lease": 0.0, "days": 120, "volume": 50},
+        ], p, full, elapsed_days=1)
+        self.assertAlmostEqual(full["base_treasury"] / 2,
+                               reduced["base_treasury"])
+        self.assertEqual({"new"}, set(reduced["long_leg"]))
+
+    def test_short_allocation_has_independent_half_life(self):
+        p = Parameters(
+            min_days=10, negative_short_start_rate=-0.01,
+            negative_short_full_rate=-0.11,
+            short_allocation_half_life_days=1)
+        full = positions_for_day([
+            {"symbol": "negative", "lease": -0.11, "days": 90, "volume": 50},
+        ], p)
+        reduced = positions_for_day([
+            {"symbol": "neutral", "lease": 0.0, "days": 120, "volume": 50},
+        ], p, full, elapsed_days=1)
+        self.assertAlmostEqual(full["long_extension"] / 2,
+                               reduced["long_extension"])
 
     def test_entry_threshold_defines_the_canonical_long_base_score(self):
         candidates = [

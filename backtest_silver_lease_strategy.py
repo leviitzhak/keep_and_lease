@@ -39,6 +39,9 @@ TENORS = [(91, "DTB3"), (182, "DTB6"), (365, "DGS1"),
 @dataclass
 class Parameters:
     min_days: int
+    reactivity: str = "same_day"
+    long_allocation_half_life_days: float = 0.0
+    short_allocation_half_life_days: float = 0.0
     roll_only_if_better: bool = True
     force_roll_at_min_days: bool = True
     enable_short_book: bool = True
@@ -89,6 +92,18 @@ class Parameters:
 
 def clamp(x, low=0.0, high=1.0):
     return max(low, min(high, x))
+
+
+def smooth_allocation(target, previous, half_life_days, elapsed_days):
+    """Move an allocation toward its target with a calendar-day half-life.
+
+    A zero half-life disables smoothing.  Contract ranking remains current;
+    this function changes only the total notional allocated to a leg.
+    """
+    if previous is None or half_life_days <= 0:
+        return target
+    alpha = 1.0 - 2.0 ** (-max(0.0, elapsed_days) / half_life_days)
+    return previous + alpha * (target - previous)
 
 
 def parse_date(value):
@@ -571,7 +586,7 @@ def _sticky_contract_book(desired, previous, contract_map, qualifying_symbols,
             for symbol, weight in held.items()}
 
 
-def positions_for_day(candidates, p, previous=None):
+def positions_for_day(candidates, p, previous=None, elapsed_days=1.0):
     eligible = [x for x in candidates if x["days"] >= p.min_days]
     if not eligible:
         return None
@@ -647,6 +662,12 @@ def positions_for_day(candidates, p, previous=None):
         p.max_futures_treasury_fraction * positive_strength
         if p.enable_cash_long_futures_leg else 0.0)
     futures_treasury_share = clamp(futures_treasury_share)
+    futures_treasury_share = smooth_allocation(
+        futures_treasury_share,
+        previous.get("base_treasury") if previous else None,
+        p.long_allocation_half_life_days,
+        elapsed_days,
+    )
     if p.enable_slv_leg:
         slv_weight = 1.0 - futures_treasury_share
     else:
@@ -657,21 +678,34 @@ def positions_for_day(candidates, p, previous=None):
     # no longer an independent overlay on top of a fully invested base.
     base_longs = {}
     long_notional = futures_treasury_share
-    if long_candidates and p.long_contract_selection == "weighted_lease_rate":
+    allocation_long_candidates = (
+        long_candidates if long_candidates else
+        (eligible if long_notional > 0 else []))
+    allocation_selected_positive = (
+        selected_positive if selected_positive else
+        (select_long(allocation_long_candidates)
+         if allocation_long_candidates else None))
+    if allocation_long_candidates and p.long_contract_selection == "weighted_lease_rate":
         long_score_threshold = (
-            min(x["lease"] for x in long_candidates) - 1e-9
-            if p.long_futures_entry_mode == "fixed"
+            min(x["lease"] for x in allocation_long_candidates) - 1e-9
+            if p.long_futures_entry_mode == "fixed" or not long_candidates
             else p.positive_entry_rate)
         base_longs = proportional_allocation([
             (x["symbol"], maturity_line_adjusted_score(
                 x["lease"] - long_score_threshold, x, p, "long"))
-            for x in long_candidates
+            for x in allocation_long_candidates
         ], long_notional)
-    elif selected_positive:
-        base_longs[selected_positive["symbol"]] = (
+    elif allocation_selected_positive:
+        base_longs[allocation_selected_positive["symbol"]] = (
             long_notional)
     total_short = (p.max_short_fraction_of_long_leg * negative_strength
                    if p.enable_short_book else 0.0)
+    total_short = smooth_allocation(
+        total_short,
+        previous.get("long_extension") if previous else None,
+        p.short_allocation_half_life_days,
+        elapsed_days,
+    )
     # The short book is defined as short futures plus an equal-sized extension
     # of the active base long book.  If both long sleeves are inactive there is
     # no composition to extend, so the complete short book must also be zero.
@@ -689,27 +723,35 @@ def positions_for_day(candidates, p, previous=None):
         max(x["lease"] for x in short_candidates) + 1e-9
         if short_candidates and p.short_futures_entry_mode == "fixed"
         else short_start_rate)
-    for x in short_candidates:
+    allocation_short_candidates = (
+        short_candidates if short_candidates else
+        (eligible if total_short > 0 else []))
+    allocation_short_threshold = (
+        max(x["lease"] for x in allocation_short_candidates) + 1e-9
+        if allocation_short_candidates and not short_candidates
+        else short_score_threshold)
+    for x in allocation_short_candidates:
         # A short's lease edge is the magnitude of lease rate minus entry
         # threshold. It is positive because qualifying leases are below entry.
-        base_score = max(0.0, short_score_threshold - x["lease"])
+        base_score = max(0.0, allocation_short_threshold - x["lease"])
         x["short_score"] = maturity_line_adjusted_score(
             base_score, x, p, "short")
-    if short_candidates and p.short_contract_selection == "lowest_lease_rate":
-        lowest = min(short_candidates, key=lambda x: (x["lease"], x["days"], -x["volume"]))
+    if allocation_short_candidates and p.short_contract_selection == "lowest_lease_rate":
+        lowest = min(allocation_short_candidates, key=lambda x: (x["lease"], x["days"], -x["volume"]))
         shorts = {lowest["symbol"]: total_short}
     else:
-        scores = [(x["symbol"], x["short_score"]) for x in short_candidates]
+        scores = [(x["symbol"], x["short_score"])
+                  for x in allocation_short_candidates]
         shorts = proportional_allocation(scores, total_short)
 
     # Resize with the signal, but change contracts only for a better lease or
     # when the configured minimum-maturity boundary forces a roll.
     base_longs = _sticky_contract_book(
         base_longs, previous.get("base_longs") if previous else None,
-        contract_map, {x["symbol"] for x in long_candidates}, "long", p)
+        contract_map, {x["symbol"] for x in allocation_long_candidates}, "long", p)
     shorts = _sticky_contract_book(
         shorts, previous.get("shorts") if previous else None,
-        contract_map, {x["symbol"] for x in short_candidates}, "short", p)
+        contract_map, {x["symbol"] for x in allocation_short_candidates}, "short", p)
 
     # A short-futures position is paired with an equally sized extension of
     # the complete long commodity leg.  Treasury collateral is not counted as
@@ -914,19 +956,28 @@ def run_backtest(spot, contracts, rates, by_day, p):
     sgov_proxy_nav = 1.0
     missing_futures_intervals = []
     previous_valid_position = None
-    scheduled_positions = {}
     previous_position = None
-    for signal_day, execution_day in zip(days, days[1:]):
-        previous_position = positions_for_day(
-            by_day[signal_day], p, previous_position)
-        scheduled_positions[execution_day] = previous_position
-    # Signal at t, execute at t+1, and measure P&L from t+1 to t+2.
-    for signal_day, execution_day, exit_day in zip(days, days[1:], days[2:]):
-        position = scheduled_positions.get(execution_day)
-        if position is None or execution_day not in spot or exit_day not in spot:
+    if p.reactivity == "same_day":
+        intervals = zip(days, days, days[1:])
+    elif p.reactivity == "next_day":
+        intervals = zip(days, days[1:], days[2:])
+    else:
+        raise ValueError("reactivity must be 'same_day' or 'next_day'")
+    previous_signal_day = None
+    # Same-day mode forms the close-derived signal and rebalances at that close;
+    # next-day mode executes it at the following available close.  In either
+    # case, the resulting position earns the execution-to-exit return.
+    for signal_day, execution_day, exit_day in intervals:
+        signal_elapsed = ((signal_day - previous_signal_day).days
+                          if previous_signal_day else 0.0)
+        position = positions_for_day(
+            by_day[signal_day], p, previous_position, signal_elapsed)
+        previous_position = position
+        previous_signal_day = signal_day
+        if execution_day not in spot or exit_day not in spot:
             continue
-        lag = (execution_day - signal_day).days
-        holding_days = max(1.0, position["bond_days"] - lag)
+        execution_lag = (execution_day - signal_day).days
+        holding_days = max(1.0, position["bond_days"] - execution_lag)
         elapsed = (exit_day - execution_day).days
         treasury_return = treasury_position_return(rates, execution_day, exit_day, holding_days, p)
         sgov_proxy_return = treasury_position_return(
@@ -1077,10 +1128,10 @@ def run_backtest(spot, contracts, rates, by_day, p):
                 asset_nav[key] *= 1 + value
         long_weighted_days = weighted_contract_value(position["longs"], position["contracts"], "days")
         short_weighted_days = weighted_contract_value(position["shorts"], position["contracts"], "days")
-        # Chart diagnostics describe the displayed (exit) date, rather than the
-        # earlier signal date used for the portfolio. This keeps them aligned
-        # with the spot/futures quotes and date shown by the chart tooltip.
-        market_diagnostics = market_diagnostics_for_day(by_day.get(exit_day, []), p)
+        # Diagnostics describe the curve that decided the allocation. Futures
+        # trade prices below are still measured on the execution close.
+        market_diagnostics = market_diagnostics_for_day(
+            by_day.get(signal_day, []), p)
         diagnostic_contracts = (market_diagnostics["contracts"]
                                 if market_diagnostics else {})
         diagnostic_longs = market_diagnostics["longs"] if market_diagnostics else {}
@@ -1094,29 +1145,27 @@ def run_backtest(spot, contracts, rates, by_day, p):
         short_forward_maturity_days = weighted_contract_value(
             diagnostic_shorts, diagnostic_contracts, "days")
         long_weighted_future_price = weighted_futures_price(
-            diagnostic_longs, contracts, exit_day)
+            diagnostic_longs, contracts, execution_day)
         short_weighted_future_price = weighted_futures_price(
-            diagnostic_shorts, contracts, exit_day)
+            diagnostic_shorts, contracts, execution_day)
         long_usd_rate = matched_usd_rate_details(
-            rates, exit_day, diagnostic_longs, diagnostic_contracts)
+            rates, signal_day, diagnostic_longs, diagnostic_contracts)
         short_usd_rate = matched_usd_rate_details(
-            rates, exit_day, diagnostic_shorts, diagnostic_contracts)
-        # The currently held position is rebalanced on the displayed exit date.
-        # Compare it with the next scheduled position and weight prices by the
-        # absolute notional traded when several contracts change together.
-        next_position = scheduled_positions.get(exit_day)
-        next_longs = next_position["longs"] if next_position else {}
-        next_shorts = next_position["shorts"] if next_position else {}
+            rates, signal_day, diagnostic_shorts, diagnostic_contracts)
+        # Rebalance at the displayed close.  Compare with the preceding
+        # position and weight the executed contracts by absolute traded notional.
+        prior_longs = previous_valid_position["longs"] if previous_valid_position else {}
+        prior_shorts = previous_valid_position["shorts"] if previous_valid_position else {}
         (entered_long_price, entered_long_size,
          exited_long_price, exited_long_size) = futures_trade_prices(
-            position["longs"], next_longs, contracts, exit_day)
+            prior_longs, position["longs"], contracts, execution_day)
         (entered_short_price, entered_short_size,
          exited_short_price, exited_short_size) = futures_trade_prices(
-            position["shorts"], next_shorts, contracts, exit_day)
+            prior_shorts, position["shorts"], contracts, execution_day)
         long_trade_details = futures_trade_details(
-            position["longs"], next_longs, contracts, exit_day)
+            prior_longs, position["longs"], contracts, execution_day)
         short_trade_details = futures_trade_details(
-            position["shorts"], next_shorts, contracts, exit_day)
+            prior_shorts, position["shorts"], contracts, execution_day)
         # Premium charts are market diagnostics, not position diagnostics.  Use
         # the threshold-independent books so a null means that a source quote
         # is unavailable, rather than merely that the strategy did not trade.
@@ -1140,7 +1189,7 @@ def run_backtest(spot, contracts, rates, by_day, p):
         else:
             weighted_days = position["bond_days"]
             largest_share = 0.0
-        output.append({"date": exit_day.isoformat(), "signal_date": signal_day.isoformat(),
+        output.append({"date": execution_day.isoformat(), "signal_date": signal_day.isoformat(),
                        "execution_date": execution_day.isoformat(), "mode": position["mode"],
                        "signal_annual_pct": 100 * position["signal"],
                        "positive_signal_annual_pct": 100 * position["positive_signal"],
@@ -1183,7 +1232,7 @@ def run_backtest(spot, contracts, rates, by_day, p):
                        "short_futures_compounded_return_pct": 100 * (asset_nav["short_futures"] - 1),
                        "slv_compounded_return_pct": 100 * (asset_nav["slv"] - 1),
                        "treasury_compounded_return_pct": 100 * (asset_nav["treasury"] - 1),
-                       "slv_price": spot[exit_day],
+                       "slv_price": spot[execution_day],
                        "long_weighted_future_price": long_weighted_future_price,
                        "short_weighted_future_price": short_weighted_future_price,
                        "entered_long_futures_price": entered_long_price,
@@ -1194,8 +1243,8 @@ def run_backtest(spot, contracts, rates, by_day, p):
                        "entered_short_futures_size_pct": 100 * entered_short_size,
                        "exited_long_futures_size_pct": 100 * exited_long_size,
                        "exited_short_futures_size_pct": 100 * exited_short_size,
-                       "resulting_long_futures_size_pct": 100 * sum(next_longs.values()),
-                       "resulting_short_futures_size_pct": 100 * sum(next_shorts.values()),
+                       "resulting_long_futures_size_pct": 100 * sum(position["longs"].values()),
+                       "resulting_short_futures_size_pct": 100 * sum(position["shorts"].values()),
                        "long_futures_trade_details": long_trade_details,
                        "short_futures_trade_details": short_trade_details,
                        "long_matched_usd_rate_pct": (
