@@ -273,6 +273,13 @@ test("uses the server adapter while preserving the Pyodide worker fallback", asy
   assert.match(adapter, /new Worker\("\/backtest-worker-v12\.js/);
   assert.match(adapter, /requestedEngine === "pyodide"/);
   assert.match(adapter, /requestedEngine === "server"/);
+  assert.match(adapter, /Empty response from/);
+  assert.match(adapter, /Invalid JSON from/);
+  assert.match(adapter, /result without a summary/);
+  assert.match(adapter, /function runBrowserRequest/);
+  assert.match(adapter, /config\.requestedEngine === "auto"/);
+  assert.match(html, /if\(data\.result==null\)/);
+  assert.match(html, /!data\.summary/);
 });
 
 test("displays the application version and deployed commit", async () => {
@@ -302,6 +309,19 @@ test("downloads and loads strategy parameters as JSON", async () => {
   assert.match(html, /The selected file is not valid JSON/);
   assert.match(html, /contains no recognized strategy parameters/);
   assert.match(html, /e\.target\.value=''/);
+});
+
+test("downloads portfolio composition and values as an interval spreadsheet", async () => {
+  const html = await readFile(
+    new URL("../public/silver_strategy_gui.html", import.meta.url),
+    "utf8",
+  );
+  assert.match(html, /id="downloadSpreadsheet"/);
+  assert.match(html, /function downloadSpreadsheet\(\)/);
+  assert.match(html, /application\/vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet/);
+  assert.match(html, /Component value \(commodity sleeve initial = 1\)/);
+  assert.match(html, /plotRangeSource\.portfolioSeries\.filter\(row=>dateInPlotRange/);
+  assert.match(html, /keep-and-lease-portfolio-/);
 });
 
 test("shows precise proxy expense and compounded portfolio attribution", async () => {
