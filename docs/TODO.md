@@ -34,6 +34,16 @@ This checklist reflects the application synchronized from the deployed Sites che
   futures positions.
 - [ ] When extending the long book and adding a short book, require the selected
   short maturities to be later than the corresponding long maturities.
+- [ ] Refine the daily return decomposition so it reports:
+  - the commodity-quoted return of the futures-plus-Treasuries leg and of the
+    lease book, with the lease-book return scaled by its effective leg
+    proportion;
+  - the commodity-quoted return of the keep book; and
+  - the total obtained by summing those commodity-quoted returns and compounding
+    that sum with the underlying commodity price change.
+  Add distribution plots for each of these daily-return series.
+- [ ] Implement configurable transaction costs on every buy and sell, including
+  both explicit fees and simulated bid-ask spread costs.
 
 ## Small fixes
 
