@@ -44,6 +44,11 @@ test("documents data corrections and the daily attribution formulas", async () =
   assert.match(html, /How the daily-return decomposition is calculated/);
   assert.match(html, /futures basis contribution/);
   assert.match(html, /NAV\[t\+1\]/);
+  assert.match(html, /exact product decomposition/);
+  assert.match(html, /1\+R = Π exp\(gᵢ\)/);
+  assert.doesNotMatch(html, /name="enable_slv_leg"/);
+  assert.match(html, /function drawBookDecompositions/);
+  assert.match(html, /lease_book_compounded_return_pct/);
 });
 
 test("orders shared plots before commodity plots and synchronizes chart dates", async () => {
