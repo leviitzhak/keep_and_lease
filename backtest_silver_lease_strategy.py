@@ -3,7 +3,8 @@
 
 The data are daily TurtleTrader individual COMEX silver contract closes, the
 LBMA silver price, and FRED Treasury yields. Futures are treated as notional
-overlays; margin and transaction costs are deliberately ignored.
+overlays; margin is ignored and configurable one-way trading costs are charged
+on every change in fund, Treasury, long-futures, and short-futures notional.
 """
 
 import argparse
@@ -39,6 +40,8 @@ TENORS = [(91, "DTB3"), (182, "DTB6"), (365, "DGS1"),
 @dataclass
 class Parameters:
     min_days: int
+    long_min_days: int | None = None
+    short_min_days: int | None = None
     reactivity: str = "same_day"
     long_allocation_half_life_days: float = 0.0
     short_allocation_half_life_days: float = 0.0
@@ -90,6 +93,14 @@ class Parameters:
     bond_mode: str = "accrual"
     treasury_asset: str = "matched_maturity"
     treasury_allocation_mode: str = "shortest_rolling"
+    transaction_fee_bps: float = 0.0
+    bid_ask_spread_bps: float = 0.0
+
+
+def minimum_days(p, direction):
+    """Return a side-specific expiry floor with legacy JSON compatibility."""
+    value = getattr(p, f"{direction}_min_days", None)
+    return p.min_days if value is None else value
 
 
 def clamp(x, low=0.0, high=1.0):
@@ -534,18 +545,21 @@ def score_diagnostic(contract, p, direction, eligibility_threshold,
 
 def market_diagnostics_for_day(candidates, p):
     """Select chart diagnostics from quotes available on the charted day."""
-    eligible = [x for x in candidates if x["days"] >= p.min_days]
-    if not eligible:
+    long_eligible = [
+        x for x in candidates if x["days"] >= minimum_days(p, "long")]
+    short_eligible = [
+        x for x in candidates if x["days"] >= minimum_days(p, "short")]
+    if not long_eligible:
         return None
-    contracts = {x["symbol"]: x for x in eligible}
-    nearest = min(eligible, key=lambda x: (x["days"], -x["volume"]))
+    contracts = {x["symbol"]: x for x in candidates if x["days"] > 0}
+    nearest = min(long_eligible, key=lambda x: (x["days"], -x["volume"]))
     longs = {nearest["symbol"]: 1.0}
 
     # Build the threshold-independent short diagnostics here, alongside their
     # eligibility filtering.  Keeping this operation self-contained prevents
     # the GUI request path from depending on a separately defined helper.
     ranked = []
-    for contract in eligible:
+    for contract in short_eligible:
         base_score = max(1e-9, -contract["lease"])
         score = maturity_line_adjusted_score(
             base_score, contract, p, "short")
@@ -560,25 +574,33 @@ def market_diagnostics_for_day(candidates, p):
         "contracts": contracts,
         "longs": longs,
         "shorts": shorts,
-        "min_maturity_days": min(x["days"] for x in eligible),
-        "max_maturity_days": max(x["days"] for x in eligible),
+        "min_maturity_days": min(x["days"] for x in long_eligible),
+        "max_maturity_days": max(x["days"] for x in long_eligible),
+        "short_min_maturity_days": (
+            min(x["days"] for x in short_eligible)
+            if short_eligible else None),
+        "short_max_maturity_days": (
+            max(x["days"] for x in short_eligible)
+            if short_eligible else None),
     }
 
 
 def _sticky_contract_book(desired, previous, contract_map, qualifying_symbols,
-                          direction, p):
+                          direction, p, hard_symbols=None):
     """Keep held maturities unless a replacement improves the lease signal."""
     desired_total = sum(desired.values())
     if desired_total <= 0:
         return {}
     previous = previous or {}
+    hard_symbols = set(contract_map) if hard_symbols is None else hard_symbols
     held = {symbol: weight for symbol, weight in previous.items()
-            if symbol in contract_map and
+            if symbol in contract_map and symbol in hard_symbols and
             (symbol in qualifying_symbols or not p.force_roll_at_min_days)}
     if not held or not p.roll_only_if_better:
         return desired
     forced = (p.force_roll_at_min_days and
-              any(contract_map[symbol]["days"] <= p.min_days for symbol in held))
+              any(contract_map[symbol]["days"] <= minimum_days(p, direction)
+                  for symbol in held))
     held_lease = weighted_contract_value(held, contract_map, "lease")
     desired_lease = weighted_contract_value(desired, contract_map, "lease")
     better = (desired_lease > held_lease if direction == "long"
@@ -591,8 +613,11 @@ def _sticky_contract_book(desired, previous, contract_map, qualifying_symbols,
 
 
 def positions_for_day(candidates, p, previous=None, elapsed_days=1.0):
-    eligible = [x for x in candidates if x["days"] >= p.min_days]
-    if not eligible:
+    long_eligible = [
+        x for x in candidates if x["days"] >= minimum_days(p, "long")]
+    short_eligible = [
+        x for x in candidates if x["days"] >= minimum_days(p, "short")]
+    if not long_eligible:
         return None
     # Keep quotes below the new-entry maturity floor available for an existing
     # position when the user explicitly disables the forced minimum-day roll.
@@ -616,20 +641,21 @@ def positions_for_day(candidates, p, previous=None, elapsed_days=1.0):
         long_leg = proportional_allocation([
             (x["symbol"], maturity_line_adjusted_score(
                 max(1e-9, x["lease"] - min(
-                    candidate["lease"] for candidate in eligible)),
+                    candidate["lease"] for candidate in long_eligible)),
                 x, p, "long"))
-            for x in eligible
+            for x in long_eligible
         ], 1.0)
     else:
-        diagnostic_long = select_long(eligible)
+        diagnostic_long = select_long(long_eligible)
         long_leg = {diagnostic_long["symbol"]: 1.0}
 
     # The long and short books are independent. Select the long contract using
     # the configured maturity/rate policy after enforcing the entry threshold.
-    positive = [x for x in eligible if x["lease"] > p.positive_entry_rate]
+    positive = [
+        x for x in long_eligible if x["lease"] > p.positive_entry_rate]
     # Fixed allocation is unconditional: enabled fixed legs allocate their
     # configured maximum even when no contract crosses an entry threshold.
-    long_candidates = (eligible if p.long_futures_entry_mode == "fixed"
+    long_candidates = (long_eligible if p.long_futures_entry_mode == "fixed"
                        else positive)
     selected_positive = select_long(long_candidates) if long_candidates else None
     # SLV is controlled by the lease rate of the configured long book, not by
@@ -639,15 +665,17 @@ def positions_for_day(candidates, p, previous=None, elapsed_days=1.0):
     # allocation still needs a market lease signal, so fall back to the best
     # eligible lease without creating a futures allocation.
     if long_signal is None:
-        long_signal = max(x["lease"] for x in eligible)
+        long_signal = max(x["lease"] for x in long_eligible)
 
     # Any eligible maturity, including the shortest, can enter the short book,
     # but only after its lease rate passes the explicit negative entry threshold.
     # The maturity bonus ranks already-eligible contracts; it cannot make a
     # positive or insufficiently negative lease rate eligible.
     short_start_rate = p.negative_short_start_rate
-    best_negative = min(eligible, key=lambda x: x["lease"])
-    signal = best_negative["lease"]
+    best_negative = (min(short_eligible, key=lambda x: x["lease"])
+                     if short_eligible else None)
+    signal = (best_negative["lease"] if best_negative is not None
+              else short_start_rate)
     positive_strength = (clamp(
         (selected_positive["lease"] - p.positive_entry_rate) /
         (p.positive_full_rate - p.positive_entry_rate)) if selected_positive else 0.0)
@@ -684,7 +712,7 @@ def positions_for_day(candidates, p, previous=None, elapsed_days=1.0):
     long_notional = futures_treasury_share
     allocation_long_candidates = (
         long_candidates if long_candidates else
-        (eligible if long_notional > 0 else []))
+        (long_eligible if long_notional > 0 else []))
     allocation_selected_positive = (
         selected_positive if selected_positive else
         (select_long(allocation_long_candidates)
@@ -720,8 +748,26 @@ def positions_for_day(candidates, p, previous=None, elapsed_days=1.0):
     # maturity (the opposite of the long book). A 0.02 bonus means one extra
     # year can compensate for 2 percentage points less-negative annualized
     # lease rate.
-    negative = [x for x in eligible if x["lease"] < short_start_rate]
-    short_candidates = (eligible if p.short_futures_entry_mode == "fixed"
+    # The keep book must short a maturity strictly later than every long
+    # future it extends.  A pure replicating-fund base has no futures maturity
+    # to compare, so only the short-side expiry floor applies in that case.
+    base_longs = _sticky_contract_book(
+        base_longs, previous.get("base_longs") if previous else None,
+        contract_map, {x["symbol"] for x in allocation_long_candidates},
+        "long", p)
+    extended_long_maturity = (
+        max(contract_map[symbol]["days"] for symbol in base_longs)
+        if base_longs else None)
+    maturity_compatible_shorts = [
+        x for x in short_eligible
+        if extended_long_maturity is None or x["days"] > extended_long_maturity]
+    if not maturity_compatible_shorts:
+        total_short = 0.0
+    negative = [
+        x for x in maturity_compatible_shorts
+        if x["lease"] < short_start_rate]
+    short_candidates = (maturity_compatible_shorts
+                        if p.short_futures_entry_mode == "fixed"
                         else negative)
     short_score_threshold = (
         max(x["lease"] for x in short_candidates) + 1e-9
@@ -729,7 +775,7 @@ def positions_for_day(candidates, p, previous=None, elapsed_days=1.0):
         else short_start_rate)
     allocation_short_candidates = (
         short_candidates if short_candidates else
-        (eligible if total_short > 0 else []))
+        (maturity_compatible_shorts if total_short > 0 else []))
     allocation_short_threshold = (
         max(x["lease"] for x in allocation_short_candidates) + 1e-9
         if allocation_short_candidates and not short_candidates
@@ -750,12 +796,13 @@ def positions_for_day(candidates, p, previous=None, elapsed_days=1.0):
 
     # Resize with the signal, but change contracts only for a better lease or
     # when the configured minimum-maturity boundary forces a roll.
-    base_longs = _sticky_contract_book(
-        base_longs, previous.get("base_longs") if previous else None,
-        contract_map, {x["symbol"] for x in allocation_long_candidates}, "long", p)
     shorts = _sticky_contract_book(
         shorts, previous.get("shorts") if previous else None,
-        contract_map, {x["symbol"] for x in allocation_short_candidates}, "short", p)
+        contract_map, {x["symbol"] for x in allocation_short_candidates},
+        "short", p,
+        {symbol for symbol, contract in contract_map.items()
+         if (extended_long_maturity is None or
+             contract["days"] > extended_long_maturity)})
 
     # A short-futures position is paired with an equally sized extension of
     # the complete long commodity leg.  Treasury collateral is not counted as
@@ -775,26 +822,33 @@ def positions_for_day(candidates, p, previous=None, elapsed_days=1.0):
     if shorts:
         short_leg = dict(shorts)
     else:
-        if p.short_contract_selection == "lowest_lease_rate":
-            lowest = min(eligible, key=lambda x: (x["lease"], x["days"], -x["volume"]))
+        diagnostic_shorts = maturity_compatible_shorts or short_eligible
+        if not diagnostic_shorts:
+            short_leg = {}
+        elif p.short_contract_selection == "lowest_lease_rate":
+            lowest = min(
+                diagnostic_shorts,
+                key=lambda x: (x["lease"], x["days"], -x["volume"]))
             short_leg = {lowest["symbol"]: 1.0}
         else:
             # The diagnostic portfolio is threshold-independent, but it still
             # uses the canonical relative scoring pipeline.  Setting the gate
             # to the highest observed rate makes every available contract
             # eligible without introducing a separate maturity formula.
-            diagnostic_threshold = max(x["lease"] for x in eligible) + 1e-12
+            diagnostic_threshold = max(
+                x["lease"] for x in diagnostic_shorts) + 1e-12
             short_leg = proportional_allocation([
                 (x["symbol"], maturity_line_adjusted_score(
                     diagnostic_threshold - x["lease"], x, p, "short"))
-                for x in eligible
+                for x in diagnostic_shorts
             ], 1.0)
     if shorts:
         bond_days = sum(shorts[s] * contract_map[s]["days"] for s in shorts) / sum(shorts.values())
     elif selected_positive:
         bond_days = selected_positive["days"]
     else:
-        bond_days = best_negative["days"]
+        bond_days = (best_negative["days"] if best_negative is not None
+                     else min(x["days"] for x in long_eligible))
     if longs and shorts:
         mode = "long_and_short"
     elif longs:
@@ -812,6 +866,7 @@ def positions_for_day(candidates, p, previous=None, elapsed_days=1.0):
             "base_slv": slv_weight, "base_treasury": treasury_weight,
             "base_longs": base_longs, "long_extension": long_extension,
             "extension_ratio": extension_ratio,
+            "extended_long_maturity_days": extended_long_maturity,
             "bond_days": bond_days, "contracts": contract_map}
 
 
@@ -919,6 +974,55 @@ def futures_trade_details(previous, current, contracts, day):
     return trades
 
 
+def _mapping_turnover(previous, current):
+    return sum(abs(current.get(symbol, 0.0) - previous.get(symbol, 0.0))
+               for symbol in set(previous) | set(current))
+
+
+def trading_turnover(position, previous=None):
+    """Split one-way traded notional between the lease and keep books."""
+    previous = previous or {}
+    previous_base_longs = previous.get("base_longs", {})
+    previous_longs = previous.get("longs", {})
+    current_base_longs = position.get("base_longs", {})
+    current_longs = position.get("longs", {})
+    previous_extension_longs = {
+        symbol: previous_longs.get(symbol, 0.0) -
+        previous_base_longs.get(symbol, 0.0)
+        for symbol in set(previous_longs) | set(previous_base_longs)}
+    current_extension_longs = {
+        symbol: current_longs.get(symbol, 0.0) -
+        current_base_longs.get(symbol, 0.0)
+        for symbol in set(current_longs) | set(current_base_longs)}
+    details = {
+        "lease_fund": abs(
+            position.get("base_slv", 0.0) - previous.get("base_slv", 0.0)),
+        "lease_treasury": abs(
+            position.get("base_treasury", 0.0) -
+            previous.get("base_treasury", 0.0)),
+        "lease_long_futures": _mapping_turnover(
+            previous_base_longs, current_base_longs),
+        "keep_fund": abs(
+            (position.get("slv", 0.0) - position.get("base_slv", 0.0)) -
+            (previous.get("slv", 0.0) - previous.get("base_slv", 0.0))),
+        "keep_treasury": abs(
+            (position.get("treasury", 0.0) -
+             position.get("base_treasury", 0.0)) -
+            (previous.get("treasury", 0.0) -
+             previous.get("base_treasury", 0.0))),
+        "keep_long_futures": _mapping_turnover(
+            previous_extension_longs, current_extension_longs),
+        "keep_short_futures": _mapping_turnover(
+            previous.get("shorts", {}), position.get("shorts", {})),
+    }
+    details["lease"] = sum(
+        value for name, value in details.items() if name.startswith("lease_"))
+    details["keep"] = sum(
+        value for name, value in details.items() if name.startswith("keep_"))
+    details["total"] = details["lease"] + details["keep"]
+    return details
+
+
 def diagnostic_futures_return(positions, day, next_day, contracts, direction):
     if not positions:
         return None
@@ -987,6 +1091,9 @@ def run_backtest(spot, contracts, rates, by_day, p):
     keep_factor_nav = 1.0
     lease_fund_factor_nav = 1.0
     lease_futures_treasury_factor_nav = 1.0
+    commodity_lease_return_index = 1.0
+    commodity_keep_return_index = 1.0
+    commodity_combined_return_index = 1.0
     lease_value = 1.0
     keep_value = 0.0
     replicating_value = None
@@ -1024,6 +1131,20 @@ def run_backtest(spot, contracts, rates, by_day, p):
         sgov_proxy_return = treasury_position_return(
             rates, execution_day, exit_day, holding_days,
             Parameters(min_days=p.min_days, treasury_asset="sgov_proxy"))
+        turnover = trading_turnover(position, previous_valid_position)
+        fee_rate = p.transaction_fee_bps / 10000
+        half_spread_rate = p.bid_ask_spread_bps / 20000
+        fee_contribution = -turnover["total"] * fee_rate
+        spread_contribution = -turnover["total"] * half_spread_rate
+        total_cost_contribution = fee_contribution + spread_contribution
+        unit_cost_rate = fee_rate + half_spread_rate
+        lease_fund_cost = -turnover["lease_fund"] * unit_cost_rate
+        lease_futures_treasury_cost = -(
+            turnover["lease_treasury"] + turnover["lease_long_futures"]
+        ) * unit_cost_rate
+        lease_cost_contribution = (
+            lease_fund_cost + lease_futures_treasury_cost)
+        keep_cost_contribution = -turnover["keep"] * unit_cost_rate
         spot_return = spot[exit_day] / spot[execution_day] - 1 - p.slv_expense * elapsed / 365
         portfolio_return = position["treasury"] * treasury_return + position["slv"] * spot_return
         base_long_return = (position["base_treasury"] * treasury_return +
@@ -1065,6 +1186,9 @@ def run_backtest(spot, contracts, rates, by_day, p):
         # observation. Skip that entire portfolio interval instead.
         if not valid_interval:
             continue
+
+        portfolio_return += total_cost_contribution
+        base_long_return += lease_cost_contribution
 
         # Exact daily return attribution. Futures price returns are separated
         # into the contemporaneous silver move and basis-related effects. The
@@ -1134,14 +1258,23 @@ def run_backtest(spot, contracts, rates, by_day, p):
             point["rate_change_pnl"] for point in rate_change_points)
         attributed = (silver_price_component + slv_expense_component +
                       treasury_component + lease_carry_component +
-                      lease_repricing_component + roll_component)
+                      lease_repricing_component + roll_component +
+                      total_cost_contribution)
         attribution_residual = portfolio_return - attributed
-        matched_long_extension_return = position["extension_ratio"] * base_long_return
-        short_book_return = matched_long_extension_return + short_futures_return
-        fund_lease_contribution = position["base_slv"] * spot_return
+        # The matched extension's gross return is derived from the base book,
+        # but its own trades belong to the keep book.  Do not multiply the
+        # base book's transaction cost into the extension; charge the measured
+        # keep turnover exactly once instead.
+        matched_long_extension_return = position["extension_ratio"] * (
+            base_long_return - lease_cost_contribution)
+        short_book_return = (
+            matched_long_extension_return + short_futures_return +
+            keep_cost_contribution)
+        fund_lease_contribution = (
+            position["base_slv"] * spot_return + lease_fund_cost)
         futures_treasury_lease_contribution = (
             position["base_treasury"] * treasury_return +
-            base_long_futures_contribution)
+            base_long_futures_contribution + lease_futures_treasury_cost)
         replication_weight = sum(position["base_longs"].values())
         futures_treasury_book_return = (
             treasury_return + base_long_futures_contribution / replication_weight
@@ -1181,6 +1314,13 @@ def run_backtest(spot, contracts, rates, by_day, p):
         lease_fund_factor_nav *= math.exp(lease_logs["fund"])
         lease_futures_treasury_factor_nav *= math.exp(
             lease_logs["futures_treasury"])
+        lease_underlying_return = (
+            (base_long_return - raw_spot_return) / (1 + raw_spot_return))
+        keep_underlying_return = short_book_return / (1 + raw_spot_return)
+        commodity_lease_return_index *= 1 + lease_underlying_return
+        commodity_keep_return_index *= 1 + keep_underlying_return
+        commodity_combined_return_index *= (
+            1 + lease_underlying_return + keep_underlying_return)
         sgov_proxy_nav *= 1 + sgov_proxy_return
         # Standalone leg returns always represent a fully invested leg.  They
         # are deliberately independent of the portfolio's allocation signal.
@@ -1286,17 +1426,39 @@ def run_backtest(spot, contracts, rates, by_day, p):
                        "lease_rate_change_contribution_pct": 100 * lease_repricing_component,
                        "rate_change_attribution_points": rate_change_points,
                        "rolling_contribution_pct": 100 * roll_component,
+                       "transaction_fee_contribution_pct": (
+                           100 * fee_contribution),
+                       "bid_ask_spread_contribution_pct": (
+                           100 * spread_contribution),
+                       "transaction_cost_contribution_pct": (
+                           100 * total_cost_contribution),
+                       "traded_notional_pct": 100 * turnover["total"],
+                       "lease_book_traded_notional_pct": 100 * turnover["lease"],
+                       "keep_book_traded_notional_pct": 100 * turnover["keep"],
                        "other_return_contribution_pct": 100 * attribution_residual,
                        "long_book_interval_return_pct": 100 * base_long_return,
                        "matched_long_extension_interval_return_pct": (
                            100 * matched_long_extension_return),
                        "short_book_interval_return_pct": 100 * short_book_return,
                        "lease_book_interval_return_pct": 100 * base_long_return,
+                       "replicating_fund_lease_contribution_pct": (
+                           100 * fund_lease_contribution),
+                       "futures_treasury_lease_contribution_pct": (
+                           100 * futures_treasury_lease_contribution),
                        "keep_book_interval_return_pct": (
                            100 * keep_book_standalone_return
                            if keep_book_standalone_return is not None else None),
                        "keep_book_contribution_interval_return_pct": (
                            100 * short_book_return),
+                       "lease_book_underlying_interval_return_pct": (
+                           100 * lease_underlying_return),
+                       "keep_book_underlying_interval_return_pct": (
+                           100 * keep_underlying_return),
+                       "combined_underlying_interval_return_pct": (
+                           100 * (lease_underlying_return +
+                                  keep_underlying_return)),
+                       "daily_lease_signal_pct": (
+                           100 * position["signal"] * elapsed / 365),
                        "replicating_fund_book_interval_return_pct": 100 * spot_return,
                        "futures_treasury_book_interval_return_pct": (
                            100 * futures_treasury_book_return
@@ -1323,6 +1485,20 @@ def run_backtest(spot, contracts, rates, by_day, p):
                        "futures_treasury_underlying_value": futures_treasury_value / commodity_price_index,
                        "lease_book_underlying_value": lease_value / commodity_price_index,
                        "keep_book_underlying_value": keep_value / commodity_price_index,
+                       "commodity_price_index": commodity_price_index,
+                       "direct_same_initial_quantity_value": commodity_price_index,
+                       "lease_book_underlying_return_index": (
+                           commodity_lease_return_index),
+                       "keep_book_underlying_return_index": (
+                           commodity_keep_return_index),
+                       "combined_underlying_return_index": (
+                           commodity_combined_return_index),
+                       "reconstructed_nav": (
+                           commodity_price_index *
+                           commodity_combined_return_index),
+                       "reconstruction_difference": (
+                           nav - commodity_price_index *
+                           commodity_combined_return_index),
                        "initial_replicating_leg_value": position["base_slv"],
                        "initial_futures_treasury_value": position["base_treasury"],
                        "lease_book_compounded_return_pct": 100 * (lease_book_nav - 1),

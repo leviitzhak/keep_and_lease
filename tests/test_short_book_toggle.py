@@ -10,8 +10,8 @@ from backtest_silver_lease_strategy import Parameters, positions_for_day
 class ShortBookToggleTests(unittest.TestCase):
     def setUp(self):
         self.candidates = [
-            {"symbol": "near", "lease": -0.10, "days": 30, "volume": 100},
-            {"symbol": "far", "lease": 0.02, "days": 90, "volume": 50},
+            {"symbol": "near", "lease": 0.02, "days": 90, "volume": 100},
+            {"symbol": "far", "lease": -0.10, "days": 180, "volume": 50},
         ]
 
     def test_disabled_short_book_has_no_short_or_matched_extension(self):

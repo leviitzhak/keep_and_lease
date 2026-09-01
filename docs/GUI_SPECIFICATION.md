@@ -6,7 +6,10 @@ The parameter panel supports named strategy presets. Saving without a name uses
 an automatic suggestion derived from the enabled assets and the current date.
 A saved preset includes portfolio proportions, rebalancing, Treasury settings,
 and the independent leg settings for every commodity. Presets can be loaded or
-deleted.
+deleted. The currently loaded or saved name is displayed next to the preset
+controls. Editing a strategy value marks the form as an unsaved current strategy
+instead of leaving a stale preset name visible. Legacy presets containing only
+`min_days` are migrated to the independent long and short expiry floors.
 
 ## Per-commodity leg parameters
 
@@ -49,6 +52,32 @@ Commodity frozen-curve rate-change and Treasury yield-change scatters are part o
 the required result set. Calendar-year and custom-range filtering applies to their
 point collections as well as to the main time series. A plot with no finite points
 must state that no observations are available rather than appearing silently blank.
+
+Each commodity sleeve also exposes a commodity-quoted decomposition. It plots
+the replicating-fund and futures-plus-Treasury lease legs, their lease-book sum,
+the keep book, their daily commodity-quoted returns and compounded indexes, the
+underlying price index, and NAV beside its exact reconstruction. Daily return
+histograms remain available. The superseded standalone-compounded and
+multiplicative-contribution plot families are intentionally hidden.
+
+Every decomposition time series participates in the same nearest-date inspection
+as the other result charts. A separate scatter compares the daily-horizon lease
+signal with the corresponding commodity-quoted lease-book daily return; selecting
+a point synchronizes inspected-day attribution. Strategy-versus-direct-hold plots
+start both paths at one and compare the strategy with the same initial quantity of
+the underlying commodity.
+
+The portfolio contribution chart shows the aggregate asset contribution and the
+replicating-fund, futures-plus-Treasury, and keep-book legs for each commodity.
+Transaction costs are already embedded in those net leg values and are exposed as
+a separate diagnostic, not added a second time to the plotted total.
+
+For every observation, the decomposition is required to satisfy, up to floating
+point tolerance,
+
+```text
+NAV(t) = P(t) / P(0) * product_s<=t(1 + r_lease(s) + r_keep(s)).
+```
 
 ## Session restoration
 

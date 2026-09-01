@@ -165,8 +165,13 @@ def parameters(payload):
 
     long_intercept, long_slope = boundary("long")
     short_intercept, short_slope = boundary("short")
+    legacy_min_days = int(number(payload, "min_days", 10, 1, 2000))
     p = Parameters(
-        min_days=int(number(payload, "min_days", 10, 1, 2000)),
+        min_days=legacy_min_days,
+        long_min_days=int(number(
+            payload, "long_min_days", legacy_min_days, 1, 2000)),
+        short_min_days=int(number(
+            payload, "short_min_days", legacy_min_days, 1, 2000)),
         reactivity=str(payload.get("reactivity", "same_day")),
         long_allocation_half_life_days=number(
             payload, "long_allocation_half_life_days", 0, 0, 10000),
@@ -252,6 +257,10 @@ def parameters(payload):
         treasury_asset=str(payload.get("treasury_asset", "matched_maturity")),
         treasury_allocation_mode=str(payload.get(
             "treasury_allocation_mode", "shortest_rolling")),
+        transaction_fee_bps=number(
+            payload, "transaction_fee_bps", 0, 0, 10000),
+        bid_ask_spread_bps=number(
+            payload, "bid_ask_spread_bps", 0, 0, 10000),
     )
     if p.bond_mode not in {"accrual", "zero_coupon_mtm"}:
         raise ValueError("Invalid bond mode")
@@ -638,7 +647,7 @@ def sleeve_result(payload, market=None, product="silver"):
     if sampled[-1] is not rows[-1]:
         sampled.append(rows[-1])
     fields = ["date", "exit_date", "interval_return_pct", "simple_cumulative_return_pct",
-              "compounded_return_pct", "slv_weight_pct", "treasury_weight_pct",
+              "compounded_return_pct", "nav", "slv_weight_pct", "treasury_weight_pct",
               "long_futures_notional_pct", "short_futures_notional_pct",
               "long_weighted_maturity_days", "short_weighted_maturity_days",
               "short_shortest_maturity_days", "short_longest_maturity_days",
@@ -648,7 +657,13 @@ def sleeve_result(payload, market=None, product="silver"):
               "long_book_cumulative_return_pct", "short_book_cumulative_return_pct",
               "matched_long_extension_cumulative_return_pct",
               "lease_book_interval_return_pct", "keep_book_interval_return_pct",
+              "replicating_fund_lease_contribution_pct",
+              "futures_treasury_lease_contribution_pct",
               "keep_book_contribution_interval_return_pct",
+              "lease_book_underlying_interval_return_pct",
+              "keep_book_underlying_interval_return_pct",
+              "combined_underlying_interval_return_pct",
+              "daily_lease_signal_pct",
               "replicating_fund_book_interval_return_pct",
               "futures_treasury_book_interval_return_pct",
               "lease_book_factor_interval_return_pct",
@@ -669,6 +684,11 @@ def sleeve_result(payload, market=None, product="silver"):
               "replicating_leg_underlying_value",
               "futures_treasury_underlying_value",
               "lease_book_underlying_value", "keep_book_underlying_value",
+              "commodity_price_index", "direct_same_initial_quantity_value",
+              "lease_book_underlying_return_index",
+              "keep_book_underlying_return_index",
+              "combined_underlying_return_index", "reconstructed_nav",
+              "reconstruction_difference",
               "initial_replicating_leg_value",
               "initial_futures_treasury_value",
               "long_futures_daily_return_pct", "short_futures_daily_return_pct",
@@ -696,7 +716,13 @@ def sleeve_result(payload, market=None, product="silver"):
                "treasury_return_contribution_pct",
                "lease_carry_contribution_pct",
                "lease_rate_change_contribution_pct",
-               "rolling_contribution_pct", "other_return_contribution_pct"]
+               "rolling_contribution_pct",
+               "transaction_fee_contribution_pct",
+               "bid_ask_spread_contribution_pct",
+               "transaction_cost_contribution_pct", "traded_notional_pct",
+               "lease_book_traded_notional_pct",
+               "keep_book_traded_notional_pct",
+               "other_return_contribution_pct"]
     change_stats = position_change_stats(rows)
     slv_nav = 1.0
     slv_nav_values = [slv_nav]
@@ -751,6 +777,22 @@ def sleeve_result(payload, market=None, product="silver"):
         "futures_prices": futures_price_series(sampled, market[1]),
         "futures_diagnostics": futures_diagnostics(sampled, market[3], p),
         "statistics_points": statistics_points(market[3], market[1], p),
+        "lease_daily_return_points": [{
+            "date": row.get("exit_date", row["date"]),
+            "symbol": "lease book",
+            "days": row.get("long_weighted_maturity_days"),
+            "daily_lease_rate_pct": row.get("daily_lease_signal_pct"),
+            "commodity_quoted_return_pct": row.get(
+                "lease_book_underlying_interval_return_pct"),
+            "annualized_lease_pct": row.get(
+                "allocation_long_lease_signal_pct"),
+            "forward_premium_pct": row.get(
+                "long_weighted_forward_premium_pct"),
+            "actual_lease_pct": row.get(
+                "lease_book_underlying_interval_return_pct"),
+        } for row in rows
+            if row.get("daily_lease_signal_pct") is not None and
+            row.get("lease_book_underlying_interval_return_pct") is not None],
         "treasury_statistics_points": treasury_statistics_points(market[2]),
         "treasury_rate_change_points": treasury_rate_change_points(market[2]),
         "rate_change_attribution_points": [
@@ -821,6 +863,7 @@ def aggregate_portfolio(sleeves, target_weights, rebalance):
         "rolling": "rolling_contribution_pct",
         "treasury": "treasury_return_contribution_pct",
         "fund_expense": "slv_expense_contribution_pct",
+        "transaction_cost": "transaction_cost_contribution_pct",
         "other": "other_return_contribution_pct",
     }
     maps = {
@@ -839,6 +882,10 @@ def aggregate_portfolio(sleeves, target_weights, rebalance):
     direct_values = dict(target_weights)
     direct_unrebalanced_values = dict(target_weights)
     asset_factor_nav = {key: 1.0 for key in target_weights}
+    commodity_leg_names = (
+        "replicating_fund", "futures_treasury", "keep_book",
+        "transaction_cost")
+    commodity_keys = [key for key in target_weights if key != "treasury"]
     output = []
     attribution = []
     previous_period = None
@@ -862,6 +909,7 @@ def aggregate_portfolio(sleeves, target_weights, rebalance):
         start_direct = sum(direct_values.values())
         start_direct_unrebalanced = sum(direct_unrebalanced_values.values())
         contributions = {}
+        leg_contributions = {}
         direct_contributions = {}
         direct_unrebalanced_contributions = {}
         day_attribution = {"date": exit_day, "start_date": day, "assets": {}}
@@ -873,12 +921,28 @@ def aggregate_portfolio(sleeves, target_weights, rebalance):
                 direct_daily = daily
                 component_values = {"treasury": 100 * effective_weight * daily}
             else:
-                daily = maps[key][(day, exit_day)]["interval_return_pct"] / 100
-                direct_daily = maps[key][(day, exit_day)]["slv_daily_return_pct"] / 100
+                sleeve_row = maps[key][(day, exit_day)]
+                daily = sleeve_row["interval_return_pct"] / 100
+                direct_daily = sleeve_row["slv_daily_return_pct"] / 100
                 component_values = {
-                    name: effective_weight * maps[key][(day, exit_day)].get(field, 0.0)
+                    name: effective_weight * sleeve_row.get(field, 0.0)
                     for name, field in component_fields.items()
                 }
+                leg_values = {
+                    "replicating_fund": sleeve_row.get(
+                        "replicating_fund_lease_contribution_pct", 0.0),
+                    "futures_treasury": sleeve_row.get(
+                        "futures_treasury_lease_contribution_pct", 0.0),
+                    "keep_book": sleeve_row.get(
+                        "keep_book_contribution_interval_return_pct", 0.0),
+                    "transaction_cost": sleeve_row.get(
+                        "transaction_cost_contribution_pct", 0.0),
+                }
+                # Cost is already included in the three economic books.  Keep
+                # it as a diagnostic series, not a fourth reconciling leg.
+                for leg_name in commodity_leg_names:
+                    leg_contributions[(key, leg_name)] = (
+                        effective_weight * leg_values[leg_name])
                 component_values["other"] += (
                     100 * effective_weight * daily
                     - sum(component_values.values()))
@@ -915,6 +979,9 @@ def aggregate_portfolio(sleeves, target_weights, rebalance):
             100 * direct_return, 100 * (direct_nav - 1), nav,
         ]
         row.extend(100 * contributions[key] for key in target_weights)
+        row.extend(
+            leg_contributions.get((key, name), 0.0)
+            for key in commodity_keys for name in commodity_leg_names)
         row.extend([
             100 * direct_unrebalanced_return,
             100 * (direct_unrebalanced_nav - 1),
@@ -932,6 +999,9 @@ def aggregate_portfolio(sleeves, target_weights, rebalance):
         "compounded_return_pct", "direct_daily_return_pct",
         "direct_compounded_return_pct", "nav",
     ] + [f"{key}_contribution_pct" for key in target_weights] + [
+        f"{key}_{name}_contribution_pct"
+        for key in commodity_keys for name in commodity_leg_names
+    ] + [
         "direct_unrebalanced_daily_return_pct",
         "direct_unrebalanced_compounded_return_pct",
     ] + [f"{key}_attributed_factor_compounded_return_pct"

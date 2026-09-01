@@ -102,7 +102,7 @@ class StandaloneLegReturnTests(unittest.TestCase):
 
     def test_short_leg_uses_strategy_maturities_when_short_is_nonzero(self):
         candidates = [
-            {"symbol": "negative", "days": 30, "future": 100, "spot": 100,
+            {"symbol": "negative", "days": 400, "future": 100, "spot": 100,
              "rate": 0, "premium": 0, "lease": -0.10, "volume": 10},
             {"symbol": "positive", "days": 300, "future": 100, "spot": 100,
              "rate": 0, "premium": 0, "lease": 0.10, "volume": 5},
@@ -111,6 +111,69 @@ class StandaloneLegReturnTests(unittest.TestCase):
         self.assertGreater(sum(position["shorts"].values()), 0)
         self.assertEqual(position["shorts"], position["short_leg"])
         self.assertEqual({"negative"}, set(position["short_leg"]))
+
+    def test_long_and_short_use_separate_expiry_floors(self):
+        candidates = [
+            {"symbol": "near", "days": 30, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": 0.10, "volume": 10},
+            {"symbol": "middle", "days": 200, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": 0.08, "volume": 8},
+            {"symbol": "far", "days": 400, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": -0.10, "volume": 5},
+        ]
+        position = positions_for_day(candidates, Parameters(
+            min_days=1, long_min_days=100, short_min_days=300,
+            long_futures_entry_mode="fixed"))
+        self.assertEqual({"middle"}, set(position["base_longs"]))
+        self.assertEqual({"far"}, set(position["shorts"]))
+
+    def test_short_maturity_is_strictly_after_extended_long_futures(self):
+        candidates = [
+            {"symbol": "long", "days": 200, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": 0.10, "volume": 10},
+            {"symbol": "invalid_short", "days": 150, "future": 100,
+             "spot": 100, "rate": 0, "premium": 0, "lease": -0.20,
+             "volume": 10},
+            {"symbol": "valid_short", "days": 300, "future": 100,
+             "spot": 100, "rate": 0, "premium": 0, "lease": -0.10,
+             "volume": 5},
+        ]
+        position = positions_for_day(candidates, Parameters(
+            min_days=1, long_contract_selection="highest_lease_rate"))
+        self.assertEqual({"long"}, set(position["base_longs"]))
+        self.assertEqual({"valid_short"}, set(position["shorts"]))
+        self.assertGreater(
+            min(position["contracts"][symbol]["days"]
+                for symbol in position["shorts"]),
+            max(position["contracts"][symbol]["days"]
+                for symbol in position["base_longs"]),
+        )
+
+    def test_transaction_costs_and_commodity_quoted_returns_reconcile(self):
+        candidates = [
+            {"symbol": "near", "days": 30, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": 0.05, "volume": 10},
+            {"symbol": "far", "days": 300, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": -0.10, "volume": 5},
+        ]
+        rows, _ = run_backtest(
+            self.spot, self.contracts, self.rates,
+            {day: [dict(item) for item in candidates] for day in self.days},
+            Parameters(min_days=1, slv_expense=0,
+                       transaction_fee_bps=10,
+                       bid_ask_spread_bps=20))
+        self.assertTrue(rows)
+        for row in rows:
+            expected_cost_pct = -row["traded_notional_pct"] * 0.002
+            self.assertAlmostEqual(
+                expected_cost_pct,
+                row["transaction_cost_contribution_pct"])
+            self.assertAlmostEqual(
+                row["transaction_cost_contribution_pct"],
+                row["transaction_fee_contribution_pct"] +
+                row["bid_ask_spread_contribution_pct"])
+            self.assertAlmostEqual(row["nav"], row["reconstructed_nav"])
+            self.assertAlmostEqual(0.0, row["reconstruction_difference"])
 
     def test_sleeves_are_proportional_to_available_signal_strength(self):
         candidates = [

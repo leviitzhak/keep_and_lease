@@ -33,7 +33,7 @@ test("renders development preview metadata", async () => {
   assert.match(await response.text(), developmentPreviewMeta);
 });
 
-test("runs the Sites preview against the same-origin server API in strict mode", async () => {
+test("keeps local preview strict while persistent Sites can use browser fallback", async () => {
   const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   const vite = await readFile(new URL("../vite.config.ts", import.meta.url), "utf8");
   const packageJson = JSON.parse(await readFile(
@@ -44,12 +44,24 @@ test("runs the Sites preview against the same-origin server API in strict mode",
     new URL("../scripts/dev-with-api.sh", import.meta.url),
     "utf8",
   );
-  assert.match(page, /silver_strategy_gui\.html\?engine=server/);
+  assert.match(page, /KEEP_AND_LEASE_ENGINE_MODE/);
+  assert.match(page, /\?engine=\$\{engine\}/);
+  assert.match(page, /\?\s*"server"\s*:\s*"auto"/);
   assert.match(vite, /"\/api\/v1"/);
   assert.match(vite, /KEEP_AND_LEASE_LOCAL_API_URL/);
   assert.equal(packageJson.scripts.dev, "bash scripts/dev-with-api.sh");
   assert.match(launcher, /python server_main\.py/);
   assert.match(launcher, /\/api\/v1\/health/);
+  assert.match(launcher, /KEEP_AND_LEASE_ENGINE_MODE="server"/);
+
+  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+  workerUrl.searchParams.set("engine-test", `${process.pid}-${Date.now()}`);
+  const { default: worker } = await import(workerUrl.href);
+  const env = { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } };
+  const ctx = { waitUntil() {}, passThroughOnException() {} };
+  const hosted = await worker.fetch(
+    new Request("https://keep-and-lease.itzhakb.chatgpt.site/"), env, ctx);
+  assert.match(await hosted.text(), /silver_strategy_gui\.html\?engine=auto/);
 });
 
 test("documents data corrections and the daily attribution formulas", async () => {
@@ -67,12 +79,13 @@ test("documents data corrections and the daily attribution formulas", async () =
   assert.match(html, /1\+R = Π exp\(gᵢ\)/);
   assert.doesNotMatch(html, /name="enable_slv_leg"/);
   assert.match(html, /function drawBookDecompositions/);
-  assert.match(html, /lease_book_compounded_return_pct/);
-  assert.match(html, /unextended lease implementations — value/);
+  assert.match(html, /lease_book_underlying_interval_return_pct/);
+  assert.match(html, /commodity-quoted daily returns/);
   assert.match(html, /lease-underlying-values/);
-  assert.match(html, /actual component values by P\(t\)\/P\(0\)/);
-  assert.match(html, /Keep book — extended lease \+ short/);
-  assert.match(html, /whole portfolio starts at 1/);
+  assert.match(html, /NAV\(t\) = P\(t\)\/P\(0\)/);
+  assert.match(html, /keep book value quoted in the underlying/);
+  assert.doesNotMatch(html, /book-standalone/);
+  assert.doesNotMatch(html, /book-factors/);
   assert.match(html, /initial_replicating_leg_value/);
 });
 
@@ -365,7 +378,7 @@ test("downloads portfolio composition and values as an interval spreadsheet", as
   );
 });
 
-test("shows precise proxy expense and compounded portfolio attribution", async () => {
+test("shows precise proxy expense and portfolio leg attribution", async () => {
   const html = await readFile(
     new URL("../public/silver_strategy_gui.html", import.meta.url),
     "utf8",
@@ -373,11 +386,43 @@ test("shows precise proxy expense and compounded portfolio attribution", async (
   assert.match(html, /name="slv_expense"[^>]*step="0\.01"/);
   assert.match(html, /function drawPortfolioComparisons/);
   assert.match(html, /direct_unrebalanced_compounded_return_pct/);
-  assert.match(html, /_attributed_factor_compounded_return_pct/);
+  assert.match(html, /_replicating_fund_contribution_pct/);
+  assert.match(html, /_futures_treasury_contribution_pct/);
+  assert.match(html, /_keep_book_contribution_pct/);
   assert.match(html, /never rebalanced/);
   assert.match(html, /portfolio value \(initial = 1\)/);
   assert.match(html, /f\('start_date'\)/);
   assert.match(html, /Longest aligned holding interval/);
+});
+
+test("configures separate expiry floors, maturity ordering, and trading costs", async () => {
+  const html = await readFile(
+    new URL("../public/silver_strategy_gui.html", import.meta.url),
+    "utf8",
+  );
+  assert.match(html, /name="long_min_days"/);
+  assert.match(html, /name="short_min_days"/);
+  assert.doesNotMatch(html, /name="min_days"/);
+  assert.match(html, /mature strictly after every long future/);
+  assert.match(html, /name="transaction_fee_bps"/);
+  assert.match(html, /name="bid_ask_spread_bps"/);
+  assert.match(html, /fee plus half of the configured full spread/);
+  assert.match(html, /Current parameters: unsaved changes/);
+});
+
+test("renders commodity-quoted reconstruction and daily lease scatter", async () => {
+  const html = await readFile(
+    new URL("../public/silver_strategy_gui.html", import.meta.url),
+    "utf8",
+  );
+  assert.match(html, /combined_underlying_return_index/);
+  assert.match(html, /reconstructed_nav/);
+  assert.match(html, /reconstruction_difference/);
+  assert.match(html, /Daily lease rate vs\. commodity-quoted lease-book return/);
+  assert.match(html, /lease_daily_return_points/);
+  assert.match(html, /function histogramChart/);
+  assert.match(html, /drawCommodityValueComparisons/);
+  assert.match(html, /Direct holding — same initial quantity/);
 });
 
 test("embedded GUI script is syntactically valid", async () => {

@@ -34,4 +34,5 @@ if ! curl --fail --silent "${api_origin}/api/v1/health" >/dev/null; then
 fi
 
 export KEEP_AND_LEASE_LOCAL_API_URL="${api_origin}"
+export KEEP_AND_LEASE_ENGINE_MODE="server"
 npm run dev:gui

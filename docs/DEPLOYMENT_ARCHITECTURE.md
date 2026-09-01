@@ -33,6 +33,12 @@ unchanged v12 Pyodide worker in a nested worker. `?engine=server` requires the A
 `?engine=pyodide` explicitly selects browser computation; `?engine=auto` is the
 default server-first behavior.
 
+The local launcher sets `KEEP_AND_LEASE_ENGINE_MODE=server`, exercising the local
+same-origin proxy and canonical CPython API in strict mode. Hosted Sites builds
+leave that build setting unset and therefore use `engine=auto`: they try a
+same-origin API first and then use the packaged browser engine because Sites does
+not host the CPython calculation service.
+
 The Pyodide runtime, Python sources, historical data, progress reporting, run
 operation, and day-inspection operation remain packaged exactly as before. They
 will remain available until server equivalence and operational reliability are

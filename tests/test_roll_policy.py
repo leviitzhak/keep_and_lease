@@ -74,11 +74,11 @@ class RollPolicyTests(unittest.TestCase):
         self.assertAlmostEqual(
             maturity_line_adjusted_score(
                 0.20, {"lease": 0.036, "days": 365}, long_p, "long"),
-            0.32)
+            20.6)
         self.assertAlmostEqual(
             maturity_line_adjusted_score(
                 0.20, {"lease": -0.036, "days": 365}, short_p, "short"),
-            0.32)
+            20.6)
 
     def test_pure_maturity_prefers_shorter_longs(self):
         p = Parameters(
@@ -107,7 +107,7 @@ class RollPolicyTests(unittest.TestCase):
         self.assertAlmostEqual(
             maturity_line_adjusted_score(
                 0.20, {"lease": 0.04, "days": 365}, p, "long"),
-            0.20)
+            20.0)
 
 
 if __name__ == "__main__":

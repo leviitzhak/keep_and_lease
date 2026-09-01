@@ -18,9 +18,16 @@
 // }
 
 export default function Home() {
+  // The local launcher sets strict server mode because it starts the canonical
+  // CPython API. Hosted Sites builds leave the variable unset and remain
+  // server-first with a browser fallback.
+  const engine = process.env.KEEP_AND_LEASE_ENGINE_MODE === "server"
+    ? "server"
+    : "auto";
+
   return (
     <main className="site-shell">
-      <iframe className="strategy-frame" src="/silver_strategy_gui.html?engine=server"
+      <iframe className="strategy-frame" src={`/silver_strategy_gui.html?engine=${engine}`}
         title="Keep and Lease silver strategy backtest" />
     </main>
   );

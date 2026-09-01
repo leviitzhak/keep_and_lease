@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-09-01 — lease/keep decomposition, maturity ordering, and trading costs
+
+- Added independent long- and short-side minimum expiry floors with legacy
+  `min_days` preset migration, and enforced that selected short contracts mature
+  strictly later than every selected base-long futures contract.
+- Added explicit per-trade fees and simulated bid-ask spreads. Opening, closing,
+  rebalancing, and rolling turnover is charged by leg and included once in net
+  values, returns, and attribution.
+- Replaced the per-commodity standalone-compounded and multiplicative-factor
+  charts with commodity-quoted lease/keep values, daily returns, compounded
+  indexes, distributions, underlying price, and an exact NAV reconstruction.
+- Added daily lease-signal-versus-commodity-return scatter inspection, same-initial-
+  quantity direct-hold comparisons, leg-level portfolio contribution series, and
+  synchronized inspection for dynamically created decomposition charts.
+- Kept the active preset name synchronized with parameter edits and renamed
+  diagnostic futures labels from "held" to "selected" where selection can exist
+  without an enabled book.
+- Documented the signed-logit then SoftMax maturity weighting and recorded the
+  reproducible full-collateralized silver investigation.
+- Kept localhost and the supervised Sites preview in strict server mode while
+  allowing the persistent ChatGPT Sites publication to fall back to its packaged
+  browser engine when the same-origin CPython API is unavailable.
+
 ## 2026-09-01 — separate maturity controls and responsive spreadsheet export
 
 - Split the pure-maturity scale and normalized clip into independent long- and

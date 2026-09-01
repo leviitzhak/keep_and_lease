@@ -28,16 +28,19 @@ This checklist reflects the application synchronized from the deployed Sites che
 - [x] Align the local ChatGPT Sites GUI/API preview with Google Cloud's versioned
   server calculation method: one checkout supplies the GUI and canonical Python
   engine, `/api/v1` is proxied same-origin, and strict server mode prevents a
-  silent browser fallback. Publishing Sites against private IAP remains outside
-  this local preview loop and would require an authenticated server-side proxy.
+  silent browser fallback on local preview hosts. The persistent Sites publication
+  uses server-first browser fallback; using the private GCP API there remains
+  outside this local loop and would require an authenticated server-side proxy.
 - [x] Generate a spreadsheet for a user-selected date interval containing the
   portfolio composition, component values, and component prices.
-- [ ] Investigate and explain the performance of the full-silver long strategy.
-- [ ] Support separate minimum-days-before-expiry parameters for long and short
+- [x] Investigate and explain the performance of the full-silver long strategy.
+  See `FULL_SILVER_LONG_PERFORMANCE.md` for assumptions, results, and cost
+  sensitivity.
+- [x] Support separate minimum-days-before-expiry parameters for long and short
   futures positions.
-- [ ] When extending the long book and adding a short book, require the selected
+- [x] When extending the long book and adding a short book, require the selected
   short maturities to be later than the corresponding long maturities.
-- [ ] Replace the current per-commodity standalone-compounded and
+- [x] Replace the current per-commodity standalone-compounded and
   multiplicative-contribution displays with the following decomposition (do
   not display those two existing plot families for now):
   - plot the values of the unextended futures-plus-Treasuries leg, the
@@ -54,31 +57,31 @@ This checklist reflects the application synchronized from the deployed Sites che
   underlying price index and the compounded sum of the lease- and keep-book
   commodity-quoted daily returns:
   `NAV(t) = P(t) / P(0) * product_s<=t(1 + r_lease(s) + r_keep(s))`.
-- [ ] Implement configurable transaction costs on every buy and sell, including
+- [x] Implement configurable transaction costs on every buy and sell, including
   both explicit fees and simulated bid-ask spread costs.
 
 ## Small fixes
 
-- [ ] Add full inspection interactivity to the new log-return decomposition
+- [x] Add full inspection interactivity to the new log-return decomposition
   graphs.
-- [ ] Extend the portfolio contribution-by-asset plot so it also shows the
+- [x] Extend the portfolio contribution-by-asset plot so it also shows the
   values of the individual legs within each commodity sleeve.
-- [ ] In each commodity's strategy-versus-direct-hold plot, compare the value
+- [x] In each commodity's strategy-versus-direct-hold plot, compare the value
   of the strategy leg with the value of a direct holding of the same initial
   quantity of that commodity.
-- [ ] Rename labels referring to "held" short futures: the diagnostic short
+- [x] Rename labels referring to "held" short futures: the diagnostic short
   selection can be displayed even when the short book is disabled.
-- [ ] For each commodity, retain the plots of leg values through time, but hide
+- [x] For each commodity, retain the plots of leg values through time, but hide
   the standalone-compounded and multiplicative-contribution plots for now; the
   commodity-quoted lease/keep decomposition above will replace them.
-- [ ] Update the maturity-weight selection documentation to describe the signed
+- [x] Update the maturity-weight selection documentation to describe the signed
   score followed by SoftMax that is now used.
-- [ ] Keep the displayed name of the currently loaded or saved parameter set
+- [x] Keep the displayed name of the currently loaded or saved parameter set
   synchronized with the values in the parameter fields.
 
 ## Other requested features
 
-- [ ] Add a scatter plot of lease rates scaled to a daily horizon versus the
+- [x] Add a scatter plot of lease rates scaled to a daily horizon versus the
   corresponding daily return quoted in the commodity.
 
 ## Priority 1 — scoring and attribution correctness

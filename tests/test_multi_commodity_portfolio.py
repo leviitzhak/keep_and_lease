@@ -71,9 +71,11 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
         contribution_indices = [
             result["fields"].index(f"{key}_contribution_pct")
             for key in result["portfolio"]["weights"]]
+        return_index = result["fields"].index("interval_return_pct")
         for row in result["series"]:
             self.assertAlmostEqual(
-                row[1], sum(row[i] for i in contribution_indices), places=11)
+                row[return_index], sum(row[i] for i in contribution_indices),
+                places=11)
 
     def test_rebalancing_choice_changes_path(self):
         sleeves = {
@@ -110,6 +112,26 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
                 f"{key}_attributed_factor_compounded_return_pct")] / 100
             for key in ("a", "b")]
         self.assertAlmostEqual(strategy_nav, math.prod(factor_navs))
+
+    def test_commodity_leg_contributions_reconcile_without_double_counting_cost(self):
+        sleeves = {"silver": {"_full_rows": [{
+            "date": "2000-01-03", "exit_date": "2000-01-04",
+            "interval_return_pct": 2.0, "slv_daily_return_pct": 1.5,
+            "replicating_fund_lease_contribution_pct": 0.5,
+            "futures_treasury_lease_contribution_pct": 0.7,
+            "keep_book_contribution_interval_return_pct": 0.8,
+            "transaction_cost_contribution_pct": -0.1,
+        }]}}
+        fields, rows, _ = gui.aggregate_portfolio(
+            sleeves, {"silver": 1.0}, "daily")
+        row = rows[0]
+        legs = [row[fields.index(f"silver_{name}_contribution_pct")]
+                for name in ("replicating_fund", "futures_treasury",
+                             "keep_book")]
+        self.assertAlmostEqual(sum(legs), row[fields.index(
+            "silver_contribution_pct")])
+        self.assertAlmostEqual(row[fields.index(
+            "silver_transaction_cost_contribution_pct")], -0.1)
 
     def test_aggregation_intersects_complete_holding_intervals(self):
         sleeves = {
@@ -178,9 +200,11 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
         contribution_indices = [
             result["fields"].index(f"{key}_contribution_pct")
             for key in result["portfolio"]["weights"]]
+        return_index = result["fields"].index("interval_return_pct")
         for row in result["series"]:
             self.assertAlmostEqual(
-                row[1], sum(row[i] for i in contribution_indices), places=11)
+                row[return_index], sum(row[i] for i in contribution_indices),
+                places=11)
 
     def test_treasury_can_run_as_standalone_portfolio(self):
         result = gui.result({
@@ -191,8 +215,10 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
         self.assertEqual(result["portfolio"]["weights"], {"treasury": 1.0})
         self.assertEqual(result["commodity_sleeves"], {})
         treasury_index = result["fields"].index("treasury_contribution_pct")
+        return_index = result["fields"].index("interval_return_pct")
         for row in result["series"]:
-            self.assertAlmostEqual(row[1], row[treasury_index], places=11)
+            self.assertAlmostEqual(
+                row[return_index], row[treasury_index], places=11)
 
     def test_product_specific_parameters_override_global_values(self):
         payload = gui.product_payload({
