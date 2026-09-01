@@ -2,143 +2,146 @@
 
 ## Purpose
 
-Rank eligible futures using both economic attractiveness and maturity preference without allowing maturity to override the lease-rate eligibility rules.
+Distribute each futures-leg target across eligible maturities using the lease
+edge, signed distance from the configured maturity line, and the optional pure
+maturity preference. Eligibility and total leg sizing remain separate from
+contract weighting.
 
 ## Variables
 
-For contract `i` on decision date `t`:
+For contract `i`:
 
-- `r_i`: annualized lease rate. For Treasury instruments, use the annualized interest rate instead.
-- `m_i`: maturity measure, preferably year fraction to expiry.
-- `b_i`: existing/base economic score before maturity adjustment.
-- `L(m_i)`: configured linear boundary in rate–maturity space.
-- `d_i`: signed vertical distance from the boundary.
-- `k`: relative adjustment strength.
+- `r_i`: signed annualized lease rate;
+- `T_i`: days to maturity;
+- `B_i`: non-negative lease edge after eligibility;
+- `L(T_i)`: configured linear maturity/rate boundary;
+- `s`: configured score-rate scale;
+- `k`: relative boundary strength;
+- `c`: normalized boundary-distance clip;
+- `h`: pure-maturity strength;
+- `T_0`: pure-maturity scale;
+- `c_T`: pure-maturity clip;
+- `Q`: total notional target for the leg.
 
-Define the boundary as:
-
-```text
-L(m) = intercept + slope * m
-```
-
-The intended geometry links a longer maturity with a larger absolute rate requirement. The exact slope sign therefore depends on whether the plotted quantity is the signed lease rate or its absolute adverse/favorable magnitude.
-
-## Long-side adjustment
-
-For a signed lease-rate representation, define:
+The boundary is
 
 ```text
-d_long_i = r_i - L_long(m_i)
+L(T) = r_1 + (r_2 - r_1) * (T - T_1) / (T_2 - T_1)
 ```
 
-A contract above the long boundary has a positive adjustment; one below it has a negative adjustment.
+## Eligibility and base edge
 
-The adjustment must be relative to the existing score, not an unrelated additive quantity. A recommended implementation is:
+Eligibility is applied before scoring:
 
 ```text
-final_long_i = b_i * (1 + k_long * normalized(d_long_i))
+long eligible  := r_i >= long_entry_rate
+short eligible := r_i <= short_entry_rate
 ```
 
-where `normalized(...)` is dimensionless and bounded or robustly scaled. Examples include division by a configured rate scale, cross-sectional robust scale, or clipping after standardization.
-
-## Short-side adjustment
-
-The intended short-side signed distance is:
+Fixed-maximum mode deliberately ignores the entry-rate gate and treats every
+contract above the minimum-maturity floor as eligible. Its cross-sectional base
+edge is measured from that day's least-attractive available lease:
 
 ```text
-d_short_i = -r_i - L_short(m_i)
+B_long_i  = r_i - min_j(r_j)
+B_short_i = max_j(r_j) - r_i
 ```
 
-This follows the project decision that a more negative lease rate should improve the short score while still trading off against maturity.
-
-A recommended relative combination is:
+Gradual mode uses the entry threshold:
 
 ```text
-final_short_i = b_i * (1 + k_short * normalized(d_short_i))
+B_long_i  = r_i - long_entry_rate
+B_short_i = short_entry_rate - r_i
 ```
 
-The base short score `b_i` should itself be positive for an economically attractive short candidate, for example from the magnitude by which the rate passes the short threshold.
+The entry/full thresholds size `Q`; they do not normalize contract weights.
 
-## Eligibility gates
+## Signed logit
 
-Apply gates before scoring:
+Signed line distance is
 
 ```text
-long eligible  := r_i >= long_eligibility_threshold
-short eligible := r_i <= short_eligibility_threshold
+d_long_i  =  r_i - L_long(T_i)
+d_short_i = -r_i - L_short(T_i)
 ```
 
-An ineligible contract receives no allocation regardless of final score.
-
-## Normalization requirements
-
-The distance `d_i` has rate units, while the multiplier must be dimensionless. The implementation must expose or document the scale. Preferred properties:
-
-- stable across dates;
-- resistant to one outlier contract;
-- symmetric for equal distances around the boundary;
-- optionally clipped to prevent sign reversal or extreme leverage.
-
-One explicit form is:
+and the bounded relative contribution is
 
 ```text
-z_i = clip(d_i / rate_scale, -z_max, z_max)
-final_i = b_i * max(0, 1 + k * z_i)
+z_i = clip(d_i / s, -c, c)
+A_rate_i = k * z_i
 ```
 
-The `max(0, ...)` protects against a negative ranking score unless negative scores have a separately defined meaning.
-
-## Separate pure-maturity multiplier
-
-After the rate/boundary multiplier, an optional independent multiplier can
-express a preference that does not depend on the lease-rate curve:
+The independent maturity contribution is
 
 ```text
-u_i = clip(maturity_days_i / pure_maturity_scale_days, 0, pure_maturity_clip)
-pure_long_i  = max(0, 1 - long_pure_maturity_strength * u_i)
-pure_short_i = max(0, 1 + short_pure_maturity_strength * u_i)
-final_i = boundary_adjusted_score_i * pure_side_i
+u_i = clip(T_i / T_0, 0, c_T)
+A_maturity_long_i  = -h_long  * u_i
+A_maturity_short_i = +h_short * u_i
 ```
 
-It therefore favors shorter contracts in the long book and longer contracts in
-the short book. Both strengths default to zero, which exactly preserves prior
-rankings. This multiplier is applied only after eligibility, so it cannot make
-an otherwise ineligible contract tradable.
-
-## Weight conversion
-
-For eligible contracts with positive final scores:
+The complete dimensionless signed score (softmax logit) is
 
 ```text
-weight_i = book_target * final_i / sum_j(final_j)
+q_i = B_i / s + A_rate_i + A_maturity_i
 ```
 
-Alternative concentration controls may be applied afterward, but they must preserve the book target after renormalization.
+A point below its maturity line can therefore have a negative score. It is not
+discarded: if it remains eligible, softmax gives it a smaller positive weight.
 
-## Required diagnostics
+## Softmax allocation
 
-The inspected-day table and hover data should show:
+Eligible logits are converted to weights with a stable softmax:
 
-- contract identifier;
-- maturity and rate;
-- boundary value;
-- signed distance;
-- base score;
-- relative multiplier;
-- pure-maturity multiplier;
-- final score;
-- eligibility result;
-- final target weight.
+```text
+q_max = max_j(q_j)
+weight_i = Q * exp(q_i - q_max) / sum_j(exp(q_j - q_max))
+```
 
-## Tests
+Subtracting `q_max` does not change relative weights and prevents overflow.
+The implementation clamps the shifted exponent at `-700` so an eligible
+contract does not become an exact zero merely through floating-point underflow.
+A final floating-point remainder is placed on the largest weight, ensuring
 
-At minimum, test that:
+```text
+sum_i(weight_i) = Q
+```
 
-1. increasing a long contract's rate while maturity is fixed increases its long adjustment;
-2. making a short contract's rate more negative while maturity is fixed increases its short adjustment;
-3. equal boundary distances produce equal relative multipliers;
-4. ineligible contracts never receive weight;
-5. setting `k = 0` reproduces the base-score ranking;
-6. normalization and clipping behave consistently at extreme values.
-7. positive pure-maturity strength favors shorter longs and longer shorts;
-8. zero pure-maturity strength reproduces the previous score exactly.
+even when every signed score is negative or all scores are equal.
+
+The existing score-rate scale `s` controls the sensitivity of both the lease
+edge and boundary distance. No separate softmax-temperature parameter is
+introduced initially.
+
+## Diagnostics and heatmap
+
+The inspected-day diagnostics show:
+
+- eligibility;
+- boundary and signed distance;
+- base lease edge;
+- signed rate/line adjustment;
+- signed pure-maturity adjustment;
+- final logit;
+- softmax target weight.
+
+The independent long and short heatmaps show either:
+
+- the parameter-only signed logit
+  `A_rate(T,r) + A_maturity(T)`; or
+- with the toggle enabled, the entry-based diagnostic logit
+  `B_entry(r)/s + A_rate(T,r) + A_maturity(T)`.
+
+A heatmap is not a normalized portfolio weight because softmax normalization
+depends on all contracts available on the selected date.
+
+## Required invariants
+
+1. Ineligible contracts receive no allocation.
+2. Every eligible contract receives a positive softmax weight.
+3. Weights exactly sum to the requested leg target.
+4. Increasing a long lease rate, other inputs fixed, increases its logit.
+5. Making a short lease rate more negative increases its logit.
+6. Equal logits split the target equally.
+7. Below-line contracts may have negative logits without disappearing.
+8. Fixed-maximum mode preserves its full notional independently of entry rates.
