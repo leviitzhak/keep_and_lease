@@ -27,7 +27,7 @@ This checklist reflects the application synchronized from the deployed Sites che
 
 - [ ] Align the ChatGPT Sites GUI and API with the Google Cloud deployment so
   both run the same canonical GUI revision and calculation engine behavior.
-- [ ] Generate a spreadsheet for a user-selected date interval containing the
+- [x] Generate a spreadsheet for a user-selected date interval containing the
   portfolio composition, component values, and component prices.
 - [ ] Investigate and explain the performance of the full-silver long strategy.
 - [ ] Support separate minimum-days-before-expiry parameters for long and short
