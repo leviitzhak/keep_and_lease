@@ -816,11 +816,12 @@ def aggregate_portfolio(sleeves, target_weights, rebalance):
         "other": "other_return_contribution_pct",
     }
     maps = {
-        key: {row["date"]: row for row in sleeve["_full_rows"]}
+        key: {(row["date"], row.get("exit_date", row["date"])): row
+              for row in sleeve["_full_rows"]}
         for key, sleeve in sleeves.items()
     }
-    dates = sorted(set.intersection(*(set(rows) for rows in maps.values())))
-    if not dates:
+    intervals = sorted(set.intersection(*(set(rows) for rows in maps.values())))
+    if not intervals:
         raise ValueError("The selected commodities have no overlapping history")
     nav = 1.0
     simple = 0.0
@@ -842,16 +843,7 @@ def aggregate_portfolio(sleeves, target_weights, rebalance):
     }
     if rebalance not in schedules:
         raise ValueError("Invalid rebalancing choice")
-    for day in dates:
-        reference_row = maps[next(iter(sleeves))][day]
-        exit_day = reference_row.get("exit_date", day)
-        interval_exits = {
-            maps[key][day].get("exit_date", day)
-            for key in maps
-        }
-        if len(interval_exits) != 1:
-            raise ValueError(
-                f"Commodity holding intervals ending after {day} are not aligned")
+    for day, exit_day in intervals:
         period = schedules[rebalance](day)
         if rebalance != "none" and previous_period is not None and period != previous_period:
             sleeve_values = {key: nav * weight for key, weight in target_weights.items()}
@@ -868,15 +860,15 @@ def aggregate_portfolio(sleeves, target_weights, rebalance):
         for key in target_weights:
             effective_weight = sleeve_values[key] / start_nav
             if key == "treasury":
-                reference = maps[next(iter(sleeves))][day]
+                reference = maps[next(iter(sleeves))][(day, exit_day)]
                 daily = reference["treasury_daily_return_pct"] / 100
                 direct_daily = daily
                 component_values = {"treasury": 100 * effective_weight * daily}
             else:
-                daily = maps[key][day]["interval_return_pct"] / 100
-                direct_daily = maps[key][day]["slv_daily_return_pct"] / 100
+                daily = maps[key][(day, exit_day)]["interval_return_pct"] / 100
+                direct_daily = maps[key][(day, exit_day)]["slv_daily_return_pct"] / 100
                 component_values = {
-                    name: effective_weight * maps[key][day].get(field, 0.0)
+                    name: effective_weight * maps[key][(day, exit_day)].get(field, 0.0)
                     for name, field in component_fields.items()
                 }
                 component_values["other"] += (
@@ -1008,6 +1000,15 @@ def result(payload):
         1 + row[fields.index(
             "direct_unrebalanced_compounded_return_pct")] / 100
         for row in series]
+    longest_interval_row = max(
+        series,
+        key=lambda row: (
+            date.fromisoformat(row[fields.index("date")])
+            - date.fromisoformat(row[fields.index("start_date")])).days)
+    longest_interval_days = (
+        date.fromisoformat(longest_interval_row[fields.index("date")])
+        - date.fromisoformat(
+            longest_interval_row[fields.index("start_date")])).days
     return {
         "fields": fields,
         "series": series,
@@ -1020,19 +1021,24 @@ def result(payload):
             "available_products": PRODUCTS,
         },
         "summary": {
-            "start": series[0][0], "end": series[-1][0],
+            "start": series[0][fields.index("start_date")],
+            "end": series[-1][fields.index("date")],
             "observations": len(series),
-            "simple_return": series[-1][2],
-            "compounded_return": series[-1][3],
-            "ending_nav": series[-1][6],
+            "simple_return": series[-1][fields.index(
+                "simple_cumulative_return_pct")],
+            "compounded_return": series[-1][fields.index(
+                "compounded_return_pct")],
+            "ending_nav": series[-1][fields.index("nav")],
             "max_drawdown": max_drawdown(nav_values),
-            "direct_holding_return": series[-1][5],
+            "direct_holding_return": series[-1][fields.index(
+                "direct_compounded_return_pct")],
             "direct_holding_max_drawdown": max_drawdown(direct_nav_values),
             "direct_unrebalanced_return": series[-1][fields.index(
                 "direct_unrebalanced_compounded_return_pct")],
             "direct_unrebalanced_max_drawdown": max_drawdown(
                 direct_unrebalanced_nav_values),
-            "direct_silver_return": series[-1][5],
+            "direct_silver_return": series[-1][fields.index(
+                "direct_compounded_return_pct")],
             "direct_silver_max_drawdown": max_drawdown(direct_nav_values),
             "missing_intervals": sum(
                 x["summary"]["missing_intervals"] for x in sleeves.values()),
@@ -1043,6 +1049,11 @@ def result(payload):
             "avg_daily_notional_change_pct": sum(
                 commodity_weights[key] * sleeves[key]["summary"][
                     "avg_daily_notional_change_pct"] for key in sleeves),
+            "longest_holding_interval_days": longest_interval_days,
+            "longest_holding_interval_start": longest_interval_row[
+                fields.index("start_date")],
+            "longest_holding_interval_end": longest_interval_row[
+                fields.index("date")],
         },
     }
 

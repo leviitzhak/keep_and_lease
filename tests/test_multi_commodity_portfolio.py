@@ -111,6 +111,28 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
             for key in ("a", "b")]
         self.assertAlmostEqual(strategy_nav, math.prod(factor_navs))
 
+    def test_aggregation_intersects_complete_holding_intervals(self):
+        sleeves = {
+            "a": {"_full_rows": [
+                {"date": "2000-01-03", "exit_date": "2000-01-04",
+                 "interval_return_pct": 1, "slv_daily_return_pct": 1},
+                {"date": "2000-01-04", "exit_date": "2000-01-05",
+                 "interval_return_pct": 2, "slv_daily_return_pct": 2},
+            ]},
+            "b": {"_full_rows": [
+                {"date": "2000-01-03", "exit_date": "2000-01-05",
+                 "interval_return_pct": 9, "slv_daily_return_pct": 9},
+                {"date": "2000-01-04", "exit_date": "2000-01-05",
+                 "interval_return_pct": 4, "slv_daily_return_pct": 4},
+            ]},
+        }
+        fields, rows, _ = gui.aggregate_portfolio(
+            sleeves, {"a": 0.5, "b": 0.5}, "daily")
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0][fields.index("start_date")], "2000-01-04")
+        self.assertEqual(rows[0][fields.index("date")], "2000-01-05")
+        self.assertAlmostEqual(rows[0][fields.index("interval_return_pct")], 3)
+
     def test_hierarchical_daily_attribution_reconciles(self):
         if not {"gold", "oil"}.issubset(self.markets):
             self.skipTest("gold and oil archives are unavailable")

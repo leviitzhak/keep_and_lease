@@ -316,6 +316,7 @@ test("shows precise proxy expense and compounded portfolio attribution", async (
   assert.match(html, /never rebalanced/);
   assert.match(html, /portfolio value \(initial = 1\)/);
   assert.match(html, /f\('start_date'\)/);
+  assert.match(html, /Longest aligned holding interval/);
 });
 
 test("embedded GUI script is syntactically valid", async () => {
