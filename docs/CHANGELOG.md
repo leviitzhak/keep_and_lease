@@ -1,5 +1,12 @@
 # Changelog
 
+- Added an in-browser Excel export for the active plot interval, with overview,
+  combined portfolio, and daily component-composition sheets containing weights,
+  component values, and weighted prices without rerunning the backtest.
+- Prevented null calculation responses from reaching summary rendering. Automatic
+  engine mode now retries failed, empty, malformed, or structurally invalid server
+  results with the browser engine; explicit server mode reports the response error.
+
 ## 2026-08-31 — Allocation smoothing and configurable reactivity
 
 - Added a same-day/next-day reactivity parameter. Same-day is the default;
