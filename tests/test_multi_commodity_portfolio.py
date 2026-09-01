@@ -78,15 +78,15 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
     def test_rebalancing_choice_changes_path(self):
         sleeves = {
             "a": {"_full_rows": [
-                {"date": "2000-01-03", "interval_return_pct": 10,
+                {"date": "2000-01-03", "exit_date": "2000-01-04", "interval_return_pct": 10,
                  "slv_daily_return_pct": 10},
-                {"date": "2000-01-04", "interval_return_pct": 10,
+                {"date": "2000-01-04", "exit_date": "2000-01-05", "interval_return_pct": 10,
                  "slv_daily_return_pct": 10},
             ]},
             "b": {"_full_rows": [
-                {"date": "2000-01-03", "interval_return_pct": 0,
+                {"date": "2000-01-03", "exit_date": "2000-01-04", "interval_return_pct": 0,
                  "slv_daily_return_pct": 0},
-                {"date": "2000-01-04", "interval_return_pct": 0,
+                {"date": "2000-01-04", "exit_date": "2000-01-05", "interval_return_pct": 0,
                  "slv_daily_return_pct": 0},
             ]},
         }
@@ -94,7 +94,11 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
             sleeves, {"a": 0.5, "b": 0.5}, "daily")
         _, drifting, _ = gui.aggregate_portfolio(
             sleeves, {"a": 0.5, "b": 0.5}, "none")
-        self.assertNotAlmostEqual(daily[-1][3], drifting[-1][3], places=8)
+        self.assertEqual(daily[0][fields.index("start_date")], "2000-01-03")
+        self.assertEqual(daily[0][fields.index("date")], "2000-01-04")
+        self.assertNotAlmostEqual(
+            daily[-1][fields.index("compounded_return_pct")],
+            drifting[-1][fields.index("compounded_return_pct")], places=8)
         self.assertNotAlmostEqual(
             daily[-1][fields.index("direct_compounded_return_pct")],
             daily[-1][fields.index(
@@ -106,6 +110,28 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
                 f"{key}_attributed_factor_compounded_return_pct")] / 100
             for key in ("a", "b")]
         self.assertAlmostEqual(strategy_nav, math.prod(factor_navs))
+
+    def test_aggregation_intersects_complete_holding_intervals(self):
+        sleeves = {
+            "a": {"_full_rows": [
+                {"date": "2000-01-03", "exit_date": "2000-01-04",
+                 "interval_return_pct": 1, "slv_daily_return_pct": 1},
+                {"date": "2000-01-04", "exit_date": "2000-01-05",
+                 "interval_return_pct": 2, "slv_daily_return_pct": 2},
+            ]},
+            "b": {"_full_rows": [
+                {"date": "2000-01-03", "exit_date": "2000-01-05",
+                 "interval_return_pct": 9, "slv_daily_return_pct": 9},
+                {"date": "2000-01-04", "exit_date": "2000-01-05",
+                 "interval_return_pct": 4, "slv_daily_return_pct": 4},
+            ]},
+        }
+        fields, rows, _ = gui.aggregate_portfolio(
+            sleeves, {"a": 0.5, "b": 0.5}, "daily")
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0][fields.index("start_date")], "2000-01-04")
+        self.assertEqual(rows[0][fields.index("date")], "2000-01-05")
+        self.assertAlmostEqual(rows[0][fields.index("interval_return_pct")], 3)
 
     def test_hierarchical_daily_attribution_reconciles(self):
         if not {"gold", "oil"}.issubset(self.markets):

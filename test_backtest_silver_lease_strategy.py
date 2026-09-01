@@ -50,6 +50,13 @@ class StandaloneLegReturnTests(unittest.TestCase):
         futures_factor = 1 + last[
             "lease_futures_treasury_attributed_factor_compounded_return_pct"] / 100
         self.assertAlmostEqual(lease_nav, fund_factor * futures_factor)
+        for row in rows:
+            self.assertAlmostEqual(
+                row["nav"], row["lease_book_value"] + row["keep_book_value"])
+            self.assertAlmostEqual(
+                row["lease_book_value"],
+                row["replicating_leg_value"] + row["futures_treasury_value"])
+        self.assertEqual(rows[0]["exit_date"], self.days[1].isoformat())
 
     def setUp(self):
         self.days = [date(2020, 1, day) for day in range(1, 6)]
