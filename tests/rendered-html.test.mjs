@@ -159,7 +159,11 @@ test("shows exact maturity-line formulas and dynamic hierarchical attribution", 
   assert.match(html, /function scoreDiagnosticTable/);
   assert.match(html, /name="long_pure_maturity_strength"/);
   assert.match(html, /name="short_pure_maturity_strength"/);
-  assert.match(html, /Pure maturity multiplier/);
+  assert.match(html, /name="long_pure_maturity_scale_days"/);
+  assert.match(html, /name="long_pure_maturity_clip"/);
+  assert.match(html, /name="short_pure_maturity_scale_days"/);
+  assert.match(html, /name="short_pure_maturity_clip"/);
+  assert.match(html, /Pure maturity adjustment/);
   assert.doesNotMatch(html, /name="long_maturity_line_intercept"/);
   assert.doesNotMatch(html, /name="short_maturity_line_intercept"/);
   assert.match(html, /id="dailyAttributionPanel"/);
@@ -209,8 +213,10 @@ test("parameter-only preview matches the canonical long and short multipliers", 
   );
   const values = {
     min_days: 10,
-    pure_maturity_scale_days: 365,
-    pure_maturity_clip: 3,
+    long_pure_maturity_scale_days: 365,
+    long_pure_maturity_clip: 3,
+    short_pure_maturity_scale_days: 365,
+    short_pure_maturity_clip: 3,
     long_line_maturity_1: 30,
     long_line_rate_1: 0.033,
     long_line_maturity_2: 365,
@@ -341,6 +347,9 @@ test("downloads portfolio composition and values as an interval spreadsheet", as
   assert.match(html, /Component value \(commodity sleeve initial = 1\)/);
   assert.match(html, /plotRangeSource\.portfolioSeries\.filter\(row=>dateInPlotRange/);
   assert.match(html, /keep-and-lease-portfolio-/);
+  assert.match(html, /Preparing spreadsheet/);
+  assert.match(html, /document\.body\.appendChild\(link\)/);
+  assert.doesNotMatch(html, /\.\.\.keys\.map\(\(\)=>22\)/);
   const dockerignore = await readFile(
     new URL("../.dockerignore", import.meta.url),
     "utf8",

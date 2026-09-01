@@ -84,7 +84,7 @@ class RollPolicyTests(unittest.TestCase):
         p = Parameters(
             min_days=10, long_relative_strength=0,
             long_pure_maturity_strength=0.5,
-            pure_maturity_scale_days=365)
+            long_pure_maturity_scale_days=365)
         short = maturity_line_adjusted_score(
             0.20, {"lease": 0.04, "days": 90}, p, "long")
         long = maturity_line_adjusted_score(
@@ -95,7 +95,7 @@ class RollPolicyTests(unittest.TestCase):
         p = Parameters(
             min_days=10, short_relative_strength=0,
             short_pure_maturity_strength=0.5,
-            pure_maturity_scale_days=365)
+            short_pure_maturity_scale_days=365)
         short = maturity_line_adjusted_score(
             0.20, {"lease": -0.04, "days": 90}, p, "short")
         long = maturity_line_adjusted_score(

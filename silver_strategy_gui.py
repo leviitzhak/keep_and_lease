@@ -200,6 +200,12 @@ def parameters(payload):
             payload, "long_score_adjustment_clip", 3, 0, 100),
         long_pure_maturity_strength=number(
             payload, "long_pure_maturity_strength", 0, 0, 100),
+        long_pure_maturity_scale_days=number(
+            payload, "long_pure_maturity_scale_days",
+            float(payload.get("pure_maturity_scale_days", 365)), 1, 10000),
+        long_pure_maturity_clip=number(
+            payload, "long_pure_maturity_clip",
+            float(payload.get("pure_maturity_clip", 3)), 0, 100),
         long_maturity_bonus_per_year=pct("long_maturity_bonus_per_year", 0.4),
         long_extreme_qualification_rate=pct(
             "long_extreme_qualification_rate",
@@ -224,10 +230,12 @@ def parameters(payload):
             payload, "short_score_adjustment_clip", 3, 0, 100),
         short_pure_maturity_strength=number(
             payload, "short_pure_maturity_strength", 0, 0, 100),
-        pure_maturity_scale_days=number(
-            payload, "pure_maturity_scale_days", 365, 1, 10000),
-        pure_maturity_clip=number(
-            payload, "pure_maturity_clip", 3, 0, 100),
+        short_pure_maturity_scale_days=number(
+            payload, "short_pure_maturity_scale_days",
+            float(payload.get("pure_maturity_scale_days", 365)), 1, 10000),
+        short_pure_maturity_clip=number(
+            payload, "short_pure_maturity_clip",
+            float(payload.get("pure_maturity_clip", 3)), 0, 100),
         score_rate_scale=pct("long_score_rate_scale", 1),
         score_adjustment_clip=number(
             payload, "long_score_adjustment_clip", 3, 0, 100),

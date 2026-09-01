@@ -38,8 +38,10 @@ production parameter names.
 | `score_adjustment_clip` | Maximum absolute normalized adjustment. |
 | `long_pure_maturity_strength` | Independent relative preference for shorter long maturities; `0` disables it. |
 | `short_pure_maturity_strength` | Independent relative preference for longer short maturities; `0` disables it. |
-| `pure_maturity_scale_days` | Days of maturity corresponding to one pure-maturity adjustment unit. |
-| `pure_maturity_clip` | Maximum normalized pure-maturity adjustment. |
+| `long_pure_maturity_scale_days` | Long-side days of maturity corresponding to one pure-maturity adjustment unit. |
+| `long_pure_maturity_clip` | Maximum normalized long-side pure-maturity adjustment. |
+| `short_pure_maturity_scale_days` | Short-side days of maturity corresponding to one pure-maturity adjustment unit. |
+| `short_pure_maturity_clip` | Maximum normalized short-side pure-maturity adjustment. |
 
 ## Gradual allocation
 

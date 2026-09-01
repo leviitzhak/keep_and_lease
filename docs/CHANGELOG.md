@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-01 — separate maturity controls and responsive spreadsheet export
+
+- Split the pure-maturity scale and normalized clip into independent long- and
+  short-side parameters, while mapping legacy shared JSON values to both sides.
+- Fixed spreadsheet generation referencing an out-of-scope portfolio-key list,
+  added immediate preparation feedback, and attached the temporary download link
+  to the document for consistent browser behavior.
+
 ## 2026-09-01 — aligned local Sites GUI/API preview
 
 - Served the spreadsheet ZIP runtime from the FastAPI web application as well
