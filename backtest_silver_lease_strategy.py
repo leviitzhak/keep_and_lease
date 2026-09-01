@@ -512,18 +512,20 @@ def score_diagnostic(contract, p, direction, eligibility_threshold,
     boundary = scoring_boundary(p, direction)
     adjustment = scoring_adjustment(p, direction)
     distance = signed_distance(rate, contract["days"], boundary, direction)
-    final = adjustment.score(max(0.0, base), distance) if eligible else 0.0
-    pure_multiplier = pure_maturity_adjustment(p, direction).multiplier(
-        contract["days"], direction)
-    final *= pure_multiplier
+    rate_adjustment = adjustment.signed_adjustment(distance)
+    pure_adjustment = pure_maturity_adjustment(
+        p, direction).signed_adjustment(contract["days"], direction)
+    final = (max(0.0, base) / adjustment.rate_scale
+             + rate_adjustment + pure_adjustment
+             if eligible else None)
     return {
         "symbol": contract["symbol"], "direction": direction,
         "maturity_days": contract["days"], "rate_pct": 100 * rate,
         "boundary_value_pct": 100 * boundary.value(contract["days"]),
         "eligible": eligible, "signed_distance_pct": 100 * distance,
         "base_score": max(0.0, base),
-        "relative_multiplier": adjustment.multiplier(distance),
-        "pure_maturity_multiplier": pure_multiplier,
+        "relative_adjustment": rate_adjustment,
+        "pure_maturity_adjustment": pure_adjustment,
         "final_score": final, "target_weight_pct": 100 * target_weight,
     }
 
@@ -545,7 +547,7 @@ def market_diagnostics_for_day(candidates, p):
         base_score = max(1e-9, -contract["lease"])
         score = maturity_line_adjusted_score(
             base_score, contract, p, "short")
-        ranked.append((contract["symbol"], max(score, 1e-9)))
+        ranked.append((contract["symbol"], score))
     ranked.sort(key=lambda item: item[1], reverse=True)
     shorts = proportional_allocation(ranked, 1.0)
     short_total = sum(shorts.values())
