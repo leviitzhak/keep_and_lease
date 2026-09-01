@@ -322,6 +322,11 @@ test("downloads portfolio composition and values as an interval spreadsheet", as
   assert.match(html, /Component value \(commodity sleeve initial = 1\)/);
   assert.match(html, /plotRangeSource\.portfolioSeries\.filter\(row=>dateInPlotRange/);
   assert.match(html, /keep-and-lease-portfolio-/);
+  const dockerignore = await readFile(
+    new URL("../.dockerignore", import.meta.url),
+    "utf8",
+  );
+  assert.match(dockerignore, /^!public\/fflate\.js$/m);
 });
 
 test("shows precise proxy expense and compounded portfolio attribution", async () => {
