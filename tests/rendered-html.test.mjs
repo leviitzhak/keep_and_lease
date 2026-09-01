@@ -49,6 +49,10 @@ test("documents data corrections and the daily attribution formulas", async () =
   assert.doesNotMatch(html, /name="enable_slv_leg"/);
   assert.match(html, /function drawBookDecompositions/);
   assert.match(html, /lease_book_compounded_return_pct/);
+  assert.match(html, /unextended lease implementations — value/);
+  assert.match(html, /lease-underlying-values/);
+  assert.match(html, /underlying price index P\(t\)\/P\(0\)/);
+  assert.match(html, /Keep book — extended lease \+ short/);
 });
 
 test("orders shared plots before commodity plots and synchronizes chart dates", async () => {
