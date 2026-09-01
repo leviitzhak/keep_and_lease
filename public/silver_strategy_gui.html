@@ -396,7 +396,7 @@ function drawPortfolioComparisons(){
   if(!last?.portfolio_series||!last?.portfolio_fields)return;
   const f=name=>last.portfolio_fields.indexOf(name),rebalancing=last.portfolio?.rebalancing||'daily';
   const valueFields=['compounded_return_pct','direct_compounded_return_pct','direct_unrebalanced_compounded_return_pct'];
-  const portfolioValues=[[last.portfolio_series[0]?.[0],1,1,1],...last.portfolio_series.map(row=>[row[0],...valueFields.map(name=>{const value=row[f(name)];return Number.isFinite(value)?1+value/100:null})])];
+  const portfolioValues=[[last.portfolio_series[0]?.[f('start_date')]||last.portfolio_series[0]?.[0],1,1,1],...last.portfolio_series.map(row=>[row[0],...valueFields.map(name=>{const value=row[f(name)];return Number.isFinite(value)?1+value/100:null})])];
   const returnCanvas=$('multiPortfolioReturn'),assetCanvas=$('multiPortfolioContributions');
   if(returnCanvas){
     const note=returnCanvas.closest('.commodity-grid')?.querySelector('.statistics-note');

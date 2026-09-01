@@ -843,6 +843,15 @@ def aggregate_portfolio(sleeves, target_weights, rebalance):
     if rebalance not in schedules:
         raise ValueError("Invalid rebalancing choice")
     for day in dates:
+        reference_row = maps[next(iter(sleeves))][day]
+        exit_day = reference_row.get("exit_date", day)
+        interval_exits = {
+            maps[key][day].get("exit_date", day)
+            for key in maps
+        }
+        if len(interval_exits) != 1:
+            raise ValueError(
+                f"Commodity holding intervals ending after {day} are not aligned")
         period = schedules[rebalance](day)
         if rebalance != "none" and previous_period is not None and period != previous_period:
             sleeve_values = {key: nav * weight for key, weight in target_weights.items()}
@@ -855,7 +864,7 @@ def aggregate_portfolio(sleeves, target_weights, rebalance):
         contributions = {}
         direct_contributions = {}
         direct_unrebalanced_contributions = {}
-        day_attribution = {"date": day, "assets": {}}
+        day_attribution = {"date": exit_day, "start_date": day, "assets": {}}
         for key in target_weights:
             effective_weight = sleeve_values[key] / start_nav
             if key == "treasury":
@@ -902,7 +911,7 @@ def aggregate_portfolio(sleeves, target_weights, rebalance):
         direct_unrebalanced_nav *= 1 + direct_unrebalanced_return
         simple += daily_return
         row = [
-            day, 100 * daily_return, 100 * simple, 100 * (nav - 1),
+            exit_day, day, 100 * daily_return, 100 * simple, 100 * (nav - 1),
             100 * direct_return, 100 * (direct_nav - 1), nav,
         ]
         row.extend(100 * contributions[key] for key in target_weights)
@@ -919,7 +928,7 @@ def aggregate_portfolio(sleeves, target_weights, rebalance):
             for asset in day_attribution["assets"].values())
         attribution.append(day_attribution)
     fields = [
-        "date", "interval_return_pct", "simple_cumulative_return_pct",
+        "date", "start_date", "interval_return_pct", "simple_cumulative_return_pct",
         "compounded_return_pct", "direct_daily_return_pct",
         "direct_compounded_return_pct", "nav",
     ] + [f"{key}_contribution_pct" for key in target_weights] + [
