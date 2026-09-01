@@ -6,6 +6,8 @@
 - Prevented null calculation responses from reaching summary rendering. Automatic
   engine mode now retries failed, empty, malformed, or structurally invalid server
   results with the browser engine; explicit server mode reports the response error.
+- Included the tracked browser spreadsheet runtime in the Docker build context so
+  `/fflate.js` is present in deployed GUI images as well as local builds.
 
 ## 2026-08-31 — Allocation smoothing and configurable reactivity
 
