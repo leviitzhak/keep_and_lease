@@ -51,8 +51,10 @@ test("documents data corrections and the daily attribution formulas", async () =
   assert.match(html, /lease_book_compounded_return_pct/);
   assert.match(html, /unextended lease implementations — value/);
   assert.match(html, /lease-underlying-values/);
-  assert.match(html, /underlying price index P\(t\)\/P\(0\)/);
+  assert.match(html, /actual component values by P\(t\)\/P\(0\)/);
   assert.match(html, /Keep book — extended lease \+ short/);
+  assert.match(html, /whole portfolio starts at 1/);
+  assert.match(html, /initial_replicating_leg_value/);
 });
 
 test("orders shared plots before commodity plots and synchronizes chart dates", async () => {
@@ -312,6 +314,7 @@ test("shows precise proxy expense and compounded portfolio attribution", async (
   assert.match(html, /direct_unrebalanced_compounded_return_pct/);
   assert.match(html, /_attributed_factor_compounded_return_pct/);
   assert.match(html, /never rebalanced/);
+  assert.match(html, /portfolio value \(initial = 1\)/);
 });
 
 test("embedded GUI script is syntactically valid", async () => {

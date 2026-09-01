@@ -629,7 +629,7 @@ def sleeve_result(payload, market=None, product="silver"):
     sampled = rows[::stride]
     if sampled[-1] is not rows[-1]:
         sampled.append(rows[-1])
-    fields = ["date", "interval_return_pct", "simple_cumulative_return_pct",
+    fields = ["date", "exit_date", "interval_return_pct", "simple_cumulative_return_pct",
               "compounded_return_pct", "slv_weight_pct", "treasury_weight_pct",
               "long_futures_notional_pct", "short_futures_notional_pct",
               "long_weighted_maturity_days", "short_weighted_maturity_days",
@@ -656,6 +656,13 @@ def sleeve_result(payload, market=None, product="silver"):
               "keep_book_attributed_factor_compounded_return_pct",
               "lease_fund_attributed_factor_compounded_return_pct",
               "lease_futures_treasury_attributed_factor_compounded_return_pct",
+              "replicating_leg_value", "futures_treasury_value",
+              "lease_book_value", "keep_book_value",
+              "replicating_leg_underlying_value",
+              "futures_treasury_underlying_value",
+              "lease_book_underlying_value", "keep_book_underlying_value",
+              "initial_replicating_leg_value",
+              "initial_futures_treasury_value",
               "long_futures_daily_return_pct", "short_futures_daily_return_pct",
               "slv_daily_return_pct", "treasury_daily_return_pct",
               "long_futures_cumulative_return_pct", "short_futures_cumulative_return_pct",

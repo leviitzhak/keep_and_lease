@@ -985,6 +985,11 @@ def run_backtest(spot, contracts, rates, by_day, p):
     keep_factor_nav = 1.0
     lease_fund_factor_nav = 1.0
     lease_futures_treasury_factor_nav = 1.0
+    lease_value = 1.0
+    keep_value = 0.0
+    replicating_value = None
+    futures_treasury_value = None
+    initial_commodity_price = None
     asset_simple = {"long_futures": 0.0, "short_futures": 0.0, "slv": 0.0, "treasury": 0.0}
     asset_nav = {"long_futures": 1.0, "short_futures": 1.0, "slv": 1.0, "treasury": 1.0}
     sgov_proxy_nav = 1.0
@@ -1148,6 +1153,15 @@ def run_backtest(spot, contracts, rates, by_day, p):
             base_long_return,
             {"fund": fund_lease_contribution,
              "futures_treasury": futures_treasury_lease_contribution})
+        starting_nav = nav
+        if replicating_value is None:
+            replicating_value = position["base_slv"]
+            futures_treasury_value = position["base_treasury"]
+            initial_commodity_price = spot[execution_day]
+        replicating_value += starting_nav * fund_lease_contribution
+        futures_treasury_value += starting_nav * futures_treasury_lease_contribution
+        lease_value += starting_nav * base_long_return
+        keep_value += starting_nav * short_book_return
         simple += portfolio_return
         long_simple += base_long_return
         extension_simple += matched_long_extension_return
@@ -1255,7 +1269,9 @@ def run_backtest(spot, contracts, rates, by_day, p):
         else:
             weighted_days = position["bond_days"]
             largest_share = 0.0
-        output.append({"date": execution_day.isoformat(), "signal_date": signal_day.isoformat(),
+        commodity_price_index = spot[exit_day] / initial_commodity_price
+        output.append({"date": execution_day.isoformat(), "exit_date": exit_day.isoformat(),
+                       "signal_date": signal_day.isoformat(),
                        "execution_date": execution_day.isoformat(), "mode": position["mode"],
                        "signal_annual_pct": 100 * position["signal"],
                        "positive_signal_annual_pct": 100 * position["positive_signal"],
@@ -1297,6 +1313,16 @@ def run_backtest(spot, contracts, rates, by_day, p):
                            100 * extension_simple),
                        "short_book_cumulative_return_pct": 100 * short_simple,
                        "compounded_return_pct": 100 * (nav - 1), "nav": nav,
+                       "replicating_leg_value": replicating_value,
+                       "futures_treasury_value": futures_treasury_value,
+                       "lease_book_value": lease_value,
+                       "keep_book_value": keep_value,
+                       "replicating_leg_underlying_value": replicating_value / commodity_price_index,
+                       "futures_treasury_underlying_value": futures_treasury_value / commodity_price_index,
+                       "lease_book_underlying_value": lease_value / commodity_price_index,
+                       "keep_book_underlying_value": keep_value / commodity_price_index,
+                       "initial_replicating_leg_value": position["base_slv"],
+                       "initial_futures_treasury_value": position["base_treasury"],
                        "lease_book_compounded_return_pct": 100 * (lease_book_nav - 1),
                        "keep_book_compounded_return_pct": 100 * (keep_book_nav - 1),
                        "keep_book_contribution_compounded_return_pct": (
