@@ -60,3 +60,14 @@ device using the same approved Google identity see that identity's latest comple
 run. Another allowlisted identity cannot list, poll, download, or cancel it. Browser
 storage remains responsible only for lightweight unsaved parameter edits, named
 presets, plot range, and chart order.
+
+## Portfolio spreadsheet export
+
+The period selector controls both plots and spreadsheet export. After a result is
+run or restored, the GUI can download an Excel workbook for the active full-history,
+calendar-year, or custom date interval. The workbook contains an overview with the
+initial portfolio composition, the combined portfolio NAV and returns, and a long
+component table with each commodity sleeve's daily effective portfolio weight, leg
+weight, component value, and weighted price or price index. Component values are
+explicitly labelled as values within a commodity sleeve initialized to one; futures
+prices are weighted averages of the contracts held in the corresponding leg.

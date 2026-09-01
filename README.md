@@ -22,7 +22,11 @@ npm run dev
 
 The development command copies market data and Python sources from the
 repository root and the Pyodide runtime from `node_modules` into generated
-public assets.
+public assets. It then starts the canonical FastAPI/CPython calculation server
+and the Sites GUI together. Vite proxies same-origin `/api/v1/*` requests to the
+local API, and the Sites iframe requests `engine=server`, matching the GCP API
+contract without silently falling back to browser calculation. Use
+`KEEP_AND_LEASE_LOCAL_API_PORT` to select a non-default API port.
 
 ## Build
 
@@ -70,10 +74,13 @@ deployment workflow are implemented. The foundation is provisioned; follow
 [`docs/GOOGLE_CLOUD_RUN_SETUP.md`](docs/GOOGLE_CLOUD_RUN_SETUP.md) for deployment,
 preview/access operations, and remaining acceptance tests.
 
-The Sites checkout may be used for a local agent preview only. Before starting
-one, synchronize it with the intended GitHub branch and commit, then verify the
-checkout's `HEAD` equals that commit. A Sites preview is never a deployment
-source and must not substitute for the GitHub-to-Cloud-Run preview workflow.
+The Sites checkout may be used for a fast local GUI/API inspection loop. Before
+starting one, synchronize it with the intended GitHub branch and commit, then
+verify the checkout's `HEAD` equals that commit. The local API uses the same
+versioned request/result contract and canonical Python engine as GCP, while GCP
+continues to add its durable Firestore, Cloud Storage, and Cloud Run Job backend.
+A Sites preview is never a deployment source and must not substitute for the
+GitHub-to-Cloud-Run preview workflow.
 
 ## Render (legacy / retired)
 

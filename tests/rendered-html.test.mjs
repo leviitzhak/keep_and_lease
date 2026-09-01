@@ -33,6 +33,25 @@ test("renders development preview metadata", async () => {
   assert.match(await response.text(), developmentPreviewMeta);
 });
 
+test("runs the Sites preview against the same-origin server API in strict mode", async () => {
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const vite = await readFile(new URL("../vite.config.ts", import.meta.url), "utf8");
+  const packageJson = JSON.parse(await readFile(
+    new URL("../package.json", import.meta.url),
+    "utf8",
+  ));
+  const launcher = await readFile(
+    new URL("../scripts/dev-with-api.sh", import.meta.url),
+    "utf8",
+  );
+  assert.match(page, /silver_strategy_gui\.html\?engine=server/);
+  assert.match(vite, /"\/api\/v1"/);
+  assert.match(vite, /KEEP_AND_LEASE_LOCAL_API_URL/);
+  assert.equal(packageJson.scripts.dev, "bash scripts/dev-with-api.sh");
+  assert.match(launcher, /python server_main\.py/);
+  assert.match(launcher, /\/api\/v1\/health/);
+});
+
 test("documents data corrections and the daily attribution formulas", async () => {
   const html = await readFile(
     new URL("../public/silver_strategy_gui.html", import.meta.url),
@@ -140,7 +159,11 @@ test("shows exact maturity-line formulas and dynamic hierarchical attribution", 
   assert.match(html, /function scoreDiagnosticTable/);
   assert.match(html, /name="long_pure_maturity_strength"/);
   assert.match(html, /name="short_pure_maturity_strength"/);
-  assert.match(html, /Pure maturity multiplier/);
+  assert.match(html, /name="long_pure_maturity_scale_days"/);
+  assert.match(html, /name="long_pure_maturity_clip"/);
+  assert.match(html, /name="short_pure_maturity_scale_days"/);
+  assert.match(html, /name="short_pure_maturity_clip"/);
+  assert.match(html, /Pure maturity adjustment/);
   assert.doesNotMatch(html, /name="long_maturity_line_intercept"/);
   assert.doesNotMatch(html, /name="short_maturity_line_intercept"/);
   assert.match(html, /id="dailyAttributionPanel"/);
@@ -190,8 +213,10 @@ test("parameter-only preview matches the canonical long and short multipliers", 
   );
   const values = {
     min_days: 10,
-    pure_maturity_scale_days: 365,
-    pure_maturity_clip: 3,
+    long_pure_maturity_scale_days: 365,
+    long_pure_maturity_clip: 3,
+    short_pure_maturity_scale_days: 365,
+    short_pure_maturity_clip: 3,
     long_line_maturity_1: 30,
     long_line_rate_1: 0.033,
     long_line_maturity_2: 365,
@@ -273,6 +298,13 @@ test("uses the server adapter while preserving the Pyodide worker fallback", asy
   assert.match(adapter, /new Worker\("\/backtest-worker-v12\.js/);
   assert.match(adapter, /requestedEngine === "pyodide"/);
   assert.match(adapter, /requestedEngine === "server"/);
+  assert.match(adapter, /Empty response from/);
+  assert.match(adapter, /Invalid JSON from/);
+  assert.match(adapter, /result without a summary/);
+  assert.match(adapter, /function runBrowserRequest/);
+  assert.match(adapter, /config\.requestedEngine === "auto"/);
+  assert.match(html, /if\(data\.result==null\)/);
+  assert.match(html, /!data\.summary/);
 });
 
 test("displays the application version and deployed commit", async () => {
@@ -302,6 +334,35 @@ test("downloads and loads strategy parameters as JSON", async () => {
   assert.match(html, /The selected file is not valid JSON/);
   assert.match(html, /contains no recognized strategy parameters/);
   assert.match(html, /e\.target\.value=''/);
+});
+
+test("downloads portfolio composition and values as an interval spreadsheet", async () => {
+  const html = await readFile(
+    new URL("../public/silver_strategy_gui.html", import.meta.url),
+    "utf8",
+  );
+  assert.match(html, /id="downloadSpreadsheet"/);
+  assert.match(html, /function downloadSpreadsheet\(\)/);
+  assert.match(html, /application\/vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet/);
+  assert.match(html, /Component value \(commodity sleeve initial = 1\)/);
+  assert.match(html, /plotRangeSource\.portfolioSeries\.filter\(row=>dateInPlotRange/);
+  assert.match(html, /keep-and-lease-portfolio-/);
+  assert.match(html, /Preparing spreadsheet/);
+  assert.match(html, /document\.body\.appendChild\(link\)/);
+  assert.doesNotMatch(html, /\.\.\.keys\.map\(\(\)=>22\)/);
+  const dockerignore = await readFile(
+    new URL("../.dockerignore", import.meta.url),
+    "utf8",
+  );
+  assert.match(dockerignore, /^!public\/fflate\.js$/m);
+  const webDockerfile = await readFile(
+    new URL("../Dockerfile.web", import.meta.url),
+    "utf8",
+  );
+  assert.match(
+    webDockerfile,
+    /^COPY .*public\/fflate\.js .*\.\/public\/$/m,
+  );
 });
 
 test("shows precise proxy expense and compounded portfolio attribution", async () => {

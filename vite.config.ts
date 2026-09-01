@@ -47,6 +47,12 @@ export default defineConfig(async () => {
     server: {
       host: "0.0.0.0",
       allowedHosts: ["terminal.local"],
+      proxy: {
+        "/api/v1": {
+          target: process.env.KEEP_AND_LEASE_LOCAL_API_URL || "http://127.0.0.1:8000",
+          changeOrigin: true,
+        },
+      },
       ...(isCodexSeatbeltSandbox
         ? { watch: { useFsEvents: false, usePolling: true } }
         : {}),

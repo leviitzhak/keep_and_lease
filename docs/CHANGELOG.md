@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-09-01 — separate maturity controls and responsive spreadsheet export
+
+- Split the pure-maturity scale and normalized clip into independent long- and
+  short-side parameters, while mapping legacy shared JSON values to both sides.
+- Fixed spreadsheet generation referencing an out-of-scope portfolio-key list,
+  added immediate preparation feedback, and attached the temporary download link
+  to the document for consistent browser behavior.
+
+## 2026-09-01 — aligned local Sites GUI/API preview
+
+- Served the spreadsheet ZIP runtime from the FastAPI web application as well
+  as packaging it in the web container.
+- Made `npm run dev` launch the canonical local CPython API beside the Sites GUI,
+  with same-origin `/api/v1` proxying and strict server mode in the Sites iframe.
+- Made failed deployment browser checks print failed requests, page errors, and
+  browser console messages directly while retaining the JSON/screenshot artifact.
+
+- Added an in-browser Excel export for the active plot interval, with overview,
+  combined portfolio, and daily component-composition sheets containing weights,
+  component values, and weighted prices without rerunning the backtest.
+- Prevented null calculation responses from reaching summary rendering. Automatic
+  engine mode now retries failed, empty, malformed, or structurally invalid server
+  results with the browser engine; explicit server mode reports the response error.
+- Included the tracked browser spreadsheet runtime in the Docker build context so
+  `/fflate.js` is present in deployed GUI images as well as local builds.
+
 ## 2026-08-31 — Allocation smoothing and configurable reactivity
 
 - Added a same-day/next-day reactivity parameter. Same-day is the default;

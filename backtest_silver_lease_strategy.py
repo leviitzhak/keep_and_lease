@@ -62,6 +62,8 @@ class Parameters:
     long_score_rate_scale: float | None = None
     long_score_adjustment_clip: float | None = None
     long_pure_maturity_strength: float = 0.0
+    long_pure_maturity_scale_days: float = 365.0
+    long_pure_maturity_clip: float = 3.0
     long_maturity_bonus_per_year: float = 0.004
     long_extreme_qualification_rate: float = 0.08
     long_extreme_maturity_advantage_per_year: float = 0.005
@@ -77,8 +79,8 @@ class Parameters:
     short_score_rate_scale: float | None = None
     short_score_adjustment_clip: float | None = None
     short_pure_maturity_strength: float = 0.0
-    pure_maturity_scale_days: float = 365.0
-    pure_maturity_clip: float = 3.0
+    short_pure_maturity_scale_days: float = 365.0
+    short_pure_maturity_clip: float = 3.0
     score_rate_scale: float = 0.01
     score_adjustment_clip: float = 3.0
     short_maturity_bonus_per_year: float = 0.004
@@ -481,8 +483,8 @@ def scoring_adjustment(p, direction):
 def pure_maturity_adjustment(p, direction):
     return PureMaturityAdjustment(
         strength=getattr(p, f"{direction}_pure_maturity_strength"),
-        scale_days=p.pure_maturity_scale_days,
-        clip=p.pure_maturity_clip,
+        scale_days=getattr(p, f"{direction}_pure_maturity_scale_days"),
+        clip=getattr(p, f"{direction}_pure_maturity_clip"),
     )
 
 

@@ -38,13 +38,27 @@ class ScoringParameterTests(unittest.TestCase):
         p = parameters({
             "long_pure_maturity_strength": "0.4",
             "short_pure_maturity_strength": "0.7",
-            "pure_maturity_scale_days": "180",
-            "pure_maturity_clip": "2",
+            "long_pure_maturity_scale_days": "180",
+            "long_pure_maturity_clip": "2",
+            "short_pure_maturity_scale_days": "720",
+            "short_pure_maturity_clip": "4",
         })
         self.assertEqual(p.long_pure_maturity_strength, 0.4)
         self.assertEqual(p.short_pure_maturity_strength, 0.7)
-        self.assertEqual(p.pure_maturity_scale_days, 180)
-        self.assertEqual(p.pure_maturity_clip, 2)
+        self.assertEqual(p.long_pure_maturity_scale_days, 180)
+        self.assertEqual(p.long_pure_maturity_clip, 2)
+        self.assertEqual(p.short_pure_maturity_scale_days, 720)
+        self.assertEqual(p.short_pure_maturity_clip, 4)
+
+    def test_legacy_shared_pure_maturity_controls_seed_both_sides(self):
+        p = parameters({
+            "pure_maturity_scale_days": "240",
+            "pure_maturity_clip": "1.5",
+        })
+        self.assertEqual(p.long_pure_maturity_scale_days, 240)
+        self.assertEqual(p.short_pure_maturity_scale_days, 240)
+        self.assertEqual(p.long_pure_maturity_clip, 1.5)
+        self.assertEqual(p.short_pure_maturity_clip, 1.5)
 
 
 if __name__ == "__main__":
