@@ -298,6 +298,18 @@ test("downloads and loads strategy parameters as JSON", async () => {
   assert.match(html, /e\.target\.value=''/);
 });
 
+test("shows precise proxy expense and compounded portfolio attribution", async () => {
+  const html = await readFile(
+    new URL("../public/silver_strategy_gui.html", import.meta.url),
+    "utf8",
+  );
+  assert.match(html, /name="slv_expense"[^>]*step="0\.01"/);
+  assert.match(html, /function drawPortfolioComparisons/);
+  assert.match(html, /direct_unrebalanced_compounded_return_pct/);
+  assert.match(html, /_attributed_factor_compounded_return_pct/);
+  assert.match(html, /never rebalanced/);
+});
+
 test("embedded GUI script is syntactically valid", async () => {
   const html = await readFile(
     new URL("../public/silver_strategy_gui.html", import.meta.url),
