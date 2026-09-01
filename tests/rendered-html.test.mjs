@@ -292,3 +292,13 @@ test("downloads and loads strategy parameters as JSON", async () => {
   assert.match(html, /contains no recognized strategy parameters/);
   assert.match(html, /e\.target\.value=''/);
 });
+
+test("embedded GUI script is syntactically valid", async () => {
+  const html = await readFile(
+    new URL("../public/silver_strategy_gui.html", import.meta.url),
+    "utf8",
+  );
+  const match = html.match(/<script>([\s\S]*?)<\/script>/);
+  assert.ok(match);
+  assert.doesNotThrow(() => new Function(match[1]));
+});
