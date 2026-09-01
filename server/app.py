@@ -88,6 +88,10 @@ def create_app(
     def browser_worker() -> FileResponse:
         return static_file("backtest-worker-v13.js", "text/javascript")
 
+    @app.get("/fflate.js", include_in_schema=False)
+    def spreadsheet_runtime() -> FileResponse:
+        return static_file("fflate.js", "text/javascript")
+
     @app.get("/build-info.json", include_in_schema=False)
     def build_info() -> dict[str, Any]:
         capabilities = (

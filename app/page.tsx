@@ -20,7 +20,7 @@
 export default function Home() {
   return (
     <main className="site-shell">
-      <iframe className="strategy-frame" src="/silver_strategy_gui.html"
+      <iframe className="strategy-frame" src="/silver_strategy_gui.html?engine=server"
         title="Keep and Lease silver strategy backtest" />
     </main>
   );

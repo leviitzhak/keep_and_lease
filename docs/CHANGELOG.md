@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-01 — aligned local Sites GUI/API preview
+
+- Served the spreadsheet ZIP runtime from the FastAPI web application as well
+  as packaging it in the web container.
+- Made `npm run dev` launch the canonical local CPython API beside the Sites GUI,
+  with same-origin `/api/v1` proxying and strict server mode in the Sites iframe.
+- Made failed deployment browser checks print failed requests, page errors, and
+  browser console messages directly while retaining the JSON/screenshot artifact.
+
 - Added an in-browser Excel export for the active plot interval, with overview,
   combined portfolio, and daily component-composition sheets containing weights,
   component values, and weighted prices without rerunning the backtest.

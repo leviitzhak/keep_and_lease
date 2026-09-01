@@ -33,6 +33,25 @@ test("renders development preview metadata", async () => {
   assert.match(await response.text(), developmentPreviewMeta);
 });
 
+test("runs the Sites preview against the same-origin server API in strict mode", async () => {
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const vite = await readFile(new URL("../vite.config.ts", import.meta.url), "utf8");
+  const packageJson = JSON.parse(await readFile(
+    new URL("../package.json", import.meta.url),
+    "utf8",
+  ));
+  const launcher = await readFile(
+    new URL("../scripts/dev-with-api.sh", import.meta.url),
+    "utf8",
+  );
+  assert.match(page, /silver_strategy_gui\.html\?engine=server/);
+  assert.match(vite, /"\/api\/v1"/);
+  assert.match(vite, /KEEP_AND_LEASE_LOCAL_API_URL/);
+  assert.equal(packageJson.scripts.dev, "bash scripts/dev-with-api.sh");
+  assert.match(launcher, /python server_main\.py/);
+  assert.match(launcher, /\/api\/v1\/health/);
+});
+
 test("documents data corrections and the daily attribution formulas", async () => {
   const html = await readFile(
     new URL("../public/silver_strategy_gui.html", import.meta.url),

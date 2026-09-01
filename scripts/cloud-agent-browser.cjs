@@ -271,5 +271,20 @@ async function main() {
 
 main().catch((error) => {
   console.error(`browser check failed: ${error.message}`);
+  const reportPath = path.join(process.env.KEEP_AND_LEASE_OUTPUT_DIR || "", "gui-report.json");
+  try {
+    const report = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+    if (report.failedRequests?.length) {
+      console.error("failed same-origin requests:", JSON.stringify(report.failedRequests, null, 2));
+    }
+    if (report.pageErrors?.length) {
+      console.error("page errors:", JSON.stringify(report.pageErrors, null, 2));
+    }
+    if (report.consoleMessages?.length) {
+      console.error("browser console messages:", JSON.stringify(report.consoleMessages, null, 2));
+    }
+  } catch {
+    // The artifact writer may itself have failed; preserve the original error.
+  }
   process.exitCode = 2;
 });
