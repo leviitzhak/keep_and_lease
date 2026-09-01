@@ -512,18 +512,20 @@ def score_diagnostic(contract, p, direction, eligibility_threshold,
     boundary = scoring_boundary(p, direction)
     adjustment = scoring_adjustment(p, direction)
     distance = signed_distance(rate, contract["days"], boundary, direction)
-    final = adjustment.score(max(0.0, base), distance) if eligible else 0.0
-    pure_multiplier = pure_maturity_adjustment(p, direction).multiplier(
-        contract["days"], direction)
-    final *= pure_multiplier
+    rate_adjustment = adjustment.signed_adjustment(distance)
+    pure_adjustment = pure_maturity_adjustment(
+        p, direction).signed_adjustment(contract["days"], direction)
+    final = (max(0.0, base) / adjustment.rate_scale
+             + rate_adjustment + pure_adjustment
+             if eligible else None)
     return {
         "symbol": contract["symbol"], "direction": direction,
         "maturity_days": contract["days"], "rate_pct": 100 * rate,
         "boundary_value_pct": 100 * boundary.value(contract["days"]),
         "eligible": eligible, "signed_distance_pct": 100 * distance,
         "base_score": max(0.0, base),
-        "relative_multiplier": adjustment.multiplier(distance),
-        "pure_maturity_multiplier": pure_multiplier,
+        "relative_adjustment": rate_adjustment,
+        "pure_maturity_adjustment": pure_adjustment,
         "final_score": final, "target_weight_pct": 100 * target_weight,
     }
 
@@ -545,7 +547,7 @@ def market_diagnostics_for_day(candidates, p):
         base_score = max(1e-9, -contract["lease"])
         score = maturity_line_adjusted_score(
             base_score, contract, p, "short")
-        ranked.append((contract["symbol"], max(score, 1e-9)))
+        ranked.append((contract["symbol"], score))
     ranked.sort(key=lambda item: item[1], reverse=True)
     shorts = proportional_allocation(ranked, 1.0)
     short_total = sum(shorts.values())
@@ -668,10 +670,10 @@ def positions_for_day(candidates, p, previous=None, elapsed_days=1.0):
         p.long_allocation_half_life_days,
         elapsed_days,
     )
-    if p.enable_slv_leg:
-        slv_weight = 1.0 - futures_treasury_share
-    else:
-        slv_weight = 0.0
+    # The fund is structurally the complement of futures replication.  Keep
+    # accepting the legacy parameter for JSON compatibility, but never allow
+    # it to leave the base commodity leg under-invested.
+    slv_weight = 1.0 - futures_treasury_share
     treasury_weight = futures_treasury_share
 
     # Long-futures notional equals the Treasury-funded replication share; it is
@@ -941,6 +943,29 @@ def _rescaled_book_return(book, target_total, day, next_day, contracts, directio
     return result, True
 
 
+def multiplicative_log_contributions(total_return, contributions):
+    """Map additive daily contributions to exact, order-free return factors.
+
+    If ``total_return = sum(contributions.values())``, the returned log
+    contributions sum to ``log1p(total_return)``.  Consequently, multiplying
+    ``exp(log_contribution)`` for every component reconstructs exactly
+    ``1 + total_return`` (up to floating-point precision).
+    """
+    if total_return <= -1.0:
+        raise ValueError("multiplicative attribution requires return > -100%")
+    values = dict(contributions)
+    if not values:
+        return {}
+    # Absorb tiny arithmetic drift so the identity remains exact in output.
+    anchor = max(values, key=lambda name: abs(values[name]))
+    values[anchor] += total_return - sum(values.values())
+    scale = (math.log1p(total_return) / total_return
+             if abs(total_return) > 1e-15 else 1.0)
+    logs = {name: value * scale for name, value in values.items()}
+    logs[anchor] += math.log1p(total_return) - sum(logs.values())
+    return logs
+
+
 def run_backtest(spot, contracts, rates, by_day, p):
     # Ignore stray weekend records. Exchange holidays have no observation, so
     # each interval automatically runs to the next available business day.
@@ -951,6 +976,15 @@ def run_backtest(spot, contracts, rates, by_day, p):
     extension_simple = 0.0
     short_simple = 0.0
     nav = 1.0
+    lease_book_nav = 1.0
+    keep_book_nav = 1.0
+    keep_contribution_nav = 1.0
+    replicating_fund_book_nav = 1.0
+    futures_treasury_book_nav = 1.0
+    lease_factor_nav = 1.0
+    keep_factor_nav = 1.0
+    lease_fund_factor_nav = 1.0
+    lease_futures_treasury_factor_nav = 1.0
     asset_simple = {"long_futures": 0.0, "short_futures": 0.0, "slv": 0.0, "treasury": 0.0}
     asset_nav = {"long_futures": 1.0, "short_futures": 1.0, "slv": 1.0, "treasury": 1.0}
     sgov_proxy_nav = 1.0
@@ -989,6 +1023,7 @@ def run_backtest(spot, contracts, rates, by_day, p):
                             position["base_slv"] * spot_return)
         short_futures_return = 0.0
         long_futures_contribution = 0.0
+        base_long_futures_contribution = 0.0
         valid_interval = True
         short_total = sum(position["shorts"].values())
         long_total = sum(position["longs"].values())
@@ -997,7 +1032,9 @@ def run_backtest(spot, contracts, rates, by_day, p):
             contribution = weight * value
             long_futures_contribution += contribution
             portfolio_return += contribution
-            base_long_return += position["base_longs"].get(symbol, 0.0) * value
+            base_contribution = position["base_longs"].get(symbol, 0.0) * value
+            base_long_futures_contribution += base_contribution
+            base_long_return += base_contribution
             if not found:
                 missing_futures_intervals.append({
                     "signal_date": signal_day.isoformat(),
@@ -1094,11 +1131,40 @@ def run_backtest(spot, contracts, rates, by_day, p):
         attribution_residual = portfolio_return - attributed
         matched_long_extension_return = position["extension_ratio"] * base_long_return
         short_book_return = matched_long_extension_return + short_futures_return
+        fund_lease_contribution = position["base_slv"] * spot_return
+        futures_treasury_lease_contribution = (
+            position["base_treasury"] * treasury_return +
+            base_long_futures_contribution)
+        replication_weight = sum(position["base_longs"].values())
+        futures_treasury_book_return = (
+            treasury_return + base_long_futures_contribution / replication_weight
+            if replication_weight > 0 else None)
+        keep_book_standalone_return = (
+            short_book_return / short_total if short_total > 0 else None)
+        strategy_logs = multiplicative_log_contributions(
+            portfolio_return,
+            {"lease": base_long_return, "keep": short_book_return})
+        lease_logs = multiplicative_log_contributions(
+            base_long_return,
+            {"fund": fund_lease_contribution,
+             "futures_treasury": futures_treasury_lease_contribution})
         simple += portfolio_return
         long_simple += base_long_return
         extension_simple += matched_long_extension_return
         short_simple += short_book_return
         nav *= 1 + portfolio_return
+        lease_book_nav *= 1 + base_long_return
+        keep_contribution_nav *= 1 + short_book_return
+        replicating_fund_book_nav *= 1 + spot_return
+        if keep_book_standalone_return is not None:
+            keep_book_nav *= 1 + keep_book_standalone_return
+        if futures_treasury_book_return is not None:
+            futures_treasury_book_nav *= 1 + futures_treasury_book_return
+        lease_factor_nav *= math.exp(strategy_logs["lease"])
+        keep_factor_nav *= math.exp(strategy_logs["keep"])
+        lease_fund_factor_nav *= math.exp(lease_logs["fund"])
+        lease_futures_treasury_factor_nav *= math.exp(
+            lease_logs["futures_treasury"])
         sgov_proxy_nav *= 1 + sgov_proxy_return
         # Standalone leg returns always represent a fully invested leg.  They
         # are deliberately independent of the portfolio's allocation signal.
@@ -1207,12 +1273,46 @@ def run_backtest(spot, contracts, rates, by_day, p):
                        "matched_long_extension_interval_return_pct": (
                            100 * matched_long_extension_return),
                        "short_book_interval_return_pct": 100 * short_book_return,
+                       "lease_book_interval_return_pct": 100 * base_long_return,
+                       "keep_book_interval_return_pct": (
+                           100 * keep_book_standalone_return
+                           if keep_book_standalone_return is not None else None),
+                       "keep_book_contribution_interval_return_pct": (
+                           100 * short_book_return),
+                       "replicating_fund_book_interval_return_pct": 100 * spot_return,
+                       "futures_treasury_book_interval_return_pct": (
+                           100 * futures_treasury_book_return
+                           if futures_treasury_book_return is not None else None),
+                       "lease_book_factor_interval_return_pct": (
+                           100 * math.expm1(strategy_logs["lease"])),
+                       "keep_book_factor_interval_return_pct": (
+                           100 * math.expm1(strategy_logs["keep"])),
+                       "lease_fund_factor_interval_return_pct": (
+                           100 * math.expm1(lease_logs["fund"])),
+                       "lease_futures_treasury_factor_interval_return_pct": (
+                           100 * math.expm1(lease_logs["futures_treasury"])),
                        "simple_cumulative_return_pct": 100 * simple,
                        "long_book_cumulative_return_pct": 100 * long_simple,
                        "matched_long_extension_cumulative_return_pct": (
                            100 * extension_simple),
                        "short_book_cumulative_return_pct": 100 * short_simple,
                        "compounded_return_pct": 100 * (nav - 1), "nav": nav,
+                       "lease_book_compounded_return_pct": 100 * (lease_book_nav - 1),
+                       "keep_book_compounded_return_pct": 100 * (keep_book_nav - 1),
+                       "keep_book_contribution_compounded_return_pct": (
+                           100 * (keep_contribution_nav - 1)),
+                       "replicating_fund_book_compounded_return_pct": (
+                           100 * (replicating_fund_book_nav - 1)),
+                       "futures_treasury_book_compounded_return_pct": (
+                           100 * (futures_treasury_book_nav - 1)),
+                       "lease_book_attributed_factor_compounded_return_pct": (
+                           100 * (lease_factor_nav - 1)),
+                       "keep_book_attributed_factor_compounded_return_pct": (
+                           100 * (keep_factor_nav - 1)),
+                       "lease_fund_attributed_factor_compounded_return_pct": (
+                           100 * (lease_fund_factor_nav - 1)),
+                       "lease_futures_treasury_attributed_factor_compounded_return_pct": (
+                           100 * (lease_futures_treasury_factor_nav - 1)),
                        "long_futures_daily_return_pct": (
                            100 * asset_returns["long_futures"]
                            if asset_returns["long_futures"] is not None else None),

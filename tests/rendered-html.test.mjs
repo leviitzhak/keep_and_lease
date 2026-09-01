@@ -44,6 +44,11 @@ test("documents data corrections and the daily attribution formulas", async () =
   assert.match(html, /How the daily-return decomposition is calculated/);
   assert.match(html, /futures basis contribution/);
   assert.match(html, /NAV\[t\+1\]/);
+  assert.match(html, /exact product decomposition/);
+  assert.match(html, /1\+R = Π exp\(gᵢ\)/);
+  assert.doesNotMatch(html, /name="enable_slv_leg"/);
+  assert.match(html, /function drawBookDecompositions/);
+  assert.match(html, /lease_book_compounded_return_pct/);
 });
 
 test("orders shared plots before commodity plots and synchronizes chart dates", async () => {
@@ -155,16 +160,16 @@ test("previews long and short parameter-only weighting independently", async () 
   assert.match(html, /id="previewShortScore"/);
   assert.match(html, /id="scorePreviewDialog"/);
   assert.match(html, /id="scorePreviewIncludeEntry"/);
-  assert.match(html, /heatmap colour is the parameter-only multiplier/i);
+  assert.match(html, /heatmap colour is the signed parameter-only logit/i);
   assert.match(html, /SCORE_PREVIEW_MAX_DAYS=3652\.5/);
   assert.match(html, /Years to maturity T/);
   assert.match(html, /silver and gold observations reach about 5 years/i);
   assert.match(html, /function drawScoreParameterHeatmap/);
   assert.match(html, /function scorePreviewConfig/);
-  assert.match(html, /P<sub>.*<\/sub>\(T,r\) = R<sub>/);
+  assert.match(html, /A<sub>.*<\/sub>\(T,r\) = A<sub>rate<\/sub>/);
   assert.match(html, /q<sub>i<\/sub> = B<sub>i<\/sub>/);
   assert.match(html, /w<sub>i<\/sub> = Q<sub>/);
-  assert.match(html, /complete gradual-mode raw score/);
+  assert.match(html, /softmax allocation/);
   assert.match(html, /updateScorePreviewButtons/);
 });
 
@@ -191,7 +196,7 @@ test("parameter-only preview matches the canonical long and short multipliers", 
     long_pure_maturity_strength: 0.5,
     long_futures_entry_mode: "fixed",
     positive_entry_rate: 0,
-    max_long_future: 50,
+    max_futures_treasury_fraction: 50,
     short_line_maturity_1: 30,
     short_line_rate_1: 0.033,
     short_line_maturity_2: 365,
@@ -202,7 +207,7 @@ test("parameter-only preview matches the canonical long and short multipliers", 
     short_pure_maturity_strength: 0.5,
     short_futures_entry_mode: "fixed",
     negative_short_start_rate: -0.5,
-    max_short_fraction_of_slv: 50,
+    max_short_fraction_of_long_leg: 50,
   };
   const form = {
     elements: { namedItem: (name) => ({ value: values[name] }) },
@@ -213,16 +218,16 @@ test("parameter-only preview matches the canonical long and short multipliers", 
   )(form);
   const long = scorePreviewConfig("long").components(365, 1.4);
   const short = scorePreviewConfig("short").components(365, -1.4);
-  assert.equal(long.rateMultiplier, 2);
-  assert.equal(long.pureMultiplier, 0.5);
-  assert.equal(long.multiplier, 1);
-  assert.equal(long.entryBase, 1.4);
-  assert.equal(long.entryScore, 1.4);
-  assert.equal(short.rateMultiplier, 2);
-  assert.equal(short.pureMultiplier, 1.5);
-  assert.equal(short.multiplier, 3);
+  assert.ok(Math.abs(long.rateAdjustment - 1) < 1e-12);
+  assert.equal(long.pureAdjustment, -0.5);
+  assert.ok(Math.abs(long.parameterLogit - 0.5) < 1e-12);
+  assert.ok(Math.abs(long.entryBase - 1.4) < 1e-12);
+  assert.ok(Math.abs(long.entryLogit - 1.9) < 1e-12);
+  assert.ok(Math.abs(short.rateAdjustment - 1) < 1e-12);
+  assert.equal(short.pureAdjustment, 0.5);
+  assert.ok(Math.abs(short.parameterLogit - 1.5) < 1e-12);
   assert.ok(Math.abs(short.entryBase - 0.9) < 1e-12);
-  assert.ok(Math.abs(short.entryScore - 2.7) < 1e-12);
+  assert.ok(Math.abs(short.entryLogit - 2.4) < 1e-12);
 });
 
 test("bundles Python dependencies required by the browser worker", async () => {
@@ -291,4 +296,26 @@ test("downloads and loads strategy parameters as JSON", async () => {
   assert.match(html, /The selected file is not valid JSON/);
   assert.match(html, /contains no recognized strategy parameters/);
   assert.match(html, /e\.target\.value=''/);
+});
+
+test("shows precise proxy expense and compounded portfolio attribution", async () => {
+  const html = await readFile(
+    new URL("../public/silver_strategy_gui.html", import.meta.url),
+    "utf8",
+  );
+  assert.match(html, /name="slv_expense"[^>]*step="0\.01"/);
+  assert.match(html, /function drawPortfolioComparisons/);
+  assert.match(html, /direct_unrebalanced_compounded_return_pct/);
+  assert.match(html, /_attributed_factor_compounded_return_pct/);
+  assert.match(html, /never rebalanced/);
+});
+
+test("embedded GUI script is syntactically valid", async () => {
+  const html = await readFile(
+    new URL("../public/silver_strategy_gui.html", import.meta.url),
+    "utf8",
+  );
+  const match = html.match(/<script>([\s\S]*?)<\/script>/);
+  assert.ok(match);
+  assert.doesNotThrow(() => new Function(match[1]));
 });

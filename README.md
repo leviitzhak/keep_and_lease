@@ -88,6 +88,16 @@ See the Google Cloud documentation above for all new deployment and preview work
 
 ## Commodity-leg allocation semantics
 
-Each configured commodity proportion is the **full long commodity leg**. Within that leg, the replicating fund and the Treasury-collateralized long-futures replication are complementary: if `a(r)` is the futures+Treasuries share, the replicating-fund share is `1 - a(r)`. The parameter `max_futures_treasury_fraction` caps `a(r)`, so `1 - max_futures_treasury_fraction` is the minimum replicating-fund share when both implementations are enabled.
+Each configured commodity proportion is the **full long commodity leg**. Within that leg, the replicating fund and the Treasury-collateralized long-futures replication are complementary: if `a(r)` is the futures+Treasuries share, the replicating-fund share is `1 - a(r)`. The parameter `max_futures_treasury_fraction` caps `a(r)`, so `1 - max_futures_treasury_fraction` is the minimum replicating-fund share. The replicating fund is structurally mandatory; legacy JSON containing `enable_slv_leg=false` is accepted but the value is ignored.
 
 The short parameter `max_short_fraction_of_long_leg` is measured against the full long commodity leg, not against only the fund or only the futures portion. A short position is paired with an equal-sized extension of the complete long commodity implementation.
+
+## Book return decomposition
+
+The lease book is the base long commodity implementation: replicating fund plus Treasury-collateralized long futures. The keep book is the incremental matched long extension plus short futures. The GUI reports independently compounded returns for both books and, within the lease book, for the replicating fund and the futures-plus-Treasury implementation.
+
+Independent curves are useful counterfactuals, but they do not multiply to the strategy NAV because the daily strategy return is initially an additive sum of book contributions. For an exact product decomposition, daily additive contributions `c_i` with `R = sum(c_i)` are converted to log contributions
+
+`g_i = c_i * log(1 + R) / R`, using the continuous limit `g_i = c_i` when `R = 0`.
+
+Then `1 + R = product(exp(g_i))`. Compounding each elementary factor `exp(g_i) - 1` through time gives an order-independent attribution whose factors multiply exactly to the parent NAV. The same transformation is applied first to lease versus keep and then inside the lease book to fund versus futures-plus-Treasury.

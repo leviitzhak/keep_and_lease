@@ -20,6 +20,9 @@ class LegAndEntryModeTests(unittest.TestCase):
         self.assertEqual(p.positive_entry_rate, -0.20)
         self.assertEqual(p.positive_full_rate, -0.10)
 
+    def test_legacy_json_cannot_disable_replicating_fund(self):
+        self.assertTrue(parameters({"enable_slv_leg": "false"}).enable_slv_leg)
+
     def test_fixed_modes_jump_to_full_positions(self):
         p = Parameters(
             min_days=10, slv_entry_mode="fixed",
@@ -30,6 +33,32 @@ class LegAndEntryModeTests(unittest.TestCase):
         self.assertAlmostEqual(sum(position["base_longs"].values()), p.max_futures_treasury_fraction)
         self.assertAlmostEqual(sum(position["shorts"].values()),
                                p.max_short_fraction_of_long_leg)
+
+    def test_fixed_weighted_mode_preserves_full_notional_when_all_logits_are_negative(self):
+        candidates = [
+            {"symbol": "A", "lease": -0.02, "days": 60, "volume": 100},
+            {"symbol": "B", "lease": -0.01, "days": 365, "volume": 100},
+        ]
+        p = Parameters(
+            min_days=10,
+            enable_slv_leg=True,
+            enable_cash_long_futures_leg=True,
+            long_futures_entry_mode="fixed",
+            long_contract_selection="weighted_lease_rate",
+            max_futures_treasury_fraction=1.0,
+            enable_short_book=False,
+            long_allocation_half_life_days=0.0,
+            long_maturity_line_intercept=0.01,
+            long_maturity_line_slope_per_year=0.01,
+            long_relative_strength=1.0,
+            long_score_rate_scale=0.01,
+        )
+        position = positions_for_day(candidates, p)
+        self.assertAlmostEqual(sum(position["base_longs"].values()), 1.0)
+        self.assertAlmostEqual(position["base_treasury"], 1.0)
+        self.assertEqual(position["base_slv"], 0.0)
+        self.assertTrue(all(weight > 0 for weight in
+                            position["base_longs"].values()))
 
     def test_fixed_modes_ignore_all_entry_conditions(self):
         p = Parameters(
@@ -45,10 +74,11 @@ class LegAndEntryModeTests(unittest.TestCase):
         self.assertAlmostEqual(sum(position["shorts"].values()),
                                p.max_short_fraction_of_long_leg)
 
-    def test_slv_can_be_disabled_independently(self):
+    def test_replicating_fund_is_mandatory_complement(self):
         position = positions_for_day(
             self.candidates, Parameters(min_days=10, enable_slv_leg=False))
-        self.assertEqual(position["base_slv"], 0.0)
+        self.assertEqual(position["base_slv"],
+                         1.0 - position["base_treasury"])
         self.assertGreater(position["base_treasury"], 0.0)
         self.assertAlmostEqual(position["base_treasury"],
                                sum(position["base_longs"].values()))
@@ -62,13 +92,13 @@ class LegAndEntryModeTests(unittest.TestCase):
         self.assertEqual(position["base_longs"], {})
         self.assertGreater(position["base_slv"], 0.0)
 
-    def test_short_book_is_zero_when_no_long_composition_exists(self):
+    def test_fund_remains_when_futures_replication_is_disabled(self):
         position = positions_for_day(
             self.candidates,
             Parameters(min_days=10, enable_slv_leg=False,
                        enable_cash_long_futures_leg=False))
-        self.assertEqual(position["shorts"], {})
-        self.assertEqual(position["long_extension"], 0.0)
+        self.assertEqual(position["base_slv"], 1.0)
+        self.assertGreaterEqual(position["long_extension"], 0.0)
 
     def test_long_allocation_half_life_smooths_total_not_contract_ranking(self):
         p = Parameters(
@@ -98,7 +128,7 @@ class LegAndEntryModeTests(unittest.TestCase):
         self.assertAlmostEqual(full["long_extension"] / 2,
                                reduced["long_extension"])
 
-    def test_entry_threshold_defines_the_canonical_long_base_score(self):
+    def test_entry_threshold_common_shift_does_not_change_softmax_mix(self):
         candidates = [
             {"symbol": "near", "lease": 0.04, "days": 30, "volume": 100},
             {"symbol": "far", "lease": 0.03, "days": 395, "volume": 100},
@@ -117,8 +147,8 @@ class LegAndEntryModeTests(unittest.TestCase):
                    for k, v in low["base_longs"].items()}
         high_mix = {k: v / sum(high["base_longs"].values())
                     for k, v in high["base_longs"].items()}
-        self.assertGreater(high_mix["near"], low_mix["near"])
-        self.assertLess(high_mix["far"], low_mix["far"])
+        self.assertAlmostEqual(high_mix["near"], low_mix["near"])
+        self.assertAlmostEqual(high_mix["far"], low_mix["far"])
 
     def test_maturity_line_rewards_contract_above_line(self):
         candidates = [

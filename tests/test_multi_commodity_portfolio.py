@@ -1,4 +1,5 @@
 import json
+import math
 import sys
 import unittest
 from pathlib import Path
@@ -53,6 +54,8 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
         })
         encoded = json.dumps(result, allow_nan=False)
         self.assertIn('"commodity_sleeves"', encoded)
+        self.assertIn("direct_unrebalanced_compounded_return_pct",
+                      result["portfolio_fields"])
 
     def test_daily_portfolio_contributions_reconcile(self):
         if not {"gold", "oil"}.issubset(self.markets):
@@ -65,10 +68,12 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
             "min_days": 30,
             "enable_short_book": "false",
         })
-        contribution_start = 7
+        contribution_indices = [
+            result["fields"].index(f"{key}_contribution_pct")
+            for key in result["portfolio"]["weights"]]
         for row in result["series"]:
             self.assertAlmostEqual(
-                row[1], sum(row[contribution_start:]), places=11)
+                row[1], sum(row[i] for i in contribution_indices), places=11)
 
     def test_rebalancing_choice_changes_path(self):
         sleeves = {
@@ -85,11 +90,22 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
                  "slv_daily_return_pct": 0},
             ]},
         }
-        _, daily, _ = gui.aggregate_portfolio(
+        fields, daily, _ = gui.aggregate_portfolio(
             sleeves, {"a": 0.5, "b": 0.5}, "daily")
         _, drifting, _ = gui.aggregate_portfolio(
             sleeves, {"a": 0.5, "b": 0.5}, "none")
         self.assertNotAlmostEqual(daily[-1][3], drifting[-1][3], places=8)
+        self.assertNotAlmostEqual(
+            daily[-1][fields.index("direct_compounded_return_pct")],
+            daily[-1][fields.index(
+                "direct_unrebalanced_compounded_return_pct")], places=8)
+        strategy_nav = 1 + daily[-1][fields.index(
+            "compounded_return_pct")] / 100
+        factor_navs = [
+            1 + daily[-1][fields.index(
+                f"{key}_attributed_factor_compounded_return_pct")] / 100
+            for key in ("a", "b")]
+        self.assertAlmostEqual(strategy_nav, math.prod(factor_navs))
 
     def test_hierarchical_daily_attribution_reconciles(self):
         if not {"gold", "oil"}.issubset(self.markets):
@@ -133,9 +149,12 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
         })
         treasury_index = result["fields"].index("treasury_contribution_pct")
         self.assertGreaterEqual(treasury_index, 7)
+        contribution_indices = [
+            result["fields"].index(f"{key}_contribution_pct")
+            for key in result["portfolio"]["weights"]]
         for row in result["series"]:
             self.assertAlmostEqual(
-                row[1], sum(row[7:]), places=11)
+                row[1], sum(row[i] for i in contribution_indices), places=11)
 
     def test_treasury_can_run_as_standalone_portfolio(self):
         result = gui.result({
@@ -145,8 +164,9 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
         })
         self.assertEqual(result["portfolio"]["weights"], {"treasury": 1.0})
         self.assertEqual(result["commodity_sleeves"], {})
+        treasury_index = result["fields"].index("treasury_contribution_pct")
         for row in result["series"]:
-            self.assertAlmostEqual(row[1], row[7], places=11)
+            self.assertAlmostEqual(row[1], row[treasury_index], places=11)
 
     def test_product_specific_parameters_override_global_values(self):
         payload = gui.product_payload({

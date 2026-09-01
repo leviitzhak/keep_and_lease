@@ -2,6 +2,7 @@
 """Local browser GUI for the parameterized silver lease strategy backtest."""
 
 import json
+import math
 import os
 from statistics import median
 from dataclasses import replace
@@ -12,6 +13,7 @@ from zipfile import BadZipFile
 
 from backtest_silver_lease_strategy import (
     Parameters, build_market, build_proxy_market, build_spot_market,
+    multiplicative_log_contributions,
     TENORS, asof_rate, positions_for_day, read_csv_spot, read_zip_spot,
     run_backtest, score_diagnostic)
 from market_data_store import data_directory, read_cached_asset, read_spot_csv
@@ -173,7 +175,9 @@ def parameters(payload):
         roll_only_if_better=flag("roll_only_if_better", True),
         force_roll_at_min_days=flag("force_roll_at_min_days", True),
         enable_short_book=flag("enable_short_book", True),
-        enable_slv_leg=flag("enable_slv_leg", True),
+        # Legacy JSON may contain enable_slv_leg=false.  The fund is now the
+        # mandatory complement of Treasury-collateralized futures replication.
+        enable_slv_leg=True,
         enable_cash_long_futures_leg=flag("enable_cash_long_futures_leg", True),
         slv_entry_mode=str(payload.get("slv_entry_mode", "gradual")),
         long_futures_entry_mode=str(payload.get(
@@ -635,6 +639,23 @@ def sleeve_result(payload, market=None, product="silver"):
               "matched_long_extension_interval_return_pct",
               "long_book_cumulative_return_pct", "short_book_cumulative_return_pct",
               "matched_long_extension_cumulative_return_pct",
+              "lease_book_interval_return_pct", "keep_book_interval_return_pct",
+              "keep_book_contribution_interval_return_pct",
+              "replicating_fund_book_interval_return_pct",
+              "futures_treasury_book_interval_return_pct",
+              "lease_book_factor_interval_return_pct",
+              "keep_book_factor_interval_return_pct",
+              "lease_fund_factor_interval_return_pct",
+              "lease_futures_treasury_factor_interval_return_pct",
+              "lease_book_compounded_return_pct",
+              "keep_book_compounded_return_pct",
+              "keep_book_contribution_compounded_return_pct",
+              "replicating_fund_book_compounded_return_pct",
+              "futures_treasury_book_compounded_return_pct",
+              "lease_book_attributed_factor_compounded_return_pct",
+              "keep_book_attributed_factor_compounded_return_pct",
+              "lease_fund_attributed_factor_compounded_return_pct",
+              "lease_futures_treasury_attributed_factor_compounded_return_pct",
               "long_futures_daily_return_pct", "short_futures_daily_return_pct",
               "slv_daily_return_pct", "treasury_daily_return_pct",
               "long_futures_cumulative_return_pct", "short_futures_cumulative_return_pct",
@@ -797,8 +818,11 @@ def aggregate_portfolio(sleeves, target_weights, rebalance):
     nav = 1.0
     simple = 0.0
     direct_nav = 1.0
+    direct_unrebalanced_nav = 1.0
     sleeve_values = dict(target_weights)
     direct_values = dict(target_weights)
+    direct_unrebalanced_values = dict(target_weights)
+    asset_factor_nav = {key: 1.0 for key in target_weights}
     output = []
     attribution = []
     previous_period = None
@@ -820,8 +844,10 @@ def aggregate_portfolio(sleeves, target_weights, rebalance):
         previous_period = period
         start_nav = sum(sleeve_values.values())
         start_direct = sum(direct_values.values())
+        start_direct_unrebalanced = sum(direct_unrebalanced_values.values())
         contributions = {}
         direct_contributions = {}
+        direct_unrebalanced_contributions = {}
         day_attribution = {"date": day, "assets": {}}
         for key in target_weights:
             effective_weight = sleeve_values[key] / start_nav
@@ -843,6 +869,9 @@ def aggregate_portfolio(sleeves, target_weights, rebalance):
             contributions[key] = effective_weight * daily
             direct_contributions[key] = (
                 direct_values[key] / start_direct * direct_daily)
+            direct_unrebalanced_contributions[key] = (
+                direct_unrebalanced_values[key] /
+                start_direct_unrebalanced * direct_daily)
             day_attribution["assets"][key] = {
                 "effective_weight_pct": 100 * effective_weight,
                 "contribution_pct": 100 * contributions[key],
@@ -852,16 +881,30 @@ def aggregate_portfolio(sleeves, target_weights, rebalance):
             }
             sleeve_values[key] *= 1 + daily
             direct_values[key] *= 1 + direct_daily
+            direct_unrebalanced_values[key] *= 1 + direct_daily
         daily_return = sum(contributions.values())
         direct_return = sum(direct_contributions.values())
+        direct_unrebalanced_return = sum(
+            direct_unrebalanced_contributions.values())
+        asset_logs = multiplicative_log_contributions(
+            daily_return, contributions)
+        for key, log_contribution in asset_logs.items():
+            asset_factor_nav[key] *= math.exp(log_contribution)
         nav *= 1 + daily_return
         direct_nav *= 1 + direct_return
+        direct_unrebalanced_nav *= 1 + direct_unrebalanced_return
         simple += daily_return
         row = [
             day, 100 * daily_return, 100 * simple, 100 * (nav - 1),
             100 * direct_return, 100 * (direct_nav - 1), nav,
         ]
         row.extend(100 * contributions[key] for key in target_weights)
+        row.extend([
+            100 * direct_unrebalanced_return,
+            100 * (direct_unrebalanced_nav - 1),
+        ])
+        row.extend(
+            100 * (asset_factor_nav[key] - 1) for key in target_weights)
         output.append(row)
         day_attribution["portfolio_return_pct"] = 100 * daily_return
         day_attribution["reconciled_pct"] = sum(
@@ -872,7 +915,11 @@ def aggregate_portfolio(sleeves, target_weights, rebalance):
         "date", "interval_return_pct", "simple_cumulative_return_pct",
         "compounded_return_pct", "direct_daily_return_pct",
         "direct_compounded_return_pct", "nav",
-    ] + [f"{key}_contribution_pct" for key in target_weights]
+    ] + [f"{key}_contribution_pct" for key in target_weights] + [
+        "direct_unrebalanced_daily_return_pct",
+        "direct_unrebalanced_compounded_return_pct",
+    ] + [f"{key}_attributed_factor_compounded_return_pct"
+         for key in target_weights]
     return fields, output, attribution
 
 
@@ -921,6 +968,8 @@ def result(payload):
             "available_products": PRODUCTS,
         }
         answer["daily_attribution"] = attribution
+        answer["portfolio_fields"] = fields
+        answer["portfolio_series"] = series
         answer["commodity_sleeves"] = sleeves
         answer["treasury_statistics_points"] = next(
             iter(sleeves.values()))["treasury_statistics_points"]
@@ -938,6 +987,10 @@ def result(payload):
     nav_values = [1.0] + [row[fields.index("nav")] for row in series]
     direct_nav_values = [1.0] + [
         1 + row[fields.index("direct_compounded_return_pct")] / 100
+        for row in series]
+    direct_unrebalanced_nav_values = [1.0] + [
+        1 + row[fields.index(
+            "direct_unrebalanced_compounded_return_pct")] / 100
         for row in series]
     return {
         "fields": fields,
@@ -959,6 +1012,10 @@ def result(payload):
             "max_drawdown": max_drawdown(nav_values),
             "direct_holding_return": series[-1][5],
             "direct_holding_max_drawdown": max_drawdown(direct_nav_values),
+            "direct_unrebalanced_return": series[-1][fields.index(
+                "direct_unrebalanced_compounded_return_pct")],
+            "direct_unrebalanced_max_drawdown": max_drawdown(
+                direct_unrebalanced_nav_values),
             "direct_silver_return": series[-1][5],
             "direct_silver_max_drawdown": max_drawdown(direct_nav_values),
             "missing_intervals": sum(

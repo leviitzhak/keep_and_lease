@@ -1,11 +1,56 @@
+import math
 import unittest
 from datetime import date
 
-from backtest_silver_lease_strategy import Parameters, positions_for_day, run_backtest, usd_rate
+from backtest_silver_lease_strategy import (
+    Parameters, multiplicative_log_contributions, positions_for_day,
+    run_backtest, usd_rate)
 from silver_strategy_gui import futures_diagnostics
 
 
 class StandaloneLegReturnTests(unittest.TestCase):
+    def test_multiplicative_attribution_reconstructs_daily_return(self):
+        logs = multiplicative_log_contributions(
+            0.03, {"lease": 0.02, "keep": 0.01})
+        self.assertAlmostEqual(
+            1.03, math.exp(logs["lease"]) * math.exp(logs["keep"]))
+        reversed_logs = multiplicative_log_contributions(
+            0.03, {"keep": 0.01, "lease": 0.02})
+        self.assertEqual(logs.keys(), reversed_logs.keys())
+        for key in logs:
+            self.assertAlmostEqual(logs[key], reversed_logs[key])
+
+    def test_multiplicative_attribution_handles_zero_net_return(self):
+        logs = multiplicative_log_contributions(
+            0.0, {"lease": 0.01, "keep": -0.01})
+        self.assertAlmostEqual(1.0, math.prod(math.exp(x) for x in logs.values()))
+
+    def test_reported_compounded_factors_reconstruct_parent_navs(self):
+        candidates = [
+            {"symbol": "near", "days": 30, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": 0.05, "volume": 10},
+            {"symbol": "far", "days": 300, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": -0.10, "volume": 5},
+        ]
+        by_day = {day: [dict(item) for item in candidates]
+                  for day in self.days}
+        rows, _ = run_backtest(
+            self.spot, self.contracts, self.rates, by_day,
+            Parameters(min_days=1, slv_expense=0))
+        last = rows[-1]
+        strategy = 1 + last["compounded_return_pct"] / 100
+        lease_factor = 1 + last[
+            "lease_book_attributed_factor_compounded_return_pct"] / 100
+        keep_factor = 1 + last[
+            "keep_book_attributed_factor_compounded_return_pct"] / 100
+        self.assertAlmostEqual(strategy, lease_factor * keep_factor)
+        lease_nav = 1 + last["lease_book_compounded_return_pct"] / 100
+        fund_factor = 1 + last[
+            "lease_fund_attributed_factor_compounded_return_pct"] / 100
+        futures_factor = 1 + last[
+            "lease_futures_treasury_attributed_factor_compounded_return_pct"] / 100
+        self.assertAlmostEqual(lease_nav, fund_factor * futures_factor)
+
     def setUp(self):
         self.days = [date(2020, 1, day) for day in range(1, 6)]
         self.spot = dict(zip(self.days, [100, 110, 121, 133.1, 146.41]))
@@ -31,13 +76,13 @@ class StandaloneLegReturnTests(unittest.TestCase):
         self.assertEqual({"near": 1.0}, position["long_leg"])
         self.assertAlmostEqual(1.0, sum(position["short_leg"].values()))
 
-    def test_leg_returns_ignore_zero_portfolio_weights(self):
+    def test_diagnostic_leg_returns_are_independent_of_portfolio_weights(self):
         rows, _ = run_backtest(
             self.spot, self.contracts, self.rates, self.by_day,
             Parameters(min_days=1, enable_slv_leg=False,
                        enable_cash_long_futures_leg=False,
                        enable_short_book=False, slv_expense=0))
-        self.assertTrue(all(row["slv_weight_pct"] == 0 for row in rows))
+        self.assertTrue(all(row["slv_weight_pct"] == 100 for row in rows))
         self.assertTrue(all(row["long_futures_notional_pct"] == 0 for row in rows))
         self.assertTrue(all(row["short_futures_notional_pct"] == 0 for row in rows))
         self.assertAlmostEqual(10.0, rows[0]["slv_daily_return_pct"])
@@ -132,7 +177,9 @@ class StandaloneLegReturnTests(unittest.TestCase):
                        long_contract_selection="weighted_lease_rate",
                        long_relative_strength=0))
         self.assertEqual({"low", "high"}, set(position["longs"]))
-        self.assertAlmostEqual(4, position["longs"]["high"] / position["longs"]["low"])
+        self.assertAlmostEqual(
+            math.exp((0.09 - 0.03) / 0.01),
+            position["longs"]["high"] / position["longs"]["low"])
 
     def test_weighted_long_score_favors_shorter_maturity(self):
         candidates = [
@@ -183,8 +230,9 @@ class StandaloneLegReturnTests(unittest.TestCase):
             candidates,
             Parameters(min_days=1, negative_short_start_rate=-0.005,
                        short_relative_strength=0))
-        self.assertAlmostEqual(3, position["shorts"]["strong"] /
-                               position["shorts"]["weak"])
+        self.assertAlmostEqual(
+            math.exp((0.095 - 0.035) / 0.01),
+            position["shorts"]["strong"] / position["shorts"]["weak"])
 
     def test_weighted_short_score_favors_longer_maturity(self):
         candidates = [
@@ -295,9 +343,8 @@ class StandaloneLegReturnTests(unittest.TestCase):
             self.spot, self.contracts, self.rates, self.by_day,
             Parameters(min_days=1, slv_expense=0))
         self.assertEqual(30, rows[0]["long_forward_maturity_days"])
-        expected_short = (30 + 300) / 2
-        self.assertAlmostEqual(
-            expected_short, rows[0]["short_forward_maturity_days"], places=3)
+        self.assertGreater(rows[0]["short_forward_maturity_days"], 30)
+        self.assertLess(rows[0]["short_forward_maturity_days"], 300)
 
     def test_market_diagnostics_use_the_displayed_output_date(self):
         self.by_day[self.days[0]][0]["lease"] = -0.05

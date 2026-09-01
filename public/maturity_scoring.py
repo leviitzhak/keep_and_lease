@@ -7,6 +7,7 @@ validated implementation.
 """
 
 from dataclasses import dataclass
+import math
 from typing import Iterable, Mapping, Sequence
 
 
@@ -66,13 +67,18 @@ class RelativeAdjustment:
         raw = signed_distance / self.rate_scale
         return max(-self.clip, min(self.clip, raw))
 
+    def signed_adjustment(self, signed_distance: float) -> float:
+        """Return the signed dimensionless contribution to a softmax logit."""
+        return self.strength * self.normalized(signed_distance)
+
     def multiplier(self, signed_distance: float) -> float:
-        return max(0.0, 1.0 + self.strength * self.normalized(signed_distance))
+        """Compatibility view of the former relative multiplier."""
+        return 1.0 + self.signed_adjustment(signed_distance)
 
     def score(self, base_score: float, signed_distance: float) -> float:
-        if base_score <= 0:
-            return 0.0
-        return base_score * self.multiplier(signed_distance)
+        """Return a signed, dimensionless softmax logit."""
+        return base_score / self.rate_scale + self.signed_adjustment(
+            signed_distance)
 
 
 @dataclass(frozen=True)
@@ -97,9 +103,13 @@ class PureMaturityAdjustment:
             return normalized
         raise ValueError("direction must be 'long' or 'short'")
 
+    def signed_adjustment(self, maturity: float, direction: str) -> float:
+        """Return the signed dimensionless pure-maturity logit contribution."""
+        return self.strength * self.normalized(maturity, direction)
+
     def multiplier(self, maturity: float, direction: str) -> float:
-        return max(0.0, 1.0 + self.strength * self.normalized(
-            maturity, direction))
+        """Compatibility view used by diagnostics and older callers."""
+        return 1.0 + self.signed_adjustment(maturity, direction)
 
 
 def signed_distance(rate: float, maturity: float, boundary: BoundaryAnchors,
@@ -117,28 +127,37 @@ def adjusted_score(base_score: float, rate: float, maturity: float,
                    boundary: BoundaryAnchors, adjustment: RelativeAdjustment,
                    direction: str,
                    maturity_adjustment: PureMaturityAdjustment | None = None) -> float:
-    boundary_score = adjustment.score(
+    logit = adjustment.score(
         base_score,
         signed_distance(rate, maturity, boundary, direction),
     )
-    if maturity_adjustment is None:
-        return boundary_score
-    return boundary_score * maturity_adjustment.multiplier(maturity, direction)
+    if maturity_adjustment is not None:
+        logit += maturity_adjustment.signed_adjustment(maturity, direction)
+    return logit
 
 
 def allocate_scores(scores: Mapping[str, float], target: float) -> dict[str, float]:
-    """Convert positive scores to weights that exactly preserve the target."""
-    if target <= 0:
+    """Softmax signed logits into weights that exactly preserve the target."""
+    if target <= 0 or not scores:
         return {}
-    positive = {key: value for key, value in scores.items() if value > 0}
-    total = sum(positive.values())
-    if total <= 0:
+    finite = {key: float(value) for key, value in scores.items()
+              if math.isfinite(float(value))}
+    if not finite:
         return {}
-    weights = {key: target * value / total for key, value in positive.items()}
-    # Put the unavoidable floating-point remainder on the final instrument so
-    # callers can rely on exact book-target preservation.
-    last = next(reversed(weights))
-    weights[last] += target - sum(weights.values())
+    maximum = max(finite.values())
+    exponentials = {
+        key: math.exp(max(-700.0, value - maximum))
+        for key, value in finite.items()
+    }
+    total = sum(exponentials.values())
+    weights = {
+        key: target * value / total
+        for key, value in exponentials.items()
+    }
+    # Put the unavoidable floating-point remainder on the largest allocation
+    # so callers can rely on exact book-target preservation.
+    largest = max(weights, key=weights.get)
+    weights[largest] += target - sum(weights.values())
     return weights
 
 
@@ -166,12 +185,14 @@ def score_contracts(
         base = (rate - eligibility_threshold if direction == "long"
                 else eligibility_threshold - rate)
         distance = signed_distance(rate, maturity, boundary, direction)
-        rate_multiplier = adjustment.multiplier(distance)
-        pure_multiplier = (maturity_adjustment.multiplier(maturity, direction)
-                           if maturity_adjustment else 1.0)
-        final = (max(0.0, base) * rate_multiplier * pure_multiplier
-                 if eligible else 0.0)
-        if final > 0:
+        rate_adjustment = adjustment.signed_adjustment(distance)
+        pure_adjustment = (
+            maturity_adjustment.signed_adjustment(maturity, direction)
+            if maturity_adjustment else 0.0)
+        final = (max(0.0, base) / adjustment.rate_scale
+                 + rate_adjustment + pure_adjustment
+                 if eligible else None)
+        if eligible:
             scores[symbol] = final
         diagnostics.append({
             "symbol": symbol,
@@ -181,8 +202,8 @@ def score_contracts(
             "boundary_value": boundary.value(maturity),
             "signed_distance": distance,
             "base_score": max(0.0, base),
-            "relative_multiplier": rate_multiplier,
-            "pure_maturity_multiplier": pure_multiplier,
+            "relative_adjustment": rate_adjustment,
+            "pure_maturity_adjustment": pure_adjustment,
             "final_score": final,
             "target_weight": 0.0,
         })
