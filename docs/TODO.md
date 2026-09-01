@@ -37,11 +37,40 @@ This checklist reflects the application synchronized from the deployed Sites che
   futures positions.
 - [ ] When extending the long book and adding a short book, require the selected
   short maturities to be later than the corresponding long maturities.
+- [ ] Replace the current per-commodity standalone-compounded and
+  multiplicative-contribution displays with the following decomposition (do
+  not display those two existing plot families for now):
+  - plot the values of the unextended futures-plus-Treasuries leg, the
+    replicating-fund leg, and their sum (the lease book), all quoted in units of
+    the underlying commodity;
+  - plot the lease book's daily return quoted in the underlying commodity, with
+    the lease-book return scaled by its effective leg proportion;
+  - compound that lease-book daily-return series into an index starting at 1;
+  - plot the corresponding commodity-quoted value, daily return, and compounded
+    daily-return index for the keep book;
+  - plot the underlying commodity's price evolution; and
+  - retain distribution plots for the commodity-quoted daily-return series.
+  Verify for every date that the portfolio value can be reconstructed from the
+  underlying price index and the compounded sum of the lease- and keep-book
+  commodity-quoted daily returns:
+  `NAV(t) = P(t) / P(0) * product_s<=t(1 + r_lease(s) + r_keep(s))`.
+- [ ] Implement configurable transaction costs on every buy and sell, including
+  both explicit fees and simulated bid-ask spread costs.
 
 ## Small fixes
 
 - [ ] Add full inspection interactivity to the new log-return decomposition
   graphs.
+- [ ] Extend the portfolio contribution-by-asset plot so it also shows the
+  values of the individual legs within each commodity sleeve.
+- [ ] In each commodity's strategy-versus-direct-hold plot, compare the value
+  of the strategy leg with the value of a direct holding of the same initial
+  quantity of that commodity.
+- [ ] Rename labels referring to "held" short futures: the diagnostic short
+  selection can be displayed even when the short book is disabled.
+- [ ] For each commodity, retain the plots of leg values through time, but hide
+  the standalone-compounded and multiplicative-contribution plots for now; the
+  commodity-quoted lease/keep decomposition above will replace them.
 - [ ] Update the maturity-weight selection documentation to describe the signed
   score followed by SoftMax that is now used.
 - [ ] Keep the displayed name of the currently loaded or saved parameter set
