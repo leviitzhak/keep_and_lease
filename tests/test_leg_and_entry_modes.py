@@ -31,6 +31,32 @@ class LegAndEntryModeTests(unittest.TestCase):
         self.assertAlmostEqual(sum(position["shorts"].values()),
                                p.max_short_fraction_of_long_leg)
 
+    def test_fixed_weighted_mode_preserves_full_notional_when_all_logits_are_negative(self):
+        candidates = [
+            {"symbol": "A", "lease": -0.02, "days": 60, "volume": 100},
+            {"symbol": "B", "lease": -0.01, "days": 365, "volume": 100},
+        ]
+        p = Parameters(
+            min_days=10,
+            enable_slv_leg=True,
+            enable_cash_long_futures_leg=True,
+            long_futures_entry_mode="fixed",
+            long_contract_selection="weighted_lease_rate",
+            max_futures_treasury_fraction=1.0,
+            enable_short_book=False,
+            long_allocation_half_life_days=0.0,
+            long_maturity_line_intercept=0.01,
+            long_maturity_line_slope_per_year=0.01,
+            long_relative_strength=1.0,
+            long_score_rate_scale=0.01,
+        )
+        position = positions_for_day(candidates, p)
+        self.assertAlmostEqual(sum(position["base_longs"].values()), 1.0)
+        self.assertAlmostEqual(position["base_treasury"], 1.0)
+        self.assertEqual(position["base_slv"], 0.0)
+        self.assertTrue(all(weight > 0 for weight in
+                            position["base_longs"].values()))
+
     def test_fixed_modes_ignore_all_entry_conditions(self):
         p = Parameters(
             min_days=10, slv_entry_mode="fixed",
