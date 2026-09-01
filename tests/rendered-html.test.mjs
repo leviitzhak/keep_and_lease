@@ -327,6 +327,14 @@ test("downloads portfolio composition and values as an interval spreadsheet", as
     "utf8",
   );
   assert.match(dockerignore, /^!public\/fflate\.js$/m);
+  const webDockerfile = await readFile(
+    new URL("../Dockerfile.web", import.meta.url),
+    "utf8",
+  );
+  assert.match(
+    webDockerfile,
+    /^COPY .*public\/fflate\.js .*\.\/public\/$/m,
+  );
 });
 
 test("shows precise proxy expense and compounded portfolio attribution", async () => {
