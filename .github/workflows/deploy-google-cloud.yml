@@ -192,8 +192,32 @@ jobs:
 
       - name: Resolve deployed web URI
         id: web
-        working-directory: infra/gcp/workloads
-        run: echo "web_uri=$(terraform output -raw web_uri)" >> "$GITHUB_OUTPUT"
+        shell: bash
+        run: |
+          set -euo pipefail
+          service_name="keep-and-lease-web"
+          if [[ "$DEPLOYMENT_TARGET" == "preview" ]]; then
+            service_name="keep-and-lease-preview-web"
+          fi
+
+          web_uri=""
+          for attempt in 1 2 3 4 5; do
+            if web_uri="$(gcloud run services describe "$service_name" \
+              --project="$PROJECT_ID" \
+              --region="$REGION" \
+              --format='value(status.url)')" && \
+                [[ "$web_uri" == https://*.run.app ]]; then
+              break
+            fi
+            web_uri=""
+            if [[ "$attempt" == 5 ]]; then
+              echo "Could not resolve a valid Cloud Run URL for ${service_name}." >&2
+              exit 1
+            fi
+            sleep $((attempt * 2))
+          done
+
+          printf 'web_uri=%s\n' "$web_uri" >> "$GITHUB_OUTPUT"
 
       - name: Mint Cloud Run identity token
         id: health_auth
