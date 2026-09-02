@@ -701,7 +701,8 @@ def sleeve_result(payload, market=None, product="silver"):
     slv_nav = 1.0
     slv_nav_values = [slv_nav]
     for row in rows:
-        slv_nav *= 1 + row["slv_daily_return_pct"] / 100
+        if row["slv_daily_return_pct"] is not None:
+            slv_nav *= 1 + row["slv_daily_return_pct"] / 100
         slv_nav_values.append(slv_nav)
     comparisons = []
     for selection in ("weighted_lease_rate", "highest_lease_rate"):
@@ -749,6 +750,7 @@ def sleeve_result(payload, market=None, product="silver"):
         "replicating_etf": PRODUCTS.get(product, {}).get("etf"),
         "replication_type": PRODUCTS.get(product, {}).get("replication"),
         "futures_prices": futures_price_series(sampled, market[1]),
+        "held_futures_diagnostics": [row.get("held_futures", []) for row in sampled],
         "futures_diagnostics": futures_diagnostics(sampled, market[3], p),
         "statistics_points": statistics_points(market[3], market[1], p),
         "treasury_statistics_points": treasury_statistics_points(market[2]),

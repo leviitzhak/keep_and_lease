@@ -106,9 +106,6 @@
 <div class="legend"><span class="key" style="--c:#16a34a">Long futures</span><span class="key" style="--c:#dc2626">Short futures</span><span class="key" style="--c:#2563eb">SLV</span><span class="key" style="--c:#64748b">Treasury</span></div>
 <section class="chart"><h2>Daily returns by position</h2><canvas id="dailyPositionReturns"></canvas></section>
 <div class="legend"><span class="key" style="--c:#16a34a">Long futures</span><span class="key" style="--c:#dc2626">Short futures</span><span class="key" style="--c:#2563eb">SLV</span><span class="key" style="--c:#64748b">Treasury</span></div>
-<section class="chart"><h2>Cumulative returns by position</h2><canvas id="cumulativePositionReturns"></canvas></section>
-<div class="legend"><span class="key" style="--c:#16a34a">Long futures</span><span class="key" style="--c:#dc2626">Short futures</span><span class="key" style="--c:#2563eb">SLV</span><span class="key" style="--c:#64748b">Treasury</span></div>
-<section class="chart"><h2>Compounded returns by position</h2><canvas id="compoundedPositionReturns"></canvas></section>
 <div class="legend"><span class="key" style="--c:#2563eb">SLV price</span></div>
 <section class="chart"><h2>SLV price</h2><canvas id="slvPrice"></canvas></section>
 <div class="legend"><span class="key" style="--c:#2563eb">SLV price</span><span class="key" style="--c:#16a34a">Weighted held long futures</span></div>
@@ -317,6 +314,7 @@ function drawExtremeReturns(){const stats=last?.extreme_return_statistics||{thre
 function drawOutliers(){const s=last?.outlier_statistics||{count:0,flagged:[]};$('outlierSummary').textContent=s.count+' intervals flagged using |robust z-score| ≥ 8 or |daily return| ≥ 25%. Flags are diagnostics, not automatic deletions.';$('outlierReturns').innerHTML=s.flagged.map(r=>{const parts=[['silver',r.silver_price_pct],['lease/basis repricing',r.lease_rate_change_pct],['roll/rebalance',r.rolling_pct]].sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));return '<tr><td>'+r.date+'</td><td>'+fmt(r.return_pct,4)+'%</td><td>'+fmt(r.robust_z,1)+'</td><td>'+fmt(r.next_return_pct,4)+'%</td><td>'+(r.immediate_reversal?'Yes':'No')+'</td><td>'+parts[0][0]+' '+fmt(parts[0][1],4)+'%</td></tr>'}).join('')}
 function drawSelectionComparison(){const rows=last?.selection_comparison||[];$('selectionComparison').innerHTML=rows.map(r=>'<tr><td>'+({'weighted_lease_rate':'Weighted by lease','highest_lease_rate':'Highest lease'}[r.selection]||r.selection)+'</td><td>'+fmt(r.strategy_return_pct,2)+'%</td><td>'+fmt(r.long_rolling_return_pct,2)+'%</td><td>'+fmt(r.treasury_return_pct,2)+'%</td><td>'+fmt(r.mean_long_notional_pct,2)+'%</td><td>'+fmt(r.mean_long_lease_pct,2)+'%</td><td>'+fmt(r.mean_long_maturity_days,1)+' days</td><td>'+fmt(r.avg_daily_contract_turnover_pct,3)+'%</td><td>'+fmt(r.long_annualized_volatility_pct,2)+'%</td><td>'+fmt(r.worst_long_day_pct,2)+'%</td></tr>').join('')}
 function lineChart(canvas, rows, specs, ylabel, opts={}) {
+  if(!canvas)return;
   const parent=canvas.parentElement, mobile=matchMedia('(max-width:850px)').matches;
   const drawableSpecs=specs.filter(spec=>Number.isInteger(spec.i)&&spec.i>=0);
   ensureLegend(parent,drawableSpecs);
@@ -349,8 +347,8 @@ function lineChart(canvas, rows, specs, ylabel, opts={}) {
   if(opts.rightLabel){c.save();c.translate(w-8,h/2);c.rotate(Math.PI/2);c.fillText(opts.rightLabel,0,0);c.restore()}
   charts.set(canvas,{canvas,rows,specs:drawableSpecs,hoverSpecs:(opts.hoverSpecs||[]).filter(spec=>Number.isInteger(spec.i)&&spec.i>=0),m,x,w,ylabel,scales,dpr,title:parent.querySelector('h2')?.textContent||ylabel});
 }
-function futuresPriceChart(canvas, rows, series, diagnostics) {
-  const spotIndex=ix('slv_price'),specs=[{i:spotIndex,c:'#2563eb',w:2,label:'Spot silver'}];
+function futuresPriceChart(canvas, rows, series, diagnostics, spotIndex=ix('slv_price'), spotLabel='Spot') {
+  const specs=[{i:spotIndex,c:'#2563eb',w:2,label:spotLabel}];
   const futuresValues=[];Object.values(series||{}).forEach(points=>points.forEach(point=>futuresValues.push(point[1])));
   lineChart(canvas,rows,specs,'price ($)',{zero:false,extraValues:futuresValues});
   const meta=charts.get(canvas); if(!meta)return;
@@ -359,6 +357,12 @@ function futuresPriceChart(canvas, rows, series, diagnostics) {
   c.save();c.setTransform(dpr,0,0,dpr,0,0);c.strokeStyle='#94a3b8';c.globalAlpha=.42;c.lineWidth=.75;
   Object.values(series||{}).forEach(points=>{c.beginPath();let previous=-2;for(const [i,value] of points){const yy=y(num(value));if(!Number.isFinite(yy)){previous=-2;continue}const xx=meta.x(i);i===previous+1?c.lineTo(xx,yy):c.moveTo(xx,yy);previous=i}c.stroke()});
   c.strokeStyle='#2563eb';c.globalAlpha=1;c.lineWidth=2;c.beginPath();let open=false;rows.forEach((row,i)=>{const yy=y(num(row[spotIndex]));if(!Number.isFinite(yy)){open=false;return}const xx=meta.x(i);open?c.lineTo(xx,yy):c.moveTo(xx,yy);open=true});c.stroke();c.restore();
+}
+function heldFuturesChart(canvas,rows,diagnostics,valueKey,ylabel){
+  const keys=[];for(const items of diagnostics||[])for(const item of items||[]){const key=item.side+'|'+item.symbol;if(!keys.includes(key))keys.push(key)}
+  const base=rows[0]?.length||0,chartRows=rows.map((row,i)=>[...row,...keys.map(key=>{const [side,symbol]=key.split('|'),item=(diagnostics?.[i]||[]).find(x=>x.side===side&&x.symbol===symbol);return item?.[valueKey]??null})]);
+  const specs=keys.map((key,i)=>{const [side,symbol]=key.split('|');return{i:base+i,c:side==='short'?'#dc2626':'#16a34a',label:(side==='short'?'Short ':'Long ')+symbol}});
+  lineChart(canvas,chartRows,specs,ylabel,{zero:false});
 }
 function individualPremiumChart(canvas,rows,series){
   const spotIndex=ix('slv_price'),premiumSeries={},all=[];
@@ -418,6 +422,7 @@ function drawPortfolioComparisons(){
     lineChart(assetCanvas,last.portfolio_series,keys.map((key,i)=>({i:f(key+'_attributed_factor_compounded_return_pct'),c:colors[i%colors.length],label:key==='treasury'?'Treasuries':sleeves[key]?.product_label||key})),'% compounded factor',{zero:false});
   }
 }
+function refineCommodityCharts(){for(const [key,sleeve] of Object.entries(last?.commodity_sleeves||{})){const safe='commodity-'+key,r=sleeve.series,f=name=>sleeve.fields.indexOf(name),held=sleeve.held_futures_diagnostics||[];for(const suffix of ['cumulative','compounded'])$(safe+'-'+suffix)?.parentElement.remove();const prices=$(safe+'-prices');if(prices){prices.parentElement.querySelector('h2').textContent=sleeve.product_label+' actual held futures prices';heldFuturesChart(prices,r,held,'price','price')}const premiums=$(safe+'-premiums');if(premiums){premiums.parentElement.querySelector('h2').textContent=sleeve.product_label+' actual held futures premiums';heldFuturesChart(premiums,r,held,'premium_pct','% premium')}const lease=$(safe+'-lease');if(lease){lease.parentElement.querySelector('h2').textContent=sleeve.product_label+' actual held futures lease rates';heldFuturesChart(lease,r,held,'lease_pct','% annualized')}const priceSection=document.createElement('section');priceSection.className='chart';priceSection.innerHTML='<h2>'+sleeve.product_label+' spot and all futures prices</h2><canvas id="'+safe+'-all-prices"></canvas>';prices?.parentElement.before(priceSection);futuresPriceChart($(safe+'-all-prices'),r,sleeve.futures_prices,[],f('slv_price'),sleeve.product_label+' spot');const activeSides=new Set(held.flatMap(items=>(items||[]).map(x=>x.side))),names=[],labels=[],colors=[];if(activeSides.has('long')){names.push('long_futures_daily_return_pct');labels.push('Long futures');colors.push('#16a34a')}if(activeSides.has('short')){names.push('short_futures_daily_return_pct');labels.push('Short futures');colors.push('#dc2626')}for(const [name,label,color,weight] of [['slv_daily_return_pct','Direct position','#2563eb','slv_weight_pct'],['treasury_daily_return_pct','Treasury','#64748b','treasury_weight_pct']])if(r.some(row=>Math.abs(num(row[f(weight)])||0)>1e-12)){names.push(name);labels.push(label);colors.push(color)}lineChart($(safe+'-legs'),r,names.map((name,i)=>({i:f(name),c:colors[i],label:labels[i]})),'% daily',{zero:false})}}
 function organizeResultCharts(){const common=$('commonPortfolioCharts'),root=$('commoditySleeveCharts'),sleeves=last?.commodity_sleeves||{};$('legacySilverCharts').hidden=Object.keys(sleeves).length>0;root?.querySelectorAll(':scope > .commodity-grid > h3').forEach(h=>{const table=h.nextElementSibling;if(table?.classList.contains('annual-table-wrap'))table.remove();h.remove()});const combined=root?.firstElementChild;if(common&&combined&&combined.querySelector('#multiPortfolioReturn')){common.innerHTML='';common.appendChild(combined)}bindTooltips()}
 function drawBookDecompositions(){
   const addCharts=(container,prefix,fields,series,label)=>{
@@ -448,7 +453,7 @@ function drawBookDecompositions(){
 const drawCommoditySleevesOriginal=drawCommoditySleeves;drawCommoditySleeves=function(){$('commonPortfolioCharts').innerHTML='';return drawCommoditySleevesOriginal()};
 bindTooltips=function(){drawTradePrices();document.querySelectorAll('canvas:not(.statistics-chart canvas)').forEach(cv=>{cv.onmousemove=hover;cv.onclick=hover;cv.onmouseleave=leave})};
 const drawStatisticsOriginal=drawStatistics;drawStatistics=function(){drawStatisticsOriginal();const heading=$('scatter-treasury-rate')?.parentElement?.querySelector('h2'),note=$('scatter-treasury-rate')?.parentElement?.querySelector('.chart-note');if(heading)heading.textContent='Treasury yield vs. maturity';if(note)note.textContent='The plotted value is the observed Treasury yield for each tenor and date.'};
-const drawUnfiltered=draw;draw=function(){if(last&&plotRangeSource?.result!==last){initializePlotRange();if($('plotPeriod').value!=='all')setTimeout(applyPlotRange,0)}const result=drawUnfiltered();drawStatistics();drawSelectionComparison();drawExtremeReturns();drawOutliers();drawCommoditySleeves();organizeResultCharts();drawPortfolioComparisons();drawBookDecompositions();const dates=last.daily_attribution||[];drawDailyAttribution(selectedDate||dates.at(-1)?.date);return result};
+const drawUnfiltered=draw;draw=function(){if(last&&plotRangeSource?.result!==last){initializePlotRange();if($('plotPeriod').value!=='all')setTimeout(applyPlotRange,0)}const result=drawUnfiltered();drawStatistics();drawSelectionComparison();drawExtremeReturns();drawOutliers();drawCommoditySleeves();refineCommodityCharts();organizeResultCharts();drawPortfolioComparisons();drawBookDecompositions();const dates=last.daily_attribution||[];drawDailyAttribution(selectedDate||dates.at(-1)?.date);return result};
 $('attributionDate').addEventListener('change',e=>selectAttributionDate(e.target.value));
 $('inspectAttributionDate').addEventListener('click',()=>selectAttributionDate($('attributionDate').value));
 $('plotPeriod').addEventListener('change',()=>{updatePlotControls();saveView()});$('applyPlotRange').addEventListener('click',applyPlotRange);$('resetPlotRange').addEventListener('click',()=>{$('plotPeriod').value='all';updatePlotControls();applyPlotRange()});

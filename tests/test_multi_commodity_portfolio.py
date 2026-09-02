@@ -57,6 +57,22 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
         self.assertIn("direct_unrebalanced_compounded_return_pct",
                       result["portfolio_fields"])
 
+    def test_disabled_short_book_has_no_short_leg_returns_or_holdings(self):
+        result = gui.result({
+            "weight_silver": 100,
+            "portfolio_rebalancing": "daily",
+            "min_days": 30,
+            "enable_short_book": "false",
+        })
+        sleeve = result["commodity_sleeves"]["silver"]
+        short_return = sleeve["fields"].index("short_futures_daily_return_pct")
+        self.assertTrue(all(row[short_return] is None for row in sleeve["series"]))
+        self.assertTrue(all(
+            item["side"] != "short"
+            for day in sleeve["held_futures_diagnostics"]
+            for item in day
+        ))
+
     def test_daily_portfolio_contributions_reconcile(self):
         if not {"gold", "oil"}.issubset(self.markets):
             self.skipTest("gold and oil archives are unavailable")

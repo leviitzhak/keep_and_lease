@@ -1182,12 +1182,15 @@ def run_backtest(spot, contracts, rates, by_day, p):
         lease_futures_treasury_factor_nav *= math.exp(
             lease_logs["futures_treasury"])
         sgov_proxy_nav *= 1 + sgov_proxy_return
-        # Standalone leg returns always represent a fully invested leg.  They
-        # are deliberately independent of the portfolio's allocation signal.
+        # Leg-return charts describe instruments the strategy actually held
+        # over this interval.  A disabled or zero-sized leg is absent rather
+        # than being replaced by a hypothetical diagnostic portfolio.
+        # These two reference returns are also used by the multi-asset
+        # aggregator for its direct-hold benchmark and standalone Treasury.
         asset_returns = {"slv": spot_return, "treasury": treasury_return}
         for key, selected, direction in (
-                ("long_futures", position["long_leg"], 1.0),
-                ("short_futures", position["short_leg"], -1.0)):
+                ("long_futures", position["longs"], 1.0),
+                ("short_futures", position["shorts"], -1.0)):
             selected_total = sum(selected.values())
             selected_return = 0.0
             selected_valid = bool(selected_total)
@@ -1255,6 +1258,24 @@ def run_backtest(spot, contracts, rates, by_day, p):
             diagnostic_longs, diagnostic_contracts, "premium")
         short_weighted_premium = weighted_contract_value(
             diagnostic_shorts, diagnostic_contracts, "premium")
+        held_futures = []
+        for side, book in (("long", position["longs"]),
+                           ("short", position["shorts"])):
+            for symbol, weight in book.items():
+                contract = position["contracts"].get(symbol, {})
+                price = contracts.get(symbol, {}).get(execution_day)
+                held_futures.append({
+                    "symbol": symbol, "side": side,
+                    "weight_pct": 100 * weight,
+                    "price": price,
+                    "premium_pct": (
+                        100 * (price / spot[execution_day] - 1)
+                        if price is not None and spot[execution_day] else None),
+                    "lease_pct": (
+                        100 * contract["lease"]
+                        if contract.get("lease") is not None else None),
+                    "maturity_days": contract.get("days"),
+                })
         if short_total:
             short_maturities = [position["contracts"][s]["days"] for s in position["shorts"]]
             shortest_short_maturity_days = min(short_maturities)
@@ -1417,6 +1438,7 @@ def run_backtest(spot, contracts, rates, by_day, p):
                        "largest_futures_maturity_share_pct": 100 * largest_share,
                        "long_symbols": ";".join(position["longs"]),
                        "short_symbols": ";".join(position["shorts"])})
+        output[-1]["held_futures"] = held_futures
         previous_valid_position = position
     return output, missing_futures_intervals
 
