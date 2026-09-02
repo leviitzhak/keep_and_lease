@@ -21,7 +21,7 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
         gui.MARKET = cls.markets["silver"]
 
     def test_available_downloaded_markets_have_curves(self):
-        self.assertEqual(set(self.markets), {"silver", "gold", "sp500"})
+        self.assertEqual(set(self.markets), {"silver", "gold", "sp500", "btc"})
         for market in self.markets.values():
             self.assertTrue(market[0])
             self.assertTrue(market[1])

@@ -14,6 +14,15 @@ production parameter names.
 | `max_short_exposure` | Maximum short-book exposure. |
 | `minimum_holding_days` | Optional turnover constraint. |
 | `transaction_cost_bps` | Assumed trading cost. |
+| `futures_contract_type` | `regular` for linear USD payoff or `inverse` for a native BTC payoff ledger. Configured independently per commodity. |
+| `inverse_payoff_conversion_fee` | Fixed proportional fee charged on the absolute USD value whenever accumulated native BTC payoff is converted at the current spot rate. Separate from bid/ask and position-change costs. |
+| `inverse_min_conversion_btc` | Absolute accumulated BTC payoff required before conversion and recognition in strategy USD returns. `0` converts every interval. Positive and negative native payoffs net in the pending balance. |
+
+For BTC, the existing fund-side allocation is implemented as a direct holding
+of BTC itself. This is a naming and instrument-description distinction only:
+it keeps the same spot return, allocation, extension, and decomposition
+arithmetic as the generic replicating-fund leg. There is no separate ETF price
+series or fund expense for the direct BTC holding.
 
 ## Eligibility
 

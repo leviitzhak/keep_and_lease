@@ -6,9 +6,18 @@
 
 For every contract and date retain contract identifier, commodity, exchange, currency, multiplier, observation date, expiry or last-trade date, settlement/close price, and quality flags.
 
+BTC dated futures are downloaded from Deribit's public history API. Preserve
+Deribit's instrument name, creation and expiration timestamps, instrument type,
+contract size, and settlement currency in `btc/coverage.json`. The corresponding
+daily OHLCV files retain the exchange's unadjusted USD quote.
+
 ### Spot or ETF
 
 Retain adjusted and unadjusted prices, distributions where relevant, expense ratio history, currency, and trading calendar.
+
+BTC spot uses Yahoo BTC-USD composite daily candles. It is deliberately
+independent of Deribit's perpetual future. The coverage report records the
+daily convention so futures/spot alignment remains auditable.
 
 ### Treasury/cash curve
 

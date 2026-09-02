@@ -90,6 +90,51 @@ class Parameters:
     bond_mode: str = "accrual"
     treasury_asset: str = "matched_maturity"
     treasury_allocation_mode: str = "shortest_rolling"
+    futures_contract_type: str = "regular"
+    inverse_payoff_conversion_fee: float = 0.0
+    inverse_min_conversion_btc: float = 0.0
+    trading_calendar: str = "business_days"
+
+
+@dataclass
+class InversePayoffAccount:
+    """Native BTC settlement balance awaiting conversion into strategy USD."""
+
+    pending_btc: float = 0.0
+    cumulative_conversion_fees_usd: float = 0.0
+
+    def settle_btc(self, btc_payoff, end_spot, conversion_fee_rate=0.0,
+                   minimum_conversion_btc=0.0, force_conversion=False):
+        if minimum_conversion_btc < 0:
+            raise ValueError("minimum BTC conversion amount must be non-negative")
+        if not 0.0 <= conversion_fee_rate < 1.0:
+            raise ValueError("conversion fee rate must be in [0, 1)")
+        self.pending_btc += btc_payoff
+        should_convert = (force_conversion or minimum_conversion_btc == 0 or
+                          abs(self.pending_btc) >= minimum_conversion_btc)
+        converted_btc = self.pending_btc if should_convert else 0.0
+        gross_usd = converted_btc * end_spot
+        fee_usd = abs(converted_btc) * end_spot * conversion_fee_rate
+        if should_convert:
+            self.pending_btc = 0.0
+            self.cumulative_conversion_fees_usd += fee_usd
+        return {"interval_btc_payoff": btc_payoff,
+                "converted_btc": converted_btc,
+                "gross_converted_usd": gross_usd,
+                "conversion_fee_usd": fee_usd,
+                "recognized_usd_payoff": gross_usd - fee_usd,
+                "pending_btc": self.pending_btc,
+                "pending_btc_spot_value_usd": self.pending_btc * end_spot,
+                "conversion_triggered": should_convert}
+
+    def settle(self, start_future, end_future, end_spot,
+               signed_usd_notional=1.0, conversion_fee_rate=0.0,
+               minimum_conversion_btc=0.0, force_conversion=False):
+        payoff = inverse_futures_usd_payoff(
+            start_future, end_future, end_spot, signed_usd_notional, 0.0)
+        return self.settle_btc(payoff["btc_payoff"], end_spot,
+                               conversion_fee_rate, minimum_conversion_btc,
+                               force_conversion)
 
 
 def clamp(x, low=0.0, high=1.0):
@@ -120,6 +165,9 @@ def parse_date(value):
 
 def expiry_from_symbol(symbol):
     """Infer the contract month from TurtleTrader's PREFIXyyM symbols."""
+    deribit = re.fullmatch(r"BTC-(\d{2}[A-Z]{3}\d{2})", symbol.upper())
+    if deribit:
+        return datetime.strptime(deribit.group(1), "%d%b%y").date()
     match = re.fullmatch(r"[A-Z]+(\d{2})([FGHJKMNQUVXZ])", symbol.upper())
     if not match:
         return None
@@ -874,6 +922,38 @@ def futures_interval_return(symbol, day, next_day, contracts):
     return prices[next_day] / prices[day] - 1, True
 
 
+def inverse_futures_usd_payoff(start_future, end_future, end_spot,
+                               signed_usd_notional=1.0,
+                               conversion_fee_rate=0.0):
+    """Convert an inverse future's native BTC payoff into USD.
+
+    ``signed_usd_notional`` is positive for a long and negative for a short.
+    The conversion fee is charged on the absolute USD amount converted, so it
+    reduces both positive and negative native settlements.  The function is
+    normalized naturally: passing a notional of one returns a portfolio-return
+    contribution per dollar of futures notional.
+    """
+    values = (start_future, end_future, end_spot)
+    if any(value is None or not math.isfinite(value) or value <= 0
+           for value in values):
+        raise ValueError("inverse futures and spot prices must be positive")
+    if not math.isfinite(signed_usd_notional):
+        raise ValueError("signed USD notional must be finite")
+    if (not math.isfinite(conversion_fee_rate) or
+            not 0.0 <= conversion_fee_rate < 1.0):
+        raise ValueError("conversion fee rate must be in [0, 1)")
+    btc_payoff = signed_usd_notional * (
+        1.0 / start_future - 1.0 / end_future)
+    gross_usd_payoff = btc_payoff * end_spot
+    conversion_fee = abs(btc_payoff) * end_spot * conversion_fee_rate
+    return {
+        "btc_payoff": btc_payoff,
+        "gross_usd_payoff": gross_usd_payoff,
+        "conversion_fee": conversion_fee,
+        "net_usd_payoff": gross_usd_payoff - conversion_fee,
+    }
+
+
 def weighted_contract_value(positions, contracts, field):
     total = sum(positions.values())
     if not total:
@@ -971,7 +1051,10 @@ def multiplicative_log_contributions(total_return, contributions):
 def run_backtest(spot, contracts, rates, by_day, p):
     # Ignore stray weekend records. Exchange holidays have no observation, so
     # each interval automatically runs to the next available business day.
-    days = sorted(day for day in by_day if day in spot and day.weekday() < 5)
+    if p.trading_calendar not in ("business_days", "all_days"):
+        raise ValueError("invalid trading calendar")
+    days = sorted(day for day in by_day if day in spot and
+                  (p.trading_calendar == "all_days" or day.weekday() < 5))
     output = []
     simple = 0.0
     long_simple = 0.0
@@ -998,21 +1081,25 @@ def run_backtest(spot, contracts, rates, by_day, p):
     missing_futures_intervals = []
     previous_valid_position = None
     previous_position = None
+    inverse_account = InversePayoffAccount()
     if p.reactivity == "same_day":
-        intervals = zip(days, days, days[1:])
+        intervals = list(zip(days, days, days[1:]))
     elif p.reactivity == "next_day":
-        intervals = zip(days, days[1:], days[2:])
+        intervals = list(zip(days, days[1:], days[2:]))
     else:
         raise ValueError("reactivity must be 'same_day' or 'next_day'")
     previous_signal_day = None
     # Same-day mode forms the close-derived signal and rebalances at that close;
     # next-day mode executes it at the following available close.  In either
     # case, the resulting position earns the execution-to-exit return.
-    for signal_day, execution_day, exit_day in intervals:
+    for interval_index, (signal_day, execution_day, exit_day) in enumerate(intervals):
         signal_elapsed = ((signal_day - previous_signal_day).days
                           if previous_signal_day else 0.0)
         position = positions_for_day(
             by_day[signal_day], p, previous_position, signal_elapsed)
+        if position is None:
+            previous_signal_day = signal_day
+            continue
         previous_position = position
         previous_signal_day = signal_day
         if execution_day not in spot or exit_day not in spot:
@@ -1034,12 +1121,21 @@ def run_backtest(spot, contracts, rates, by_day, p):
         valid_interval = True
         short_total = sum(position["shorts"].values())
         long_total = sum(position["longs"].values())
+        interval_inverse_btc = 0.0
         for symbol, weight in position["longs"].items():
             value, found = futures_interval_return(symbol, execution_day, exit_day, contracts)
-            contribution = weight * value
+            if p.futures_contract_type == "inverse" and found:
+                interval_inverse_btc += nav * weight * (
+                    1 / contracts[symbol][execution_day] -
+                    1 / contracts[symbol][exit_day])
+                contribution = 0.0
+            else:
+                contribution = weight * value
             long_futures_contribution += contribution
             portfolio_return += contribution
             base_contribution = position["base_longs"].get(symbol, 0.0) * value
+            if p.futures_contract_type == "inverse":
+                base_contribution = 0.0
             base_long_futures_contribution += base_contribution
             base_long_return += base_contribution
             if not found:
@@ -1051,7 +1147,13 @@ def run_backtest(spot, contracts, rates, by_day, p):
             valid_interval = valid_interval and found
         for symbol, weight in position["shorts"].items():
             value, found = futures_interval_return(symbol, execution_day, exit_day, contracts)
-            contribution = -weight * value
+            if p.futures_contract_type == "inverse" and found:
+                interval_inverse_btc -= nav * weight * (
+                    1 / contracts[symbol][execution_day] -
+                    1 / contracts[symbol][exit_day])
+                contribution = 0.0
+            else:
+                contribution = -weight * value
             short_futures_return += contribution
             portfolio_return += contribution
             if not found:
@@ -1065,6 +1167,21 @@ def run_backtest(spot, contracts, rates, by_day, p):
         # observation. Skip that entire portfolio interval instead.
         if not valid_interval:
             continue
+
+        inverse_settlement = None
+        if p.futures_contract_type == "inverse":
+            inverse_settlement = inverse_account.settle_btc(
+                interval_inverse_btc, spot[exit_day],
+                p.inverse_payoff_conversion_fee,
+                p.inverse_min_conversion_btc,
+                interval_index == len(intervals) - 1)
+            recognized = inverse_settlement["recognized_usd_payoff"] / nav
+            long_futures_contribution += recognized
+            portfolio_return += recognized
+            base_share = (sum(position["base_longs"].values()) / long_total
+                          if long_total else 0.0)
+            base_long_futures_contribution += recognized * base_share
+            base_long_return += recognized * base_share
 
         # Exact daily return attribution. Futures price returns are separated
         # into the contemporaneous silver move and basis-related effects. The
@@ -1279,6 +1396,13 @@ def run_backtest(spot, contracts, rates, by_day, p):
                        "positive_signal_annual_pct": 100 * position["positive_signal"],
                        "negative_signal_annual_pct": 100 * position["negative_signal"],
                        "interval_return_pct": 100 * portfolio_return,
+                       "futures_contract_type": p.futures_contract_type,
+                       "inverse_interval_btc_payoff": inverse_settlement["interval_btc_payoff"] if inverse_settlement else None,
+                       "inverse_converted_btc": inverse_settlement["converted_btc"] if inverse_settlement else None,
+                       "inverse_pending_btc": inverse_settlement["pending_btc"] if inverse_settlement else None,
+                       "inverse_pending_btc_spot_value_usd": inverse_settlement["pending_btc_spot_value_usd"] if inverse_settlement else None,
+                       "inverse_conversion_fee_usd": inverse_settlement["conversion_fee_usd"] if inverse_settlement else None,
+                       "inverse_recognized_usd_payoff": inverse_settlement["recognized_usd_payoff"] if inverse_settlement else None,
                        "silver_price_return_contribution_pct": 100 * silver_price_component,
                        "slv_expense_contribution_pct": 100 * slv_expense_component,
                        "treasury_return_contribution_pct": 100 * treasury_component,

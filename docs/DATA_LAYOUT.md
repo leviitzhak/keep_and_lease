@@ -6,6 +6,7 @@ The canonical target layout is `public/data/<asset>/`, with simple CSV files:
 - `gold/spot.csv`, `gold/fund.csv`, and `gold/futures/*.csv`
 - `treasuries/yields/*.csv` and optional `treasuries/fund.csv`
 - `sp500/spot.csv`, `sp500/fund.csv`, and `sp500/futures/*.csv`
+- `btc/spot.csv`, `btc/futures/*.csv`, and `btc/coverage.json`
 
 The checked-in materialized data currently occupies about 15 MiB. A complete
 daily research set for the four assets should normally remain below roughly
@@ -34,9 +35,27 @@ Available today:
   original TurtleTrader source, refreshed continuous benchmark, and IAU.
 - Treasuries: six daily yield tenors and SHY.
 - S&P 500: 83 individual futures, the cash index, and SPY.
+- BTC: 493 Deribit dated contracts were enumerated on 2 September 2026; 462
+  contain archived daily candles. Yahoo BTC-USD supplies a spot composite.
+  The audited overlap is continuous from 6 January 2017, while at least two
+  simultaneously observed contracts are available from 9 February 2017.
+  `btc/coverage.json` records exact coverage and contract metadata and can be
+  regenerated with `scripts/refresh-btc-market-data.py`.
 
 The individual-contract archives are historical rather than current: silver,
 gold, and S&P 500 end in 2002. Continuous benchmark CSVs extend through July
 2026, but they cannot replace a cross-maturity futures curve.
+
+Historical Deribit BTC contracts are inverse USD futures. For signed USD
+notional `N`, daily prices `F0,F1`, ending BTC spot `S1`, and conversion-fee
+rate `c`, inverse mode adds `N(1/F0−1/F1)` BTC to a pending native balance.
+Regular mode retains the linear USD payoff. In inverse mode the signed BTC
+payoffs net until the absolute balance reaches `inverse_min_conversion_btc`.
+The complete balance `B` is then recognized as `S1·B − c·S1·|B|` USD and reset
+to zero. A remaining balance is force-converted at the backtest end. Pending BTC
+and its current spot value remain diagnostic fields but are not included in USD
+strategy NAV before conversion. The fee is distinct from bid/ask and
+position-change costs. BTC also requires an explicit seven-day calendar policy
+and Treasury accrual across weekends before GUI activation.
 `public/data/manifest.json` is the machine-readable coverage and checksum
 inventory.
