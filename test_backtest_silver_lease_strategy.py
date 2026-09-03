@@ -82,6 +82,27 @@ class StandaloneLegReturnTests(unittest.TestCase):
                     self.assertEqual(0.0, item["start_value"])
                     self.assertEqual(0.0, item["end_value"])
                     self.assertIsNotNone(item["quantity"])
+                if item["holding_type"] == "direct":
+                    elapsed = (date.fromisoformat(row["exit_date"]) -
+                               date.fromisoformat(row["date"])).days
+                    expected_expense = (
+                        item["start_value"] * 0.01 * elapsed / 365)
+                    expected_pnl = item["start_value"] * (
+                        item["exit_price"] / item["price"] - 1 -
+                        0.01 * elapsed / 365)
+                    self.assertAlmostEqual(expected_expense,
+                                           item["expense_value"])
+                    self.assertAlmostEqual(expected_pnl, item["pnl_value"])
+                    self.assertAlmostEqual(
+                        item["gross_pnl_value"] - item["expense_value"],
+                        item["pnl_value"])
+                    self.assertAlmostEqual(
+                        item["quantity"] - item["units_expensed"],
+                        item["end_quantity"])
+                    self.assertAlmostEqual(
+                        item["end_quantity"] * item["exit_price"],
+                        item["end_value"])
+                    self.assertEqual(0.0, item["internal_transfer_value"])
             for book in ("lease", "keep"):
                 holdings = [item for item in ledger if item["book"] == book]
                 start = sum(item["start_value"] for item in holdings)

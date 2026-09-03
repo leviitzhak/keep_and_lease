@@ -1,7 +1,7 @@
 (function installKeepLeaseWorkbook(global) {
   "use strict";
 
-  const TEMPLATE_VERSION = 1;
+  const TEMPLATE_VERSION = 2;
   const STYLE_IDS = {
     default: 0,
     title: 1,
@@ -316,9 +316,12 @@
       add("Keep book end — engine audit", 27), add("Keep book engine audit difference", 31, "formula"),
     ]);
     addGroup(columns, groups, "Detailed return contributions", [
-      add("Direct/replicating contribution", 27, "percentFormula"), add("Treasury contribution", 22, "percentFormula"),
+      add("Direct gross price contribution", 29, "percentFormula"), add("Holding expense contribution", 27, "percentFormula"),
+      add("Direct/replicating net contribution", 31, "percentFormula"), add("Direct decomposition difference", 29, "percentFormula"),
+      add("Treasury contribution", 22, "percentFormula"),
       add("Futures contribution", 22, "percentFormula"), add("Cash/financing contribution", 25, "percentFormula"),
       add("Detailed contribution sum", 24, "percentFormula"), add("Detailed return difference", 24, "percentFormula"),
+      add("Maximum holding P&L formula difference", 34, "formula"),
       add("Actual holding count", 20, "integer"),
     ]);
 
@@ -327,9 +330,12 @@
       const start = columns.length;
       const definitions = [
         add("Name", 32, "default"), add("Type", 15, "default"), add("Book", 12, "default"), add("Side", 11, "default"),
-        add("Contract type", 15, "default"), add("Start price", 17), add("End price", 17), add("Quantity / units", 18),
-        add("Position (% NAV)", 19, "percentSource"), add("Value / notional", 19), add("Start value", 18), add("End value", 18),
-        add("Economic P&L", 18), add("Internal transfer", 20), add("Spot price — start", 20), add("Spot price — end", 20),
+        add("Contract type", 15, "default"), add("Start price", 17), add("End price", 17), add("Annual expense rate", 20, "percentSource"),
+        add("Start quantity / units", 20), add("Units expensed", 18, "formula"), add("End quantity / units", 20, "formula"),
+        add("Position (% NAV)", 19, "percentSource"), add("Value / notional", 19), add("Start value", 18),
+        add("Gross P&L before expense", 24, "formula"), add("Holding expense", 20, "formula"), add("Economic P&L", 18, "formula"),
+        add("Source economic P&L", 22), add("P&L formula difference", 23, "formula"), add("Internal transfer", 20), add("End value", 18),
+        add("Spot price — start", 20), add("Spot price — end", 20),
         add("Premium", 16, "percentSource"), add("Matched USD rate", 20, "percentSource"), add("Lease rate", 17, "percentSource"),
         add("Maturity (days)", 18, "integer"), add("Return contribution", 20, "percentFormula"),
       ];
@@ -343,8 +349,9 @@
     const reference = (header, row) => `${excelColumn(columnIndex.get(header))}${row}`;
     const slotReference = (slot, field, row) => {
       const fieldOffset = holdingGroups[slot].start + [
-        "Name", "Type", "Book", "Side", "Contract type", "Start price", "End price", "Quantity / units",
-        "Position (% NAV)", "Value / notional", "Start value", "End value", "Economic P&L", "Internal transfer",
+        "Name", "Type", "Book", "Side", "Contract type", "Start price", "End price", "Annual expense rate",
+        "Start quantity / units", "Units expensed", "End quantity / units", "Position (% NAV)", "Value / notional", "Start value",
+        "Gross P&L before expense", "Holding expense", "Economic P&L", "Source economic P&L", "P&L formula difference", "Internal transfer", "End value",
         "Spot price — start", "Spot price — end", "Premium", "Matched USD rate", "Lease rate", "Maturity (days)",
         "Return contribution",
       ].indexOf(field);
@@ -416,6 +423,24 @@
           .filter((item) => item.holding_type === type)
           .reduce((sum, item) => sum + finiteNumber(item.pnl_value, 0), 0) / startNav : 0;
       }
+      const directGrossContribution = startNav ? ledger
+        .filter((item) => item.holding_type === "direct")
+        .reduce((sum, item) => {
+          const quantity = finiteNumber(item.quantity, 0);
+          const startPrice = finiteNumber(item.price, 0);
+          const endPrice = finiteNumber(item.exit_price, startPrice);
+          return sum + finiteNumber(item.gross_pnl_value, quantity * (endPrice - startPrice));
+        }, 0) / startNav : 0;
+      const expenseContribution = startNav ? -ledger
+        .filter((item) => item.holding_type === "direct")
+        .reduce((sum, item) => {
+          const quantity = finiteNumber(item.quantity, 0);
+          const gross = finiteNumber(item.gross_pnl_value,
+            quantity * (finiteNumber(item.exit_price, 0) - finiteNumber(item.price, 0)));
+          return sum + finiteNumber(item.expense_value, gross - finiteNumber(item.pnl_value, 0));
+        }, 0) / startNav : 0;
+      const directDecompositionDifference = (
+        directGrossContribution + expenseContribution - contributions.direct);
       const detailedSum = Object.values(contributions).reduce((sum, value) => sum + value, 0);
       const values = Array(columns.length).fill(null);
       const put = (header, value) => { values[columnIndex.get(header)] = value; };
@@ -496,25 +521,57 @@
       put("Combined books return in underlying", formula(`${reference("Lease contribution to combined book return", rowNumber)}+${reference("Keep contribution to combined book return", rowNumber)}`, combinedUnderlying, "percentFormula"));
       put("Reconstructed total daily return", formula(`(1+${reference("Underlying price change", rowNumber)})*(1+${reference("Combined books return in underlying", rowNumber)})-1`, reconstructedReturn, "percentFormula"));
       put("Underlying/book return difference", formula(`${reference("Source total daily return", rowNumber)}-${reference("Reconstructed total daily return", rowNumber)}`, sourceReturn - reconstructedReturn, "percentFormula"));
-      put("Direct/replicating contribution", formula(`SUM(${holdingGroups.map((group) => `IF(${slotReference(group.slot, "Type", rowNumber)}="direct",${slotReference(group.slot, "Return contribution", rowNumber)},0)`).join(",")})`, contributions.direct, "percentFormula"));
+      put("Direct gross price contribution", formula(`SUM(${holdingGroups.map((group) => `IF(${slotReference(group.slot, "Type", rowNumber)}="direct",${slotReference(group.slot, "Gross P&L before expense", rowNumber)}/${reference("Start NAV", rowNumber)},0)`).join(",")})`, directGrossContribution, "percentFormula"));
+      put("Holding expense contribution", formula(`-SUM(${holdingGroups.map((group) => `IF(${slotReference(group.slot, "Type", rowNumber)}="direct",${slotReference(group.slot, "Holding expense", rowNumber)}/${reference("Start NAV", rowNumber)},0)`).join(",")})`, expenseContribution, "percentFormula"));
+      put("Direct/replicating net contribution", formula(`${reference("Direct gross price contribution", rowNumber)}+${reference("Holding expense contribution", rowNumber)}`, directGrossContribution + expenseContribution, "percentFormula"));
+      put("Direct decomposition difference", formula(`${reference("Direct/replicating net contribution", rowNumber)}-SUM(${holdingGroups.map((group) => `IF(${slotReference(group.slot, "Type", rowNumber)}="direct",${slotReference(group.slot, "Return contribution", rowNumber)},0)`).join(",")})`, directDecompositionDifference, "percentFormula"));
       put("Treasury contribution", formula(`SUM(${holdingGroups.map((group) => `IF(${slotReference(group.slot, "Type", rowNumber)}="treasury",${slotReference(group.slot, "Return contribution", rowNumber)},0)`).join(",")})`, contributions.treasury, "percentFormula"));
       put("Futures contribution", formula(`SUM(${holdingGroups.map((group) => `IF(${slotReference(group.slot, "Type", rowNumber)}="future",${slotReference(group.slot, "Return contribution", rowNumber)},0)`).join(",")})`, contributions.future, "percentFormula"));
       put("Cash/financing contribution", formula(`SUM(${holdingGroups.map((group) => `IF(${slotReference(group.slot, "Type", rowNumber)}="cash",${slotReference(group.slot, "Return contribution", rowNumber)},0)`).join(",")})`, contributions.cash, "percentFormula"));
-      put("Detailed contribution sum", formula(`SUM(${reference("Direct/replicating contribution", rowNumber)}:${reference("Cash/financing contribution", rowNumber)})`, detailedSum, "percentFormula"));
+      put("Detailed contribution sum", formula(`SUM(${reference("Direct/replicating net contribution", rowNumber)},${reference("Treasury contribution", rowNumber)},${reference("Futures contribution", rowNumber)},${reference("Cash/financing contribution", rowNumber)})`, detailedSum, "percentFormula"));
       put("Detailed return difference", formula(`${reference("Source total daily return", rowNumber)}-${reference("Detailed contribution sum", rowNumber)}`, sourceReturn - detailedSum, "percentFormula"));
+      const pnlFormulaDifferenceMaximum = Math.max(0, ...ledger.map((item) => {
+        const gross = finiteNumber(item.gross_pnl_value,
+          item.holding_type === "direct" ? finiteNumber(item.quantity, 0) * (finiteNumber(item.exit_price, 0) - finiteNumber(item.price, 0)) : finiteNumber(item.pnl_value, 0));
+        const expense = finiteNumber(item.expense_value,
+          item.holding_type === "direct" ? gross - finiteNumber(item.pnl_value, 0) : 0);
+        return Math.abs(finiteNumber(item.pnl_value, 0) - gross + expense);
+      }));
+      put("Maximum holding P&L formula difference", formula(`MAX(${holdingGroups.map((group) => `ABS(${slotReference(group.slot, "P&L formula difference", rowNumber)})`).join(",")})`, pnlFormulaDifferenceMaximum));
       put("Actual holding count", formula(`COUNTA(${holdingGroups.map((group) => slotReference(group.slot, "Name", rowNumber)).join(",")})`, ledger.length, "integer"));
 
       holdingGroups.forEach((group) => {
         const item = ledger[group.slot] || {};
         const position = finiteNumber(item.position_pct, null);
+        const startQuantity = finiteNumber(item.quantity, null);
+        const startPrice = finiteNumber(item.price, null);
+        const endPrice = finiteNumber(item.exit_price, null);
+        const sourcePnl = finiteNumber(item.pnl_value, null);
+        const grossPnl = finiteNumber(item.gross_pnl_value,
+          item.holding_type === "direct" && startQuantity !== null && startPrice !== null && endPrice !== null
+            ? startQuantity * (endPrice - startPrice) : finiteNumber(item.pnl_value, 0));
+        const expenseValue = finiteNumber(item.expense_value,
+          item.holding_type === "direct" ? grossPnl - finiteNumber(item.pnl_value, 0) : 0);
+        const elapsedDays = Math.max(0, (Date.parse(record.exit_date) - Date.parse(record.date)) / 86400000);
+        const expenseRate = finiteNumber(item.expense_rate,
+          item.holding_type === "direct" && finiteNumber(item.start_value, 0) && elapsedDays
+            ? expenseValue / finiteNumber(item.start_value, 0) * 365 / elapsedDays
+            : null);
+        const unitsExpensed = finiteNumber(item.units_expensed,
+          item.holding_type === "direct" && endPrice ? expenseValue / endPrice : 0);
+        const endQuantity = finiteNumber(item.end_quantity,
+          item.holding_type === "direct" && startQuantity !== null ? startQuantity - unitsExpensed : startQuantity);
         const valuesByField = {
           "Name": item.name || "", "Type": item.holding_type || "", "Book": item.book || "", "Side": item.side || "",
-          "Contract type": item.contract_type || "", "Start price": finiteNumber(item.price, null),
-          "End price": finiteNumber(item.exit_price, null), "Quantity / units": finiteNumber(item.quantity, null),
+          "Contract type": item.contract_type || "", "Start price": startPrice,
+          "End price": endPrice, "Annual expense rate": expenseRate,
+          "Start quantity / units": startQuantity, "Units expensed": unitsExpensed, "End quantity / units": endQuantity,
           "Position (% NAV)": position === null ? null : position / 100,
           "Value / notional": finiteNumber(item.notional_value, finiteNumber(item.start_value, null)),
-          "Start value": finiteNumber(item.start_value, null), "End value": finiteNumber(item.end_value, null),
-          "Economic P&L": finiteNumber(item.pnl_value, null), "Internal transfer": finiteNumber(item.internal_transfer_value, null),
+          "Start value": finiteNumber(item.start_value, null), "Gross P&L before expense": grossPnl,
+          "Holding expense": expenseValue, "Economic P&L": sourcePnl, "Source economic P&L": sourcePnl,
+          "P&L formula difference": 0, "Internal transfer": finiteNumber(item.internal_transfer_value, null),
+          "End value": finiteNumber(item.end_value, null),
           "Spot price — start": finiteNumber(item.spot_price, null), "Spot price — end": finiteNumber(item.exit_spot_price, null),
           "Premium": finiteNumber(item.premium_pct, null) === null ? null : finiteNumber(item.premium_pct, 0) / 100,
           "Matched USD rate": finiteNumber(item.matched_usd_rate_pct, null) === null ? null : finiteNumber(item.matched_usd_rate_pct, 0) / 100,
@@ -522,14 +579,35 @@
           "Maturity (days)": finiteNumber(item.maturity_days, null),
         };
         const fieldOrder = [
-          "Name", "Type", "Book", "Side", "Contract type", "Start price", "End price", "Quantity / units",
-          "Position (% NAV)", "Value / notional", "Start value", "End value", "Economic P&L", "Internal transfer",
+          "Name", "Type", "Book", "Side", "Contract type", "Start price", "End price", "Annual expense rate",
+          "Start quantity / units", "Units expensed", "End quantity / units", "Position (% NAV)", "Value / notional", "Start value",
+          "Gross P&L before expense", "Holding expense", "Economic P&L", "Source economic P&L", "P&L formula difference", "Internal transfer", "End value",
           "Spot price — start", "Spot price — end", "Premium", "Matched USD rate", "Lease rate", "Maturity (days)",
         ];
         fieldOrder.forEach((field, offset) => {
           const style = columns[group.start + offset].style;
           values[group.start + offset] = styled(valuesByField[field], style);
         });
+        if (item.name) {
+          values[group.start + fieldOrder.indexOf("Units expensed")] = formula(
+            `IF(${slotReference(group.slot, "Type", rowNumber)}="direct",IFERROR(${slotReference(group.slot, "Holding expense", rowNumber)}/${slotReference(group.slot, "End price", rowNumber)},0),0)`, unitsExpensed,
+          );
+          values[group.start + fieldOrder.indexOf("End quantity / units")] = formula(
+            `IF(${slotReference(group.slot, "Type", rowNumber)}="direct",${slotReference(group.slot, "Start quantity / units", rowNumber)}-${slotReference(group.slot, "Units expensed", rowNumber)},IF(${slotReference(group.slot, "Type", rowNumber)}="cash",${slotReference(group.slot, "End value", rowNumber)},${slotReference(group.slot, "Start quantity / units", rowNumber)}))`, endQuantity,
+          );
+          values[group.start + fieldOrder.indexOf("Gross P&L before expense")] = formula(
+            `IF(${slotReference(group.slot, "Type", rowNumber)}="direct",${slotReference(group.slot, "Start quantity / units", rowNumber)}*(${slotReference(group.slot, "End price", rowNumber)}-${slotReference(group.slot, "Start price", rowNumber)}),${slotReference(group.slot, "Source economic P&L", rowNumber)})`, grossPnl,
+          );
+          values[group.start + fieldOrder.indexOf("Holding expense")] = formula(
+            `IF(${slotReference(group.slot, "Type", rowNumber)}="direct",${slotReference(group.slot, "Start value", rowNumber)}*${slotReference(group.slot, "Annual expense rate", rowNumber)}*${reference("Elapsed days", rowNumber)}/365,0)`, expenseValue,
+          );
+          values[group.start + fieldOrder.indexOf("Economic P&L")] = formula(
+            `${slotReference(group.slot, "Gross P&L before expense", rowNumber)}-${slotReference(group.slot, "Holding expense", rowNumber)}`, finiteNumber(item.pnl_value, 0),
+          );
+          values[group.start + fieldOrder.indexOf("P&L formula difference")] = formula(
+            `${slotReference(group.slot, "Source economic P&L", rowNumber)}-${slotReference(group.slot, "Economic P&L", rowNumber)}`, finiteNumber(item.pnl_value, 0) - grossPnl + expenseValue,
+          );
+        }
         values[group.end] = item.name
           ? formula(`IFERROR(${slotReference(group.slot, "Economic P&L", rowNumber)}/${reference("Start NAV", rowNumber)},0)`, startNav ? finiteNumber(item.pnl_value, 0) / startNav : 0, "percentFormula")
           : null;
@@ -538,6 +616,7 @@
       numericRows.push({
         sourceReturn, calculatedReturn, navDifference: endNav - startNav * (1 + calculatedReturn),
         underlyingDifference: sourceReturn - reconstructedReturn, detailDifference: sourceReturn - detailedSum,
+        directDecompositionDifference, pnlFormulaDifferenceMaximum,
         leaseRollDifference: book.lease.rollDifference, keepRollDifference: book.keep.rollDifference,
         leaseEngineDifference: book.lease.end - book.lease.sourceEnd, keepEngineDifference: book.keep.end - book.keep.sourceEnd,
         holdingCount: ledger.length,
@@ -575,7 +654,8 @@
       [styled("Template version", "label"), TEMPLATE_VERSION],
       [styled("Commodity scope", "label"), `${daily.label}; this template version requires exactly one commodity sleeve.`],
       [styled("Mode", "label"), styled("positive = long futures only; neutral = no futures; negative = short futures only; long_and_short = both.", "note")],
-      [styled("Futures value", "label"), styled("Exchange-traded futures are carried at zero after daily settlement. Notional is exposure; economic P&L settles into the attributed cash/margin holding.", "note")],
+      [styled("Futures value", "label"), styled("Regular and inverse exchange-traded futures are both carried at zero after daily settlement. Their signed notional records contractual price exposure; economic P&L settles into the attributed cash/margin holding.", "note")],
+      [styled("Holding expense", "label"), styled("The direct or replicating holding expense is shown explicitly as annual rate × elapsed days / 365 × start value. An equal value of units is removed at the interval-end price, so the expense changes units rather than creating an internal cash transfer.", "note")],
       [styled("Book valuation", "label"), styled("Lease and keep values are independently reconstructed from attributed holdings and from opening value + accumulated P&L + external/rebalancing transfers.", "note")],
       [styled("Returns", "label"), styled("Standalone book return uses that book's start value. Contribution uses total lease + keep start value. Total return is reconstructed as underlying price change compounded with the combined book return quoted in the underlying.", "note")],
       [styled("Prices", "label"), styled("A future's spot fields contain the actual commodity spot quote. Futures notional and quantity do not rescale that spot price. The normalized underlying index is shown separately.", "note")],
@@ -592,7 +672,7 @@
       name: "Overview",
       rows,
       widths: [42, 105, 2, 18, 18, 18],
-      merges: ["A1:F1", "B3:F3", "B4:F4", "B7:F7", "B8:F8", "B9:F9", "B10:F10", "B11:F11", "A13:F13"],
+      merges: ["A1:F1", "B3:F3", "B4:F4", "B7:F7", "B8:F8", "B9:F9", "B10:F10", "B11:F11", "B12:F12", "A14:F14"],
     };
   }
 
@@ -628,6 +708,8 @@
       ["Maximum NAV difference", maximumAbsolute("NAV difference"), 0, 1e-10, "Engine ending NAV less formula-derived ending NAV."],
       ["Maximum underlying/book return difference", maximumAbsolute("Underlying/book return difference"), 0, 1e-10, "Source return less underlying price × combined underlying-book return reconstruction."],
       ["Maximum detailed-contribution difference", maximumAbsolute("Detailed return difference"), 0, 1e-10, "Source return less direct + Treasury + futures + cash contributions."],
+      ["Maximum direct expense-decomposition difference", maximumAbsolute("Direct decomposition difference"), 0, 1e-10, "Net direct/replicating contribution less gross price contribution plus the explicit expense contribution."],
+      ["Maximum holding P&L formula difference", maximumAbsolute("Maximum holding P&L formula difference"), 0, 1e-10, "Source holding economic P&L less gross P&L before expense minus the explicit holding expense."],
       ["Maximum lease holdings/roll-forward difference", maximumAbsolute("Lease holdings vs roll-forward difference"), 0, 1e-10, "Lease holdings sum versus opening + accumulated P&L + external transfers."],
       ["Maximum keep holdings/roll-forward difference", maximumAbsolute("Keep holdings vs roll-forward difference"), 0, 1e-10, "Keep holdings sum versus opening + accumulated P&L + external transfers."],
       ["Maximum lease engine-audit difference", maximumAbsolute("Lease book engine audit difference"), 0, 1e-10, "Lease holdings sum versus completed backtest book value."],
@@ -640,6 +722,8 @@
       Math.max(0, ...daily.numericRows.map((row) => Math.abs(row.navDifference))),
       Math.max(0, ...daily.numericRows.map((row) => Math.abs(row.underlyingDifference))),
       Math.max(0, ...daily.numericRows.map((row) => Math.abs(row.detailDifference))),
+      Math.max(0, ...daily.numericRows.map((row) => Math.abs(row.directDecompositionDifference))),
+      Math.max(0, ...daily.numericRows.map((row) => Math.abs(row.pnlFormulaDifferenceMaximum))),
       Math.max(0, ...daily.numericRows.map((row) => Math.abs(row.leaseRollDifference))),
       Math.max(0, ...daily.numericRows.map((row) => Math.abs(row.keepRollDifference))),
       Math.max(0, ...daily.numericRows.map((row) => Math.abs(row.leaseEngineDifference))),

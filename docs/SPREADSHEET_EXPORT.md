@@ -22,7 +22,11 @@ The workbook has four sheets:
    detailed return contributions, and enough holding groups for the maximum
    simultaneous ledger entries in the selected period. Futures carry zero book
    value after settlement but retain price, quantity, signed notional, spot,
-   premium, matched USD rate, lease rate, maturity, and economic P&L.
+   premium, matched USD rate, lease rate, maturity, and economic P&L. Direct or
+   replicating holdings separately show start units, annual expense rate, units
+   removed for the expense, end units, gross price P&L, expense, and net economic
+   P&L. Unit removal is valued at the interval-end price and preserves the
+   strategy's pre-existing net return exactly.
 4. `Checks` reconciles holding P&L to source return, formula NAV to engine NAV,
    underlying-price and book returns to total return, detailed holding types to
    total return, holding sums to book roll-forwards, and holding sums to the

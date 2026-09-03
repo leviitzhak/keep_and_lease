@@ -1435,10 +1435,15 @@ def run_backtest(spot, contracts, rates, by_day, p):
                 "price": 1.0,
                 "exit_price": 1.0,
                 "quantity": start_value,
+                "end_quantity": end_value,
+                "units_expensed": 0.0,
                 "position_pct": None,
                 "notional_value": None,
                 "start_value": start_value,
                 "end_value": end_value,
+                "gross_pnl_value": 0.0,
+                "expense_rate": None,
+                "expense_value": 0.0,
                 "pnl_value": 0.0,
                 "internal_transfer_value": end_value - start_value,
                 "spot_price": spot[execution_day],
@@ -1469,18 +1474,45 @@ def run_backtest(spot, contracts, rates, by_day, p):
                 continue
             start_value = starting_nav * weight
             quantity = start_value / start_price if start_price else None
-            end_value = quantity * end_price if quantity is not None else None
             pnl_value = start_value * exact_return
-            cash_adjustments[book] += pnl_value - (end_value - start_value)
+            gross_pnl_value = (
+                quantity * (end_price - start_price)
+                if quantity is not None else 0.0)
+            expense_rate = p.slv_expense if holding_type == "direct" else None
+            expense_value = (
+                start_value * p.slv_expense * elapsed / 365
+                if holding_type == "direct" else 0.0)
+            units_expensed = (
+                expense_value / end_price
+                if holding_type == "direct" and end_price else 0.0)
+            end_quantity = (
+                quantity - units_expensed if quantity is not None else None)
+            end_value = (
+                end_quantity * end_price
+                if end_quantity is not None else None)
+            internal_transfer = end_value - start_value - pnl_value
+            # The proxy expense is represented as a gradual reduction in fund
+            # units.  This preserves the existing net return exactly while
+            # avoiding an artificial expense transfer between the holding and
+            # cash.  Other non-futures holdings retain their prior roll-forward.
+            if holding_type == "direct":
+                internal_transfer = 0.0
+            cash_adjustments[book] -= internal_transfer
             nonfuture_start_values[book] += start_value
             holding_ledger.append({
                 "name": name, "holding_type": holding_type, "book": book,
                 "side": "long", "contract_type": None,
                 "price": start_price, "exit_price": end_price,
-                "quantity": quantity, "position_pct": 100 * weight,
+                "quantity": quantity, "end_quantity": end_quantity,
+                "units_expensed": units_expensed,
+                "position_pct": 100 * weight,
                 "notional_value": None, "start_value": start_value,
-                "end_value": end_value, "pnl_value": pnl_value,
-                "internal_transfer_value": end_value - start_value - pnl_value,
+                "end_value": end_value,
+                "gross_pnl_value": gross_pnl_value,
+                "expense_rate": expense_rate,
+                "expense_value": expense_value,
+                "pnl_value": pnl_value,
+                "internal_transfer_value": internal_transfer,
                 "spot_price": spot[execution_day],
                 "exit_spot_price": spot[exit_day], "premium_pct": None,
                 "matched_usd_rate_pct": None, "lease_pct": None,
@@ -1517,11 +1549,18 @@ def run_backtest(spot, contracts, rates, by_day, p):
                 "quantity": (
                     notional_value / price
                     if p.futures_contract_type != "inverse" and price else None),
+                "end_quantity": (
+                    notional_value / price
+                    if p.futures_contract_type != "inverse" and price else None),
+                "units_expensed": 0.0,
                 "position_pct": 100 * signed_weight,
                 "notional_value": notional_value,
                 # Exchange-traded futures are carried at zero after daily
                 # settlement; their economic exposure is the notional above.
                 "start_value": 0.0, "end_value": 0.0,
+                "gross_pnl_value": starting_nav * contribution,
+                "expense_rate": None,
+                "expense_value": 0.0,
                 "pnl_value": starting_nav * contribution,
                 "internal_transfer_value": -starting_nav * contribution,
             })

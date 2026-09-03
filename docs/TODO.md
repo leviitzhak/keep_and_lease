@@ -4,6 +4,10 @@ This checklist reflects the application synchronized from the deployed Sites che
 
 ## Higher priority
 
+- [ ] Do not activate the lease book for BTC inverse futures when their required
+  BTC collateral is itself held idle and earns no yield. In that construction,
+  the collateral drag prevents the lease book from being expected to follow the
+  strategy's fully collateralized futures-plus-yielding-Treasury principle.
 - [ ] Enable BTC as a strategy commodity after the Deribit/Yahoo coverage
   audit passes: apply the implemented native-payoff conversion throughout the
   return and attribution pipeline, expose regular/inverse mode, its fixed
@@ -51,8 +55,16 @@ This checklist reflects the application synchronized from the deployed Sites che
 - [ ] Investigate and explain the performance of the full-silver long strategy.
 - [ ] Support separate minimum-days-before-expiry parameters for long and short
   futures positions.
-- [ ] When extending the long book and adding a short book, require the selected
-  short maturities to be later than the corresponding long maturities.
+- [ ] Define the extended book independently from the lease book:
+  - every long future held by the extended book must mature earlier than every
+    short future it holds;
+  - the extended book's long-futures maturities do not have to match the
+    long-futures maturities selected for the lease book; and
+  - select the extension from the eligible subset of shorter maturities using
+    the same construction logic as the lease book, including the same trade-off
+    between a replicating-fund position and a Treasuries-plus-long-futures
+    position. Here, "extension" means an analogous independently selected
+    allocation, not a duplication of the lease book's contracts.
 - [ ] Replace the current per-commodity standalone-compounded and
   multiplicative-contribution displays with the following decomposition (do
   not display those two existing plot families for now):

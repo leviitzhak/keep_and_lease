@@ -676,8 +676,10 @@ def sleeve_result(payload, market=None, product="silver"):
     ]
     holding_fields = [
         "name", "holding_type", "book", "side", "contract_type", "price",
-        "exit_price", "quantity", "position_pct", "notional_value",
-        "start_value", "end_value", "pnl_value", "internal_transfer_value",
+        "exit_price", "quantity", "end_quantity", "units_expensed",
+        "position_pct", "notional_value", "start_value", "end_value",
+        "gross_pnl_value", "expense_rate", "expense_value", "pnl_value",
+        "internal_transfer_value",
         "spot_price", "exit_spot_price", "premium_pct",
         "matched_usd_rate_pct", "lease_pct", "maturity_days",
     ]
