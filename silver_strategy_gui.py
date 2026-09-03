@@ -14,8 +14,9 @@ from zipfile import BadZipFile
 from backtest_silver_lease_strategy import (
     Parameters, build_market, build_proxy_market, build_spot_market,
     multiplicative_log_contributions,
-    TENORS, asof_rate, positions_for_day, read_csv_spot, read_zip_spot,
-    run_backtest, score_diagnostic)
+    TENORS, asof_rate, market_calendar, missing_quote_dates,
+    positions_for_day, read_csv_spot, read_zip_spot, run_backtest,
+    score_diagnostic)
 from market_data_store import data_directory, read_cached_asset, read_spot_csv
 
 ROOT = Path(__file__).resolve().parent
@@ -653,10 +654,15 @@ def outlier_statistics(rows, limit=50):
     flagged.sort(key=lambda item: abs(item["robust_z"]), reverse=True)
     return {"median_pct": center, "mad_pct": mad, "count": len(flagged),
             "flagged": flagged[:limit]}
-def sleeve_result(payload, market=None, product="silver"):
+def sleeve_result(payload, market=None, product="silver", calendar_days=None,
+                  excluded_events=None):
     p = parameters(product_payload(payload, product))
     market = market or MARKET
-    rows, missing = run_backtest(*market, p)
+    rows, missing = run_backtest(
+        *market, p, calendar_days=calendar_days,
+        omit_missing_quote_dates=calendar_days is None)
+    if excluded_events:
+        missing = list(excluded_events) + missing
     if not rows:
         raise ValueError("No observations remain with these parameters")
     stride = max(1, (len(rows) + 4999) // 5000)
@@ -839,7 +845,10 @@ def sleeve_result(payload, market=None, product="silver"):
         } for row in sampled],
         "summary": {
             "start": rows[0]["date"], "end": rows[-1]["date"],
-            "observations": len(rows), "missing_intervals": len(missing),
+            "observations": len(rows),
+            "missing_intervals": len({
+                day for event in missing
+                for day in event.get("missing_quote_dates", [])}),
             "missing_return_events": missing,
             "simple_return": rows[-1]["simple_cumulative_return_pct"],
             "compounded_return": rows[-1]["compounded_return_pct"],
@@ -853,6 +862,38 @@ def sleeve_result(payload, market=None, product="silver"):
             **change_stats,
         },
     }
+
+
+def joint_backtest_calendar(payload, markets, products):
+    """Build one fully priceable decision/holding calendar for all sleeves."""
+    configured = {
+        product: parameters(product_payload(payload, product))
+        for product in products
+    }
+    calendars = [
+        set(market_calendar(
+            markets[product][0], markets[product][3], configured[product]))
+        for product in products
+    ]
+    days = sorted(set.intersection(*calendars))
+    if not days:
+        raise ValueError("The selected commodities have no overlapping history")
+    excluded = {product: [] for product in products}
+    while True:
+        newly_excluded = set()
+        for product in products:
+            _, missing = run_backtest(
+                *markets[product], configured[product], calendar_days=days,
+                omit_missing_quote_dates=False)
+            excluded[product].extend(missing)
+            newly_excluded.update(missing_quote_dates(missing))
+        revised = [day for day in days if day not in newly_excluded]
+        if len(revised) == len(days):
+            return days, excluded
+        days = revised
+        if len(days) < 2:
+            raise ValueError(
+                "Fewer than two jointly priceable market dates remain")
 
 
 def portfolio_allocations(payload):
@@ -1016,8 +1057,14 @@ def result(payload):
             "Selected commodity data could not be loaded (" + details +
             "). Set those proportions to zero or repair the market archive.")
     rebalance = str(payload.get("portfolio_rebalancing", "daily"))
+    joint_days = None
+    excluded_events = {}
+    if commodity_weights:
+        joint_days, excluded_events = joint_backtest_calendar(
+            payload, MARKETS, commodity_weights)
     sleeves = {
-        key: sleeve_result(payload, MARKETS[key], key)
+        key: sleeve_result(
+            payload, MARKETS[key], key, joint_days, excluded_events.get(key))
         for key in commodity_weights
     }
     cash_reference = None
@@ -1031,6 +1078,15 @@ def result(payload):
         aggregation_sleeves = {"_cash_reference": cash_reference}
     fields, series, attribution = aggregate_portfolio(
         aggregation_sleeves, weights, rebalance)
+    portfolio_missing_events = [
+        {**event, "product": product}
+        for product, sleeve in sleeves.items()
+        for event in sleeve["summary"]["missing_return_events"]
+    ]
+    omitted_quote_dates = {
+        day for event in portfolio_missing_events
+        for day in event.get("missing_quote_dates", [])
+    }
     if (len(sleeves) == 1 and "silver" in sleeves and rebalance == "daily"
             and "treasury" not in weights):
         # Keep the legacy silver-only response shape without making the
@@ -1110,9 +1166,8 @@ def result(payload):
             "direct_silver_return": series[-1][fields.index(
                 "direct_compounded_return_pct")],
             "direct_silver_max_drawdown": max_drawdown(direct_nav_values),
-            "missing_intervals": sum(
-                x["summary"]["missing_intervals"] for x in sleeves.values()),
-            "missing_return_events": [],
+            "missing_intervals": len(omitted_quote_dates),
+            "missing_return_events": portfolio_missing_events,
             "avg_daily_futures_notional_change_pct": sum(
                 commodity_weights[key] * sleeves[key]["summary"][
                     "avg_daily_futures_notional_change_pct"] for key in sleeves),

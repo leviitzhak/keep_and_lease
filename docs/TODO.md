@@ -19,11 +19,13 @@ This checklist reflects the application synchronized from the deployed Sites che
   carry forward the latest observable Treasury yield and accrue the Treasury
   position at that yield until the next observable yield becomes available,
   without using future observations or interpolating between daily marks.
-- [ ] Investigate why a NAV-reconstruction difference first appears on
-  03.01.1985 for the `strategy full silver long gradual` parameter set.
 
 ## Implemented
 
+- [x] Resolve the 03.01.1985 NAV-reconstruction discontinuity by omitting the
+  incomplete 02.01.1985 quote date, retaining 31.12.1984–03.01.1985 as one
+  holding/compounding interval, and using one jointly priceable calendar for
+  every commodity in a portfolio.
 - [x] Eligibility gates are applied before maturity scoring.
 - [x] Long and short linear maturity/rate boundaries are available.
 - [x] Boundary distance is normalized, clipped, and applied as a relative score multiplier.

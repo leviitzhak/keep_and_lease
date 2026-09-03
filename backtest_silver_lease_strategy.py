@@ -1048,13 +1048,29 @@ def multiplicative_log_contributions(total_return, contributions):
     return logs
 
 
-def run_backtest(spot, contracts, rates, by_day, p):
+def market_calendar(spot, by_day, p, calendar_days=None):
+    """Return the strategy dates allowed by market data and calendar policy."""
+    source_days = by_day if calendar_days is None else calendar_days
+    return sorted(day for day in source_days if day in by_day and day in spot and
+                  (p.trading_calendar == "all_days" or day.weekday() < 5))
+
+
+def missing_quote_dates(events):
+    """Return endpoint dates whose missing quotes made an interval invalid."""
+    return {
+        date.fromisoformat(day)
+        for event in events
+        for day in event.get("missing_quote_dates", [])
+    }
+
+
+def _run_backtest_once(spot, contracts, rates, by_day, p,
+                       calendar_days=None):
     # Ignore stray weekend records. Exchange holidays have no observation, so
     # each interval automatically runs to the next available business day.
     if p.trading_calendar not in ("business_days", "all_days"):
         raise ValueError("invalid trading calendar")
-    days = sorted(day for day in by_day if day in spot and
-                  (p.trading_calendar == "all_days" or day.weekday() < 5))
+    days = market_calendar(spot, by_day, p, calendar_days)
     output = []
     simple = 0.0
     long_simple = 0.0
@@ -1144,11 +1160,15 @@ def run_backtest(spot, contracts, rates, by_day, p):
             base_long_futures_contribution += base_contribution
             base_long_return += base_contribution
             if not found:
+                missing_dates = [
+                    day.isoformat() for day in (execution_day, exit_day)
+                    if day not in contracts.get(symbol, {})]
                 missing_futures_intervals.append({
                     "signal_date": signal_day.isoformat(),
                     "execution_date": execution_day.isoformat(),
                     "exit_date": exit_day.isoformat(), "leg": "long",
-                    "symbol": symbol, "reason": "missing futures price"})
+                    "symbol": symbol, "reason": "missing futures price",
+                    "missing_quote_dates": missing_dates})
             valid_interval = valid_interval and found
         for symbol, weight in position["shorts"].items():
             value, found = futures_interval_return(symbol, execution_day, exit_day, contracts)
@@ -1163,14 +1183,20 @@ def run_backtest(spot, contracts, rates, by_day, p):
             short_futures_contributions[symbol] = contribution
             portfolio_return += contribution
             if not found:
+                missing_dates = [
+                    day.isoformat() for day in (execution_day, exit_day)
+                    if day not in contracts.get(symbol, {})]
                 missing_futures_intervals.append({
                     "signal_date": signal_day.isoformat(),
                     "execution_date": execution_day.isoformat(),
                     "exit_date": exit_day.isoformat(), "leg": "short",
-                    "symbol": symbol, "reason": "missing futures price"})
+                    "symbol": symbol, "reason": "missing futures price",
+                    "missing_quote_dates": missing_dates})
             valid_interval = valid_interval and found
         # Do not invent a zero futures return when a held contract has no next
-        # observation. Skip that entire portfolio interval instead.
+        # observation.  Mark this candidate interval invalid; the outer
+        # calendar builder removes its incomplete quote date and reruns the
+        # strategy across the resulting longer interval.
         if not valid_interval:
             continue
 
@@ -1335,11 +1361,15 @@ def run_backtest(spot, contracts, rates, by_day, p):
                 selected_valid = selected_valid and found
                 selected_return += direction * weight * value
                 if not found:
+                    missing_dates = [
+                        day.isoformat() for day in (execution_day, exit_day)
+                        if day not in contracts.get(symbol, {})]
                     missing_futures_intervals.append({
                         "signal_date": signal_day.isoformat(),
                         "execution_date": execution_day.isoformat(),
                         "exit_date": exit_day.isoformat(), "leg": key,
-                        "symbol": symbol, "reason": "missing futures price"})
+                        "symbol": symbol, "reason": "missing futures price",
+                        "missing_quote_dates": missing_dates})
             asset_returns[key] = (selected_return / selected_total
                                   if selected_valid else None)
         for key, value in asset_returns.items():
@@ -1758,6 +1788,33 @@ def run_backtest(spot, contracts, rates, by_day, p):
     return output, missing_futures_intervals
 
 
+def run_backtest(spot, contracts, rates, by_day, p, calendar_days=None,
+                 omit_missing_quote_dates=True):
+    """Run on consecutive dates that can value every held futures contract.
+
+    A date with a missing held-contract quote is removed from the calendar and
+    the complete strategy is rerun.  This makes the observations surrounding
+    that date one continuous holding interval instead of silently dropping its
+    return.  Callers coordinating several commodities can disable the automatic
+    removal, remove the union of their incomplete dates, and rerun every sleeve
+    on one joint calendar.
+    """
+    remaining_days = market_calendar(spot, by_day, p, calendar_days)
+    excluded_events = []
+    while True:
+        rows, missing = _run_backtest_once(
+            spot, contracts, rates, by_day, p, remaining_days)
+        if not omit_missing_quote_dates or not missing:
+            return rows, excluded_events + missing
+        excluded_events.extend(missing)
+        excluded_dates = missing_quote_dates(missing)
+        revised_days = [day for day in remaining_days
+                        if day not in excluded_dates]
+        if len(revised_days) == len(remaining_days):
+            return rows, excluded_events
+        remaining_days = revised_days
+
+
 def write_csv(path, rows, fieldnames=None):
     if not rows and not fieldnames:
         return
@@ -1827,7 +1884,8 @@ def main():
         rows, missing = run_backtest(spot, contracts, rates, by_day, parameters)
         write_csv(args.output_dir / f"strategy_min_{min_days}d.csv", rows)
         write_csv(args.output_dir / f"missing_returns_min_{min_days}d.csv", missing,
-                  ["signal_date", "execution_date", "exit_date", "leg", "symbol", "reason"])
+                  ["signal_date", "execution_date", "exit_date", "leg",
+                   "symbol", "reason", "missing_quote_dates"])
         if rows:
             summary.append({"min_days": min_days, "bond_mode": args.bond_mode,
                             "start": rows[0]["date"], "end": rows[-1]["date"],

@@ -369,11 +369,21 @@ class StandaloneLegReturnTests(unittest.TestCase):
         del self.contracts["near"][self.days[2]]
         rows, missing = run_backtest(
             self.spot, self.contracts, self.rates, self.by_day,
-            Parameters(min_days=1, positive_entry_rate=-0.01))
+            Parameters(min_days=1, positive_entry_rate=-0.01,
+                       trading_calendar="all_days"))
         self.assertTrue(missing)
         self.assertEqual("near", missing[0]["symbol"])
         self.assertEqual(self.days[2].isoformat(), missing[0]["exit_date"])
-        self.assertNotEqual(len(self.days) - 2, len(rows))
+        self.assertEqual([self.days[2].isoformat()],
+                         missing[0]["missing_quote_dates"])
+        self.assertEqual(len(self.days) - 2, len(rows))
+        spanning = next(row for row in rows
+                        if row["date"] == self.days[1].isoformat())
+        self.assertEqual(self.days[3].isoformat(), spanning["exit_date"])
+        self.assertAlmostEqual(
+            100 * (self.contracts["near"][self.days[3]] /
+                   self.contracts["near"][self.days[1]] - 1),
+            spanning["long_futures_daily_return_pct"])
 
     def test_futures_diagnostics_summarize_eligible_contracts(self):
         rows = [{"date": self.days[0].isoformat()}]

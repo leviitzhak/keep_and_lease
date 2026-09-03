@@ -184,6 +184,43 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
         self.assertEqual(rows[0][fields.index("date")], "2000-01-05")
         self.assertAlmostEqual(rows[0][fields.index("interval_return_pct")], 3)
 
+    def test_joint_calendar_omits_incomplete_date_for_every_commodity(self):
+        from datetime import date
+        days = [date(2020, 1, day) for day in range(6, 11)]
+        rates = {tenor: [(days[0], 0.0)] for tenor, _ in TENORS}
+        candidate = {"symbol": "near", "days": 30, "future": 100,
+                     "spot": 100, "rate": 0, "premium": 0,
+                     "lease": 0.05, "volume": 10}
+
+        def market(missing_day=None):
+            prices = {day: 100 + index for index, day in enumerate(days)}
+            if missing_day is not None:
+                del prices[missing_day]
+            return ({day: 100 + index for index, day in enumerate(days)},
+                    {"near": prices}, rates,
+                    {day: [dict(candidate)] for day in days})
+
+        markets = {"silver": market(days[2]), "gold": market()}
+        payload = {
+            "weight_silver": 50, "weight_gold": 50,
+            "min_days": 1, "enable_short_book": "false",
+            "positive_entry_rate": -1, "slv_expense": 0,
+        }
+        calendar, excluded = gui.joint_backtest_calendar(
+            payload, markets, ("silver", "gold"))
+        self.assertNotIn(days[2], calendar)
+        self.assertTrue(excluded["silver"])
+        self.assertFalse(excluded["gold"])
+        for product in ("silver", "gold"):
+            rows, missing = gui.run_backtest(
+                *markets[product],
+                gui.parameters(gui.product_payload(payload, product)),
+                calendar_days=calendar, omit_missing_quote_dates=False)
+            self.assertFalse(missing)
+            spanning = next(row for row in rows
+                            if row["date"] == days[1].isoformat())
+            self.assertEqual(days[3].isoformat(), spanning["exit_date"])
+
     def test_hierarchical_daily_attribution_reconciles(self):
         if not {"gold", "oil"}.issubset(self.markets):
             self.skipTest("gold and oil archives are unavailable")
