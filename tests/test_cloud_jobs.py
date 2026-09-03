@@ -392,6 +392,10 @@ class CloudJobTests(unittest.TestCase):
         self.assertIn("Multi-asset lease strategy", client.get("/").text)
         self.assertIn("Server-first calculation adapter", client.get("/backtest-worker-v13.js").text)
         self.assertIn("fflate", client.get("/fflate.js").text)
+        self.assertIn(
+            "installKeepLeaseWorkbook",
+            client.get("/backtest-workbook-v1.js").text,
+        )
         self.assertEqual(client.get("/compute-config.json").json(), {"apiBaseUrl": ""})
         latest = client.get("/api/v1/backtests/latest")
         self.assertEqual(latest.status_code, 200)

@@ -137,6 +137,8 @@ test("exports completed backtests with position and book roll-forward checks", a
   assert.match(html, /book internal transfer check/);
   assert.match(html, /Parameters/);
   assert.match(html, /selectedDates\.has\(record\.exit_date\)/);
+  assert.match(html, /backtest-workbook-v1\.js/);
+  assert.match(html, /KeepLeaseWorkbook\.buildSheets/);
 });
 
 test("restores the latest durable run and renders every rate-change curve", async () => {
