@@ -101,10 +101,14 @@ The short parameter `max_short_fraction_of_long_leg` is measured against the ful
 
 ## Book return decomposition
 
-The lease book is the base long commodity implementation: replicating fund plus Treasury-collateralized long futures. The keep book is the incremental matched long extension plus short futures. The GUI reports independently compounded returns for both books and, within the lease book, for the replicating fund and the futures-plus-Treasury implementation.
+The lease book is the base long commodity implementation: replicating fund plus Treasury-collateralized long futures. The keep book is the incremental matched long extension plus short futures. The GUI quotes both books in units of the underlying commodity by dividing their dollar values by the underlying price index `P(t) / P(0)`.
 
-Independent curves are useful counterfactuals, but they do not multiply to the strategy NAV because the daily strategy return is initially an additive sum of book contributions. For an exact product decomposition, daily additive contributions `c_i` with `R = sum(c_i)` are converted to log contributions
+Let `U_lease(t)` and `U_keep(t)` be those commodity-quoted values and let `U_total(t-1) = U_lease(t-1) + U_keep(t-1)`. The displayed daily contributions are
 
-`g_i = c_i * log(1 + R) / R`, using the continuous limit `g_i = c_i` when `R = 0`.
+`r_lease(t) = [U_lease(t) - U_lease(t-1)] / U_total(t-1)`
 
-Then `1 + R = product(exp(g_i))`. Compounding each elementary factor `exp(g_i) - 1` through time gives an order-independent attribution whose factors multiply exactly to the parent NAV. The same transformation is applied first to lease versus keep and then inside the lease book to fund versus futures-plus-Treasury.
+and the corresponding formula for `r_keep(t)`. This is equivalent to scaling each book's own commodity-quoted return by its effective start-of-interval proportion. The combined series is chain-linked from 1 and verified on every date using
+
+`NAV(t) = P(t) / P(0) * product(s <= t)[1 + r_lease(s) + r_keep(s)]`.
+
+The prior standalone-compounded and multiplicative-attribution plot families are retained in the calculation output for compatibility but are not displayed in the GUI.

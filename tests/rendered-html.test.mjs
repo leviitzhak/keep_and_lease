@@ -67,13 +67,20 @@ test("documents data corrections and the daily attribution formulas", async () =
   assert.match(html, /1\+R = Π exp\(gᵢ\)/);
   assert.doesNotMatch(html, /name="enable_slv_leg"/);
   assert.match(html, /function drawBookDecompositions/);
-  assert.match(html, /lease_book_compounded_return_pct/);
-  assert.match(html, /unextended lease implementations — value/);
+  assert.match(html, /lease_book_underlying_daily_return_pct/);
+  assert.match(html, /unextended lease book — value in underlying/);
   assert.match(html, /lease-underlying-values/);
-  assert.match(html, /actual component values by P\(t\)\/P\(0\)/);
+  assert.match(html, /Commodity-quoted values divide each dollar value/);
   assert.match(html, /Keep book — extended lease \+ short/);
-  assert.match(html, /whole portfolio starts at 1/);
+  assert.match(html, /effective start-of-interval proportion/);
   assert.match(html, /initial_replicating_leg_value/);
+  assert.match(html, /function histogramChart/);
+  assert.match(html, /lease-book daily-return distribution/);
+  assert.match(html, /NAV reconstruction check/);
+  assert.doesNotMatch(html, /id="'\+prefix\+'-book-standalone"/);
+  assert.doesNotMatch(html, /id="'\+prefix\+'-book-factors"/);
+  assert.doesNotMatch(html, /id="'\+prefix\+'-lease-standalone"/);
+  assert.doesNotMatch(html, /id="'\+prefix\+'-lease-factors"/);
 });
 
 test("orders shared plots before commodity plots and synchronizes chart dates", async () => {

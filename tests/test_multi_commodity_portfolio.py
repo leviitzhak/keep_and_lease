@@ -1,7 +1,9 @@
 import json
 import math
 import sys
+import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 
 
@@ -56,6 +58,71 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
         self.assertIn('"commodity_sleeves"', encoded)
         self.assertIn("direct_unrebalanced_compounded_return_pct",
                       result["portfolio_fields"])
+
+    def test_missing_optional_legacy_spot_member_does_not_abort_markets(self):
+        previous_errors = dict(gui.MARKET_LOAD_ERRORS)
+        try:
+            with tempfile.TemporaryDirectory() as temporary_directory:
+                root = Path(temporary_directory)
+                with zipfile.ZipFile(root / "gold_silver.zip", "w") as archive:
+                    archive.writestr(
+                        "silver_price.csv", "date,price\n2024-01-02,23.50\n"
+                    )
+
+                markets = gui.build_markets(root, enabled_products={"btc"})
+
+                self.assertEqual(markets, {})
+                self.assertIn("spot.csv", gui.MARKET_LOAD_ERRORS["btc"])
+                self.assertIn(
+                    "does not contain", gui.MARKET_LOAD_ERRORS["btc"]
+                )
+        finally:
+            gui.MARKET_LOAD_ERRORS = previous_errors
+
+    def test_commodity_quoted_book_returns_reconstruct_nav_every_date(self):
+        sleeve = gui.sleeve_result({
+            "min_days": 30,
+            "enable_short_book": "true",
+        }, self.markets["silver"], "silver")
+        combined_index = 1.0
+        previous_lease = 1.0
+        previous_keep = 0.0
+        for row in sleeve["_full_rows"]:
+            previous_total = previous_lease + previous_keep
+            lease_return = row["lease_book_underlying_daily_return_pct"] / 100
+            keep_return = row["keep_book_underlying_daily_return_pct"] / 100
+            self.assertAlmostEqual(
+                lease_return,
+                (row["lease_book_underlying_value"] - previous_lease) /
+                previous_total,
+                places=12,
+            )
+            self.assertAlmostEqual(
+                row["lease_book_effective_proportion_pct"] / 100,
+                previous_lease / previous_total,
+                places=12,
+            )
+            combined_index *= 1 + lease_return + keep_return
+            self.assertAlmostEqual(
+                row["combined_books_underlying_compounded_index"],
+                combined_index,
+                delta=1e-12 * max(1.0, abs(combined_index)),
+            )
+            self.assertAlmostEqual(
+                row["nav"],
+                row["underlying_price_index"] * combined_index,
+                delta=1e-9 * max(1.0, abs(row["nav"])),
+            )
+            self.assertAlmostEqual(
+                row["nav_reconstruction_difference"], 0.0,
+                delta=1e-9 * max(1.0, abs(row["nav"])))
+            previous_lease = row["lease_book_underlying_value"]
+            previous_keep = row["keep_book_underlying_value"]
+        self.assertTrue(sleeve["summary"]["nav_reconstruction_verified"])
+        self.assertEqual(
+            len(sleeve["book_return_distributions"]),
+            len(sleeve["_full_rows"]),
+        )
 
     def test_disabled_short_book_has_no_short_leg_returns_or_holdings(self):
         result = gui.result({

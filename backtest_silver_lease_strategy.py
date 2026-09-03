@@ -300,8 +300,15 @@ def build_spot_market(root, archive_name, symbol_prefix, spot):
 
 def read_zip_spot(root, member):
     result = {}
-    with zipfile.ZipFile(root / "gold_silver.zip") as archive:
-        stream = io.TextIOWrapper(archive.open(member), encoding="utf-8-sig")
+    archive_path = root / "gold_silver.zip"
+    with zipfile.ZipFile(archive_path) as archive:
+        try:
+            member_stream = archive.open(member)
+        except KeyError as exc:
+            raise FileNotFoundError(
+                f"{archive_path} does not contain {member}"
+            ) from exc
+        stream = io.TextIOWrapper(member_stream, encoding="utf-8-sig")
         for row in csv.DictReader(stream):
             try:
                 value = float(row["price"])
@@ -1072,6 +1079,11 @@ def run_backtest(spot, contracts, rates, by_day, p):
     lease_futures_treasury_factor_nav = 1.0
     lease_value = 1.0
     keep_value = 0.0
+    lease_underlying_contribution_nav = 1.0
+    keep_underlying_contribution_nav = 1.0
+    combined_underlying_nav = 1.0
+    previous_lease_underlying_value = 1.0
+    previous_keep_underlying_value = 0.0
     replicating_value = None
     futures_treasury_value = None
     initial_commodity_price = None
@@ -1591,6 +1603,37 @@ def run_backtest(spot, contracts, rates, by_day, p):
             weighted_days = position["bond_days"]
             largest_share = 0.0
         commodity_price_index = spot[exit_day] / initial_commodity_price
+        lease_underlying_value = lease_value / commodity_price_index
+        keep_underlying_value = keep_value / commodity_price_index
+        previous_total_underlying_value = (
+            previous_lease_underlying_value + previous_keep_underlying_value)
+        if abs(previous_total_underlying_value) <= 1e-15:
+            raise ValueError(
+                "commodity-quoted book value reached zero; returns are undefined")
+        lease_underlying_return = (
+            (lease_underlying_value - previous_lease_underlying_value) /
+            previous_total_underlying_value)
+        keep_underlying_return = (
+            (keep_underlying_value - previous_keep_underlying_value) /
+            previous_total_underlying_value)
+        lease_effective_proportion = (
+            previous_lease_underlying_value / previous_total_underlying_value)
+        keep_effective_proportion = (
+            previous_keep_underlying_value / previous_total_underlying_value)
+        lease_underlying_contribution_nav *= 1 + lease_underlying_return
+        keep_underlying_contribution_nav *= 1 + keep_underlying_return
+        combined_underlying_nav *= (
+            1 + lease_underlying_return + keep_underlying_return)
+        reconstructed_nav = commodity_price_index * combined_underlying_nav
+        nav_reconstruction_difference = nav - reconstructed_nav
+        nav_reconstruction_difference_pct = (
+            100 * nav_reconstruction_difference / nav if nav else 0.0)
+        if abs(nav_reconstruction_difference) > 1e-10 * max(1.0, abs(nav)):
+            raise AssertionError(
+                "commodity-quoted lease/keep returns do not reconstruct NAV "
+                f"on {exit_day.isoformat()}: {nav_reconstruction_difference}")
+        previous_lease_underlying_value = lease_underlying_value
+        previous_keep_underlying_value = keep_underlying_value
         output.append({"date": execution_day.isoformat(), "exit_date": exit_day.isoformat(),
                        "signal_date": signal_day.isoformat(),
                        "execution_date": execution_day.isoformat(), "mode": position["mode"],
@@ -1655,8 +1698,28 @@ def run_backtest(spot, contracts, rates, by_day, p):
                        "keep_book_value": keep_value,
                        "replicating_leg_underlying_value": replicating_value / commodity_price_index,
                        "futures_treasury_underlying_value": futures_treasury_value / commodity_price_index,
-                       "lease_book_underlying_value": lease_value / commodity_price_index,
-                       "keep_book_underlying_value": keep_value / commodity_price_index,
+                       "lease_book_underlying_value": lease_underlying_value,
+                       "keep_book_underlying_value": keep_underlying_value,
+                       "underlying_price_index": commodity_price_index,
+                       "lease_book_effective_proportion_pct": (
+                           100 * lease_effective_proportion),
+                       "keep_book_effective_proportion_pct": (
+                           100 * keep_effective_proportion),
+                       "lease_book_underlying_daily_return_pct": (
+                           100 * lease_underlying_return),
+                       "keep_book_underlying_daily_return_pct": (
+                           100 * keep_underlying_return),
+                       "lease_book_underlying_compounded_index": (
+                           lease_underlying_contribution_nav),
+                       "keep_book_underlying_compounded_index": (
+                           keep_underlying_contribution_nav),
+                       "combined_books_underlying_compounded_index": (
+                           combined_underlying_nav),
+                       "reconstructed_nav": reconstructed_nav,
+                       "nav_reconstruction_difference": (
+                           nav_reconstruction_difference),
+                       "nav_reconstruction_difference_pct": (
+                           nav_reconstruction_difference_pct),
                        "initial_replicating_leg_value": position["base_slv"],
                        "initial_futures_treasury_value": position["base_treasury"],
                        "lease_book_compounded_return_pct": 100 * (lease_book_nav - 1),
