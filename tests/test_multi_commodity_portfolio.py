@@ -73,6 +73,27 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
             for item in day
         ))
 
+    def test_held_futures_include_export_and_hover_market_fields(self):
+        result = gui.result({
+            "weight_silver": 100,
+            "portfolio_rebalancing": "daily",
+            "min_days": 30,
+            "enable_short_book": "false",
+        })
+        sleeve = result["commodity_sleeves"]["silver"]
+        held = next(day for day in sleeve["held_futures_diagnostics"] if day)
+        self.assertTrue({
+            "symbol", "side", "contract_type", "weight_pct", "price", "spot_price",
+            "premium_pct", "matched_usd_rate_pct", "lease_pct",
+            "maturity_days",
+        }.issubset(held[0]))
+        self.assertIn("slv_exit_price", sleeve["fields"])
+        self.assertGreaterEqual(len(sleeve["spreadsheet_rows"]), len(sleeve["series"]))
+        self.assertEqual(
+            sleeve["spreadsheet_rows"][0]["exit_date"],
+            sleeve["series"][0][sleeve["fields"].index("exit_date")],
+        )
+
     def test_daily_portfolio_contributions_reconcile(self):
         if not {"gold", "oil"}.issubset(self.markets):
             self.skipTest("gold and oil archives are unavailable")
@@ -87,9 +108,10 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
         contribution_indices = [
             result["fields"].index(f"{key}_contribution_pct")
             for key in result["portfolio"]["weights"]]
+        interval_index = result["fields"].index("interval_return_pct")
         for row in result["series"]:
             self.assertAlmostEqual(
-                row[1], sum(row[i] for i in contribution_indices), places=11)
+                row[interval_index], sum(row[i] for i in contribution_indices), places=11)
 
     def test_rebalancing_choice_changes_path(self):
         sleeves = {
@@ -194,9 +216,10 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
         contribution_indices = [
             result["fields"].index(f"{key}_contribution_pct")
             for key in result["portfolio"]["weights"]]
+        interval_index = result["fields"].index("interval_return_pct")
         for row in result["series"]:
             self.assertAlmostEqual(
-                row[1], sum(row[i] for i in contribution_indices), places=11)
+                row[interval_index], sum(row[i] for i in contribution_indices), places=11)
 
     def test_treasury_can_run_as_standalone_portfolio(self):
         result = gui.result({
@@ -207,8 +230,9 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
         self.assertEqual(result["portfolio"]["weights"], {"treasury": 1.0})
         self.assertEqual(result["commodity_sleeves"], {})
         treasury_index = result["fields"].index("treasury_contribution_pct")
+        interval_index = result["fields"].index("interval_return_pct")
         for row in result["series"]:
-            self.assertAlmostEqual(row[1], row[treasury_index], places=11)
+            self.assertAlmostEqual(row[interval_index], row[treasury_index], places=11)
 
     def test_product_specific_parameters_override_global_values(self):
         payload = gui.product_payload({

@@ -1381,13 +1381,21 @@ def run_backtest(spot, contracts, rates, by_day, p):
             for symbol, weight in book.items():
                 contract = position["contracts"].get(symbol, {})
                 price = contracts.get(symbol, {}).get(execution_day)
+                contract_usd_rate = matched_usd_rate_details(
+                    rates, signal_day, {symbol: weight},
+                    {symbol: contract})
                 held_futures.append({
                     "symbol": symbol, "side": side,
+                    "contract_type": p.futures_contract_type,
                     "weight_pct": 100 * weight,
                     "price": price,
+                    "spot_price": spot[execution_day],
                     "premium_pct": (
                         100 * (price / spot[execution_day] - 1)
                         if price is not None and spot[execution_day] else None),
+                    "matched_usd_rate_pct": (
+                        100 * contract_usd_rate["rate"]
+                        if contract_usd_rate["rate"] is not None else None),
                     "lease_pct": (
                         100 * contract["lease"]
                         if contract.get("lease") is not None else None),
@@ -1506,6 +1514,7 @@ def run_backtest(spot, contracts, rates, by_day, p):
                        "slv_compounded_return_pct": 100 * (asset_nav["slv"] - 1),
                        "treasury_compounded_return_pct": 100 * (asset_nav["treasury"] - 1),
                        "slv_price": spot[execution_day],
+                       "slv_exit_price": spot[exit_day],
                        "long_weighted_future_price": long_weighted_future_price,
                        "short_weighted_future_price": short_weighted_future_price,
                        "entered_long_futures_price": entered_long_price,

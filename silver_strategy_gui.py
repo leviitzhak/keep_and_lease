@@ -663,6 +663,13 @@ def sleeve_result(payload, market=None, product="silver"):
     sampled = rows[::stride]
     if sampled[-1] is not rows[-1]:
         sampled.append(rows[-1])
+    spreadsheet_fields = [
+        "date", "exit_date", "interval_return_pct", "slv_price",
+        "slv_exit_price", "slv_weight_pct", "replicating_leg_value",
+        "treasury_weight_pct", "treasury_position_price_index",
+        "futures_treasury_value", "lease_book_value", "keep_book_value",
+        "lease_book_underlying_value", "keep_book_underlying_value",
+    ]
     fields = ["date", "exit_date", "interval_return_pct", "simple_cumulative_return_pct",
               "compounded_return_pct", "slv_weight_pct", "treasury_weight_pct",
               "long_futures_notional_pct", "short_futures_notional_pct",
@@ -703,7 +710,7 @@ def sleeve_result(payload, market=None, product="silver"):
               "slv_cumulative_return_pct", "treasury_cumulative_return_pct",
               "long_futures_compounded_return_pct", "short_futures_compounded_return_pct",
               "slv_compounded_return_pct", "treasury_compounded_return_pct",
-              "slv_price", "long_weighted_future_price", "short_weighted_future_price",
+              "slv_price", "slv_exit_price", "long_weighted_future_price", "short_weighted_future_price",
               "treasury_position_price_index", "sgov_proxy_price_index",
               "long_weighted_forward_premium_pct",
               "short_weighted_forward_premium_pct", "cash_plus_slv_weight_pct",
@@ -779,6 +786,11 @@ def sleeve_result(payload, market=None, product="silver"):
             "holding_label", "Replicating fund"),
         "futures_prices": futures_price_series(sampled, market[1]),
         "held_futures_diagnostics": [row.get("held_futures", []) for row in sampled],
+        "spreadsheet_rows": [
+            {**{field: row.get(field) for field in spreadsheet_fields},
+             "held_futures": row.get("held_futures", [])}
+            for row in rows
+        ],
         "futures_diagnostics": futures_diagnostics(sampled, market[3], p),
         "statistics_points": statistics_points(market[3], market[1], p),
         "treasury_statistics_points": treasury_statistics_points(market[2]),
