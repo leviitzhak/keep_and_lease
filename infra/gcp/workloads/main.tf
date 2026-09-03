@@ -86,6 +86,10 @@ resource "google_cloud_run_v2_job" "calculation" {
           name  = "KEEP_AND_LEASE_IMAGE_REF"
           value = var.worker_image
         }
+        env {
+          name  = "KEEP_AND_LEASE_MAX_RESULT_BYTES"
+          value = tostring(var.max_result_bytes)
+        }
       }
     }
   }
@@ -168,6 +172,10 @@ resource "google_cloud_run_v2_service" "web" {
       env {
         name  = "KEEP_AND_LEASE_ALLOWED_ORIGIN_REGEX"
         value = var.allowed_origin_regex
+      }
+      env {
+        name  = "KEEP_AND_LEASE_MAX_RESULT_BYTES"
+        value = tostring(var.max_result_bytes)
       }
 
       startup_probe {

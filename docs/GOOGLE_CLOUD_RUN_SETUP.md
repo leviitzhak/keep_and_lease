@@ -77,9 +77,12 @@ server adapter but contains no market archives or Pyodide fallback payload.
 5. The worker runs the canonical `StrategyEngine` once. It checks that application,
    engine, data-manifest, and worker-image provenance match the submitted immutable
    identifiers.
-6. Strict JSON encoding enforces the configured result limit. The worker creates a
-   deterministic gzip object with `if_generation_match=0`, CRC32C transport
-   checking, and SHA-256 checksums for compressed and uncompressed bytes.
+6. Strict JSON encoding enforces the Terraform-managed result limit. The workload
+   configuration sets `KEEP_AND_LEASE_MAX_RESULT_BYTES` to 268,435,456 bytes
+   (256 MiB) for both the worker and web service so detailed holding ledgers remain
+   available for later plots, statistics, and spreadsheet exports. The worker then
+   creates a deterministic gzip object with `if_generation_match=0`, CRC32C
+   transport checking, and SHA-256 checksums for compressed and uncompressed bytes.
 7. A final Firestore transaction records `completed`, the `gs://` result pointer,
    checksums, timings, peak RSS, execution name, and exact provenance.
 8. `GET /api/v1/backtests/{id}` reads Firestore. It also converts expired queued

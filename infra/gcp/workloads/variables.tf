@@ -34,6 +34,20 @@ variable "web_max_instances" {
   default = 3
 }
 
+variable "max_result_bytes" {
+  description = "Maximum uncompressed JSON backtest-result size accepted before storage."
+  type        = number
+  default     = 268435456
+
+  validation {
+    condition = (
+      var.max_result_bytes >= 104857600 &&
+      floor(var.max_result_bytes) == var.max_result_bytes
+    )
+    error_message = "max_result_bytes must be an integer of at least 104857600 bytes (100 MiB)."
+  }
+}
+
 variable "allow_unauthenticated" {
   description = "Expose billable job submission publicly; false for the private proof of concept."
   type        = bool
