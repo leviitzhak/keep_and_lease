@@ -163,6 +163,10 @@ This checklist reflects the application synchronized from the deployed Sites che
   command-line commits; leave existing public commit history unchanged unless a
   separate history-rewrite decision is made.
 - [ ] Remove obsolete generated worker versions and other duplicated deployment artifacts after confirming the canonical build path.
+- [ ] **Lowest priority for now:** make the persistent ChatGPT Site operate smoothly and remain verifiable by
+  Codex: keep its packaged runtime assets synchronized with the deployed code,
+  support reliable owner-authenticated access, and add an end-to-end smoke test
+  that runs a strategy and verifies the plots and downloaded spreadsheet.
 - [ ] Keep `CHANGELOG.md`, parameter documentation, data manifest, and this checklist current with every durable behavior change.
 
 ## Deferred scoring work
