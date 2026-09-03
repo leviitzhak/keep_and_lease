@@ -144,6 +144,13 @@ This checklist reflects the application synchronized from the deployed Sites che
 - [x] Add an asynchronous in-process backtest job runner with progress, queued/running cancellation semantics, one-worker concurrency, result limits, caching, and provenance.
 - [ ] Add full-data CPython-versus-Pyodide equivalence fixtures; the Pyodide v12 worker is retained as an explicit and automatic fallback.
 - [ ] Measure warm/cold duration, peak memory, and result size before selecting server capacity.
+- [ ] **Lower priority speed improvement:** precompute and version compact
+  per-commodity, per-contract quote-availability indexes; persist a reusable
+  jointly-priceable compounding-calendar cache keyed by the active commodity
+  set, all contract-selection-relevant strategy parameters, market-data
+  version, and requested date range. This avoids rerunning interval discovery
+  for equivalent backtests without conservatively dropping dates for contracts
+  the strategy does not hold.
 - [x] Add a fixed two-service Render preview definition and GitHub deploy-hook
   workflow that deploys and verifies the same commit on the GUI and API.
 - [x] Provision the fixed Render services and configure their deploy-hook secrets
