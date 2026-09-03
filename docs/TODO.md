@@ -35,6 +35,9 @@ This checklist reflects the application synchronized from the deployed Sites che
 - [ ] Investigate and explain the performance of the full-silver long strategy.
 - [ ] Support separate minimum-days-before-expiry parameters for long and short
   futures positions.
+- [ ] For strategies containing only BTC, allow the execution delay to be
+  specified in seconds, or at sub-second resolution when supported by the
+  available intraday market data.
 - [ ] When extending the long book and adding a short book, require the selected
   short maturities to be later than the corresponding long maturities.
 - [ ] Replace the current per-commodity standalone-compounded and
@@ -59,6 +62,13 @@ This checklist reflects the application synchronized from the deployed Sites che
 
 ## Small fixes
 
+- [ ] Investigate why a NAV-reconstruction difference first appears on
+  03.01.1985 for the `strategy full silver long gradual` parameter set.
+- [ ] Fix the maturity-allocation heatmap preview not rendering on the
+  persistent Sites deployment.
+- [ ] Use thinner bins in the displayed return-distribution histograms.
+- [ ] Populate the GUI's **Saved strategy** dropdown with the strategy files in
+  the repository's `strategies` folder.
 - [ ] Add full inspection interactivity to the new log-return decomposition
   graphs.
 - [ ] Extend the portfolio contribution-by-asset plot so it also shows the
@@ -71,8 +81,8 @@ This checklist reflects the application synchronized from the deployed Sites che
 - [ ] For each commodity, retain the plots of leg values through time, but hide
   the standalone-compounded and multiplicative-contribution plots for now; the
   commodity-quoted lease/keep decomposition above will replace them.
-- [ ] Update the maturity-weight selection documentation to describe the signed
-  score followed by SoftMax that is now used.
+- [ ] Update the **Maturity-line allocation formulas** section with the current
+  signed-score and SoftMax allocation formula.
 - [ ] Keep the displayed name of the currently loaded or saved parameter set
   synchronized with the values in the parameter fields.
 
