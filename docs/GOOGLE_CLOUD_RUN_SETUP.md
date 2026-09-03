@@ -88,8 +88,10 @@ server adapter but contains no market archives or Pyodide fallback payload.
 8. `GET /api/v1/backtests/{id}` reads Firestore. It also converts expired queued
    leases or worker heartbeats into a durable `failed/worker_lost` state.
 9. `GET /api/v1/backtests/{id}/result` checks the completed record and streams the
-   gzip object from the configured result bucket; the browser receives the same
-   canonical JSON object after HTTP decompression.
+   gzip object from the configured result bucket without a `Content-Length` header,
+   so Cloud Run uses chunked transfer encoding for results larger than the 32 MiB
+   non-streaming HTTP/1 response limit. The browser receives the same canonical
+   JSON object after HTTP decompression.
 10. `DELETE /api/v1/backtests/{id}` durably requests cancellation. Queued work is
     cancelled before claim; running work uses the recorded execution name to call
     Cloud Run cancellation and the worker treats SIGTERM during cancellation as a

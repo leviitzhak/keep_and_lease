@@ -173,8 +173,9 @@ def create_app(
             raise HTTPException(409, "Backtest result is not ready")
         if isinstance(result, ResultStream):
             headers = dict(result.headers)
-            if result.content_length is not None:
-                headers["Content-Length"] = str(result.content_length)
+            # Do not set Content-Length for large result objects. Starlette then
+            # uses chunked transfer encoding, avoiding Cloud Run's 32 MiB limit
+            # for non-streaming HTTP/1 responses while preserving gzip streaming.
             return StreamingResponse(
                 result.body,
                 media_type=result.media_type,

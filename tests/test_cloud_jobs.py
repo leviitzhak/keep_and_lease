@@ -402,6 +402,7 @@ class CloudJobTests(unittest.TestCase):
         )
         result = client.get(f"/api/v1/backtests/{'d' * 32}/result")
         self.assertEqual(result.json(), {"durable": True})
+        self.assertNotIn("content-length", result.headers)
         inspection = client.post(
             "/api/v1/inspections",
             json={"schema_version": 1, "date": "2000-01-03", "parameters": {}},
