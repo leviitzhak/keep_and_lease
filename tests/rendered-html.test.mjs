@@ -382,6 +382,7 @@ test("downloads a formula-driven daily holdings and reconciliation spreadsheet",
     "utf8",
   );
   assert.match(dockerignore, /^!public\/fflate\.js$/m);
+  assert.match(dockerignore, /^!public\/backtest-workbook-v1\.js$/m);
   const webDockerfile = await readFile(
     new URL("../Dockerfile.web", import.meta.url),
     "utf8",

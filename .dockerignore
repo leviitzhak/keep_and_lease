@@ -10,6 +10,7 @@ infra
 public/*
 !public/silver_strategy_gui.html
 !public/backtest-worker-v13.js
+!public/backtest-workbook-v1.js
 !public/fflate.js
 !public/data
 !public/data/**
