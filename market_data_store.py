@@ -13,7 +13,7 @@ from functools import lru_cache
 from pathlib import Path
 
 
-ASSET_BY_PREFIX = {"SI": "silver", "GC": "gold", "SP": "sp500"}
+ASSET_BY_PREFIX = {"SI": "silver", "GC": "gold", "SP": "sp500", "BTC": "btc"}
 
 
 def data_directory(root: Path) -> Path:
@@ -139,6 +139,8 @@ def build_database(root: Path, target: Path | None = None) -> Path:
             CREATE INDEX future_asset_day ON future(asset, day);
         """)
         for prefix, asset in ASSET_BY_PREFIX.items():
+            if not (data_directory(root) / asset).is_dir():
+                continue
             spot = read_spot_csv(root, asset)
             contracts, volumes = read_contract_csvs(
                 root, asset, prefix, spot if asset == "silver" else None)

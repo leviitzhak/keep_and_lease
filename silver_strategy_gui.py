@@ -46,9 +46,16 @@ PRODUCTS = {
     "sp500": {"label": "S&P 500", "archive": "sp.zip", "prefix": "SP",
               "spot_source": "nearest live future (cash-index history pending)",
               "etf": "SPY / IVV", "replication": "equity-backed"},
+    "btc": {"label": "Bitcoin", "archive": None, "prefix": "BTC",
+            "spot_source": "Yahoo BTC-USD composite",
+            "etf": "Direct BTC holding", "replication": "direct holding",
+            "holding_label": "Direct holding",
+            "parameter_defaults": {
+                "slv_expense": 0, "futures_contract_type": "inverse",
+                "trading_calendar": "all_days"}},
 }
 
-DEFAULT_DEPLOYMENT_PRODUCTS = ("silver", "gold", "sp500")
+DEFAULT_DEPLOYMENT_PRODUCTS = ("silver", "gold", "sp500", "btc")
 
 
 def build_markets(root, enabled_products=None):
@@ -71,6 +78,8 @@ def build_markets(root, enabled_products=None):
         "oil": lambda: build_spot_market(
             root, "cl.zip", "CL",
             read_csv_spot(root, "DCOILWTICO.csv", "DCOILWTICO")),
+        "btc": lambda: build_spot_market(
+            root, None, "BTC", _asset_spot(root, "btc", "spot.csv")),
     }
     for key, spec in PRODUCTS.items():
         if key not in enabled_products:
@@ -129,7 +138,13 @@ def product_payload(payload, product):
     scoring curve, caps, and leg switches.
     """
     merged = dict(payload)
+    merged.update(PRODUCTS.get(product, {}).get("parameter_defaults", {}))
     nested = payload.get("commodity_parameters", {})
+    if isinstance(nested, str):
+        try:
+            nested = json.loads(nested)
+        except json.JSONDecodeError:
+            nested = {}
     if isinstance(nested, dict) and isinstance(nested.get(product), dict):
         merged.update(nested[product])
     prefix = f"{product}__"
@@ -252,7 +267,18 @@ def parameters(payload):
         treasury_asset=str(payload.get("treasury_asset", "matched_maturity")),
         treasury_allocation_mode=str(payload.get(
             "treasury_allocation_mode", "shortest_rolling")),
+        futures_contract_type=str(payload.get(
+            "futures_contract_type", "regular")),
+        inverse_payoff_conversion_fee=pct(
+            "inverse_payoff_conversion_fee", 0),
+        inverse_min_conversion_btc=number(
+            payload, "inverse_min_conversion_btc", 0, 0),
+        trading_calendar=str(payload.get("trading_calendar", "business_days")),
     )
+    if p.futures_contract_type not in {"regular", "inverse"}:
+        raise ValueError("futures_contract_type must be 'regular' or 'inverse'")
+    if p.trading_calendar not in {"business_days", "all_days"}:
+        raise ValueError("Invalid trading calendar")
     if p.bond_mode not in {"accrual", "zero_coupon_mtm"}:
         raise ValueError("Invalid bond mode")
     if p.reactivity not in {"same_day", "next_day"}:
@@ -637,6 +663,13 @@ def sleeve_result(payload, market=None, product="silver"):
     sampled = rows[::stride]
     if sampled[-1] is not rows[-1]:
         sampled.append(rows[-1])
+    spreadsheet_fields = [
+        "date", "exit_date", "interval_return_pct", "slv_price",
+        "slv_exit_price", "slv_weight_pct", "replicating_leg_value",
+        "treasury_weight_pct", "treasury_position_price_index",
+        "futures_treasury_value", "lease_book_value", "keep_book_value",
+        "lease_book_underlying_value", "keep_book_underlying_value",
+    ]
     fields = ["date", "exit_date", "interval_return_pct", "simple_cumulative_return_pct",
               "compounded_return_pct", "slv_weight_pct", "treasury_weight_pct",
               "long_futures_notional_pct", "short_futures_notional_pct",
@@ -677,7 +710,7 @@ def sleeve_result(payload, market=None, product="silver"):
               "slv_cumulative_return_pct", "treasury_cumulative_return_pct",
               "long_futures_compounded_return_pct", "short_futures_compounded_return_pct",
               "slv_compounded_return_pct", "treasury_compounded_return_pct",
-              "slv_price", "long_weighted_future_price", "short_weighted_future_price",
+              "slv_price", "slv_exit_price", "long_weighted_future_price", "short_weighted_future_price",
               "treasury_position_price_index", "sgov_proxy_price_index",
               "long_weighted_forward_premium_pct",
               "short_weighted_forward_premium_pct", "cash_plus_slv_weight_pct",
@@ -701,7 +734,8 @@ def sleeve_result(payload, market=None, product="silver"):
     slv_nav = 1.0
     slv_nav_values = [slv_nav]
     for row in rows:
-        slv_nav *= 1 + row["slv_daily_return_pct"] / 100
+        if row["slv_daily_return_pct"] is not None:
+            slv_nav *= 1 + row["slv_daily_return_pct"] / 100
         slv_nav_values.append(slv_nav)
     comparisons = []
     for selection in ("weighted_lease_rate", "highest_lease_rate"):
@@ -748,7 +782,15 @@ def sleeve_result(payload, market=None, product="silver"):
         "direct_proxy": PRODUCTS.get(product, {}).get("spot_source"),
         "replicating_etf": PRODUCTS.get(product, {}).get("etf"),
         "replication_type": PRODUCTS.get(product, {}).get("replication"),
+        "holding_label": PRODUCTS.get(product, {}).get(
+            "holding_label", "Replicating fund"),
         "futures_prices": futures_price_series(sampled, market[1]),
+        "held_futures_diagnostics": [row.get("held_futures", []) for row in sampled],
+        "spreadsheet_rows": [
+            {**{field: row.get(field) for field in spreadsheet_fields},
+             "held_futures": row.get("held_futures", [])}
+            for row in rows
+        ],
         "futures_diagnostics": futures_diagnostics(sampled, market[3], p),
         "statistics_points": statistics_points(market[3], market[1], p),
         "treasury_statistics_points": treasury_statistics_points(market[2]),

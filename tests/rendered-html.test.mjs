@@ -336,7 +336,7 @@ test("downloads and loads strategy parameters as JSON", async () => {
   assert.match(html, /e\.target\.value=''/);
 });
 
-test("downloads portfolio composition and values as an interval spreadsheet", async () => {
+test("downloads a formula-driven daily holdings and reconciliation spreadsheet", async () => {
   const html = await readFile(
     new URL("../public/silver_strategy_gui.html", import.meta.url),
     "utf8",
@@ -344,7 +344,13 @@ test("downloads portfolio composition and values as an interval spreadsheet", as
   assert.match(html, /id="downloadSpreadsheet"/);
   assert.match(html, /function downloadSpreadsheet\(\)/);
   assert.match(html, /application\/vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet/);
-  assert.match(html, /Component value \(commodity sleeve initial = 1\)/);
+  assert.match(html, /One row per holding interval/);
+  assert.match(html, /Daily Holdings/);
+  assert.match(html, /matched USD rate \(%\)/);
+  assert.match(html, /lease-book return in underlying \(%\)/);
+  assert.match(html, /Portfolio return reconciliation difference \(pp\)/);
+  assert.match(html, /<f>/);
+  assert.match(html, /fullCalcOnLoad="1"/);
   assert.match(html, /plotRangeSource\.portfolioSeries\.filter\(row=>dateInPlotRange/);
   assert.match(html, /keep-and-lease-portfolio-/);
   assert.match(html, /Preparing spreadsheet/);
@@ -363,6 +369,67 @@ test("downloads portfolio composition and values as an interval spreadsheet", as
     webDockerfile,
     /^COPY .*public\/fflate\.js .*\.\/public\/$/m,
   );
+});
+
+test("actual held futures charts aggregate by side and retain contract hover details", async () => {
+  const html = await readFile(
+    new URL("../public/silver_strategy_gui.html", import.meta.url),
+    "utf8",
+  );
+  assert.match(html, /Held long futures — weighted/);
+  assert.match(html, /Held short futures — weighted/);
+  assert.match(html, /meta\.heldDetails/);
+  assert.match(html, /matched_usd_rate_pct/);
+  assert.doesNotMatch(html, /label:\(side==='short'\?'Short ':'Long '\)\+symbol/);
+});
+
+test("daily holdings builder emits contract columns and auditable formulas", async () => {
+  const html = await readFile(
+    new URL("../public/silver_strategy_gui.html", import.meta.url),
+    "utf8",
+  );
+  const source = html.slice(
+    html.indexOf("function spreadsheetRows"),
+    html.indexOf("async function downloadSpreadsheet"),
+  );
+  const fields = [
+    "date", "exit_date", "interval_return_pct", "slv_price", "slv_exit_price",
+    "slv_weight_pct", "replicating_leg_value", "treasury_weight_pct",
+    "treasury_position_price_index", "futures_treasury_value", "lease_book_value",
+    "keep_book_value", "lease_book_underlying_value", "keep_book_underlying_value",
+  ];
+  const series = [["2020-01-01", "2020-01-02", 1, 100, 102, 50, 0.51, 50, 100.01, 0.5, 1.01, 0, 0.9901960784, 0]];
+  const sleeve = {
+    product_label: "Silver", holding_label: "Replicating fund", fields, series,
+    held_futures_diagnostics: [[{
+      side: "long", symbol: "SIH20", weight_pct: 50, price: 103,
+      spot_price: 100, premium_pct: 3, matched_usd_rate_pct: 1.5,
+      lease_pct: -1.5, maturity_days: 60,
+    }]],
+  };
+  const context = {
+    result: {
+      portfolio_fields: ["date", "start_date", "nav", "interval_return_pct", "silver_contribution_pct"],
+      portfolio: { weights: { silver: 1 } }, commodity_sleeves: { silver: sleeve },
+      daily_attribution: [{ date: "2020-01-02", assets: { silver: { effective_weight_pct: 100 } } }],
+    },
+    sleeves: { silver: { series: sleeve.series } },
+  };
+  const makeRows = new Function("plotRangeSource", "num", "xlsxColumn", `${source}; return spreadsheetRows;`)(
+    context,
+    (value) => { const parsed = Number(value); return Number.isFinite(parsed) ? parsed : null; },
+    (index) => { let name = ""; for (let n = index + 1; n; n = Math.floor((n - 1) / 26)) name = String.fromCharCode(65 + (n - 1) % 26) + name; return name; },
+  );
+  const result = makeRows({ rows: [["2020-01-02", "2020-01-01", 1.01, 1, 1]], start: "2020-01-02", end: "2020-01-02" });
+  assert.equal(result.dailyRows.length, 2);
+  assert.ok(result.dailyRows[0].includes("Instrument 1 — name"));
+  assert.ok(result.dailyRows[0].includes("Instrument 1 — matched USD rate (%)"));
+  assert.equal(
+    result.dailyRows[1][result.dailyRows[0].indexOf("Instrument 1 — name")],
+    "SIH20",
+  );
+  const formulaIndex = result.dailyRows[0].indexOf("Silver — reconstructed daily return (%)");
+  assert.match(result.dailyRows[1][formulaIndex].formula, /^=\(\(1\+/);
 });
 
 test("shows precise proxy expense and compounded portfolio attribution", async () => {

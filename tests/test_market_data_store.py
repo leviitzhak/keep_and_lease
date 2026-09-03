@@ -19,6 +19,7 @@ class MarketDataStoreTests(unittest.TestCase):
             self.assertGreaterEqual(assets["silver"], 270)
             self.assertGreaterEqual(assets["gold"], 210)
             self.assertGreaterEqual(assets["sp500"], 80)
+            self.assertGreaterEqual(assets["btc"], 450)
 
     def test_cached_gold_is_read_without_legacy_zip(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -29,6 +30,18 @@ class MarketDataStoreTests(unittest.TestCase):
             spot, contracts, volumes = read_cached_asset(root, "gold")
             self.assertTrue(spot)
             self.assertGreaterEqual(len(contracts), 210)
+            self.assertTrue(volumes)
+
+    def test_cached_btc_keeps_deribit_contract_names_and_daily_spot(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = root / "data" / "market.sqlite3"
+            target.parent.mkdir()
+            build_database(ROOT, target)
+            spot, contracts, volumes = read_cached_asset(root, "btc")
+            self.assertGreaterEqual(len(spot), 3500)
+            self.assertGreaterEqual(len(contracts), 450)
+            self.assertTrue(all(symbol.startswith("BTC-") for symbol in contracts))
             self.assertTrue(volumes)
 
     def test_unreadable_cache_has_an_actionable_error(self):

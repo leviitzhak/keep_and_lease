@@ -1,5 +1,12 @@
 # TODO
 
+- [ ] Enable BTC as a strategy commodity after the Deribit/Yahoo coverage
+  audit passes: apply the implemented native-payoff conversion throughout the
+  return and attribution pipeline, expose regular/inverse mode, its fixed
+  conversion-fee rate and its minimum accumulated-BTC conversion threshold,
+  add seven-day calendar alignment and weekend Treasury accrual, and choose an
+  direct-BTC holding label throughout the GUI and exports.
+
 This checklist reflects the application synchronized from the deployed Sites checkpoint in PR #16.
 
 ## Implemented
