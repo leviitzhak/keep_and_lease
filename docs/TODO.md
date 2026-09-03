@@ -1,13 +1,22 @@
 # TODO
 
+This checklist reflects the application synchronized from the deployed Sites checkpoint in PR #16.
+
+## Higher priority
+
 - [ ] Enable BTC as a strategy commodity after the Deribit/Yahoo coverage
   audit passes: apply the implemented native-payoff conversion throughout the
   return and attribution pipeline, expose regular/inverse mode, its fixed
   conversion-fee rate and its minimum accumulated-BTC conversion threshold,
   add seven-day calendar alignment and weekend Treasury accrual, and choose an
   direct-BTC holding label throughout the GUI and exports.
-
-This checklist reflects the application synchronized from the deployed Sites checkpoint in PR #16.
+- [ ] Support BTC-only strategies at any execution/rebalancing frequency allowed
+  by the available market-data resolution. For intraday Treasury valuation,
+  carry forward the latest observable Treasury yield and accrue the Treasury
+  position at that yield until the next observable yield becomes available,
+  without using future observations or interpolating between daily marks.
+- [ ] Investigate why a NAV-reconstruction difference first appears on
+  03.01.1985 for the `strategy full silver long gradual` parameter set.
 
 ## Implemented
 
@@ -42,9 +51,6 @@ This checklist reflects the application synchronized from the deployed Sites che
 - [ ] Investigate and explain the performance of the full-silver long strategy.
 - [ ] Support separate minimum-days-before-expiry parameters for long and short
   futures positions.
-- [ ] For strategies containing only BTC, allow the execution delay to be
-  specified in seconds, or at sub-second resolution when supported by the
-  available intraday market data.
 - [ ] When extending the long book and adding a short book, require the selected
   short maturities to be later than the corresponding long maturities.
 - [ ] Replace the current per-commodity standalone-compounded and
@@ -69,8 +75,6 @@ This checklist reflects the application synchronized from the deployed Sites che
 
 ## Small fixes
 
-- [ ] Investigate why a NAV-reconstruction difference first appears on
-  03.01.1985 for the `strategy full silver long gradual` parameter set.
 - [ ] Fix the maturity-allocation heatmap preview not rendering on the
   persistent Sites deployment.
 - [ ] Use thinner bins in the displayed return-distribution histograms.
