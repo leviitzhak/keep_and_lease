@@ -90,6 +90,7 @@ This checklist reflects the application synchronized from the deployed Sites che
 - [ ] Fix the maturity-allocation heatmap preview not rendering on the
   persistent Sites deployment.
 - [ ] Use thinner bins in the displayed return-distribution histograms.
+- [ ] Show hover information on the return-distribution graphs.
 - [ ] Populate the GUI's **Saved strategy** dropdown with the strategy files in
   the repository's `strategies` folder.
 - [ ] Add full inspection interactivity to the new log-return decomposition
@@ -139,6 +140,9 @@ This checklist reflects the application synchronized from the deployed Sites che
 - [ ] Complete previous/next trading-day controls wherever inspection still requires date entry.
 
 ## Engineering
+
+- [ ] **Lower-priority persistent Sites work:** make the persistent Sites
+  deployment able to run a backtest and return its results reliably.
 
 - [x] Define and implement the versioned browser-parameters/server-result API described in `DEPLOYMENT_ARCHITECTURE.md`.
 - [x] Add an asynchronous in-process backtest job runner with progress, queued/running cancellation semantics, one-worker concurrency, result limits, caching, and provenance.
