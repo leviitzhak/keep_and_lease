@@ -300,8 +300,15 @@ def build_spot_market(root, archive_name, symbol_prefix, spot):
 
 def read_zip_spot(root, member):
     result = {}
-    with zipfile.ZipFile(root / "gold_silver.zip") as archive:
-        stream = io.TextIOWrapper(archive.open(member), encoding="utf-8-sig")
+    archive_path = root / "gold_silver.zip"
+    with zipfile.ZipFile(archive_path) as archive:
+        try:
+            member_stream = archive.open(member)
+        except KeyError as exc:
+            raise FileNotFoundError(
+                f"{archive_path} does not contain {member}"
+            ) from exc
+        stream = io.TextIOWrapper(member_stream, encoding="utf-8-sig")
         for row in csv.DictReader(stream):
             try:
                 value = float(row["price"])

@@ -1,7 +1,9 @@
 import json
 import math
 import sys
+import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 
 
@@ -56,6 +58,26 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
         self.assertIn('"commodity_sleeves"', encoded)
         self.assertIn("direct_unrebalanced_compounded_return_pct",
                       result["portfolio_fields"])
+
+    def test_missing_optional_legacy_spot_member_does_not_abort_markets(self):
+        previous_errors = dict(gui.MARKET_LOAD_ERRORS)
+        try:
+            with tempfile.TemporaryDirectory() as temporary_directory:
+                root = Path(temporary_directory)
+                with zipfile.ZipFile(root / "gold_silver.zip", "w") as archive:
+                    archive.writestr(
+                        "silver_price.csv", "date,price\n2024-01-02,23.50\n"
+                    )
+
+                markets = gui.build_markets(root, enabled_products={"btc"})
+
+                self.assertEqual(markets, {})
+                self.assertIn("spot.csv", gui.MARKET_LOAD_ERRORS["btc"])
+                self.assertIn(
+                    "does not contain", gui.MARKET_LOAD_ERRORS["btc"]
+                )
+        finally:
+            gui.MARKET_LOAD_ERRORS = previous_errors
 
     def test_commodity_quoted_book_returns_reconstruct_nav_every_date(self):
         sleeve = gui.sleeve_result({
