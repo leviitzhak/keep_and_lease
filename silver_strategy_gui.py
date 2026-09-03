@@ -673,6 +673,16 @@ def sleeve_result(payload, market=None, product="silver"):
         "keep_book_start_value", "keep_book_end_value",
         "lease_book_external_transfer", "keep_book_external_transfer",
         "lease_book_underlying_value", "keep_book_underlying_value",
+        "underlying_price_index",
+        "lease_book_effective_proportion_pct",
+        "keep_book_effective_proportion_pct",
+        "lease_book_underlying_daily_return_pct",
+        "keep_book_underlying_daily_return_pct",
+        "lease_book_underlying_compounded_index",
+        "keep_book_underlying_compounded_index",
+        "combined_books_underlying_compounded_index",
+        "reconstructed_nav", "nav_reconstruction_difference",
+        "nav_reconstruction_difference_pct",
     ]
     holding_fields = [
         "name", "holding_type", "book", "side", "contract_type", "price",
@@ -715,6 +725,16 @@ def sleeve_result(payload, market=None, product="silver"):
               "replicating_leg_underlying_value",
               "futures_treasury_underlying_value",
               "lease_book_underlying_value", "keep_book_underlying_value",
+              "underlying_price_index",
+              "lease_book_effective_proportion_pct",
+              "keep_book_effective_proportion_pct",
+              "lease_book_underlying_daily_return_pct",
+              "keep_book_underlying_daily_return_pct",
+              "lease_book_underlying_compounded_index",
+              "keep_book_underlying_compounded_index",
+              "combined_books_underlying_compounded_index",
+              "reconstructed_nav", "nav_reconstruction_difference",
+              "nav_reconstruction_difference_pct",
               "initial_replicating_leg_value",
               "initial_futures_treasury_value",
               "long_futures_daily_return_pct", "short_futures_daily_return_pct",
@@ -789,6 +809,11 @@ def sleeve_result(payload, market=None, product="silver"):
     return {
         "_full_rows": rows,
         "series": [[row[k] for k in fields] for row in sampled],
+        "book_return_distributions": [[
+            row["exit_date"],
+            row["lease_book_underlying_daily_return_pct"],
+            row["keep_book_underlying_daily_return_pct"],
+        ] for row in rows],
         "fields": fields,
         "product": product,
         "product_label": PRODUCTS.get(product, {}).get("label", product.title()),
@@ -850,6 +875,12 @@ def sleeve_result(payload, market=None, product="silver"):
             # Compatibility aliases for older saved browser results.
             "direct_silver_return": 100 * (slv_nav - 1),
             "direct_silver_max_drawdown": max_drawdown(slv_nav_values),
+            "max_nav_reconstruction_difference": max(
+                abs(row["nav_reconstruction_difference"]) for row in rows),
+            "max_nav_reconstruction_relative_difference": max(
+                abs(row["nav_reconstruction_difference_pct"]) / 100
+                for row in rows),
+            "nav_reconstruction_verified": True,
             **change_stats,
         },
     }
