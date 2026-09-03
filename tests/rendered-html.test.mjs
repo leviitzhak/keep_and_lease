@@ -120,6 +120,25 @@ test("reinitializes and applies plot periods to every visible data source", asyn
   );
 });
 
+test("exports completed backtests with position and book roll-forward checks", async () => {
+  const html = await readFile(
+    new URL("../public/silver_strategy_gui.html", import.meta.url),
+    "utf8",
+  );
+  assert.match(html, /function accountingWorkbook/);
+  assert.match(html, /holding_ledger/);
+  assert.match(html, /Futures value/);
+  assert.match(html, /carried at zero after daily settlement/);
+  assert.match(html, /book start — holdings sum/);
+  assert.match(html, /book end — roll-forward/);
+  assert.match(html, /book standalone return \(%\)/);
+  assert.match(html, /book contribution to sleeve return \(%\)/);
+  assert.match(html, /book external\/rebalancing transfer/);
+  assert.match(html, /book internal transfer check/);
+  assert.match(html, /Parameters/);
+  assert.match(html, /selectedDates\.has\(record\.exit_date\)/);
+});
+
 test("restores the latest durable run and renders every rate-change curve", async () => {
   const html = await readFile(
     new URL("../public/silver_strategy_gui.html", import.meta.url),

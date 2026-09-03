@@ -1118,6 +1118,9 @@ def run_backtest(spot, contracts, rates, by_day, p):
         short_futures_return = 0.0
         long_futures_contribution = 0.0
         base_long_futures_contribution = 0.0
+        long_futures_contributions = {}
+        base_long_futures_contributions = {}
+        short_futures_contributions = {}
         valid_interval = True
         short_total = sum(position["shorts"].values())
         long_total = sum(position["longs"].values())
@@ -1136,6 +1139,8 @@ def run_backtest(spot, contracts, rates, by_day, p):
             base_contribution = position["base_longs"].get(symbol, 0.0) * value
             if p.futures_contract_type == "inverse":
                 base_contribution = 0.0
+            long_futures_contributions[symbol] = contribution
+            base_long_futures_contributions[symbol] = base_contribution
             base_long_futures_contribution += base_contribution
             base_long_return += base_contribution
             if not found:
@@ -1155,6 +1160,7 @@ def run_backtest(spot, contracts, rates, by_day, p):
             else:
                 contribution = -weight * value
             short_futures_return += contribution
+            short_futures_contributions[symbol] = contribution
             portfolio_return += contribution
             if not found:
                 missing_futures_intervals.append({
@@ -1182,6 +1188,15 @@ def run_backtest(spot, contracts, rates, by_day, p):
                           if long_total else 0.0)
             base_long_futures_contribution += recognized * base_share
             base_long_return += recognized * base_share
+            if position["longs"]:
+                for symbol, weight in position["longs"].items():
+                    long_futures_contributions[symbol] = (
+                        recognized * weight / long_total)
+                base_total = sum(position["base_longs"].values())
+                if base_total:
+                    for symbol, weight in position["base_longs"].items():
+                        base_long_futures_contributions[symbol] = (
+                            recognized * base_share * weight / base_total)
 
         # Exact daily return attribution. Futures price returns are separated
         # into the contemporaneous silver move and basis-related effects. The
@@ -1273,6 +1288,9 @@ def run_backtest(spot, contracts, rates, by_day, p):
             {"fund": fund_lease_contribution,
              "futures_treasury": futures_treasury_lease_contribution})
         starting_nav = nav
+        lease_book_start_value = lease_value
+        keep_book_start_value = keep_value
+        treasury_start_price_index = 100 * asset_nav["treasury"]
         if replicating_value is None:
             replicating_value = position["base_slv"]
             futures_treasury_value = position["base_treasury"]
@@ -1328,6 +1346,7 @@ def run_backtest(spot, contracts, rates, by_day, p):
             if value is not None:
                 asset_simple[key] += value
                 asset_nav[key] *= 1 + value
+        treasury_end_price_index = 100 * asset_nav["treasury"]
         long_weighted_days = weighted_contract_value(position["longs"], position["contracts"], "days")
         short_weighted_days = weighted_contract_value(position["shorts"], position["contracts"], "days")
         # Diagnostics describe the curve that decided the allocation. Futures
@@ -1389,7 +1408,9 @@ def run_backtest(spot, contracts, rates, by_day, p):
                     "contract_type": p.futures_contract_type,
                     "weight_pct": 100 * weight,
                     "price": price,
+                    "exit_price": contracts.get(symbol, {}).get(exit_day),
                     "spot_price": spot[execution_day],
+                    "exit_spot_price": spot[exit_day],
                     "premium_pct": (
                         100 * (price / spot[execution_day] - 1)
                         if price is not None and spot[execution_day] else None),
@@ -1401,6 +1422,119 @@ def run_backtest(spot, contracts, rates, by_day, p):
                         if contract.get("lease") is not None else None),
                     "maturity_days": contract.get("days"),
                 })
+        extension_slv = position["slv"] - position["base_slv"]
+        extension_treasury = position["treasury"] - position["base_treasury"]
+
+        def cash_holding(book, start_value, end_value):
+            return {
+                "name": f"{book.title()} cash / margin / financing",
+                "holding_type": "cash",
+                "book": book,
+                "side": "cash",
+                "contract_type": None,
+                "price": 1.0,
+                "exit_price": 1.0,
+                "quantity": start_value,
+                "position_pct": None,
+                "notional_value": None,
+                "start_value": start_value,
+                "end_value": end_value,
+                "pnl_value": 0.0,
+                "internal_transfer_value": end_value - start_value,
+                "spot_price": spot[execution_day],
+                "exit_spot_price": spot[exit_day],
+                "premium_pct": None,
+                "matched_usd_rate_pct": None,
+                "lease_pct": None,
+                "maturity_days": None,
+            }
+
+        holding_ledger = []
+        cash_adjustments = {"lease": 0.0, "keep": 0.0}
+        nonfuture_start_values = {"lease": 0.0, "keep": 0.0}
+        for (book, holding_type, name, weight, start_price, end_price,
+             exact_return) in (
+            ("lease", "direct", "Direct commodity holding",
+             position["base_slv"], spot[execution_day], spot[exit_day], spot_return),
+            ("lease", "treasury", "Treasury collateral",
+             position["base_treasury"], treasury_start_price_index,
+             treasury_end_price_index, treasury_return),
+            ("keep", "direct", "Direct commodity holding extension",
+             extension_slv, spot[execution_day], spot[exit_day], spot_return),
+            ("keep", "treasury", "Treasury collateral extension",
+             extension_treasury, treasury_start_price_index,
+             treasury_end_price_index, treasury_return),
+        ):
+            if abs(weight) <= 1e-15:
+                continue
+            start_value = starting_nav * weight
+            quantity = start_value / start_price if start_price else None
+            end_value = quantity * end_price if quantity is not None else None
+            pnl_value = start_value * exact_return
+            cash_adjustments[book] += pnl_value - (end_value - start_value)
+            nonfuture_start_values[book] += start_value
+            holding_ledger.append({
+                "name": name, "holding_type": holding_type, "book": book,
+                "side": "long", "contract_type": None,
+                "price": start_price, "exit_price": end_price,
+                "quantity": quantity, "position_pct": 100 * weight,
+                "notional_value": None, "start_value": start_value,
+                "end_value": end_value, "pnl_value": pnl_value,
+                "internal_transfer_value": end_value - start_value - pnl_value,
+                "spot_price": spot[execution_day],
+                "exit_spot_price": spot[exit_day], "premium_pct": None,
+                "matched_usd_rate_pct": None, "lease_pct": None,
+                "maturity_days": holding_days if holding_type == "treasury" else None,
+            })
+
+        held_by_key = {(item["side"], item["symbol"]): item
+                       for item in held_futures}
+        future_books = []
+        for symbol, total_weight in position["longs"].items():
+            base_weight = position["base_longs"].get(symbol, 0.0)
+            extension_weight = total_weight - base_weight
+            if base_weight > 1e-15:
+                future_books.append((
+                    "lease", "long", symbol, base_weight,
+                    base_long_futures_contributions.get(symbol, 0.0)))
+            if extension_weight > 1e-15:
+                future_books.append((
+                    "keep", "long", symbol, extension_weight,
+                    long_futures_contributions.get(symbol, 0.0) -
+                    base_long_futures_contributions.get(symbol, 0.0)))
+        for symbol, weight in position["shorts"].items():
+            future_books.append((
+                "keep", "short", symbol, weight,
+                short_futures_contributions.get(symbol, 0.0)))
+        for book, side, symbol, weight, contribution in future_books:
+            market = held_by_key[(side, symbol)]
+            signed_weight = weight if side == "long" else -weight
+            price = market["price"]
+            notional_value = starting_nav * signed_weight
+            holding_ledger.append({
+                **market, "name": symbol, "holding_type": "future",
+                "book": book, "side": side,
+                "quantity": (
+                    notional_value / price
+                    if p.futures_contract_type != "inverse" and price else None),
+                "position_pct": 100 * signed_weight,
+                "notional_value": notional_value,
+                # Exchange-traded futures are carried at zero after daily
+                # settlement; their economic exposure is the notional above.
+                "start_value": 0.0, "end_value": 0.0,
+                "pnl_value": starting_nav * contribution,
+                "internal_transfer_value": -starting_nav * contribution,
+            })
+            cash_adjustments[book] += starting_nav * contribution
+
+        lease_cash_start = lease_book_start_value - nonfuture_start_values["lease"]
+        keep_cash_start = keep_book_start_value - nonfuture_start_values["keep"]
+        holding_ledger.extend([
+            cash_holding("lease", lease_cash_start,
+                         lease_cash_start + cash_adjustments["lease"]),
+            cash_holding("keep", keep_cash_start,
+                         keep_cash_start + cash_adjustments["keep"]),
+        ])
         if short_total:
             short_maturities = [position["contracts"][s]["days"] for s in position["shorts"]]
             shortest_short_maturity_days = min(short_maturities)
@@ -1425,6 +1559,14 @@ def run_backtest(spot, contracts, rates, by_day, p):
                        "positive_signal_annual_pct": 100 * position["positive_signal"],
                        "negative_signal_annual_pct": 100 * position["negative_signal"],
                        "interval_return_pct": 100 * portfolio_return,
+                       "starting_nav": starting_nav,
+                       "ending_nav": nav,
+                       "lease_book_start_value": lease_book_start_value,
+                       "lease_book_end_value": lease_value,
+                       "keep_book_start_value": keep_book_start_value,
+                       "keep_book_end_value": keep_value,
+                       "lease_book_external_transfer": 0.0,
+                       "keep_book_external_transfer": 0.0,
                        "futures_contract_type": p.futures_contract_type,
                        "inverse_interval_btc_payoff": inverse_settlement["interval_btc_payoff"] if inverse_settlement else None,
                        "inverse_converted_btc": inverse_settlement["converted_btc"] if inverse_settlement else None,
@@ -1572,6 +1714,7 @@ def run_backtest(spot, contracts, rates, by_day, p):
                        "long_symbols": ";".join(position["longs"]),
                        "short_symbols": ";".join(position["shorts"])})
         output[-1]["held_futures"] = held_futures
+        output[-1]["holding_ledger"] = holding_ledger
         previous_valid_position = position
     return output, missing_futures_intervals
 

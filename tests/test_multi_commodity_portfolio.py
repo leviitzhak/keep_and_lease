@@ -84,7 +84,8 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
         held = next(day for day in sleeve["held_futures_diagnostics"] if day)
         self.assertTrue({
             "symbol", "side", "contract_type", "weight_pct", "price", "spot_price",
-            "premium_pct", "matched_usd_rate_pct", "lease_pct",
+            "exit_price", "exit_spot_price", "premium_pct",
+            "matched_usd_rate_pct", "lease_pct",
             "maturity_days",
         }.issubset(held[0]))
         self.assertIn("slv_exit_price", sleeve["fields"])
@@ -93,6 +94,13 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
             sleeve["spreadsheet_rows"][0]["exit_date"],
             sleeve["series"][0][sleeve["fields"].index("exit_date")],
         )
+        ledger = [dict(zip(sleeve["holding_fields"], item))
+                  for item in sleeve["spreadsheet_rows"][0]["holding_ledger"]]
+        self.assertTrue({"lease", "keep"}.issubset(
+            {item["book"] for item in ledger}))
+        self.assertTrue(all(
+            item["start_value"] == item["end_value"] == 0
+            for item in ledger if item["holding_type"] == "future"))
 
     def test_daily_portfolio_contributions_reconcile(self):
         if not {"gold", "oil"}.issubset(self.markets):
@@ -109,9 +117,14 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
             result["fields"].index(f"{key}_contribution_pct")
             for key in result["portfolio"]["weights"]]
         interval_index = result["fields"].index("interval_return_pct")
+        start_nav_index = result["fields"].index("start_nav")
+        nav_index = result["fields"].index("nav")
         for row in result["series"]:
             self.assertAlmostEqual(
                 row[interval_index], sum(row[i] for i in contribution_indices), places=11)
+            self.assertAlmostEqual(
+                row[interval_index],
+                100 * (row[nav_index] / row[start_nav_index] - 1), places=11)
 
     def test_rebalancing_choice_changes_path(self):
         sleeves = {

@@ -664,11 +664,22 @@ def sleeve_result(payload, market=None, product="silver"):
     if sampled[-1] is not rows[-1]:
         sampled.append(rows[-1])
     spreadsheet_fields = [
-        "date", "exit_date", "interval_return_pct", "slv_price",
+        "date", "exit_date", "mode", "interval_return_pct", "starting_nav",
+        "ending_nav", "slv_price",
         "slv_exit_price", "slv_weight_pct", "replicating_leg_value",
         "treasury_weight_pct", "treasury_position_price_index",
         "futures_treasury_value", "lease_book_value", "keep_book_value",
+        "lease_book_start_value", "lease_book_end_value",
+        "keep_book_start_value", "keep_book_end_value",
+        "lease_book_external_transfer", "keep_book_external_transfer",
         "lease_book_underlying_value", "keep_book_underlying_value",
+    ]
+    holding_fields = [
+        "name", "holding_type", "book", "side", "contract_type", "price",
+        "exit_price", "quantity", "position_pct", "notional_value",
+        "start_value", "end_value", "pnl_value", "internal_transfer_value",
+        "spot_price", "exit_spot_price", "premium_pct",
+        "matched_usd_rate_pct", "lease_pct", "maturity_days",
     ]
     fields = ["date", "exit_date", "interval_return_pct", "simple_cumulative_return_pct",
               "compounded_return_pct", "slv_weight_pct", "treasury_weight_pct",
@@ -786,9 +797,14 @@ def sleeve_result(payload, market=None, product="silver"):
             "holding_label", "Replicating fund"),
         "futures_prices": futures_price_series(sampled, market[1]),
         "held_futures_diagnostics": [row.get("held_futures", []) for row in sampled],
+        "holding_fields": holding_fields,
         "spreadsheet_rows": [
             {**{field: row.get(field) for field in spreadsheet_fields},
-             "held_futures": row.get("held_futures", [])}
+             "held_futures": row.get("held_futures", []),
+             "holding_ledger": [
+                 [item.get(field) for field in holding_fields]
+                 for item in row.get("holding_ledger", [])
+             ]}
             for row in rows
         ],
         "futures_diagnostics": futures_diagnostics(sampled, market[3], p),
@@ -954,7 +970,7 @@ def aggregate_portfolio(sleeves, target_weights, rebalance):
         simple += daily_return
         row = [
             exit_day, day, 100 * daily_return, 100 * simple, 100 * (nav - 1),
-            100 * direct_return, 100 * (direct_nav - 1), nav,
+            100 * direct_return, 100 * (direct_nav - 1), start_nav, nav,
         ]
         row.extend(100 * contributions[key] for key in target_weights)
         row.extend([
@@ -972,7 +988,7 @@ def aggregate_portfolio(sleeves, target_weights, rebalance):
     fields = [
         "date", "start_date", "interval_return_pct", "simple_cumulative_return_pct",
         "compounded_return_pct", "direct_daily_return_pct",
-        "direct_compounded_return_pct", "nav",
+        "direct_compounded_return_pct", "start_nav", "nav",
     ] + [f"{key}_contribution_pct" for key in target_weights] + [
         "direct_unrebalanced_daily_return_pct",
         "direct_unrebalanced_compounded_return_pct",
@@ -1029,6 +1045,7 @@ def result(payload):
         answer["portfolio_fields"] = fields
         answer["portfolio_series"] = series
         answer["commodity_sleeves"] = sleeves
+        answer["parameters"] = dict(payload)
         answer["treasury_statistics_points"] = next(
             iter(sleeves.values()))["treasury_statistics_points"]
         answer.pop("_full_rows", None)
@@ -1060,6 +1077,7 @@ def result(payload):
         - date.fromisoformat(
             longest_interval_row[fields.index("start_date")])).days
     return {
+        "parameters": dict(payload),
         "fields": fields,
         "series": series,
         "daily_attribution": attribution,

@@ -58,6 +58,41 @@ class StandaloneLegReturnTests(unittest.TestCase):
                 row["replicating_leg_value"] + row["futures_treasury_value"])
         self.assertEqual(rows[0]["exit_date"], self.days[1].isoformat())
 
+    def test_holding_ledger_reconstructs_both_books(self):
+        candidates = [
+            {"symbol": "near", "days": 30, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": 0.08, "volume": 10},
+            {"symbol": "far", "days": 300, "future": 100, "spot": 100,
+             "rate": 0, "premium": 0, "lease": -0.10, "volume": 5},
+        ]
+        by_day = {day: [dict(item) for item in candidates]
+                  for day in self.days}
+        rows, _ = run_backtest(
+            self.spot, self.contracts, self.rates, by_day,
+            Parameters(min_days=1, slv_expense=0.01))
+        self.assertTrue(rows)
+        for row in rows:
+            ledger = row["holding_ledger"]
+            self.assertTrue(any(item["holding_type"] == "cash" for item in ledger))
+            for item in ledger:
+                self.assertAlmostEqual(
+                    item["end_value"], item["start_value"] +
+                    item["pnl_value"] + item["internal_transfer_value"])
+                if item["holding_type"] == "future":
+                    self.assertEqual(0.0, item["start_value"])
+                    self.assertEqual(0.0, item["end_value"])
+                    self.assertIsNotNone(item["quantity"])
+            for book in ("lease", "keep"):
+                holdings = [item for item in ledger if item["book"] == book]
+                start = sum(item["start_value"] for item in holdings)
+                end = sum(item["end_value"] for item in holdings)
+                pnl = sum(item["pnl_value"] for item in holdings)
+                internal = sum(item["internal_transfer_value"] for item in holdings)
+                self.assertAlmostEqual(row[f"{book}_book_start_value"], start)
+                self.assertAlmostEqual(row[f"{book}_book_end_value"], end)
+                self.assertAlmostEqual(end, start + pnl)
+                self.assertAlmostEqual(0.0, internal)
+
     def setUp(self):
         self.days = [date(2020, 1, day) for day in range(1, 6)]
         self.spot = dict(zip(self.days, [100, 110, 121, 133.1, 146.41]))
