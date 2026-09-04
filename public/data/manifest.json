@@ -1,4 +1,18 @@
 {
+  "btc_intraday": {
+    "active_provider": "deribit_1m",
+    "coverage": {
+      "compressed_bytes": 7451178,
+      "contract_count": 93,
+      "rows": 1202419,
+      "synthetic_rows": 840526
+    },
+    "from_timestamp": "2026-06-06T00:00Z",
+    "manifest_sha256": "67c88f41f528b632119334252cfe14952f712930c70ec0527cc643310f46ed31",
+    "resolution": "1m",
+    "source": "https://history.deribit.com/api/v2/public",
+    "to_timestamp_exclusive": "2026-09-04T00:00Z"
+  },
   "gold_repair": {
     "archive_sha256": "96292d22406bdcda93b30f995b9f531acfa1b6b7136fabc5ec69eb0e6453395a",
     "contracts_downloaded": 214,
