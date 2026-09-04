@@ -8,12 +8,22 @@ try:
 except ModuleNotFoundError:  # Pyodide omits the optional SQLite module.
     sqlite3 = None
 from collections import Counter
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from functools import lru_cache
 from pathlib import Path
 
 
 ASSET_BY_PREFIX = {"SI": "silver", "GC": "gold", "SP": "sp500", "BTC": "btc"}
+
+
+def parse_observation(value: str) -> date | datetime:
+    value = value.strip().strip('"')
+    if "T" in value or " " in value:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        if parsed.tzinfo is not None:
+            parsed = parsed.astimezone(timezone.utc).replace(tzinfo=None)
+        return parsed
+    return date.fromisoformat(value)
 
 
 def data_directory(root: Path) -> Path:
@@ -37,7 +47,8 @@ def read_spot_csv(root: Path, asset: str) -> dict[date, float]:
             try:
                 value = float(row.get("price") or row["close"])
                 if value > 0:
-                    result[date.fromisoformat(row["date"])] = value
+                    timestamp = row.get("timestamp") or row["date"]
+                    result[parse_observation(timestamp)] = value
             except (ValueError, TypeError, KeyError):
                 pass
     return result
@@ -60,12 +71,16 @@ def read_contract_csvs(
                 try:
                     raw_day = row[0].strip('"')
                     day = None
-                    for date_format in ("%m/%d/%Y", "%Y-%m-%d", "%y%m%d"):
-                        try:
-                            day = datetime.strptime(raw_day, date_format).date()
-                            break
-                        except ValueError:
-                            pass
+                    try:
+                        day = parse_observation(raw_day)
+                    except ValueError:
+                        for date_format in ("%m/%d/%Y", "%y%m%d"):
+                            try:
+                                day = datetime.strptime(
+                                    raw_day, date_format).date()
+                                break
+                            except ValueError:
+                                pass
                     if day is None:
                         raise ValueError(raw_day)
                     raw = float(row[4])
@@ -106,11 +121,11 @@ def read_cached_asset(root: Path, asset: str):
         with sqlite3.connect(f"file:{path}?mode=ro", uri=True) as connection:
             for day, value in connection.execute(
                     "SELECT day, price FROM spot WHERE asset=? ORDER BY day", (asset,)):
-                spot[date.fromisoformat(day)] = value
+                spot[parse_observation(day)] = value
             for symbol, day, close, volume in connection.execute(
                     "SELECT symbol, day, close, volume FROM future "
                     "WHERE asset=? ORDER BY symbol, day", (asset,)):
-                parsed_day = date.fromisoformat(day)
+                parsed_day = parse_observation(day)
                 contracts.setdefault(symbol, {})[parsed_day] = close
                 volumes[(symbol, parsed_day)] = volume
     except sqlite3.DatabaseError as exc:

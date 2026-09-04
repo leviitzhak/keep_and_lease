@@ -193,6 +193,8 @@ def audit(instruments, futures_rows, spot_rows):
             "futures": DERIBIT,
             "spot": YAHOO,
             "downloaded_at_utc": datetime.now(timezone.utc).isoformat(),
+            "resolution": "1D",
+            "resolution_seconds": 86400,
             "daily_cutoff": "Yahoo BTC-USD daily candle; Deribit 1D archive candle",
         },
         "coverage": {

@@ -19,6 +19,11 @@ BTC spot uses Yahoo BTC-USD composite daily candles. It is deliberately
 independent of Deribit's perpetual future. The coverage report records the
 daily convention so futures/spot alignment remains auditable.
 
+The loader preserves ISO timestamps when present instead of truncating them to
+dates. Backtests infer the finest common BTC spot/futures spacing from the
+loaded observations. The presently packaged Yahoo/Deribit files are daily and
+therefore expose a finest supported interval of 86,400 seconds.
+
 ### Treasury/cash curve
 
 Retain instrument or tenor, observation date, maturity, quoted yield/rate, compounding convention, and price or total-return data when available.
@@ -49,7 +54,10 @@ For Treasury scatter plots, use a consistently annualized rate with the quoted c
 
 - Never join observations using future data.
 - Preserve original source timestamps.
-- Record whether a value is observed, interpolated, or derived.
+- Record whether a value is observed, carried forward, interpolated across
+  maturity tenors, or derived.
+- Carry Treasury yields forward through time; never interpolate between daily
+  marks or use the next mark before its observable timestamp.
 - Use the next valid trading date for delayed execution.
 - Avoid mixing settlement and intraday prices without an explicit convention.
 

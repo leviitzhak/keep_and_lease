@@ -5991,6 +5991,8 @@
     "daily_cutoff": "Yahoo BTC-USD daily candle; Deribit 1D archive candle",
     "downloaded_at_utc": "2026-09-02T13:07:38.355190+00:00",
     "futures": "https://history.deribit.com/api/v2/public",
+    "resolution": "1D",
+    "resolution_seconds": 86400,
     "spot": "https://query2.finance.yahoo.com/v8/finance/chart/BTC-USD"
   }
 }

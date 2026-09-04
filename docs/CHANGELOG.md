@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-09-04 — BTC-frequency and causal Treasury accrual
+
+- Added a BTC-only execution/rebalancing interval in seconds. Zero uses every
+  common market observation; positive intervals must be whole multiples of the
+  detected source resolution, with requests finer than the data rejected.
+- Preserved ISO timestamps in spot and futures CSV readers so the same engine
+  path supports intraday datasets when they are supplied.
+- Replaced between-date Treasury-yield interpolation and future backfilling with
+  true as-of alignment. Treasury positions now accrue piecewise at the latest
+  observable yield until a new mark becomes available.
+- Documented the conservative intraday convention that a date-only Treasury
+  close becomes available at 00:00 UTC on the following day.
+
 ## 2026-09-01 — separate maturity controls and responsive spreadsheet export
 
 - Split the pure-maturity scale and normalized clip into independent long- and

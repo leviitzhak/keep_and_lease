@@ -2,22 +2,35 @@
 
 ## Time convention
 
-Signals use information available at the close of day `t`. The `reactivity`
-parameter executes changes either at that close (`same_day`) or at the following
-available close (`next_day`). Returns are measured from execution to the next
-available trading-day close. Missing calendar dates use each instrument's actual
-trading calendar rather than a fixed one-day timedelta.
+Signals use information available at observation `t`. The `reactivity`
+parameter executes changes either at that observation (`same_day`) or at the
+following available observation (`next_day`). Returns are measured from
+execution to the next selected market observation. Missing timestamps use each
+instrument's actual trading calendar rather than a fixed timedelta.
 
-## Daily sequence
+For a BTC-only commodity portfolio, `execution_interval_seconds=0` selects every
+common spot/futures mark. A positive value selects the next available mark at
+that cadence and must be a whole multiple of the finest detected common-market
+resolution. Requests finer than the data are rejected. The current packaged BTC
+history is daily, so its finest interval is 86,400 seconds; timestamped files
+activate the same mechanism at their detected intraday resolution.
 
-1. Validate market data for day `t`.
+Treasury accrual is piecewise causal. The latest observable yield is applied
+until a later yield mark becomes available, at which point the remaining
+interval accrues at the new yield. The engine never backfills from a future mark
+and never interpolates through time between daily yields. It may still
+interpolate across available Treasury tenors to match a futures maturity.
+
+## Observation sequence
+
+1. Validate market data for observation `t`.
 2. Compute derived rates and eligibility.
 3. Compute base and adjusted scores.
 4. Convert scores to target weights.
 5. Apply the configured allocation half-lives to the long implementation mix
    and short-book size; do not smooth curve inputs or contract ranking.
 6. Execute target changes according to `reactivity`.
-7. Calculate mark-to-market return to the next valid trading-day close from the position just established.
+7. Calculate mark-to-market return to the next selected market observation from the position just established.
 8. Apply transaction costs, fees, financing, ETF expenses, and roll effects.
 9. Persist diagnostics and attribution.
 
