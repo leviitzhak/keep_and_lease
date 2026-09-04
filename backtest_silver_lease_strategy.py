@@ -27,7 +27,7 @@ from maturity_scoring import (
 from rate_change_attribution import InstrumentAttribution, build_rate_change_point
 from market_data_store import (
     ASSET_BY_PREFIX, data_directory, read_cached_asset, read_contract_csvs,
-    read_spot_csv,
+    read_spot_csv, load_intraday_market,
 )
 
 MONTHS = dict(zip("FGHJKMNQUVXZ", range(1, 13)))
@@ -189,8 +189,12 @@ def elapsed_days(start, end):
 
 
 def days_to_expiry(expiry, observation):
-    """Fractional calendar days to a date-only contract expiry."""
-    if isinstance(observation, datetime):
+    """Fractional calendar days to a date-only or timestamped expiry."""
+    if isinstance(expiry, datetime):
+        expiry_observation = expiry
+        if not isinstance(observation, datetime):
+            observation = datetime.combine(observation, time.min)
+    elif isinstance(observation, datetime):
         expiry_observation = datetime.combine(expiry, time.min)
     else:
         expiry_observation = expiry
@@ -372,6 +376,141 @@ def build_spot_market(root, archive_name, symbol_prefix, spot):
     usable_days = set(by_day)
     return ({day: value for day, value in spot.items() if day in usable_days},
             contracts, rates, by_day)
+
+
+def _utc_naive(value):
+    if value.tzinfo is not None:
+        return value.astimezone(timezone.utc).replace(tzinfo=None)
+    return value
+
+
+def _intraday_contract_expirations(market):
+    """Read exact exchange expiries when the selected provider records them."""
+
+    paths = [market.provider.directory / "manifest.json"]
+    # Tardis quote files for Deribit contracts can reuse the exchange metadata
+    # captured with the candle archive.
+    paths.append(
+        market.provider.directory.parent / "deribit_1m" / "manifest.json")
+    expirations = {}
+    for manifest_path in dict.fromkeys(paths):
+        if not manifest_path.exists():
+            continue
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            expirations.update({
+                symbol.upper(): datetime.fromisoformat(
+                    details["expiration_timestamp"].replace("Z", "+00:00"))
+                for symbol, details in manifest.get("contracts", {}).items()
+                if details.get("expiration_timestamp")
+            })
+        except (OSError, TypeError, ValueError, KeyError,
+                json.JSONDecodeError):
+            continue
+    return expirations
+
+
+def _select_intraday_spot_session(market, observations, sample_day=None):
+    """Do not bridge disconnected free-sample days as continuous history."""
+
+    manifest_path = market.provider.directory / "manifest.json"
+    if not manifest_path.exists():
+        return observations
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        sessions = manifest.get("sample_sessions", [])
+        complete = [
+            row for row in sessions
+            if row.get("missing_minutes", 1) == 0
+        ]
+        if not complete:
+            return observations
+        if sample_day is None:
+            selected = max(complete, key=lambda row: row["date"])
+        else:
+            selected = next(
+                row for row in complete if row["date"] == str(sample_day))
+        start = datetime.fromisoformat(
+            selected["from_timestamp"].replace("Z", "+00:00"))
+        end = datetime.fromisoformat(
+            selected["to_timestamp_exclusive"].replace("Z", "+00:00"))
+        # Bar labels span [start, end); their no-look-ahead effective times
+        # span (start, end].
+        return {
+            instant: price for instant, price in observations.items()
+            if start < instant <= end
+        }
+    except (OSError, StopIteration, TypeError, ValueError, KeyError,
+            json.JSONDecodeError):
+        if sample_day is not None:
+            raise ValueError(
+                f"No complete Kraken sample session for {sample_day}")
+        return observations
+
+
+def build_intraday_btc_market(root, sample_day=None):
+    """Build the BTC curve from independently configured spot/futures feeds.
+
+    Kraken minute closes define the strategy decision grid. Futures are read as
+    no-look-ahead snapshots on that grid. A future switch from Deribit candles
+    to Tardis tick quotes is therefore a configuration change, not a strategy
+    engine change.
+    """
+
+    spot_market = load_intraday_market(Path(root), role="spot")
+    futures_market = load_intraday_market(Path(root), role="futures")
+    spot_by_instant = {}
+    for observation in spot_market.iter_observations():
+        if observation.symbol == "BTC-USD" and observation.reference_price > 0:
+            spot_by_instant[observation.effective_time] = (
+                observation.reference_price)
+    spot_by_instant = _select_intraday_spot_session(
+        spot_market, spot_by_instant, sample_day)
+    if not spot_by_instant:
+        raise FileNotFoundError(
+            "The configured BTC intraday spot provider produced no observations")
+
+    rates = read_rates(root)
+    expirations = _intraday_contract_expirations(futures_market)
+    spot, contracts, by_day = {}, defaultdict(dict), defaultdict(list)
+    schedule = sorted(spot_by_instant)
+    snapshots = futures_market.iter_snapshots(
+        schedule, max_age=timedelta(minutes=1))
+    for instant, snapshot in zip(schedule, snapshots):
+        day = _utc_naive(instant)
+        physical = spot_by_instant[instant]
+        curve = []
+        for symbol, observation in snapshot.observations.items():
+            if not symbol.startswith("BTC-") or symbol == "BTC-USD":
+                continue
+            expiry = expirations.get(symbol) or expiry_from_symbol(symbol)
+            if expiry is None:
+                continue
+            days = days_to_expiry(expiry, day)
+            rate = usd_rate(rates, day, days) if days > 0 else None
+            if days <= 0 or rate is None:
+                continue
+            future = observation.reference_price
+            premium = future / physical - 1
+            lease = rate - premium * 365 / days
+            contracts[symbol][day] = future
+            curve.append({
+                "symbol": symbol,
+                "days": days,
+                "future": future,
+                "spot": physical,
+                "rate": rate,
+                "premium": premium,
+                "lease": lease,
+                "volume": observation.volume or 0.0,
+            })
+        if curve:
+            spot[day] = physical
+            by_day[day] = curve
+    if not by_day:
+        raise ValueError(
+            "BTC intraday spot and futures providers have no usable overlap")
+    return spot, dict(contracts), rates, by_day
 
 
 def read_zip_spot(root, member):

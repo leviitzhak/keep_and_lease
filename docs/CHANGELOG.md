@@ -2,6 +2,10 @@
 
 ## 2026-09-04 — BTC-frequency and causal Treasury accrual
 
+- Added role-based intraday providers: Kraken one-minute midpoint spot candles
+  and Deribit one-minute dated-futures candles can now be changed independently.
+- Materialized three complete Kraken free-sample days (4,320 minute bars) and
+  connected the BTC-only strategy path to no-look-ahead spot/futures snapshots.
 - Added a BTC-only execution/rebalancing interval in seconds. Zero uses every
   common market observation; positive intervals must be whole multiples of the
   detected source resolution, with requests finer than the data rejected.

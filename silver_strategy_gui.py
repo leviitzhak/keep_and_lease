@@ -11,7 +11,8 @@ from pathlib import Path
 from zipfile import BadZipFile
 
 from backtest_silver_lease_strategy import (
-    Parameters, build_market, build_proxy_market, build_spot_market,
+    Parameters, build_intraday_btc_market, build_market, build_proxy_market,
+    build_spot_market,
     elapsed_days, market_resolution_seconds, observation_seconds,
     multiplicative_log_contributions,
     TENORS, asof_rate, parse_date, positions_for_day, read_csv_spot, read_zip_spot,
@@ -47,7 +48,7 @@ PRODUCTS = {
               "spot_source": "nearest live future (cash-index history pending)",
               "etf": "SPY / IVV", "replication": "equity-backed"},
     "btc": {"label": "Bitcoin", "archive": None, "prefix": "BTC",
-            "spot_source": "Yahoo BTC-USD composite",
+            "spot_source": "Kraken BTC/USD one-minute midpoint",
             "etf": "Direct BTC holding", "replication": "direct holding",
             "holding_label": "Direct holding",
             "parameter_defaults": {
@@ -78,8 +79,7 @@ def build_markets(root, enabled_products=None):
         "oil": lambda: build_spot_market(
             root, "cl.zip", "CL",
             read_csv_spot(root, "DCOILWTICO.csv", "DCOILWTICO")),
-        "btc": lambda: build_spot_market(
-            root, None, "BTC", _asset_spot(root, "btc", "spot.csv")),
+        "btc": lambda: _build_btc_market(root),
     }
     for key, spec in PRODUCTS.items():
         if key not in enabled_products:
@@ -114,6 +114,15 @@ def _asset_spot(root, asset, legacy_member):
     if (data_directory(Path(root)) / asset).is_dir():
         return read_spot_csv(Path(root), asset)
     return read_zip_spot(root, legacy_member)
+
+
+def _build_btc_market(root):
+    intraday_config = (
+        data_directory(Path(root)) / "btc" / "intraday" / "config.json")
+    if intraday_config.exists():
+        return build_intraday_btc_market(root)
+    return build_spot_market(
+        root, None, "BTC", _asset_spot(root, "btc", "spot.csv"))
 
 
 def number(payload, name, default, low=None, high=None):

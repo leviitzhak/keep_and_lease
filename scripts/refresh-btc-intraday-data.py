@@ -226,12 +226,21 @@ def download_contract(instrument, start_ms: int, end_ms: int, target: Path):
 def write_config():
     CONFIG.parent.mkdir(parents=True, exist_ok=True)
     payload = {
-        "schema_version": 1,
+        "schema_version": 2,
         "active_provider": "deribit_1m",
+        "active_providers": {
+            "futures": "deribit_1m",
+            "spot": "kraken_1m",
+        },
         "providers": {
             "deribit_1m": {
                 "format": "deribit_candles",
                 "path": "deribit_1m",
+                "resolution": "1m",
+            },
+            "kraken_1m": {
+                "format": "kraken_spot_candles",
+                "path": "kraken_1m",
                 "resolution": "1m",
             },
             "tardis_quotes": {

@@ -36,6 +36,10 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
             "not enabled in this deployment" in gui.MARKET_LOAD_ERRORS[key]
             for key in ("oil", "wheat", "corn", "soybeans")
         ))
+        btc_spot = self.markets["btc"][0]
+        self.assertEqual(len(btc_spot), 1440)
+        self.assertEqual(min(btc_spot).isoformat(), "2026-09-01T00:01:00")
+        self.assertEqual(max(btc_spot).isoformat(), "2026-09-02T00:00:00")
 
     def test_gold_and_oil_use_independent_spot_series(self):
         for key in ("gold", "oil"):

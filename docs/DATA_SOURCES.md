@@ -19,27 +19,37 @@ time, file hashes, contract metadata, row counts, and the number of zero-volume
 filled rows. The refresh script requests no more than 5,000 candles at once and
 can reuse already-complete contract files.
 
-Strategy-facing intraday code must use `load_intraday_market`, not read Deribit
+Strategy-facing intraday code must use `load_intraday_market`, not read exchange
 files directly. The loader normalizes current candle files and future Tardis
-quote files to `MarketObservation`. Changing `active_provider` in
-`btc/intraday/config.json` therefore changes the source adapter without changing
-the strategy engine. Candle close is the current reference and execution
-fallback; Tardis quote midpoint is the reference, while bid and ask are retained
-for executable sell and buy prices.
+quote files to `MarketObservation`. Changing the `spot` or `futures` entry in
+`active_providers` within `btc/intraday/config.json` therefore changes the
+source adapter without changing the strategy engine. Candle close is the
+current reference and execution fallback; Tardis quote midpoint is the
+reference, while bid and ask are retained for executable sell and buy prices.
 
 ### Spot or ETF
 
 Retain adjusted and unadjusted prices, distributions where relevant, expense ratio history, currency, and trading calendar.
 
-BTC spot uses Yahoo BTC-USD composite daily candles. It is deliberately
-independent of Deribit's perpetual future. The coverage report records the
-daily convention so futures/spot alignment remains auditable.
+The intraday BTC spot feed is Kraken's best bid and ask delivered in Tardis'
+normalized quote schema. The checked-in free samples cover the complete UTC
+days 2026-07-01, 2026-08-01, and 2026-09-01. They contain 2,773,814 valid quote
+updates aggregated to 4,320 one-minute midpoint OHLC bars with no missing
+minutes. Kraken's `XBT/USD` identifier before 2026-07-10 and `BTC/USD` identifier
+afterward are both normalized to `BTC-USD`. The per-file source hashes and the
+aggregation convention live in `btc/intraday/kraken_1m/manifest.json`.
+
+The legacy daily BTC path retains Yahoo BTC-USD composite candles for
+compatibility when no intraday configuration is present. Both spot series are
+independent of Deribit's perpetual future.
 
 The legacy loader preserves ISO timestamps when present instead of truncating
 them to dates. Backtests infer the finest common BTC spot/futures spacing from
-loaded observations. The packaged Yahoo spot series remains daily, so a full
-intraday premium backtest still needs a point-in-time one-minute spot/index feed
-alongside the packaged one-minute Deribit futures.
+loaded observations. The packaged Kraken samples exercise the complete
+one-minute strategy path, but their three isolated days are a plumbing and
+accounting validation set, not a continuous performance-research history. The
+default GUI backtest therefore selects the latest complete sample day instead
+of inventing a holding return across the month-long gaps.
 
 ### Treasury/cash curve
 

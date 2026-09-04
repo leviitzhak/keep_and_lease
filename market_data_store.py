@@ -123,6 +123,15 @@ def _utc_timestamp(value: str | int | float) -> datetime:
     return datetime.fromtimestamp(numeric, timezone.utc)
 
 
+def _canonical_intraday_symbol(value: str) -> str:
+    """Normalize exchange aliases without erasing futures identifiers."""
+
+    symbol = value.strip().upper()
+    if symbol in {"XBT/USD", "XBT-USD", "BTC/USD", "BTCUSD"}:
+        return "BTC-USD"
+    return symbol
+
+
 class DeribitCandleCsvProvider:
     """Read normalized one-minute Deribit candle files, one stream per symbol."""
 
@@ -180,6 +189,55 @@ class DeribitCandleCsvProvider:
                 yield self._stream(path, start, end)
 
 
+class KrakenSpotCandleCsvProvider:
+    """Read one-minute Kraken top-of-book midpoint candles."""
+
+    name = "kraken_spot_candles_1m"
+
+    def __init__(self, directory: Path):
+        self.directory = Path(directory)
+
+    def _stream(self, path, start, end, symbols):
+        with _open_csv_text(path) as stream:
+            for row in csv.DictReader(stream):
+                try:
+                    timestamp = _utc_timestamp(row["timestamp"])
+                    if start is not None and timestamp < start:
+                        continue
+                    if end is not None and timestamp >= end:
+                        break
+                    symbol = _canonical_intraday_symbol(
+                        row.get("symbol") or "BTC-USD")
+                    if symbols is not None and symbol not in symbols:
+                        continue
+                    close = float(row["close"])
+                    quote_count = int(row.get("quote_count") or 0)
+                    if close <= 0:
+                        continue
+                except (KeyError, TypeError, ValueError, OverflowError):
+                    continue
+                yield MarketObservation(
+                    timestamp=timestamp,
+                    # The midpoint close is known only after the labeled
+                    # minute has completed.
+                    available_at=timestamp + timedelta(minutes=1),
+                    symbol=symbol,
+                    reference_price=close,
+                    source="kraken",
+                    source_kind="candle_1m",
+                    observed=quote_count > 0,
+                )
+
+    def streams(self, start=None, end=None, symbols=None):
+        paths = sorted({
+            path
+            for pattern in ("*.csv", "*.csv.gz")
+            for path in self.directory.glob(pattern)
+        })
+        for path in paths:
+            yield self._stream(path, start, end, symbols)
+
+
 class TardisQuoteCsvProvider:
     """Read timestamp-sorted Tardis normalized quote CSVs."""
 
@@ -197,7 +255,7 @@ class TardisQuoteCsvProvider:
                         continue
                     if end is not None and timestamp >= end:
                         break
-                    symbol = row["symbol"].upper()
+                    symbol = _canonical_intraday_symbol(row["symbol"])
                     if symbols is not None and symbol not in symbols:
                         continue
                     bid = float(row["bid_price"])
@@ -290,15 +348,33 @@ class IntradayMarketData:
 
 
 def load_intraday_market(
-    root: Path, asset: str = "btc", provider: str | None = None
+    root: Path,
+    asset: str = "btc",
+    provider: str | None = None,
+    role: str | None = None,
 ) -> IntradayMarketData:
-    """Load the configured provider without changing strategy callers."""
+    """Load an explicitly selected or role-configured intraday provider.
+
+    ``active_provider`` remains supported for callers created before spot and
+    futures became independently configurable. New strategy code selects the
+    ``spot`` and ``futures`` roles, so either side can change adapters without
+    changing the strategy engine.
+    """
 
     directory = data_directory(Path(root)) / asset / "intraday"
     config = json.loads(
         (directory / "config.json").read_text(encoding="utf-8"))
-    selected = provider or os.getenv(
-        "KEEP_AND_LEASE_INTRADAY_PROVIDER", config["active_provider"])
+    if provider is not None:
+        selected = provider
+    elif role is not None:
+        configured = config.get("active_providers", {}).get(role)
+        if configured is None:
+            raise ValueError(f"Unknown intraday provider role: {role}")
+        selected = os.getenv(
+            f"KEEP_AND_LEASE_INTRADAY_{role.upper()}_PROVIDER", configured)
+    else:
+        selected = os.getenv(
+            "KEEP_AND_LEASE_INTRADAY_PROVIDER", config["active_provider"])
     try:
         specification = config["providers"][selected]
     except KeyError as exc:
@@ -307,6 +383,8 @@ def load_intraday_market(
     format_name = specification["format"]
     if format_name == "deribit_candles":
         adapter = DeribitCandleCsvProvider(source)
+    elif format_name == "kraken_spot_candles":
+        adapter = KrakenSpotCandleCsvProvider(source)
     elif format_name == "tardis_quotes":
         adapter = TardisQuoteCsvProvider(source)
     else:

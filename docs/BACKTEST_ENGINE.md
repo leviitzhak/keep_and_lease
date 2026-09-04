@@ -11,9 +11,12 @@ instrument's actual trading calendar rather than a fixed timedelta.
 For a BTC-only commodity portfolio, `execution_interval_seconds=0` selects every
 common spot/futures mark. A positive value selects the next available mark at
 that cadence and must be a whole multiple of the finest detected common-market
-resolution. Requests finer than the data are rejected. The current packaged BTC
-history is daily, so its finest interval is 86,400 seconds; timestamped files
-activate the same mechanism at their detected intraday resolution.
+resolution. Requests finer than the data are rejected. The active BTC path uses
+Kraken one-minute midpoint candles and Deribit one-minute dated-futures candles,
+so its finest interval is 60 seconds. The packaged Kraken history consists of
+three free sample days rather than a continuous institutional research set.
+The default packaged run uses the latest complete sample session and never
+bridges the unavailable time between monthly samples.
 
 Treasury accrual is piecewise causal. The latest observable yield is applied
 until a later yield mark becomes available, at which point the remaining

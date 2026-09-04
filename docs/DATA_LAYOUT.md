@@ -7,13 +7,15 @@ The canonical target layout is `public/data/<asset>/`, with simple CSV files:
 - `treasuries/yields/*.csv` and optional `treasuries/fund.csv`
 - `sp500/spot.csv`, `sp500/fund.csv`, and `sp500/futures/*.csv`
 - `btc/spot.csv`, `btc/futures/*.csv`, and `btc/coverage.json`
+- `btc/intraday/kraken_1m/spot.csv.gz` and
+  `btc/intraday/deribit_1m/futures/*.csv.gz`
 
 The checked-in materialized data currently occupies about 15 MiB. A complete
 daily research set for the four assets should normally remain below roughly
 100–250 MiB as plain CSV, depending mainly on the number of individual futures
 contracts and whether ETF OHLCV, distributions, and both price and total-return
-indices are retained. Compression can be used for transfer, but not as the
-canonical on-disk schema.
+indices are retained. Daily data remains plain CSV. High-frequency artifacts
+use deterministic gzip CSVs as their canonical checked-in representation.
 
 Server images compile these CSVs at image-build time into the immutable local
 `data/market.sqlite3` cache. The strategy reads that cache once per process and
@@ -36,7 +38,10 @@ Available today:
 - Treasuries: six daily yield tenors and SHY.
 - S&P 500: 83 individual futures, the cash index, and SPY.
 - BTC: 493 Deribit dated contracts were enumerated on 2 September 2026; 462
-  contain archived daily candles. Yahoo BTC-USD supplies a spot composite.
+  contain archived daily candles. Yahoo BTC-USD supplies the legacy daily spot
+  composite. The intraday path contains 93 Deribit futures over the bounded
+  2026-06-06 through 2026-09-04 window plus 4,320 Kraken one-minute midpoint
+  bars on the free sample days 2026-07-01, 2026-08-01, and 2026-09-01.
   The audited overlap is continuous from 6 January 2017, while at least two
   simultaneously observed contracts are available from 9 February 2017.
   `btc/coverage.json` records exact coverage and contract metadata and can be
