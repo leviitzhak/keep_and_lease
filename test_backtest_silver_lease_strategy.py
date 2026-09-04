@@ -1,10 +1,10 @@
 import math
 import unittest
-from datetime import date
+from datetime import date, datetime, timedelta
 
 from backtest_silver_lease_strategy import (
-    Parameters, multiplicative_log_contributions, positions_for_day,
-    run_backtest, usd_rate)
+    Parameters, accrued_yield_return, asof_rate, execution_timeline,
+    multiplicative_log_contributions, positions_for_day, run_backtest, usd_rate)
 from silver_strategy_gui import futures_diagnostics
 
 
@@ -139,7 +139,7 @@ class StandaloneLegReturnTests(unittest.TestCase):
         self.assertEqual({"near": 1.0}, position["long_leg"])
         self.assertAlmostEqual(1.0, sum(position["short_leg"].values()))
 
-    def test_diagnostic_leg_returns_are_independent_of_portfolio_weights(self):
+    def test_disabled_leg_returns_are_absent_from_held_position_series(self):
         rows, _ = run_backtest(
             self.spot, self.contracts, self.rates, self.by_day,
             Parameters(min_days=1, enable_slv_leg=False,
@@ -149,8 +149,10 @@ class StandaloneLegReturnTests(unittest.TestCase):
         self.assertTrue(all(row["long_futures_notional_pct"] == 0 for row in rows))
         self.assertTrue(all(row["short_futures_notional_pct"] == 0 for row in rows))
         self.assertAlmostEqual(10.0, rows[0]["slv_daily_return_pct"])
-        self.assertAlmostEqual(2.0, rows[0]["long_futures_daily_return_pct"])
-        self.assertIsNotNone(rows[0]["short_futures_daily_return_pct"])
+        self.assertIsNone(rows[0]["long_futures_daily_return_pct"])
+        self.assertIsNone(rows[0]["short_futures_daily_return_pct"])
+        # Market lease/premium diagnostics remain available even though the
+        # disabled futures legs contribute no held-position return series.
         self.assertEqual(0.0, rows[0]["long_weighted_lease_rate_pct"])
         self.assertEqual(0.0, rows[0]["short_weighted_lease_rate_pct"])
         self.assertEqual(0.0, rows[0]["long_weighted_forward_premium_pct"])
@@ -438,10 +440,95 @@ class StandaloneLegReturnTests(unittest.TestCase):
         ))
         self.assertAlmostEqual(rows[0]["interval_return_pct"], components)
 
-    def test_usd_rate_interpolates_missing_observation_dates(self):
+    def test_usd_rate_carries_latest_mark_without_future_interpolation(self):
         series = {tenor: [(date(2020, 1, 1), 0.01), (date(2020, 1, 11), 0.03)]
                   for tenor in (91, 182, 365, 730, 1095, 1825)}
-        self.assertAlmostEqual(0.02, usd_rate(series, date(2020, 1, 6), 365))
+        self.assertAlmostEqual(0.01, usd_rate(series, date(2020, 1, 6), 365))
+        self.assertIsNone(asof_rate(series, 365, date(2019, 12, 31)))
+
+    def test_intraday_treasury_accrual_switches_at_observable_mark(self):
+        start = datetime(2026, 1, 5, 9)
+        update = datetime(2026, 1, 5, 12)
+        end = datetime(2026, 1, 5, 18)
+        rates = {tenor: [(datetime(2026, 1, 5, 8), 0.0365),
+                         (update, 0.073)]
+                 for tenor, _ in ((91, "DTB3"), (182, "DTB6"),
+                                  (365, "DGS1"), (730, "DGS2"),
+                                  (1095, "DGS3"), (1825, "DGS5"))}
+        expected = ((1 + 0.0365 * 3 / 24 / 365) *
+                    (1 + 0.073 * 6 / 24 / 365) - 1)
+        self.assertAlmostEqual(
+            expected, accrued_yield_return(rates, start, end, 365), places=15)
+        before_update = datetime(2026, 1, 5, 11, 59)
+        baseline = accrued_yield_return(rates, start, before_update, 365)
+        changed = {tenor: [(day, 9.99 if day == update else rate)
+                           for day, rate in observations]
+                   for tenor, observations in rates.items()}
+        self.assertEqual(
+            baseline,
+            accrued_yield_return(changed, start, before_update, 365),
+        )
+
+    def test_date_only_treasury_close_is_delayed_on_intraday_timeline(self):
+        series = {tenor: [(date(2026, 1, 4), 0.02),
+                          (date(2026, 1, 5), 0.09)]
+                  for tenor in (91, 182, 365, 730, 1095, 1825)}
+        self.assertEqual(
+            0.02, asof_rate(series, 365, datetime(2026, 1, 5, 23, 59)))
+        self.assertEqual(
+            0.09, asof_rate(series, 365, datetime(2026, 1, 6, 0, 0)))
+
+    def test_multiday_treasury_accrual_uses_each_new_daily_mark(self):
+        rates = {tenor: [(date(2026, 1, 5), 0.0365),
+                         (date(2026, 1, 6), 0.073)]
+                 for tenor in (91, 182, 365, 730, 1095, 1825)}
+        expected = ((1 + 0.0365 / 365) * (1 + 0.073 / 365) - 1)
+        self.assertAlmostEqual(
+            expected,
+            accrued_yield_return(
+                rates, date(2026, 1, 5), date(2026, 1, 7), 365),
+            places=15,
+        )
+
+    def test_intraday_execution_interval_uses_whole_source_periods(self):
+        start = datetime(2026, 1, 5)
+        observations = [start + timedelta(hours=hour) for hour in range(7)]
+        self.assertEqual(
+            observations[::2], execution_timeline(observations, 2 * 3600))
+        with self.assertRaisesRegex(ValueError, "whole multiple"):
+            execution_timeline(observations, 90 * 60)
+        with self.assertRaisesRegex(ValueError, "finer"):
+            execution_timeline(observations, 30 * 60)
+        subsecond = [start + timedelta(milliseconds=500 * index)
+                     for index in range(5)]
+        self.assertEqual(
+            subsecond[::2], execution_timeline(subsecond, 1.0))
+
+    def test_intraday_backtest_rebalances_on_requested_timeline(self):
+        start = datetime(2026, 1, 5)
+        observations = [start + timedelta(hours=hour) for hour in range(7)]
+        spot = {moment: 100 + index for index, moment in enumerate(observations)}
+        contracts = {"near": {
+            moment: 100 + index for index, moment in enumerate(observations)}}
+        rates = {tenor: [(start - timedelta(hours=1), 0.03)]
+                 for tenor in (91, 182, 365, 730, 1095, 1825)}
+        candidate = {"symbol": "near", "days": 30, "future": 100,
+                     "spot": 100, "rate": 0.03, "premium": 0,
+                     "lease": 0.03, "volume": 10}
+        by_day = {moment: [dict(candidate)] for moment in observations}
+        rows, _ = run_backtest(
+            spot, contracts, rates, by_day,
+            Parameters(min_days=1, trading_calendar="all_days",
+                       execution_interval_seconds=2 * 3600,
+                       slv_expense=0, enable_short_book=False))
+        self.assertEqual(
+            [moment.isoformat() for moment in observations[::2][:-1]],
+            [row["execution_date"] for row in rows],
+        )
+        self.assertEqual(
+            [moment.isoformat() for moment in observations[::2][1:]],
+            [row["exit_date"] for row in rows],
+        )
 
 
 if __name__ == "__main__":

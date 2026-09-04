@@ -59,6 +59,26 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
         self.assertIn("direct_unrebalanced_compounded_return_pct",
                       result["portfolio_fields"])
 
+    def test_custom_execution_interval_requires_btc_as_only_commodity(self):
+        with self.assertRaisesRegex(ValueError, "sole commodity"):
+            gui.result({
+                "weight_silver": 50,
+                "weight_btc": 50,
+                "execution_interval_seconds": 86400,
+            })
+
+    def test_execution_interval_parameter_preserves_fractional_seconds(self):
+        self.assertEqual(
+            gui.parameters({"execution_interval_seconds": 172800})
+            .execution_interval_seconds,
+            172800,
+        )
+        self.assertEqual(
+            gui.parameters({"execution_interval_seconds": 0.5})
+            .execution_interval_seconds,
+            0.5,
+        )
+
     def test_missing_optional_legacy_spot_member_does_not_abort_markets(self):
         previous_errors = dict(gui.MARKET_LOAD_ERRORS)
         try:

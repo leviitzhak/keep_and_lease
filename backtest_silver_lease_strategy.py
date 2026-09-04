@@ -14,11 +14,10 @@ import json
 import math
 import re
 import zipfile
-from bisect import bisect_right
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from dataclasses import replace
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 
 from maturity_scoring import (
@@ -34,6 +33,7 @@ from market_data_store import (
 MONTHS = dict(zip("FGHJKMNQUVXZ", range(1, 13)))
 TENORS = [(91, "DTB3"), (182, "DTB6"), (365, "DGS1"),
           (730, "DGS2"), (1095, "DGS3"), (1825, "DGS5")]
+SECONDS_PER_DAY = 24 * 60 * 60
 
 
 @dataclass
@@ -94,6 +94,7 @@ class Parameters:
     inverse_payoff_conversion_fee: float = 0.0
     inverse_min_conversion_btc: float = 0.0
     trading_calendar: str = "business_days"
+    execution_interval_seconds: float = 0.0
 
 
 @dataclass
@@ -154,13 +155,88 @@ def smooth_allocation(target, previous, half_life_days, elapsed_days):
 
 
 def parse_date(value):
+    """Parse a daily date or an ISO timestamp without discarding resolution."""
     value = value.strip().strip('"')
+    if "T" in value or " " in value:
+        try:
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            if parsed.tzinfo is not None:
+                parsed = parsed.astimezone(timezone.utc).replace(tzinfo=None)
+            return parsed
+        except ValueError:
+            pass
     for fmt in ("%m/%d/%Y", "%Y-%m-%d", "%y%m%d"):
         try:
             return datetime.strptime(value, fmt).date()
         except ValueError:
             pass
     raise ValueError(value)
+
+
+def observation_seconds(value):
+    """Monotonic scalar for both date-only and intraday observations."""
+    if isinstance(value, datetime):
+        if value.tzinfo is not None:
+            value = value.astimezone(timezone.utc).replace(tzinfo=None)
+        return ((value.toordinal() * SECONDS_PER_DAY) +
+                value.hour * 3600 + value.minute * 60 + value.second +
+                value.microsecond / 1_000_000)
+    return value.toordinal() * SECONDS_PER_DAY
+
+
+def elapsed_days(start, end):
+    return (observation_seconds(end) - observation_seconds(start)) / SECONDS_PER_DAY
+
+
+def days_to_expiry(expiry, observation):
+    """Fractional calendar days to a date-only contract expiry."""
+    if isinstance(observation, datetime):
+        expiry_observation = datetime.combine(expiry, time.min)
+    else:
+        expiry_observation = expiry
+    return elapsed_days(observation, expiry_observation)
+
+
+def market_resolution_seconds(observations):
+    """Infer the finest positive spacing present in a market timeline."""
+    values = sorted({observation_seconds(item) for item in observations})
+    deltas = [right - left for left, right in zip(values, values[1:])
+              if right > left]
+    return min(deltas) if deltas else None
+
+
+def execution_timeline(observations, interval_seconds=0):
+    """Select the next available quote at each requested execution interval.
+
+    A zero interval means every available observation.  A custom interval must
+    be a whole multiple of the detected source resolution. Missing scheduled
+    marks move execution to the next available quote and restart the clock
+    there, matching the existing next-available-observation convention.
+    """
+    timeline = sorted(observations, key=observation_seconds)
+    if not timeline or not interval_seconds:
+        return timeline
+    resolution = market_resolution_seconds(timeline)
+    if resolution is None:
+        raise ValueError("Cannot infer market-data resolution from one observation")
+    if interval_seconds + 1e-9 < resolution:
+        raise ValueError(
+            "Execution interval is finer than the available market-data "
+            f"resolution ({resolution:g} seconds)")
+    multiple = interval_seconds / resolution
+    if abs(multiple - round(multiple)) > 1e-9:
+        raise ValueError(
+            "Execution interval must be a whole multiple of the available "
+            f"market-data resolution ({resolution:g} seconds)")
+    selected = [timeline[0]]
+    next_execution = observation_seconds(timeline[0]) + interval_seconds
+    for observation in timeline[1:]:
+        current = observation_seconds(observation)
+        if current + 1e-9 < next_execution:
+            continue
+        selected.append(observation)
+        next_execution = current + interval_seconds
+    return selected
 
 
 def expiry_from_symbol(symbol):
@@ -245,7 +321,7 @@ def build_proxy_market(root, archive_name, symbol_prefix):
         if not expiry:
             continue
         for day, value in prices.items():
-            days = (expiry - day).days
+            days = days_to_expiry(expiry, day)
             if days > 0:
                 quotes[day].append((days, -volumes.get((symbol, day), 0.0),
                                     symbol, value))
@@ -257,7 +333,7 @@ def build_proxy_market(root, archive_name, symbol_prefix):
         if not expiry:
             continue
         for day, future in prices.items():
-            days = (expiry - day).days
+            days = days_to_expiry(expiry, day)
             physical = spot.get(day)
             rate = usd_rate(rates, day, days) if days > 0 else None
             if days <= 0 or not physical or rate is None:
@@ -282,7 +358,7 @@ def build_spot_market(root, archive_name, symbol_prefix, spot):
         if not expiry:
             continue
         for day, future in prices.items():
-            days = (expiry - day).days
+            days = days_to_expiry(expiry, day)
             physical = spot.get(day)
             rate = usd_rate(rates, day, days) if days > 0 else None
             if days <= 0 or not physical or rate is None:
@@ -313,7 +389,7 @@ def read_zip_spot(root, member):
             try:
                 value = float(row["price"])
                 if value > 0:
-                    result[date.fromisoformat(row["date"])] = value
+                    result[parse_date(row["date"])] = value
             except (ValueError, TypeError, KeyError):
                 pass
     return result
@@ -326,7 +402,7 @@ def read_csv_spot(root, filename, value_column):
             try:
                 value = float(row[value_column])
                 if value > 0:
-                    result[date.fromisoformat(row["observation_date"])] = value
+                    result[parse_date(row["observation_date"])] = value
             except (ValueError, TypeError, KeyError):
                 pass
     return result
@@ -391,7 +467,7 @@ def read_rates(root):
         with open(root / f"{name}.csv", encoding="utf-8-sig") as stream:
             for row in csv.DictReader(stream):
                 try:
-                    observations.append((date.fromisoformat(row["observation_date"]),
+                    observations.append((parse_date(row["observation_date"]),
                                          float(row[name]) / 100))
                 except (ValueError, TypeError, KeyError):
                     pass
@@ -400,23 +476,35 @@ def read_rates(root):
     return series
 
 
+def _rate_available_at(observation, query):
+    """Return when a Treasury mark may first be used by the backtest.
+
+    Date-only Treasury rows are closing marks. They remain usable on the same
+    date for date-only (daily-close) calculations. On an intraday timeline the
+    file does not identify an exact publication time, so the conservative
+    convention makes a dated mark available at 00:00 UTC on the next day.
+    Timestamped Treasury rows become available at their exact timestamps.
+    """
+    if isinstance(query, datetime) and not isinstance(observation, datetime):
+        return datetime.combine(observation + timedelta(days=1), time.min)
+    return observation
+
+
 def asof_rate(series, tenor, day):
+    """Latest Treasury observation available at ``day``; never look ahead."""
     observations = series[tenor]
     if not observations:
         return None
-    index = bisect_right(observations, (day, float("inf"))) - 1
-    if index >= 0 and observations[index][0] == day:
-        return observations[index][1]
-    right_index = index + 1
-    if index < 0:
-        return observations[0][1]
-    if right_index >= len(observations):
-        return observations[-1][1]
-    left_day, left_rate = observations[index]
-    right_day, right_rate = observations[right_index]
-    alpha = ((day - left_day).days /
-             (right_day - left_day).days)
-    return left_rate + alpha * (right_rate - left_rate)
+    target = observation_seconds(day)
+    low, high = 0, len(observations)
+    while low < high:
+        middle = (low + high) // 2
+        available = _rate_available_at(observations[middle][0], day)
+        if observation_seconds(available) <= target:
+            low = middle + 1
+        else:
+            high = middle
+    return observations[low - 1][1] if low else None
 
 
 def usd_rate(series, day, days):
@@ -498,7 +586,7 @@ def build_market(root):
         if not expiry:
             continue
         for day, future in prices.items():
-            days = (expiry - day).days
+            days = days_to_expiry(expiry, day)
             physical = spot.get(day)
             rate = usd_rate(rates, day, days) if days > 0 else None
             if days <= 0 or not physical or rate is None:
@@ -870,14 +958,60 @@ def positions_for_day(candidates, p, previous=None, elapsed_days=1.0):
             "bond_days": bond_days, "contracts": contract_map}
 
 
+def _rate_change_boundaries(rates, start, end, tenors=None):
+    """Observable rate-update times strictly inside a holding interval."""
+    selected_tenors = tenors or tuple(tenor for tenor, _ in TENORS)
+    start_value = observation_seconds(start)
+    end_value = observation_seconds(end)
+    boundaries = {}
+    for tenor in selected_tenors:
+        observations = rates.get(tenor, [])
+        low, high = 0, len(observations)
+        while low < high:
+            middle = (low + high) // 2
+            available = _rate_available_at(observations[middle][0], start)
+            if observation_seconds(available) <= start_value:
+                low = middle + 1
+            else:
+                high = middle
+        for index in range(low, len(observations)):
+            observation = observations[index][0]
+            available = _rate_available_at(observation, start)
+            value = observation_seconds(available)
+            if value >= end_value:
+                break
+            boundaries[value] = available
+    return [boundaries[value] for value in sorted(boundaries)]
+
+
+def accrued_yield_return(rates, start, end, days, tenors=None):
+    """Accrue causally, changing yield only when a new mark is observable."""
+    boundaries = _rate_change_boundaries(rates, start, end, tenors)
+    points = [start, *boundaries, end]
+    factor = 1.0
+    for left, right in zip(points, points[1:]):
+        segment_days = elapsed_days(left, right)
+        if segment_days <= 0:
+            continue
+        remaining = max(1 / SECONDS_PER_DAY,
+                        days - elapsed_days(start, left))
+        if tenors and len(tenors) == 1:
+            rate = asof_rate(rates, tenors[0], left)
+        else:
+            rate = usd_rate(rates, left, remaining)
+        if rate is not None:
+            factor *= 1 + rate * segment_days / 365
+    return factor - 1
+
+
 def bond_return(rates, day, next_day, days, mode):
-    elapsed = (next_day - day).days
+    elapsed = elapsed_days(day, next_day)
+    if mode == "accrual":
+        return accrued_yield_return(rates, day, next_day, days)
     current_yield = usd_rate(rates, day, days)
     if current_yield is None:
         return 0.0
-    if mode == "accrual":
-        return current_yield * elapsed / 365
-    remaining = max(1.0, days - elapsed)
+    remaining = max(1 / SECONDS_PER_DAY, days - elapsed)
     next_yield = usd_rate(rates, next_day, remaining)
     if next_yield is None:
         return current_yield * elapsed / 365
@@ -888,9 +1022,8 @@ def bond_return(rates, day, next_day, days, mode):
 
 def treasury_position_return(rates, day, next_day, days, p):
     if p.treasury_asset == "sgov_proxy":
-        rate = asof_rate(rates, 91, day)
-        elapsed = (next_day - day).days
-        return 0.0 if rate is None else rate * elapsed / 365
+        return accrued_yield_return(
+            rates, day, next_day, TENORS[0][0], (TENORS[0][0],))
     if p.treasury_allocation_mode == "rate_weighted_maturities":
         available = [
             (tenor, asof_rate(rates, tenor, day))
@@ -1060,8 +1193,11 @@ def run_backtest(spot, contracts, rates, by_day, p):
     # each interval automatically runs to the next available business day.
     if p.trading_calendar not in ("business_days", "all_days"):
         raise ValueError("invalid trading calendar")
-    days = sorted(day for day in by_day if day in spot and
-                  (p.trading_calendar == "all_days" or day.weekday() < 5))
+    available_days = sorted(day for day in by_day if day in spot and
+                            (p.trading_calendar == "all_days" or
+                             day.weekday() < 5))
+    days = execution_timeline(
+        available_days, p.execution_interval_seconds)
     output = []
     simple = 0.0
     long_simple = 0.0
@@ -1105,7 +1241,7 @@ def run_backtest(spot, contracts, rates, by_day, p):
     # next-day mode executes it at the following available close.  In either
     # case, the resulting position earns the execution-to-exit return.
     for interval_index, (signal_day, execution_day, exit_day) in enumerate(intervals):
-        signal_elapsed = ((signal_day - previous_signal_day).days
+        signal_elapsed = (elapsed_days(previous_signal_day, signal_day)
                           if previous_signal_day else 0.0)
         position = positions_for_day(
             by_day[signal_day], p, previous_position, signal_elapsed)
@@ -1116,9 +1252,10 @@ def run_backtest(spot, contracts, rates, by_day, p):
         previous_signal_day = signal_day
         if execution_day not in spot or exit_day not in spot:
             continue
-        execution_lag = (execution_day - signal_day).days
-        holding_days = max(1.0, position["bond_days"] - execution_lag)
-        elapsed = (exit_day - execution_day).days
+        execution_lag = elapsed_days(signal_day, execution_day)
+        holding_days = max(
+            1 / SECONDS_PER_DAY, position["bond_days"] - execution_lag)
+        elapsed = elapsed_days(execution_day, exit_day)
         treasury_return = treasury_position_return(rates, execution_day, exit_day, holding_days, p)
         sgov_proxy_return = treasury_position_return(
             rates, execution_day, exit_day, holding_days,
