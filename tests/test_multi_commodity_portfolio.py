@@ -59,6 +59,39 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
         self.assertIn("direct_unrebalanced_compounded_return_pct",
                       result["portfolio_fields"])
 
+    def test_btc_only_inverse_portfolio_reconstructs_nav(self):
+        payload = {
+            "weight_silver": 0,
+            "weight_gold": 0,
+            "weight_sp500": 0,
+            "weight_btc": 100,
+            "weight_treasury": 0,
+            "portfolio_rebalancing": "daily",
+        }
+        result = gui.result(payload)
+
+        self.assertEqual(result["portfolio"]["weights"], {"btc": 1.0})
+        self.assertGreater(result["summary"]["observations"], 0)
+        self.assertTrue(
+            result["commodity_sleeves"]["btc"]["summary"]
+            ["nav_reconstruction_verified"])
+        self.assertLessEqual(
+            result["commodity_sleeves"]["btc"]["summary"]
+            ["max_nav_reconstruction_relative_difference"],
+            1e-10,
+        )
+
+        payload["commodity_parameters"] = json.dumps({
+            "btc": {
+                "inverse_min_conversion_btc": 1,
+                "inverse_payoff_conversion_fee": 0.2,
+            }
+        })
+        delayed = gui.result(payload)
+        self.assertTrue(
+            delayed["commodity_sleeves"]["btc"]["summary"]
+            ["nav_reconstruction_verified"])
+
     def test_missing_optional_legacy_spot_member_does_not_abort_markets(self):
         previous_errors = dict(gui.MARKET_LOAD_ERRORS)
         try:

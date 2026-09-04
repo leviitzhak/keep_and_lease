@@ -1094,6 +1094,11 @@ def run_backtest(spot, contracts, rates, by_day, p):
     previous_valid_position = None
     previous_position = None
     inverse_account = InversePayoffAccount()
+    inverse_pending_btc_by_book = {
+        "base_long": 0.0,
+        "extension_long": 0.0,
+        "short": 0.0,
+    }
     if p.reactivity == "same_day":
         intervals = list(zip(days, days, days[1:]))
     elif p.reactivity == "next_day":
@@ -1137,12 +1142,24 @@ def run_backtest(spot, contracts, rates, by_day, p):
         short_total = sum(position["shorts"].values())
         long_total = sum(position["longs"].values())
         interval_inverse_btc = 0.0
+        interval_inverse_btc_by_book = {
+            "base_long": 0.0,
+            "extension_long": 0.0,
+            "short": 0.0,
+        }
         for symbol, weight in position["longs"].items():
             value, found = futures_interval_return(symbol, execution_day, exit_day, contracts)
             if p.futures_contract_type == "inverse" and found:
-                interval_inverse_btc += nav * weight * (
+                inverse_price_change = (
                     1 / contracts[symbol][execution_day] -
                     1 / contracts[symbol][exit_day])
+                base_weight = position["base_longs"].get(symbol, 0.0)
+                extension_weight = weight - base_weight
+                base_btc = nav * base_weight * inverse_price_change
+                extension_btc = nav * extension_weight * inverse_price_change
+                interval_inverse_btc_by_book["base_long"] += base_btc
+                interval_inverse_btc_by_book["extension_long"] += extension_btc
+                interval_inverse_btc += base_btc + extension_btc
                 contribution = 0.0
             else:
                 contribution = weight * value
@@ -1165,9 +1182,11 @@ def run_backtest(spot, contracts, rates, by_day, p):
         for symbol, weight in position["shorts"].items():
             value, found = futures_interval_return(symbol, execution_day, exit_day, contracts)
             if p.futures_contract_type == "inverse" and found:
-                interval_inverse_btc -= nav * weight * (
+                short_btc = -nav * weight * (
                     1 / contracts[symbol][execution_day] -
                     1 / contracts[symbol][exit_day])
+                interval_inverse_btc_by_book["short"] += short_btc
+                interval_inverse_btc += short_btc
                 contribution = 0.0
             else:
                 contribution = -weight * value
@@ -1188,27 +1207,54 @@ def run_backtest(spot, contracts, rates, by_day, p):
 
         inverse_settlement = None
         if p.futures_contract_type == "inverse":
+            for book, btc_payoff in interval_inverse_btc_by_book.items():
+                inverse_pending_btc_by_book[book] += btc_payoff
             inverse_settlement = inverse_account.settle_btc(
                 interval_inverse_btc, spot[exit_day],
                 p.inverse_payoff_conversion_fee,
                 p.inverse_min_conversion_btc,
                 interval_index == len(intervals) - 1)
-            recognized = inverse_settlement["recognized_usd_payoff"] / nav
-            long_futures_contribution += recognized
-            portfolio_return += recognized
-            base_share = (sum(position["base_longs"].values()) / long_total
-                          if long_total else 0.0)
-            base_long_futures_contribution += recognized * base_share
-            base_long_return += recognized * base_share
-            if position["longs"]:
-                for symbol, weight in position["longs"].items():
-                    long_futures_contributions[symbol] = (
-                        recognized * weight / long_total)
-                base_total = sum(position["base_longs"].values())
-                if base_total:
-                    for symbol, weight in position["base_longs"].items():
-                        base_long_futures_contributions[symbol] = (
-                            recognized * base_share * weight / base_total)
+            recognized_by_book = {book: 0.0 for book in inverse_pending_btc_by_book}
+            if inverse_settlement["conversion_triggered"]:
+                absolute_pending = sum(
+                    abs(value) for value in inverse_pending_btc_by_book.values())
+                for book, pending_btc in inverse_pending_btc_by_book.items():
+                    fee_share = (
+                        inverse_settlement["conversion_fee_usd"]
+                        * abs(pending_btc) / absolute_pending
+                        if absolute_pending else 0.0)
+                    recognized_by_book[book] = (
+                        pending_btc * spot[exit_day] - fee_share) / nav
+                    inverse_pending_btc_by_book[book] = 0.0
+
+            base_recognized = recognized_by_book["base_long"]
+            extension_recognized = recognized_by_book["extension_long"]
+            short_recognized = recognized_by_book["short"]
+            long_futures_contribution += base_recognized + extension_recognized
+            short_futures_return += short_recognized
+            base_long_futures_contribution += base_recognized
+            base_long_return += base_recognized
+            portfolio_return += (
+                base_recognized + extension_recognized + short_recognized)
+
+            base_total = sum(position["base_longs"].values())
+            extension_total = long_total - base_total
+            for symbol, weight in position["longs"].items():
+                base_weight = position["base_longs"].get(symbol, 0.0)
+                extension_weight = weight - base_weight
+                base_contribution = (
+                    base_recognized * base_weight / base_total
+                    if base_total else 0.0)
+                extension_contribution = (
+                    extension_recognized * extension_weight / extension_total
+                    if extension_total else 0.0)
+                base_long_futures_contributions[symbol] = base_contribution
+                long_futures_contributions[symbol] = (
+                    base_contribution + extension_contribution)
+            if short_total:
+                for symbol, weight in position["shorts"].items():
+                    short_futures_contributions[symbol] = (
+                        short_recognized * weight / short_total)
 
         # Exact daily return attribution. Futures price returns are separated
         # into the contemporaneous silver move and basis-related effects. The
@@ -1280,7 +1326,19 @@ def run_backtest(spot, contracts, rates, by_day, p):
                       treasury_component + lease_carry_component +
                       lease_repricing_component + roll_component)
         attribution_residual = portfolio_return - attributed
-        matched_long_extension_return = position["extension_ratio"] * base_long_return
+        # The extension normally scales the base long book exactly.  For an
+        # inverse contract whose BTC settlements accumulate before conversion,
+        # however, the recognized extension payoff reflects the historical
+        # pending balance rather than only today's extension ratio.  Use its
+        # actual futures contribution and scale only the contemporaneous
+        # non-futures part of the base book.
+        extension_long_futures_contribution = (
+            long_futures_contribution - base_long_futures_contribution)
+        base_nonfuture_return = (
+            base_long_return - base_long_futures_contribution)
+        matched_long_extension_return = (
+            position["extension_ratio"] * base_nonfuture_return
+            + extension_long_futures_contribution)
         short_book_return = matched_long_extension_return + short_futures_return
         fund_lease_contribution = position["base_slv"] * spot_return
         futures_treasury_lease_contribution = (
@@ -1339,6 +1397,14 @@ def run_backtest(spot, contracts, rates, by_day, p):
                 ("long_futures", position["longs"], 1.0),
                 ("short_futures", position["shorts"], -1.0)):
             selected_total = sum(selected.values())
+            if p.futures_contract_type == "inverse":
+                recognized_contribution = (
+                    long_futures_contribution
+                    if key == "long_futures" else short_futures_return)
+                asset_returns[key] = (
+                    recognized_contribution / selected_total
+                    if selected_total else None)
+                continue
             selected_return = 0.0
             selected_valid = bool(selected_total)
             for symbol, weight in selected.items():
