@@ -98,7 +98,7 @@ and two legacy gold/oil portfolio tests because oil is outside the enabled marke
 set. This does not establish coverage for disabled commodities or the skipped
 1969 golden workbook. Focused follow-up checks cover later audit/API/UI changes.
 The normal build and artifact validation also completed. A focused follow-up of
-59 execution, audit, API and cloud-workflow tests passed after the full discovery. All 25 HTML checks and six workbook tests pass, including numeric form validity,
+59 execution, audit, API and cloud-workflow tests passed after the full discovery. All 26 HTML checks and six workbook tests pass, including numeric form validity,
 full-minute chart bounds, streaming workbook equivalence,
 minute timestamp preservation, and cost reconciliation.
 
@@ -218,3 +218,14 @@ restoration is discarded if parameters were edited. A deferred-response test
 checks this ordering and confirms an untouched session still restores normally.
 The smoke fixture also resets its fresh browser context to form defaults before
 selecting weights, so a previous BTC preset cannot contaminate the daily test.
+
+
+### BTC preset profile preservation
+
+A saved BTC-only JSON can contain a BTC commodity profile without a silver
+profile. The parameter loader now supplies defaults only for missing profiles;
+it preserves every provided BTC setting. A regression loads the saved 1 bp
+fee sensitivity and verifies that both the fee and observed execution mode
+survive import. Previously, the legacy fallback replaced the BTC profile with
+top-level defaults when no silver profile was present. CLI financial results
+were unaffected because the harness reads the saved BTC profile directly.

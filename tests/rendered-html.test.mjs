@@ -3,6 +3,22 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import vm from "node:vm";
 
+test("BTC-only preset import preserves its execution and cost profile", async () => {
+  const html=await readFile(new URL("../public/silver_strategy_gui.html",import.meta.url),"utf8");
+  const source=html.split('\n').find(line=>line.startsWith('function applyParameters('));
+  const preset=JSON.parse(await readFile(new URL("../strategies/research-btc-long-gradual-1m-fee-1bp.json",import.meta.url),"utf8"));
+  const fields=new Map(Object.keys(preset.parameters).map(name=>[name,{value:''}]));
+  const context={commodityProfiles:{},COMMODITIES:['silver','gold','sp500','btc'],
+    LEG_FIELDS:['slv_expense','futures_contract_type','execution_model','trading_fee_bps'],
+    form:{elements:{namedItem:name=>fields.get(name)}},loadCommodity:()=>{}};
+  vm.runInNewContext(source,context);
+  context.applyParameters(preset.parameters);
+  assert.equal(context.commodityProfiles.btc.trading_fee_bps,'1');
+  assert.equal(context.commodityProfiles.btc.execution_model,'observed');
+  assert.deepEqual(context.commodityProfiles.btc,preset.parameters.commodity_parameters.btc);
+  assert.ok(context.commodityProfiles.silver);
+});
+
 test("Run waits for saved-result restoration as well as server readiness", async () => {
   const html=await readFile(new URL("../public/silver_strategy_gui.html",import.meta.url),"utf8");
   assert.match(html, /<button id="run"[^>]*\bdisabled\b/);

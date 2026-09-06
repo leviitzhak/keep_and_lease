@@ -4,6 +4,7 @@
 
 - Keep Run disabled until engine and saved-result initialization finish.
 - Discard a late saved result when strategy parameters have been edited.
+- Preserve supplied BTC profiles when importing a preset without a silver profile.
 - Initialize the deployment smoke fixture independently of the last saved preset.
 
 
