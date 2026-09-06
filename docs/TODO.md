@@ -8,7 +8,7 @@ This checklist reflects the application synchronized from the deployed Sites che
   BTC collateral is itself held idle and earns no yield. In that construction,
   the collateral drag prevents the lease book from being expected to follow the
   strategy's fully collateralized futures-plus-yielding-Treasury principle.
-- [ ] Enable BTC as a strategy commodity after the Deribit/Yahoo coverage
+- [x] Enable BTC as a strategy commodity after the Deribit/Yahoo coverage
   audit passes: apply the implemented native-payoff conversion throughout the
   return and attribution pipeline, expose regular/inverse mode, its fixed
   conversion-fee rate and its minimum accumulated-BTC conversion threshold,
@@ -19,7 +19,7 @@ This checklist reflects the application synchronized from the deployed Sites che
   carry forward the latest observable Treasury yield and accrue the Treasury
   position at that yield until the next observable yield becomes available,
   without using future observations or interpolating between daily marks.
-- [ ] Investigate why a NAV-reconstruction difference first appears on
+- [x] Investigate why a NAV-reconstruction difference first appears on
   03.01.1985 for the `strategy full silver long gradual` parameter set.
 
 ## Implemented
@@ -65,7 +65,7 @@ This checklist reflects the application synchronized from the deployed Sites che
     between a replicating-fund position and a Treasuries-plus-long-futures
     position. Here, "extension" means an analogous independently selected
     allocation, not a duplication of the lease book's contracts.
-- [ ] Replace the current per-commodity standalone-compounded and
+- [x] Replace the current per-commodity standalone-compounded and
   multiplicative-contribution displays with the following decomposition (do
   not display those two existing plot families for now):
   - plot the values of the unextended futures-plus-Treasuries leg, the
