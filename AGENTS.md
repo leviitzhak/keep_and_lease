@@ -132,3 +132,12 @@ ref is `master`.
 
 Do not use the retired Render preview workflow. See
 `docs/GOOGLE_CLOUD_RUN_SETUP.md` for the deployment and access runbook.
+
+## Stable deployment verification
+
+After a user-approved merge into `master`, stable deployment does not need to be
+verified again: the preview has normally already been verified. Do not routinely
+wait for the stable deployment workflow or repeat stable health/GUI checks unless
+the user explicitly requests stable verification. This exception applies to the
+stable target; the preview verification requirements above remain in effect.
+Existing automated stable deployment checks may still run without agent follow-up.
