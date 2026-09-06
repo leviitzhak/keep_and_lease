@@ -1,5 +1,34 @@
 # Changelog
 
+## 2026-09-06 — GCP-first preview validation and agent preview access
+
+- Removed the local Sites preview from the normal implementation and validation
+  sequence while its compatibility gaps remain intentionally unfixed.
+- Made the deployed GCP preview and its authenticated GUI/strategy smoke test the
+  required preview gate before merging application changes.
+- Extended the bounded keyless cloud-agent operator to select the stable or
+  preview service and optionally require the exact deployed Git commit.
+- Added the preview-service operator invoker binding to preview workload Terraform
+  and excluded request-only operator commits from automatic GCP deployment, so an
+  independent diagnostic cannot replace or race the preview it checks.
+
+## 2026-09-04 — BTC-frequency and causal Treasury accrual
+
+- Added role-based intraday providers: Kraken one-minute midpoint spot candles
+  and Deribit one-minute dated-futures candles can now be changed independently.
+- Materialized three complete Kraken free-sample days (4,320 minute bars) and
+  connected the BTC-only strategy path to no-look-ahead spot/futures snapshots.
+- Added a BTC-only execution/rebalancing interval in seconds. Zero uses every
+  common market observation; positive intervals must be whole multiples of the
+  detected source resolution, with requests finer than the data rejected.
+- Preserved ISO timestamps in spot and futures CSV readers so the same engine
+  path supports intraday datasets when they are supplied.
+- Replaced between-date Treasury-yield interpolation and future backfilling with
+  true as-of alignment. Treasury positions now accrue piecewise at the latest
+  observable yield until a new mark becomes available.
+- Documented the conservative intraday convention that a date-only Treasury
+  close becomes available at 00:00 UTC on the following day.
+
 ## 2026-09-01 — separate maturity controls and responsive spreadsheet export
 
 - Split the pure-maturity scale and normalized clip into independent long- and

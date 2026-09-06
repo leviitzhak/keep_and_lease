@@ -36,6 +36,10 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
             "not enabled in this deployment" in gui.MARKET_LOAD_ERRORS[key]
             for key in ("oil", "wheat", "corn", "soybeans")
         ))
+        btc_spot = self.markets["btc"][0]
+        self.assertEqual(len(btc_spot), 1440)
+        self.assertEqual(min(btc_spot).isoformat(), "2026-09-01T00:01:00")
+        self.assertEqual(max(btc_spot).isoformat(), "2026-09-02T00:00:00")
 
     def test_gold_and_oil_use_independent_spot_series(self):
         for key in ("gold", "oil"):
@@ -91,6 +95,26 @@ class MultiCommodityPortfolioTests(unittest.TestCase):
         self.assertTrue(
             delayed["commodity_sleeves"]["btc"]["summary"]
             ["nav_reconstruction_verified"])
+
+    def test_custom_execution_interval_requires_btc_as_only_commodity(self):
+        with self.assertRaisesRegex(ValueError, "sole commodity"):
+            gui.result({
+                "weight_silver": 50,
+                "weight_btc": 50,
+                "execution_interval_seconds": 86400,
+            })
+
+    def test_execution_interval_parameter_preserves_fractional_seconds(self):
+        self.assertEqual(
+            gui.parameters({"execution_interval_seconds": 172800})
+            .execution_interval_seconds,
+            172800,
+        )
+        self.assertEqual(
+            gui.parameters({"execution_interval_seconds": 0.5})
+            .execution_interval_seconds,
+            0.5,
+        )
 
     def test_missing_optional_legacy_spot_member_does_not_abort_markets(self):
         previous_errors = dict(gui.MARKET_LOAD_ERRORS)

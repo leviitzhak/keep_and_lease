@@ -14,16 +14,15 @@ This checklist reflects the application synchronized from the deployed Sites che
   conversion-fee rate and its minimum accumulated-BTC conversion threshold,
   add seven-day calendar alignment and weekend Treasury accrual, and choose an
   direct-BTC holding label throughout the GUI and exports.
-- [ ] Support BTC-only strategies at any execution/rebalancing frequency allowed
-  by the available market-data resolution. For intraday Treasury valuation,
-  carry forward the latest observable Treasury yield and accrue the Treasury
-  position at that yield until the next observable yield becomes available,
-  without using future observations or interpolating between daily marks.
 - [x] Investigate why a NAV-reconstruction difference first appears on
   03.01.1985 for the `strategy full silver long gradual` parameter set.
 
 ## Implemented
 
+- [x] BTC-only execution/rebalancing accepts any whole multiple of the detected
+  common market-data resolution. Intraday Treasury valuation carries the latest
+  observable yield forward and switches accrual only when a new mark becomes
+  available, without future observations or time interpolation.
 - [x] Eligibility gates are applied before maturity scoring.
 - [x] Long and short linear maturity/rate boundaries are available.
 - [x] Boundary distance is normalized, clipped, and applied as a relative score multiplier.
@@ -173,6 +172,9 @@ This checklist reflects the application synchronized from the deployed Sites che
   keyless immutable-digest deployment workflow.
 - [x] Apply the Google Cloud foundation IAM delta and deploy the private Cloud Run
   workloads with an authenticated health check.
+- [x] Let the bounded keyless cloud-agent operator select the private stable or
+  preview GUI, enforce an optional exact deployed SHA, and keep request-only
+  checks from triggering a competing preview deployment.
 - [ ] Complete the bounded numerical, cancellation, cache-reuse, and
   container-replacement acceptance tests in `GOOGLE_CLOUD_RUN_SETUP.md`.
 - [x] Implement direct Cloud Run IAP, private manual human/machine allowlist

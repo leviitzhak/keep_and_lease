@@ -83,6 +83,18 @@ test("documents data corrections and the daily attribution formulas", async () =
   assert.doesNotMatch(html, /id="'\+prefix\+'-lease-factors"/);
 });
 
+test("exposes BTC source-resolution execution intervals and causal Treasury guidance", async () => {
+  const html = await readFile(
+    new URL("../public/silver_strategy_gui.html", import.meta.url),
+    "utf8",
+  );
+  assert.match(html, /name="execution_interval_seconds"/);
+  assert.match(html, /whole multiple of the detected BTC data resolution/);
+  assert.match(html, /latest observable yield/);
+  assert.match(html, /no future daily mark or time interpolation/);
+  assert.match(html, /calendarDate=String\(date\)\.slice\(0,10\)/);
+});
+
 test("orders shared plots before commodity plots and synchronizes chart dates", async () => {
   const html = await readFile(
     new URL("../public/silver_strategy_gui.html", import.meta.url),

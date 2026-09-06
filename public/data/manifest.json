@@ -1,4 +1,37 @@
 {
+  "btc_intraday": {
+    "active_provider": "deribit_1m",
+    "coverage": {
+      "compressed_bytes": 7451178,
+      "contract_count": 93,
+      "rows": 1202419,
+      "synthetic_rows": 840526
+    },
+    "from_timestamp": "2026-06-06T00:00Z",
+    "manifest_sha256": "67c88f41f528b632119334252cfe14952f712930c70ec0527cc643310f46ed31",
+    "resolution": "1m",
+    "source": "https://history.deribit.com/api/v2/public",
+    "to_timestamp_exclusive": "2026-09-04T00:00Z"
+  },
+  "btc_intraday_spot": {
+    "active_provider": "kraken_1m",
+    "coverage": {
+      "bars": 4320,
+      "compressed_bytes": 59434,
+      "missing_minutes": 0,
+      "quote_updates": 2773814,
+      "rejected_quotes": 0,
+      "session_count": 3
+    },
+    "manifest_sha256": "1527d8d542deaec37292b30d806cba4313f78728cc9360c2fac21ef239e86c8a",
+    "resolution": "1m",
+    "sample_days": [
+      "2026-07-01",
+      "2026-08-01",
+      "2026-09-01"
+    ],
+    "source": "Kraken via Tardis.dev free normalized CSV samples"
+  },
   "gold_repair": {
     "archive_sha256": "96292d22406bdcda93b30f995b9f531acfa1b6b7136fabc5ec69eb0e6453395a",
     "contracts_downloaded": 214,

@@ -6,15 +6,16 @@ import math
 import os
 from statistics import median
 from dataclasses import replace
-from datetime import date
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from zipfile import BadZipFile
 
 from backtest_silver_lease_strategy import (
-    Parameters, build_market, build_proxy_market, build_spot_market,
+    Parameters, build_intraday_btc_market, build_market, build_proxy_market,
+    build_spot_market,
+    elapsed_days, market_resolution_seconds, observation_seconds,
     multiplicative_log_contributions,
-    TENORS, asof_rate, positions_for_day, read_csv_spot, read_zip_spot,
+    TENORS, asof_rate, parse_date, positions_for_day, read_csv_spot, read_zip_spot,
     run_backtest, score_diagnostic)
 from market_data_store import data_directory, read_cached_asset, read_spot_csv
 
@@ -47,7 +48,7 @@ PRODUCTS = {
               "spot_source": "nearest live future (cash-index history pending)",
               "etf": "SPY / IVV", "replication": "equity-backed"},
     "btc": {"label": "Bitcoin", "archive": None, "prefix": "BTC",
-            "spot_source": "Yahoo BTC-USD composite",
+            "spot_source": "Kraken BTC/USD one-minute midpoint",
             "etf": "Direct BTC holding", "replication": "direct holding",
             "holding_label": "Direct holding",
             "parameter_defaults": {
@@ -78,8 +79,7 @@ def build_markets(root, enabled_products=None):
         "oil": lambda: build_spot_market(
             root, "cl.zip", "CL",
             read_csv_spot(root, "DCOILWTICO.csv", "DCOILWTICO")),
-        "btc": lambda: build_spot_market(
-            root, None, "BTC", _asset_spot(root, "btc", "spot.csv")),
+        "btc": lambda: _build_btc_market(root),
     }
     for key, spec in PRODUCTS.items():
         if key not in enabled_products:
@@ -114,6 +114,15 @@ def _asset_spot(root, asset, legacy_member):
     if (data_directory(Path(root)) / asset).is_dir():
         return read_spot_csv(Path(root), asset)
     return read_zip_spot(root, legacy_member)
+
+
+def _build_btc_market(root):
+    intraday_config = (
+        data_directory(Path(root)) / "btc" / "intraday" / "config.json")
+    if intraday_config.exists():
+        return build_intraday_btc_market(root)
+    return build_spot_market(
+        root, None, "BTC", _asset_spot(root, "btc", "spot.csv"))
 
 
 def number(payload, name, default, low=None, high=None):
@@ -158,6 +167,8 @@ def parameters(payload):
     pct = lambda name, default: number(payload, name, default) / 100
     flag = lambda name, default: str(payload.get(
         name, "true" if default else "false")).lower() == "true"
+    execution_interval_seconds = number(
+        payload, "execution_interval_seconds", 0, 0)
     def boundary(direction):
         anchor_names = (
             f"{direction}_line_maturity_1", f"{direction}_line_rate_1",
@@ -274,6 +285,7 @@ def parameters(payload):
         inverse_min_conversion_btc=number(
             payload, "inverse_min_conversion_btc", 0, 0),
         trading_calendar=str(payload.get("trading_calendar", "business_days")),
+        execution_interval_seconds=execution_interval_seconds,
     )
     if p.futures_contract_type not in {"regular", "inverse"}:
         raise ValueError("futures_contract_type must be 'regular' or 'inverse'")
@@ -355,7 +367,7 @@ def futures_diagnostics(rows, by_day, p):
     """Return per-date futures details for the all-prices chart tooltip."""
     result = []
     for row in rows:
-        chart_day = date.fromisoformat(row["date"])
+        chart_day = parse_date(row["date"])
         candidates = by_day.get(chart_day, [])
         eligible = [x for x in candidates if x["days"] >= p.min_days]
         if not eligible:
@@ -414,7 +426,7 @@ def statistics_points(by_day, contracts, p, limit=12000):
                 "forward_premium_pct": 100 * contract["premium"],
                 "actual_lease_pct": 100 * contract["lease"] * contract["days"] / 365,
                 "next_date": next_day.isoformat() if next_day else None,
-                "next_elapsed_days": (next_day - day).days if next_day else None,
+                "next_elapsed_days": elapsed_days(day, next_day) if next_day else None,
                 "next_return_pct": 100 * next_return if next_return is not None else None,
             })
     if len(points) <= limit:
@@ -471,7 +483,7 @@ def inspection_for_day(payload, requested_day):
     global MARKETS
     if MARKETS is None:
         MARKETS = {"silver": MARKET}
-    selected = date.fromisoformat(requested_day)
+    selected = parse_date(requested_day)
     weights = portfolio_allocations(payload)
     result = {"requested_date": requested_day, "commodities": {}}
     resolved_days = []
@@ -483,7 +495,11 @@ def inspection_for_day(payload, requested_day):
         available_days = sorted(market[3])
         if not available_days:
             continue
-        actual = min(available_days, key=lambda day: abs(day - selected))
+        selected_value = observation_seconds(selected)
+        actual = min(
+            available_days,
+            key=lambda day: abs(observation_seconds(day) - selected_value),
+        )
         resolved_days.append(actual)
         candidates = [item for item in market[3].get(actual, [])
                       if item["days"] >= p.min_days]
@@ -656,6 +672,10 @@ def outlier_statistics(rows, limit=50):
 def sleeve_result(payload, market=None, product="silver"):
     p = parameters(product_payload(payload, product))
     market = market or MARKET
+    common_observations = [
+        observation for observation in market[3] if observation in market[0]
+    ]
+    source_resolution_seconds = market_resolution_seconds(common_observations)
     rows, missing = run_backtest(*market, p)
     if not rows:
         raise ValueError("No observations remain with these parameters")
@@ -817,6 +837,9 @@ def sleeve_result(payload, market=None, product="silver"):
         "fields": fields,
         "product": product,
         "product_label": PRODUCTS.get(product, {}).get("label", product.title()),
+        "market_data_resolution_seconds": source_resolution_seconds,
+        "execution_interval_seconds": (
+            p.execution_interval_seconds or source_resolution_seconds),
         "direct_proxy": PRODUCTS.get(product, {}).get("spot_source"),
         "replicating_etf": PRODUCTS.get(product, {}).get("etf"),
         "replication_type": PRODUCTS.get(product, {}).get("replication"),
@@ -1038,6 +1061,13 @@ def result(payload):
     commodity_weights = {
         key: value for key, value in weights.items() if key != "treasury"
     }
+    requested_interval = number(
+        payload, "execution_interval_seconds", 0, 0)
+    if requested_interval and set(commodity_weights) != {"btc"}:
+        raise ValueError(
+            "A custom execution interval is supported only when Bitcoin is "
+            "the sole commodity; a standalone Treasury allocation may still "
+            "be included")
     unavailable = [key for key in commodity_weights if key not in MARKETS]
     if unavailable:
         details = "; ".join(
@@ -1062,6 +1092,12 @@ def result(payload):
         aggregation_sleeves = {"_cash_reference": cash_reference}
     fields, series, attribution = aggregate_portfolio(
         aggregation_sleeves, weights, rebalance)
+    frequency_reference = sleeves.get("btc") or next(
+        iter(sleeves.values()), cash_reference)
+    source_resolution_seconds = frequency_reference.get(
+        "market_data_resolution_seconds")
+    effective_execution_interval_seconds = frequency_reference.get(
+        "execution_interval_seconds")
     if (len(sleeves) == 1 and "silver" in sleeves and rebalance == "daily"
             and "treasury" not in weights):
         # Keep the legacy silver-only response shape without making the
@@ -1072,6 +1108,8 @@ def result(payload):
         answer = dict(sleeves["silver"])
         answer["portfolio"] = {
             "weights": {"silver": 1.0}, "rebalancing": rebalance,
+            "market_data_resolution_seconds": source_resolution_seconds,
+            "execution_interval_seconds": effective_execution_interval_seconds,
             "available_products": PRODUCTS,
         }
         answer["daily_attribution"] = attribution
@@ -1102,13 +1140,14 @@ def result(payload):
         for row in series]
     longest_interval_row = max(
         series,
-        key=lambda row: (
-            date.fromisoformat(row[fields.index("date")])
-            - date.fromisoformat(row[fields.index("start_date")])).days)
-    longest_interval_days = (
-        date.fromisoformat(longest_interval_row[fields.index("date")])
-        - date.fromisoformat(
-            longest_interval_row[fields.index("start_date")])).days
+        key=lambda row: elapsed_days(
+            parse_date(row[fields.index("start_date")]),
+            parse_date(row[fields.index("date")]),
+        ))
+    longest_interval_days = elapsed_days(
+        parse_date(longest_interval_row[fields.index("start_date")]),
+        parse_date(longest_interval_row[fields.index("date")]),
+    )
     return {
         "parameters": dict(payload),
         "fields": fields,
@@ -1119,6 +1158,8 @@ def result(payload):
         "treasury_rate_change_points": treasury_change_points,
         "portfolio": {
             "weights": weights, "rebalancing": rebalance,
+            "market_data_resolution_seconds": source_resolution_seconds,
+            "execution_interval_seconds": effective_execution_interval_seconds,
             "available_products": PRODUCTS,
         },
         "summary": {

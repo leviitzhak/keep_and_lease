@@ -93,20 +93,22 @@ Firestore job/cache namespace for feature-branch inspection.
 
 The GitHub deployment workflow is `.github/workflows/deploy-google-cloud.yml`.
 Stable deployment is automatic from `master`; a push to any other branch
-automatically deploys to the separate shared preview target. Manual workflow
-dispatch remains available for reruns. Because all non-`master` branches share
-one preview service, a later branch push replaces the commit shown there. Preview
-procedures identify the exact branch/SHA and verify the GUI's displayed commit
-before merge.
+automatically deploys to the separate shared preview target. The sole exception
+is a push that changes only `.cloud-agent/requests/**`, which runs a bounded
+diagnostic without redeploying or racing the preview being inspected. Manual
+workflow dispatch remains available for reruns. Because all non-`master` branches
+share one preview service, a later deployable branch push replaces the commit
+shown there. Preview procedures identify the exact branch/SHA and verify the
+GUI's displayed commit before merge.
 
 ### Local Sites-preview rule
 
-The Sites checkout is an optional local inspection surface, not a deployment
-source. Before any Sites preview is started, synchronize that checkout to the
-intended GitHub branch and commit and verify `HEAD` matches the intended SHA.
-If it does not, update the checkout first. The authoritative branch preview is
-still the GitHub-triggered Cloud Run deployment, whose displayed GUI commit must
-be verified separately.
+The local Sites preview has known compatibility gaps that are intentionally left
+unfixed. It is not a required inspection stage and must not be started before a
+normal GCP deployment. The authoritative branch preview is the GitHub-triggered
+Cloud Run deployment. Its displayed GUI commit is verified by the deployment
+smoke test and can be checked independently through the bounded keyless operator
+without putting Google credentials in the working agent environment.
 
 Direct Cloud Run IAP is the planned normal browser access path limited to approved
 Google identities. Truly anonymous access must wait until the public GUI is
