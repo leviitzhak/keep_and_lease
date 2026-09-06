@@ -16,7 +16,8 @@ branch._
   audit chunks. See [the findings and implementation](BTC_EXECUTION_FIX_PROPOSAL.md)
   and [validation/caveats](BTC_MINUTE_VALIDATION.md). The exact feature revision
   must pass the authenticated deployment workflow before preview approval.
-  No master merge is authorized.
+  The user approved merging this change into master, with the follow-up
+  visualization, progress/cancellation and order-book research tasks in `TODO.md`.
 - Active branch: `agent/btc-binance-minute-data`
 - Active review and exact-revision deployment evidence: [draft PR #37](https://github.com/leviitzhak/keep_and_lease/pull/37).
 - Previous generalized application review: [PR #22 — Complete generalized multi-commodity implementation](https://github.com/leviitzhak/keep_and_lease/pull/22)

@@ -4,6 +4,17 @@ This checklist reflects the application synchronized from the deployed Sites che
 
 ## Higher priority
 
+- [ ] Add a plot of the volume traded by the strategy, based on actual simulated
+  fills (not market-wide volume).
+- [ ] Add a progress bar and cancellation option to spreadsheet generation and
+  download.
+- [ ] Add a progress bar when loading detailed plots.
+- [ ] Add a progress bar for the full audit download.
+- [ ] Later, if suitable data becomes available, investigate how historical
+  bid/ask quotes and additional order-book depth can improve backtesting,
+  including executable prices, available size, partial fills and slippage.
+
+
 - [x] Keep full 90-day BTC minute computation within existing worker limits using
   immutable audit chunks and on-demand detail/export. All 129,599 intervals are
   retained; local full worker measurement is 3,186.3 MiB RAM / 63.54 MiB initial
