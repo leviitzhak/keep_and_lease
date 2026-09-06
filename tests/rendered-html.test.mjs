@@ -1,6 +1,23 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import vm from "node:vm";
+
+test("large minute charts retain every point without argument-limit errors", async () => {
+  const html=await readFile(new URL("../public/silver_strategy_gui.html",import.meta.url),"utf8");
+  const start=html.indexOf('function lineChart('),end=html.indexOf('\nfunction ',start+1);
+  const bounds=html.split('\n').filter(line=>/^function array(?:Minimum|Maximum)\(/.test(line)).join('\n');
+  const drawing=Object.fromEntries(['scale','clearRect','fillText','beginPath','moveTo','lineTo','stroke','arc','fill','save','translate','rotate','restore'].map(name=>[name,()=>{}]));
+  const canvas={style:{},parentElement:{clientWidth:800,querySelector:()=>({textContent:'Large minute chart'})},getContext:()=>drawing};
+  const rows=Array.from({length:129600},(_,i)=>['2026-06-06',i,-i,2*i]);
+  const charts=new Map();
+  const context={canvas,rows,charts,matchMedia:()=>({matches:false}),devicePixelRatio:1,ensureLegend:()=>{},num:Number,fmt:String,hover:()=>{},leave:()=>{}};
+  vm.runInNewContext(bounds+'\n'+html.slice(start,end)+"\nlineChart(canvas,rows,[{i:1},{i:2},{i:3}],'value',{zero:false});",context);
+  const rendered=charts.get(canvas);
+  assert.equal(rendered.rows,rows);
+  assert.ok(rendered.scales.left.low < -129599);
+  assert.ok(rendered.scales.left.high > 2*129599);
+});
 
 test("every numeric default satisfies its browser range and step constraints", async () => {
   const html = await readFile(new URL("../public/silver_strategy_gui.html", import.meta.url), "utf8");
@@ -477,7 +494,8 @@ test("daily holdings builder emits contract columns and auditable formulas", asy
     },
     sleeves: { silver: { series: sleeve.series } },
   };
-  const makeRows = new Function("plotRangeSource", "num", "xlsxColumn", `${source}; return spreadsheetRows;`)(
+  const bounds=html.split('\n').filter(line=>/^function array(?:Minimum|Maximum)\(/.test(line)).join('\n');
+  const makeRows = new Function("plotRangeSource", "num", "xlsxColumn", `${bounds}\n${source}; return spreadsheetRows;`)(
     context,
     (value) => { const parsed = Number(value); return Number.isFinite(parsed) ? parsed : null; },
     (index) => { let name = ""; for (let n = index + 1; n; n = Math.floor((n - 1) / 26)) name = String.fromCharCode(65 + (n - 1) % 26) + name; return name; },

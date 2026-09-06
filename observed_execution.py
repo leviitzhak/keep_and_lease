@@ -48,7 +48,7 @@ class ObservedExecution:
         signal_day = self.active[0] if self.active else None
         spot_observed = bool(curve and curve[0].get("spot_observed", False))
         if self.active and spot_observed:
-            # Reductions precede increases to limit temporary gross exposure.
+            # Full exits precede remaining changes; every increase is capped.
             symbols = sorted(set(self.quantities) | set(target_weights),
                              key=lambda s: (target_weights.get(s, 0) > 0, s))
             for symbol in symbols:

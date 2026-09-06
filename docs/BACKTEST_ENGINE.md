@@ -122,6 +122,8 @@ margin requirements. Execution costs appear as an explicit holding-ledger expens
 and reconcile through both book NAV and contribution accounting. Prices remain
 Deribit inverse quotes proxying hypothetical regular futures; see
 `BTC_EXECUTION_FIX_PROPOSAL.md` for the payoff rationale and measured sensitivities.
+Nonzero fee/spread/slippage controls require observed execution; legacy and daily
+paths reject them instead of silently reporting a run that ignored its costs.
 
 `run_backtest(row_sink=..., retain_fields=...)` emits each complete finalized row
 without requiring full-row retention. Durable jobs use immutable audit chunks;

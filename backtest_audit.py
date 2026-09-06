@@ -157,6 +157,9 @@ class AuditCollection:
         datasets = {}
         for product, writer in self.writers.items():
             writer.flush()
+            # flush() prepares the next empty buffer. Close its unused gzip
+            # wrapper explicitly before interpreter shutdown (including 3.13).
+            writer.gzip.close()
             datasets[product] = {"rows": writer.count, "chunks": writer.entries,
                                  **writer.metadata}
         manifest = {"schema_version": 1, "base_url": self.base_url,

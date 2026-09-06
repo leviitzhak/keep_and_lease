@@ -187,3 +187,13 @@ default 100, which violates HTML step validity. It now accepts any percentage
 from 0 through 100. The browser smoke reports invalid form controls immediately,
 and an HTML regression verifies every numeric default against its bounds/step.
 This correction changes form validity only, not execution or measured returns.
+
+
+### Full-minute browser bounds
+
+A direct 129,600-point regression reproduced `RangeError: Maximum call stack size
+exceeded` in the portfolio chart's variadic `Math.min`/`Math.max` calls. Chart,
+histogram and scatter bounds now scan values rather than expanding whole arrays
+as function arguments. Every point and interval remains available; no execution,
+return, data or export sampling changed. The same 129,600-point chart regression
+passes after the change. This also protects full-period detailed-plot loading.

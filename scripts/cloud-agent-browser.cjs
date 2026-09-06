@@ -173,14 +173,14 @@ async function main() {
       }
       const expectedCommodities = runBtcAudit ? ["btc"] : ["gold", "silver", "sp500"];
       const expectedWeights = runBtcAudit ? {btc:1,treasury:0} : { silver: 0.3, gold: 0.3, sp500: 0.3, treasury: 0.1 };
-      await page.waitForFunction((names) => {
+      await Promise.race([page.waitForFunction((names) => {
         const observations = document.querySelector("#obs")?.textContent?.trim();
         const button = document.querySelector("#run");
         return button && !button.disabled && observations && observations !== "--" && names.every((name) => {
           const canvas = document.querySelector(`#commodity-${name}-lease`);
           return canvas && canvas.width > 0 && canvas.height > 0;
         });
-      }, expectedCommodities, { timeout: 180000 });
+      }, expectedCommodities, { timeout: 180000 }), guiFailurePromise]);
 
       // The result can be large enough for Chromium to evict its response body
       // from the inspector cache. Validate the same data after the application
@@ -303,6 +303,15 @@ async function main() {
     }
   } catch (error) {
     failure = error;
+    if (runBtcAudit) {
+      const state = await page.evaluate(() => ({
+        status:document.querySelector('#status')?.textContent,
+        auditStatus:document.querySelector('#auditStatus')?.textContent,
+        observations:document.querySelector('#obs')?.textContent,
+        runDisabled:document.querySelector('#run')?.disabled,
+      })).catch(() => null);
+      console.error('BTC GUI failure state: '+JSON.stringify(state));
+    }
     throw error;
   } finally {
     await page.screenshot({

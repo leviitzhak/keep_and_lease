@@ -1409,6 +1409,9 @@ def run_backtest(spot, contracts, rates, by_day, p, *, row_sink=None,
         p = replace(p, execution_model=(
             "observed" if intraday_source and p.futures_contract_type == "regular"
             else "legacy_close"))
+    if p.execution_model != "observed" and any((
+            p.trading_fee_bps, p.half_spread_bps, p.slippage_bps)):
+        raise ValueError("Trading fee, spread and slippage controls require observed regular BTC execution")
     observed_execution = None
     if p.execution_model == "observed":
         if not intraday_source:

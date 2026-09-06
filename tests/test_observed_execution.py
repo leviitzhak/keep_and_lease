@@ -102,6 +102,10 @@ class ObservedExecutionTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,"regular futures"):
                 run_backtest(*self.market(),p)
 
+    def test_legacy_model_cannot_silently_ignore_requested_trading_costs(self):
+        with self.assertRaisesRegex(ValueError,"controls require observed"):
+            run_backtest(*self.market(),self.parameters(execution_model="legacy_close",trading_fee_bps=1))
+
 
 if __name__ == "__main__":
     unittest.main()
