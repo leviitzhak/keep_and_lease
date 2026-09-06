@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - "**"
+    paths-ignore:
+      - .cloud-agent/requests/**
   workflow_dispatch:
     inputs:
       deployment_target:

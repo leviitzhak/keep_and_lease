@@ -1,6 +1,6 @@
 # Keep & Lease — Project State
 
-_Last updated: 2026-08-24_
+_Last updated: 2026-09-06_
 
 ## Purpose
 
@@ -8,7 +8,8 @@ Build an interactive research and backtesting application for strategies that al
 
 ## Current scope
 
-- Commodities: silver first, with the same analysis framework extended to gold and other supported commodities.
+- Commodities: silver, gold, S&P 500, and BTC through the same registered-market
+  framework, with other data-backed commodities remaining extensible.
 - Cash/Treasuries: treated as another investable curve, using interest rates rather than lease rates.
 - Instruments: physical-backed ETFs, futures at several maturities, and Treasury/cash positions.
 - Outputs: daily positions, returns, cumulative returns, diagnostics, contract-level inspection, and cross-sectional scatter plots.
@@ -68,6 +69,14 @@ Build an interactive research and backtesting application for strategies that al
     audiences are implemented; one-time OAuth activation, manual policy setup, and
     acceptance verification remain.
     Anonymous calculation access remains disabled.
+11. BTC-only strategies accept execution/rebalancing frequencies at whole
+    multiples of the detected intraday market-data resolution. Intraday Treasury
+    valuation accrues at the latest observable yield without future backfill or
+    interpolation.
+12. The local Sites preview is intentionally outside the normal validation path
+    while its compatibility gaps remain unfixed. Feature branches deploy to the
+    private GCP preview, whose built-in smoke test and bounded keyless operator can
+    verify the exact deployed SHA and rendered GUI.
 
 ## Active review and planned architecture
 

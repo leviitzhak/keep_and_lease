@@ -1,6 +1,6 @@
 # Google Cloud Run deployment design and implementation state
 
-## Current state — 2026-08-25
+## Current state — 2026-09-06
 
 The Google Cloud foundation is provisioned and verified. The durable application
 split, containers, workload Terraform, and keyless deployment workflow are
@@ -8,12 +8,14 @@ implemented. The private web service and calculation Job were first deployed fro
 commit `fc4400e9a18a4e68846f250b64efee7fc0429ad7`; the production workflow now
 deploys `master`, currently verified by the private operator at commit
 `08b583696f52314b54e3be6bd6f1d39497b10a1c` (application version `1.3`).
-The branch-restricted keyless operator has been applied and verified end-to-end:
-the API returned `status=ok` and the private GUI rendered with HTTP 200. Direct
-Cloud Run IAP Terraform, manual human/machine allowlisting, and dual-mode
-deployment/operator token audiences are implemented on
-`agent/market-data-sqlite-cache`. Activation still requires the one-time
-no-organization OAuth setup and repository variables described below.
+The branch-restricted keyless operator has been applied and verified end-to-end
+against stable: the API returned `status=ok` and the private GUI rendered with
+HTTP 200. It now accepts only the fixed `stable` or `preview` target and can
+require an exact deployed commit SHA. Preview workload Terraform maintains the
+operator's preview invoker binding. Direct Cloud Run IAP Terraform, manual
+human/machine allowlisting, and dual-mode deployment/operator token audiences are
+implemented; IAP activation still requires the one-time no-organization OAuth
+setup and repository variables described below.
 The pure-maturity branch was inspected on Cloud Run and the service was returned
 to private access; anonymous requests to the public URL return `403`. Bounded
 deployment acceptance now renders the authenticated GUI and runs a three-commodity
@@ -166,8 +168,10 @@ bucket.
 
 A push to `master` runs **Deploy Google Cloud workloads** automatically against the
 `stable` target. A push to any other branch automatically deploys that commit to
-the shared `preview` target. The workflow also retains `workflow_dispatch` for
-reruns or explicitly selected refs. Manual runs expose a
+the shared `preview` target, except for request-only changes beneath
+`.cloud-agent/requests/`; those trigger diagnostics without redeploying. The
+workflow also retains `workflow_dispatch` for reruns or explicitly selected refs.
+Manual runs expose a
 `deployment_target` choice that defaults to `preview` and an
 `allow_unauthenticated` input that defaults to `false`; the latter must remain false
 until the planned authentication and abuse controls are implemented. A stable run
@@ -191,9 +195,11 @@ is rejected unless its selected ref is `master`. The workflow:
 
 #### Feature-branch preview convention
 
-Every non-`master` branch push automatically runs **Deploy Google Cloud
+Every deployable non-`master` branch push automatically runs **Deploy Google Cloud
 workloads** for that exact commit against the private preview target. This includes
-branches outside `agent/**` and documentation-only commits. Manual dispatch with
+branches outside `agent/**` and documentation-only commits. A push changing only
+`.cloud-agent/requests/**` is intentionally ignored so an operator check cannot
+replace or race the preview revision it names. Manual dispatch with
 `deployment_target=preview` and `allow_unauthenticated=false` remains available
 for a rerun without another commit.
 
@@ -217,6 +223,13 @@ dispatch. A successful preview requires both the workflow's authenticated health
 check and its rendered-GUI/multi-commodity smoke test. The browser check also
 confirms that the GUI version footer reports the same SHA. Report the workflow run
 and private preview URL with the change handoff.
+
+For an independent working-agent check, synchronize the permanent
+`agent/cloud-autonomous-access` branch with the current operator implementation,
+then submit a bounded request with `target=preview` and the full deployed SHA in
+`expected_commit`. Read the workflow summary and sanitized evidence through the
+GitHub connector. Request-only pushes do not consume another deployment. See
+[CLOUD_AGENT_ACCESS.md](CLOUD_AGENT_ACCESS.md).
 
 #### Commit identity and SHA preservation
 

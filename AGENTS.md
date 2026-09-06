@@ -13,33 +13,40 @@ recreate or cherry-pick only the intended patch onto a branch based on GitHub
 `master`; never push an unrelated Sites history to GitHub.
 
 ChatGPT Sites and GitHub are separate repositories and are not automatically
-synchronized. Treat the Sites working copy and its local preview as optional
-development, GUI/API testing, and result-analysis environment. The local Sites
-preview is not a deployment target. When reporting a push, state the GitHub
-branch and full commit SHA, and distinguish the local Sites preview from the
-deployed GCP preview URL.
+synchronized. The local Sites preview currently has known compatibility gaps
+that are intentionally left unfixed. Do not start or use the local Sites preview
+as part of the normal development, validation, or deployment workflow unless the
+user explicitly asks to work on that compatibility. The deployed GCP preview is
+the authoritative GUI/API preview. When reporting a push, state the GitHub branch
+and full commit SHA and identify the deployed GCP preview URL.
 
 ### Required development and deployment sequence
 
-1. Implement new GUI/API features in the Sites working copy.
-2. Before any GCP preview deployment, run the local Sites preview and inspect or
-   test the changes there, including strategy results and analysis when needed.
-3. If the preview needs changes, modify and retest the Sites working copy
-   locally. Do not push merely to preserve an intermediate workspace version,
-   and do not use GCP preview deployments as the normal source-iteration loop.
-4. Keep the tested version local until the user explicitly decides to preserve
-   and deploy that workspace version. Only after that decision, transfer the
-   tested patch onto a feature branch based on GitHub `master` and push it to
-   GitHub. That push automatically deploys the GCP **preview** site.
-5. Verify the GCP preview represents the pushed GitHub SHA. After explicit
-   approval, merge the feature branch into GitHub `master`; that merge
-   automatically deploys the GCP **stable** site.
+1. Implement the change on a feature branch based on the current GitHub `master`
+   and run relevant local checks that do not require a Sites preview.
+2. Do not run the local Sites preview before deployment. Once a coherent change
+   is ready to preview, push the feature branch to GitHub unless the user has
+   requested local-only work or no deployment. The push automatically deploys
+   that exact commit to the GCP **preview** target.
+3. Record the pushed branch and full commit SHA. When practical and not
+   resource-consuming, wait for **Deploy Google Cloud workloads** to reach a
+   terminal state rather than leaving the deployment unchecked.
+4. After a successful deployment, test the deployed GUI at the private preview
+   URL reported by the workflow. Verify the displayed commit is the pushed SHA,
+   the server engine is ready, and a representative strategy completes. The
+   workflow's authenticated rendered-GUI and multi-commodity smoke test provides
+   the baseline check; perform an additional interactive check when authenticated
+   access is available and doing so is inexpensive. If waiting or deployed-GUI
+   access is unavailable, report the unverified step explicitly.
+5. If the preview needs changes, modify the feature branch and repeat the push,
+   deployment wait, and deployed-GUI test. After explicit approval, merge the
+   feature branch into GitHub `master`; that merge automatically deploys the GCP
+   **stable** target.
 
-Do not treat a Sites preview as a substitute for either GCP deployment, and do
-not treat a GCP deployment as a substitute for the local Sites review stage.
-Do not push, deploy, or merge an intermediate version unless the user has made
-the corresponding decision. Do not implement Sites-from-GitHub deployment
-automation unless requested.
+Do not push or deploy an incomplete intermediate state merely to preserve it, and
+do not merge a feature branch before preview approval. Do not publish a Sites
+version as a substitute for the GCP preview and do not spend time repairing local
+Sites compatibility unless requested.
 
 ### Required Sites checkout freshness check
 
@@ -48,16 +55,52 @@ intended GitHub branch and commit, fetch GitHub, and verify that the Sites
 checkout is based on that exact revision. If it is behind or based on a different
 history, first transfer/rebase the intended patch onto a branch based on the
 current GitHub revision; do not begin a new implementation on stale Sites code.
-Preserve any existing uncommitted user work while doing so. Before starting a
-local Sites preview, repeat the check and report the GitHub branch and SHA that
-the preview represents.
+Preserve any existing uncommitted user work while doing so. This checkout
+freshness check does not authorize or require starting a local Sites preview.
+
+## Documentation updates are required for implementation changes
+
+Whenever implementing a change or addition, update the relevant documentation in
+the same patch. Documentation is part of the implementation's definition of done,
+not a separate follow-up task.
+
+Review and update every document affected by the change, including, as
+applicable:
+
+- user-facing behavior, configuration, parameters, formulas, and data sources;
+- architecture, API, deployment, and operational runbooks;
+- current implementation and project-state documents; and
+- TODO entries whose scope or status changed.
+
+Documentation must describe the code and deployment state that actually exists.
+Do not leave obsolete behavior documented or completed work listed as pending.
+
+
+## Documentation updates are required for implementation changes
+
+Whenever implementing a change or addition, update the relevant documentation in
+the same patch. Documentation is part of the implementation's definition of done,
+not a separate follow-up task.
+
+Review and update every document affected by the change, including, as
+applicable:
+
+- user-facing behavior, configuration, parameters, formulas, and data sources;
+- architecture, API, deployment, and operational runbooks;
+- current implementation and project-state documents; and
+- TODO entries whose scope or status changed.
+
+Documentation must describe the code and deployment state that actually exists.
+Do not leave obsolete behavior documented or completed work listed as pending.
 
 ## Preview deployment after changes
 
 Every push to a non-`master` branch automatically deploys that exact commit to
 the shared preview target. Every push to `master` automatically deploys that exact
-commit to stable. Because the workflow intentionally covers every branch push,
-documentation-only pushes also redeploy their corresponding target.
+commit to stable. Documentation-only pushes also redeploy their corresponding
+target. The only exception is a push that changes only
+`.cloud-agent/requests/**`; those bounded diagnostic requests must not replace or
+race the preview revision they are intended to inspect.
 
 The authoritative preview path is the GitHub Actions workflow **Deploy Google
 Cloud workloads** (`.github/workflows/deploy-google-cloud.yml`). Push any
@@ -67,9 +110,21 @@ with `deployment_target=preview` and `allow_unauthenticated=false`.
 
 The preview target is a separate private, IAP-protected Cloud Run service and
 calculation Job, with separate Firestore job/cache collections. It must never
-replace the stable working service. After the run, verify the authenticated health
-check and that the deployed commit is the feature branch's exact SHA, then report
-the workflow run and private preview URL.
+replace the stable working service. When practical, follow the workflow until it
+finishes and use its authenticated health, rendered-GUI, and strategy smoke-test
+results to validate the deployment. Then test the workflow-reported private
+preview URL directly when authenticated access is available, verify that it shows
+the feature branch's exact SHA, and report the workflow run and preview URL.
+
+For an independent working-agent check of the private deployed GUI, use the
+keyless **Cloud agent operator** described in `docs/CLOUD_AGENT_ACCESS.md`. Submit
+only a bounded request on the permanent `agent/cloud-autonomous-access` branch,
+set `target` to `preview`, and set `expected_commit` to the full deployed SHA.
+Read the workflow result and sanitized GUI evidence through the GitHub connector.
+The operator branch must first contain the current operator workflow, and the GCP
+foundation/IAP policies must grant its dedicated service account access to the
+preview service. Never copy an identity token or Google credential into the
+workspace, repository, workflow artifact, or chat.
 
 The stable working target deploys automatically from `master`. A manual stable
 deployment must use `deployment_target=stable` and is rejected unless the selected

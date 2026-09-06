@@ -218,6 +218,16 @@ resource "google_cloud_run_v2_service_iam_member" "deploy_invoker" {
   member   = "serviceAccount:keep-lease-github@${var.project_id}.iam.gserviceaccount.com"
 }
 
+resource "google_cloud_run_v2_service_iam_member" "codex_operator_preview_invoker" {
+  count = local.preview ? 1 : 0
+
+  project  = var.project_id
+  location = google_cloud_run_v2_service.web.location
+  name     = google_cloud_run_v2_service.web.name
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:keep-lease-codex-operator@${var.project_id}.iam.gserviceaccount.com"
+}
+
 resource "google_cloud_run_v2_service_iam_member" "iap_service_agent_invoker" {
   count = var.iap_enabled ? 1 : 0
 

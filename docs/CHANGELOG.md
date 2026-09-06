@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-06 — GCP-first preview validation and agent preview access
+
+- Removed the local Sites preview from the normal implementation and validation
+  sequence while its compatibility gaps remain intentionally unfixed.
+- Made the deployed GCP preview and its authenticated GUI/strategy smoke test the
+  required preview gate before merging application changes.
+- Extended the bounded keyless cloud-agent operator to select the stable or
+  preview service and optionally require the exact deployed Git commit.
+- Added the preview-service operator invoker binding to preview workload Terraform
+  and excluded request-only operator commits from automatic GCP deployment, so an
+  independent diagnostic cannot replace or race the preview it checks.
+
 ## 2026-09-04 — BTC-frequency and causal Treasury accrual
 
 - Added role-based intraday providers: Kraken one-minute midpoint spot candles

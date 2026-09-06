@@ -74,13 +74,12 @@ deployment workflow are implemented. The foundation is provisioned; follow
 [`docs/GOOGLE_CLOUD_RUN_SETUP.md`](docs/GOOGLE_CLOUD_RUN_SETUP.md) for deployment,
 preview/access operations, and remaining acceptance tests.
 
-The Sites checkout may be used for a fast local GUI/API inspection loop. Before
-starting one, synchronize it with the intended GitHub branch and commit, then
-verify the checkout's `HEAD` equals that commit. The local API uses the same
-versioned request/result contract and canonical Python engine as GCP, while GCP
-continues to add its durable Firestore, Cloud Storage, and Cloud Run Job backend.
-A Sites preview is never a deployment source and must not substitute for the
-GitHub-to-Cloud-Run preview workflow.
+The local Sites preview currently has known compatibility gaps and is intentionally
+not part of the normal validation path. Do not start it before a GCP deployment or
+repair it incidentally. Push a coherent feature branch to deploy the authoritative
+GCP preview, then use the deployment smoke test and, when needed, the bounded
+keyless cloud-agent operator to inspect the private deployed GUI. Persistent Sites
+compatibility remains deferred work.
 
 ## Render (legacy / retired)
 

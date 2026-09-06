@@ -18,6 +18,7 @@ from typing import Any
 
 
 ALLOWED_ACTIONS = {"health", "gui", "backtest"}
+ALLOWED_TARGETS = {"stable", "preview"}
 SMOKE_FIXTURES: dict[str, dict[str, Any]] = {
     "silver-default": {"weight_silver": 100},
 }
@@ -43,6 +44,16 @@ def load_request(path: Path) -> dict[str, Any]:
         raise OperatorError("Request must be a JSON object")
     if request.get("schema_version") != 1:
         raise OperatorError("schema_version must be 1")
+    target = request.get("target", "stable")
+    if target not in ALLOWED_TARGETS:
+        raise OperatorError("target must be stable or preview")
+    request["target"] = target
+    expected_commit = request.get("expected_commit")
+    if expected_commit is not None and (
+        not isinstance(expected_commit, str)
+        or not re.fullmatch(r"[0-9a-f]{40}", expected_commit)
+    ):
+        raise OperatorError("expected_commit must be a full lowercase Git commit SHA")
     request_id = request.get("request_id")
     if not isinstance(request_id, str) or not REQUEST_ID_PATTERN.fullmatch(request_id):
         raise OperatorError("request_id must contain only letters, digits, dot, underscore, or dash")
@@ -248,6 +259,8 @@ def main() -> int:
             "schema_version": request["schema_version"],
             "request_id": request["request_id"],
             "actions": request["actions"],
+            "target": request["target"],
+            "expected_commit": request.get("expected_commit"),
             "web_uri": web_uri,
         },
     )
@@ -260,6 +273,11 @@ def main() -> int:
             raise OperatorError("Health response status is not ok")
         build = client.json("GET", "/build-info.json")
         write_json(args.output_dir / "build-info.json", build)
+        expected_commit = request.get("expected_commit")
+        if expected_commit and build.get("commit") != expected_commit:
+            raise OperatorError(
+                f"Deployed commit {build.get('commit')!r} does not match expected_commit"
+            )
     if "backtest" in request["actions"]:
         run_backtest(client, request["backtest"], args.output_dir)
     return 0

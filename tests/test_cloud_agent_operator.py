@@ -28,6 +28,43 @@ class RequestValidationTests(unittest.TestCase):
             }
         )
         self.assertEqual(request["request_id"], "health-gui")
+        self.assertEqual(request["target"], "stable")
+
+    def test_preview_target_and_expected_commit(self):
+        request = self.load(
+            {
+                "schema_version": 1,
+                "request_id": "preview-health-gui",
+                "target": "preview",
+                "expected_commit": "a" * 40,
+                "actions": ["health", "gui"],
+            }
+        )
+        self.assertEqual(request["target"], "preview")
+        self.assertEqual(request["expected_commit"], "a" * 40)
+
+    def test_rejects_unknown_target(self):
+        with self.assertRaises(MODULE.OperatorError):
+            self.load(
+                {
+                    "schema_version": 1,
+                    "request_id": "wrong-target",
+                    "target": "arbitrary",
+                    "actions": ["health"],
+                }
+            )
+
+    def test_rejects_abbreviated_expected_commit(self):
+        with self.assertRaises(MODULE.OperatorError):
+            self.load(
+                {
+                    "schema_version": 1,
+                    "request_id": "short-commit",
+                    "target": "preview",
+                    "expected_commit": "abc123",
+                    "actions": ["health"],
+                }
+            )
 
     def test_backtest_requires_explicit_billable_confirmation(self):
         with self.assertRaises(MODULE.OperatorError):

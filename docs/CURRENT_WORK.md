@@ -6,15 +6,15 @@ branch._
 
 ## Active change set
 
-- Status: GUI stabilization is implemented on top of the market-data SQLite/IAP
-  branch; separate stable/preview Cloud Run targets are being deployed and verified
-- Active branch: `agent/gui-stabilization`
+- Status: BTC intraday execution and GCP-first preview validation are implemented;
+  the combined branch is being deployed, checked, and merged.
+- Active branch: `agent/btc-intraday-deribit-data`
 - Previous generalized application review: [PR #22 — Complete generalized multi-commodity implementation](https://github.com/leviitzhak/keep_and_lease/pull/22)
 - Render services' configured source branch: [`agent/fixed-render-preview-deploys`](https://github.com/leviitzhak/keep_and_lease/tree/agent/fixed-render-preview-deploys). Deploy hooks override this default with the exact commit pushed to the current implementation branch.
 - Application version: `1.3`
 - First verified Cloud Run revision:
   `fc4400e9a18a4e68846f250b64efee7fc0429ad7`
-- Current private Cloud Run deployment commit verified by the private operator:
+- Last documented private stable commit verified by the private operator:
   `08b583696f52314b54e3be6bd6f1d39497b10a1c` (same application content as
   `a3d457516bda8b74a8b23db3f5bb2f491296ea10`)
 - First successful autonomous private health/GUI run:
@@ -22,6 +22,11 @@ branch._
 - Cloud Run URL: <https://keep-and-lease-web-vfk2j2rgoq-zf.a.run.app>. Anonymous
   requests return `403 Forbidden`; use the authenticated Cloud SDK proxy until
   selected-user browser authentication is implemented.
+- Private GCP preview URL:
+  <https://keep-and-lease-preview-web-vfk2j2rgoq-zf.a.run.app>. Normal
+  feature-branch deployments run an authenticated GUI and multi-commodity smoke
+  test; the keyless cloud-agent operator can independently select this target and
+  enforce its exact deployed SHA.
 - For the separate Render preview, read `Version … · commit …` in the [preview GUI](https://keep-and-lease-fixed-preview.onrender.com), or compare [`build-info.json`](https://keep-and-lease-fixed-preview.onrender.com/build-info.json) with the API [`engine_commit`](https://keep-and-lease-fixed-preview-api.onrender.com/api/v1/health).
 
 ## Scope being completed
@@ -44,7 +49,10 @@ branch._
   containers, workload Terraform, and GitHub OIDC deployment workflow.
 - A branch-restricted, keyless GitHub OIDC operator that can collect non-secret
   health/build evidence, render the private GUI, and run sanitized fixed-fixture
-  API smoke tests without exposing a Google credential to Codex.
+  API smoke tests against stable or preview without exposing a Google credential
+  to Codex.
+- BTC-only intraday execution/rebalancing at whole multiples of the detected
+  one-minute market resolution, using causal latest-observable Treasury accrual.
 - A documented direct Cloud Run IAP migration that keeps the existing
   internet-reachable `run.app` URL, allowlists approved Google users and machine
   identities, preserves the keyless operator, and keeps anonymous access disabled.

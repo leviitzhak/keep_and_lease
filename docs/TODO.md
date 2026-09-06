@@ -8,13 +8,13 @@ This checklist reflects the application synchronized from the deployed Sites che
   BTC collateral is itself held idle and earns no yield. In that construction,
   the collateral drag prevents the lease book from being expected to follow the
   strategy's fully collateralized futures-plus-yielding-Treasury principle.
-- [ ] Enable BTC as a strategy commodity after the Deribit/Yahoo coverage
+- [x] Enable BTC as a strategy commodity after the Deribit/Yahoo coverage
   audit passes: apply the implemented native-payoff conversion throughout the
   return and attribution pipeline, expose regular/inverse mode, its fixed
   conversion-fee rate and its minimum accumulated-BTC conversion threshold,
   add seven-day calendar alignment and weekend Treasury accrual, and choose an
   direct-BTC holding label throughout the GUI and exports.
-- [ ] Investigate why a NAV-reconstruction difference first appears on
+- [x] Investigate why a NAV-reconstruction difference first appears on
   03.01.1985 for the `strategy full silver long gradual` parameter set.
 
 ## Implemented
@@ -64,7 +64,7 @@ This checklist reflects the application synchronized from the deployed Sites che
     between a replicating-fund position and a Treasuries-plus-long-futures
     position. Here, "extension" means an analogous independently selected
     allocation, not a duplication of the lease book's contracts.
-- [ ] Replace the current per-commodity standalone-compounded and
+- [x] Replace the current per-commodity standalone-compounded and
   multiplicative-contribution displays with the following decomposition (do
   not display those two existing plot families for now):
   - plot the values of the unextended futures-plus-Treasuries leg, the
@@ -172,6 +172,9 @@ This checklist reflects the application synchronized from the deployed Sites che
   keyless immutable-digest deployment workflow.
 - [x] Apply the Google Cloud foundation IAM delta and deploy the private Cloud Run
   workloads with an authenticated health check.
+- [x] Let the bounded keyless cloud-agent operator select the private stable or
+  preview GUI, enforce an optional exact deployed SHA, and keep request-only
+  checks from triggering a competing preview deployment.
 - [ ] Complete the bounded numerical, cancellation, cache-reuse, and
   container-replacement acceptance tests in `GOOGLE_CLOUD_RUN_SETUP.md`.
 - [x] Implement direct Cloud Run IAP, private manual human/machine allowlist
