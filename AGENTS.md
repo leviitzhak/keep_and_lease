@@ -52,6 +52,24 @@ Preserve any existing uncommitted user work while doing so. Before starting a
 local Sites preview, repeat the check and report the GitHub branch and SHA that
 the preview represents.
 
+
+## Documentation updates are required for implementation changes
+
+Whenever implementing a change or addition, update the relevant documentation in
+the same patch. Documentation is part of the implementation's definition of done,
+not a separate follow-up task.
+
+Review and update every document affected by the change, including, as
+applicable:
+
+- user-facing behavior, configuration, parameters, formulas, and data sources;
+- architecture, API, deployment, and operational runbooks;
+- current implementation and project-state documents; and
+- TODO entries whose scope or status changed.
+
+Documentation must describe the code and deployment state that actually exists.
+Do not leave obsolete behavior documented or completed work listed as pending.
+
 ## Preview deployment after changes
 
 Every push to a non-`master` branch automatically deploys that exact commit to
