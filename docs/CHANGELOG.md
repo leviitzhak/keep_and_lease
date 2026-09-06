@@ -1,5 +1,131 @@
 # Changelog
 
+## 2026-09-06 — GCP-first preview validation and agent preview access
+
+- Removed the local Sites preview from the normal implementation and validation
+  sequence while its compatibility gaps remain intentionally unfixed.
+- Made the deployed GCP preview and its authenticated GUI/strategy smoke test the
+  required preview gate before merging application changes.
+- Extended the bounded keyless cloud-agent operator to select the stable or
+  preview service and optionally require the exact deployed Git commit.
+- Added the preview-service operator invoker binding to preview workload Terraform
+  and excluded request-only operator commits from automatic GCP deployment, so an
+  independent diagnostic cannot replace or race the preview it checks.
+
+## 2026-09-04 — BTC-frequency and causal Treasury accrual
+
+- Added role-based intraday providers: Kraken one-minute midpoint spot candles
+  and Deribit one-minute dated-futures candles can now be changed independently.
+- Materialized three complete Kraken free-sample days (4,320 minute bars) and
+  connected the BTC-only strategy path to no-look-ahead spot/futures snapshots.
+- Added a BTC-only execution/rebalancing interval in seconds. Zero uses every
+  common market observation; positive intervals must be whole multiples of the
+  detected source resolution, with requests finer than the data rejected.
+- Preserved ISO timestamps in spot and futures CSV readers so the same engine
+  path supports intraday datasets when they are supplied.
+- Replaced between-date Treasury-yield interpolation and future backfilling with
+  true as-of alignment. Treasury positions now accrue piecewise at the latest
+  observable yield until a new mark becomes available.
+- Documented the conservative intraday convention that a date-only Treasury
+  close becomes available at 00:00 UTC on the following day.
+
+## 2026-09-01 — separate maturity controls and responsive spreadsheet export
+
+- Split the pure-maturity scale and normalized clip into independent long- and
+  short-side parameters, while mapping legacy shared JSON values to both sides.
+- Fixed spreadsheet generation referencing an out-of-scope portfolio-key list,
+  added immediate preparation feedback, and attached the temporary download link
+  to the document for consistent browser behavior.
+
+## 2026-09-01 — aligned local Sites GUI/API preview
+
+- Served the spreadsheet ZIP runtime from the FastAPI web application as well
+  as packaging it in the web container.
+- Made `npm run dev` launch the canonical local CPython API beside the Sites GUI,
+  with same-origin `/api/v1` proxying and strict server mode in the Sites iframe.
+- Made failed deployment browser checks print failed requests, page errors, and
+  browser console messages directly while retaining the JSON/screenshot artifact.
+
+- Added an in-browser Excel export for the active plot interval, with overview,
+  combined portfolio, and daily component-composition sheets containing weights,
+  component values, and weighted prices without rerunning the backtest.
+- Prevented null calculation responses from reaching summary rendering. Automatic
+  engine mode now retries failed, empty, malformed, or structurally invalid server
+  results with the browser engine; explicit server mode reports the response error.
+- Included the tracked browser spreadsheet runtime in the Docker build context so
+  `/fflate.js` is present in deployed GUI images as well as local builds.
+
+## 2026-08-31 — Allocation smoothing and configurable reactivity
+
+- Added a same-day/next-day reactivity parameter. Same-day is the default;
+  next-day preserves the prior one-observation execution lag.
+- Added independent calendar-day half-lives for the long implementation mix
+  and short-book allocation. Smoothing changes exposure sizes without averaging
+  lease inputs or delaying current contract ranking.
+- Aligned output dates, trade diagnostics, and market diagnostics with that
+  execution close in both timing modes.
+- Added timing, smoothing, non-trading-day, and no-look-ahead regression coverage.
+
+## 2026-08-25 — Firestore routing regression mitigation
+
+- Pinned `google-api-core[grpc]` to `2.34.0` after the newly released `2.35.0`
+  percent-encoded Firestore's `(default)` database ID as `%28default%29`, causing
+  both stable and preview strategy requests to return HTTP 500 before a
+  calculation Job could launch.
+- Added a dependency regression test so an unconstrained rebuild cannot silently
+  reintroduce the broken routing client.
+- Strengthened the Cloud Shell helper with a private startup initializer that
+  reactivates the Keep & Lease account, project, region, and persistent Cloud SDK
+  configuration in each new shell.
+
+## 2026-08-25 — GUI result, curve, and market-loading stabilization
+
+- Added `GET /api/v1/backtests/latest` so the GUI restores the newest completed
+  Firestore/GCS result, including its parameters, after refresh, close/reopen,
+  and from another browser using the approved Cloud Run application.
+- Scoped new job caches, latest-result selection, status, result download, and
+  cancellation to the authenticated IAP identity; unowned local development
+  remains supported.
+- Removed obsolete GUI calls to the nonexistent `/api/strategy-state` and
+  `/api/strategy-parameters` routes; lightweight parameter edits remain local,
+  while the latest completed run is the cross-session server source of truth.
+- Restored commodity frozen-curve and Treasury yield-change scatter plots,
+  carried their source points through date filtering, and made empty plots show
+  an explicit no-observations message instead of a blank canvas.
+- Made the default deployment load only the three materialized GUI markets
+  (silver, gold, and S&P 500), retained opt-in extensibility through
+  `KEEP_AND_LEASE_PRODUCTS`, and removed the duplicate silver load.
+- Added cache-corruption diagnostics plus API, market-cache, and rendered-GUI
+  regression coverage for the fixes.
+
+## 2026-08-24 — Direct Cloud Run IAP implementation
+
+- Added foundation-managed IAP API enablement without granting the keyless
+  deployment identity permission to administer IAP policy.
+- Added direct Cloud Run IAP and its service-agent invocation binding. Human,
+  Codex operator, and deployment accessors are all managed manually in the private
+  Google Cloud IAP policy.
+- Updated the workload-only Google Terraform provider constraint to 7.x, where
+  direct Cloud Run `iap_enabled` is supported; foundation state remains on its
+  independent provider constraint.
+- Added repository-variable-controlled IAP activation and automatic IAP OAuth
+  client audiences for both deployment health checks and the bounded operator.
+- Kept activation fail-closed: IAP requires a non-empty client ID and cannot
+  coexist with anonymous invocation.
+- Left the no-organization OAuth console activation and end-to-end acceptance
+  checks as explicit one-time deployment steps.
+- Added an idempotent, checksum-verified Terraform `1.15.9` installer that persists
+  in `$HOME/.local/bin` across Google Cloud Shell sessions.
+
+## 2026-08-23 — Canonical market database cache
+
+- Switched silver, gold, and S&P 500 server loading from legacy ZIP archives to
+  their common materialized CSV layout.
+- Added a deterministic build-time SQLite cache and process-local decoded cache
+  so repeated calculations reuse the same market snapshot without network I/O.
+- Removed the truncated `gc.zip` from Cloud Run API and worker images; valid
+  gold data now comes from all 214 materialized contract files.
+
 ## 2026-08-23 — Approved-user Cloud Run IAP cutover plan
 
 - Documented direct IAP on the existing `run.app` URL as the approved-user browser
@@ -36,7 +162,28 @@
   null-reference page error for follow-up; neither prevented the ready server GUI
   from rendering.
 
+## 2026-08-21 — Cloud Run preview inspection and return to private access
 
+- Deployed the unmerged `agent/pure-maturity-multiplier` branch to Cloud Run and
+  repaired corrupted strategy and GUI assets discovered in the deployed image.
+- Added an explicit, default-false `allow_unauthenticated` manual-workflow input and
+  removed automatic backtest submission on a visitor's first page load.
+- Temporarily enabled anonymous invocation to inspect the normal browser GUI, then
+  redeployed with `allow_unauthenticated=false` and verified that the `run.app` URL
+  returns `403 Forbidden` without authentication.
+- Restored the deployment workflow to `master` push plus manual dispatch only. The
+  branch remains unmerged; selected-user authentication and allowlisting are
+  deferred to the next access-control change.
+
+## 2026-08-20 — Pure-maturity scoring multiplier
+
+- Added independent, bounded multipliers that favor shorter long contracts and
+  longer short contracts after lease-rate eligibility and boundary scoring.
+- Kept both strengths at zero by default for exact ranking compatibility.
+- Exposed the controls per commodity and added the multiplier to inspected-day
+  score diagnostics.
+- Corrected GUI two-anchor boundary and side-specific rate-scale parsing so the
+  displayed controls reach the canonical Python engine.
 ## 2026-08-20 — Cloud Run operator access and publication plan
 
 - Recorded the successful `master` deployment and authenticated private operator

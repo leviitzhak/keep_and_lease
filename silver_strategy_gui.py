@@ -2,17 +2,22 @@
 """Local browser GUI for the parameterized silver lease strategy backtest."""
 
 import json
+import math
+import os
 from statistics import median
 from dataclasses import replace
-from datetime import date
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from zipfile import BadZipFile
 
 from backtest_silver_lease_strategy import (
-    Parameters, build_market, build_proxy_market, build_spot_market,
-    TENORS, asof_rate, positions_for_day, read_csv_spot, read_zip_spot,
+    Parameters, build_intraday_btc_market, build_market, build_proxy_market,
+    build_spot_market,
+    elapsed_days, market_resolution_seconds, observation_seconds,
+    multiplicative_log_contributions,
+    TENORS, asof_rate, parse_date, positions_for_day, read_csv_spot, read_zip_spot,
     run_backtest, score_diagnostic)
+from market_data_store import data_directory, read_cached_asset, read_spot_csv
 
 ROOT = Path(__file__).resolve().parent
 PAGE = ROOT / "silver_strategy_gui.html"
@@ -42,22 +47,47 @@ PRODUCTS = {
     "sp500": {"label": "S&P 500", "archive": "sp.zip", "prefix": "SP",
               "spot_source": "nearest live future (cash-index history pending)",
               "etf": "SPY / IVV", "replication": "equity-backed"},
+    "btc": {"label": "Bitcoin", "archive": None, "prefix": "BTC",
+            "spot_source": "Kraken BTC/USD one-minute midpoint",
+            "etf": "Direct BTC holding", "replication": "direct holding",
+            "holding_label": "Direct holding",
+            "parameter_defaults": {
+                "slv_expense": 0, "futures_contract_type": "inverse",
+                "trading_calendar": "all_days"}},
 }
 
+DEFAULT_DEPLOYMENT_PRODUCTS = ("silver", "gold", "sp500", "btc")
 
-def build_markets(root):
+
+def build_markets(root, enabled_products=None):
     import time
     global MARKET_LOAD_ERRORS
     markets, MARKET_LOAD_ERRORS = {}, {}
+    if enabled_products is None:
+        configured = os.getenv(
+            "KEEP_AND_LEASE_PRODUCTS", ",".join(DEFAULT_DEPLOYMENT_PRODUCTS)
+        )
+        enabled_products = {
+            item.strip() for item in configured.split(",") if item.strip()
+        }
+    else:
+        enabled_products = set(enabled_products)
     builders = {
         "silver": lambda: build_market(root),
         "gold": lambda: build_spot_market(
-            root, "gc.zip", "GC", read_zip_spot(root, "gold_price.csv")),
+            root, "gc.zip", "GC", _asset_spot(root, "gold", "gold_price.csv")),
         "oil": lambda: build_spot_market(
             root, "cl.zip", "CL",
             read_csv_spot(root, "DCOILWTICO.csv", "DCOILWTICO")),
+        "btc": lambda: _build_btc_market(root),
     }
     for key, spec in PRODUCTS.items():
+        if key not in enabled_products:
+            MARKET_LOAD_ERRORS[key] = (
+                "not enabled in this deployment; materialize its spot and "
+                "contract histories before adding it to KEEP_AND_LEASE_PRODUCTS"
+            )
+            continue
         builder = builders.get(key, lambda spec=spec: build_proxy_market(
             root, spec["archive"], spec["prefix"]))
         started = time.monotonic()
@@ -75,6 +105,24 @@ def build_markets(root):
                 flush=True,
             )
     return markets
+
+
+def _asset_spot(root, asset, legacy_member):
+    cached = read_cached_asset(Path(root), asset)
+    if cached is not None:
+        return cached[0]
+    if (data_directory(Path(root)) / asset).is_dir():
+        return read_spot_csv(Path(root), asset)
+    return read_zip_spot(root, legacy_member)
+
+
+def _build_btc_market(root):
+    intraday_config = (
+        data_directory(Path(root)) / "btc" / "intraday" / "config.json")
+    if intraday_config.exists():
+        return build_intraday_btc_market(root)
+    return build_spot_market(
+        root, None, "BTC", _asset_spot(root, "btc", "spot.csv"))
 
 
 def number(payload, name, default, low=None, high=None):
@@ -99,7 +147,13 @@ def product_payload(payload, product):
     scoring curve, caps, and leg switches.
     """
     merged = dict(payload)
+    merged.update(PRODUCTS.get(product, {}).get("parameter_defaults", {}))
     nested = payload.get("commodity_parameters", {})
+    if isinstance(nested, str):
+        try:
+            nested = json.loads(nested)
+        except json.JSONDecodeError:
+            nested = {}
     if isinstance(nested, dict) and isinstance(nested.get(product), dict):
         merged.update(nested[product])
     prefix = f"{product}__"
@@ -113,12 +167,43 @@ def parameters(payload):
     pct = lambda name, default: number(payload, name, default) / 100
     flag = lambda name, default: str(payload.get(
         name, "true" if default else "false")).lower() == "true"
+    execution_interval_seconds = number(
+        payload, "execution_interval_seconds", 0, 0)
+    def boundary(direction):
+        anchor_names = (
+            f"{direction}_line_maturity_1", f"{direction}_line_rate_1",
+            f"{direction}_line_maturity_2", f"{direction}_line_rate_2")
+        if not any(name in payload for name in anchor_names):
+            return (
+                pct(f"{direction}_maturity_line_intercept", 0),
+                pct(f"{direction}_maturity_line_slope_per_year",
+                    payload.get(f"{direction}_maturity_bonus_per_year", 0.4)),
+            )
+        maturity_1 = number(payload, f"{direction}_line_maturity_1", 30, 0)
+        maturity_2 = number(payload, f"{direction}_line_maturity_2", 365, 0)
+        if maturity_2 <= maturity_1:
+            raise ValueError(
+                f"{direction} boundary maturity 2 must exceed maturity 1")
+        rate_1 = pct(f"{direction}_line_rate_1", 0.033)
+        rate_2 = pct(f"{direction}_line_rate_2", 0.4)
+        slope = (rate_2 - rate_1) * 365 / (maturity_2 - maturity_1)
+        return rate_1 - slope * maturity_1 / 365, slope
+
+    long_intercept, long_slope = boundary("long")
+    short_intercept, short_slope = boundary("short")
     p = Parameters(
         min_days=int(number(payload, "min_days", 10, 1, 2000)),
+        reactivity=str(payload.get("reactivity", "same_day")),
+        long_allocation_half_life_days=number(
+            payload, "long_allocation_half_life_days", 0, 0, 10000),
+        short_allocation_half_life_days=number(
+            payload, "short_allocation_half_life_days", 0, 0, 10000),
         roll_only_if_better=flag("roll_only_if_better", True),
         force_roll_at_min_days=flag("force_roll_at_min_days", True),
         enable_short_book=flag("enable_short_book", True),
-        enable_slv_leg=flag("enable_slv_leg", True),
+        # Legacy JSON may contain enable_slv_leg=false.  The fund is now the
+        # mandatory complement of Treasury-collateralized futures replication.
+        enable_slv_leg=True,
         enable_cash_long_futures_leg=flag("enable_cash_long_futures_leg", True),
         slv_entry_mode=str(payload.get("slv_entry_mode", "gradual")),
         long_futures_entry_mode=str(payload.get(
@@ -132,13 +217,21 @@ def parameters(payload):
         positive_full_rate=pct("positive_full_rate", 15),
         long_contract_selection=str(payload.get(
             "long_contract_selection", "shortest_maturity")),
-        long_maturity_line_intercept=pct(
-            "long_maturity_line_intercept", 0),
-        long_maturity_line_slope_per_year=pct(
-            "long_maturity_line_slope_per_year",
-            payload.get("long_maturity_bonus_per_year", 0.4)),
+        long_maturity_line_intercept=long_intercept,
+        long_maturity_line_slope_per_year=long_slope,
         long_relative_strength=number(
             payload, "long_relative_strength", 1, 0, 100),
+        long_score_rate_scale=pct("long_score_rate_scale", 1),
+        long_score_adjustment_clip=number(
+            payload, "long_score_adjustment_clip", 3, 0, 100),
+        long_pure_maturity_strength=number(
+            payload, "long_pure_maturity_strength", 0, 0, 100),
+        long_pure_maturity_scale_days=number(
+            payload, "long_pure_maturity_scale_days",
+            float(payload.get("pure_maturity_scale_days", 365)), 1, 10000),
+        long_pure_maturity_clip=number(
+            payload, "long_pure_maturity_clip",
+            float(payload.get("pure_maturity_clip", 3)), 0, 100),
         long_maturity_bonus_per_year=pct("long_maturity_bonus_per_year", 0.4),
         long_extreme_qualification_rate=pct(
             "long_extreme_qualification_rate",
@@ -148,22 +241,30 @@ def parameters(payload):
             "long_extreme_maturity_advantage_per_year", 0.5),
         long_extreme_maturity_bonus_per_year=pct(
             "long_extreme_maturity_bonus_per_year", 1),
-        max_long_future=pct("max_long_future", 50),
+        max_futures_treasury_fraction=pct("max_futures_treasury_fraction", 50),
         negative_short_start_rate=pct("negative_short_start_rate", -0.5),
         negative_short_full_rate=pct("negative_short_full_rate", -15),
-        max_short_fraction_of_slv=pct("max_short_fraction_of_slv", 50),
+        max_short_fraction_of_long_leg=pct("max_short_fraction_of_long_leg", 50),
         short_contract_selection=str(payload.get(
             "short_contract_selection", "weighted_lease_rate")),
-        short_maturity_line_intercept=pct(
-            "short_maturity_line_intercept", 0),
-        short_maturity_line_slope_per_year=pct(
-            "short_maturity_line_slope_per_year",
-            payload.get("short_maturity_bonus_per_year", 0.4)),
+        short_maturity_line_intercept=short_intercept,
+        short_maturity_line_slope_per_year=short_slope,
         short_relative_strength=number(
             payload, "short_relative_strength", 1, 0, 100),
-        score_rate_scale=pct("score_rate_scale", 1),
+        short_score_rate_scale=pct("short_score_rate_scale", 1),
+        short_score_adjustment_clip=number(
+            payload, "short_score_adjustment_clip", 3, 0, 100),
+        short_pure_maturity_strength=number(
+            payload, "short_pure_maturity_strength", 0, 0, 100),
+        short_pure_maturity_scale_days=number(
+            payload, "short_pure_maturity_scale_days",
+            float(payload.get("pure_maturity_scale_days", 365)), 1, 10000),
+        short_pure_maturity_clip=number(
+            payload, "short_pure_maturity_clip",
+            float(payload.get("pure_maturity_clip", 3)), 0, 100),
+        score_rate_scale=pct("long_score_rate_scale", 1),
         score_adjustment_clip=number(
-            payload, "score_adjustment_clip", 3, 0, 100),
+            payload, "long_score_adjustment_clip", 3, 0, 100),
         short_maturity_bonus_per_year=pct("short_maturity_bonus_per_year", 0.4),
         short_extreme_qualification_rate=pct(
             "short_extreme_qualification_rate",
@@ -177,9 +278,23 @@ def parameters(payload):
         treasury_asset=str(payload.get("treasury_asset", "matched_maturity")),
         treasury_allocation_mode=str(payload.get(
             "treasury_allocation_mode", "shortest_rolling")),
+        futures_contract_type=str(payload.get(
+            "futures_contract_type", "regular")),
+        inverse_payoff_conversion_fee=pct(
+            "inverse_payoff_conversion_fee", 0),
+        inverse_min_conversion_btc=number(
+            payload, "inverse_min_conversion_btc", 0, 0),
+        trading_calendar=str(payload.get("trading_calendar", "business_days")),
+        execution_interval_seconds=execution_interval_seconds,
     )
+    if p.futures_contract_type not in {"regular", "inverse"}:
+        raise ValueError("futures_contract_type must be 'regular' or 'inverse'")
+    if p.trading_calendar not in {"business_days", "all_days"}:
+        raise ValueError("Invalid trading calendar")
     if p.bond_mode not in {"accrual", "zero_coupon_mtm"}:
         raise ValueError("Invalid bond mode")
+    if p.reactivity not in {"same_day", "next_day"}:
+        raise ValueError("Invalid strategy reactivity")
     if p.treasury_asset not in {"matched_maturity", "sgov_proxy"}:
         raise ValueError("Invalid Treasury instrument")
     if p.treasury_allocation_mode not in {
@@ -252,7 +367,7 @@ def futures_diagnostics(rows, by_day, p):
     """Return per-date futures details for the all-prices chart tooltip."""
     result = []
     for row in rows:
-        chart_day = date.fromisoformat(row["date"])
+        chart_day = parse_date(row["date"])
         candidates = by_day.get(chart_day, [])
         eligible = [x for x in candidates if x["days"] >= p.min_days]
         if not eligible:
@@ -311,7 +426,7 @@ def statistics_points(by_day, contracts, p, limit=12000):
                 "forward_premium_pct": 100 * contract["premium"],
                 "actual_lease_pct": 100 * contract["lease"] * contract["days"] / 365,
                 "next_date": next_day.isoformat() if next_day else None,
-                "next_elapsed_days": (next_day - day).days if next_day else None,
+                "next_elapsed_days": elapsed_days(day, next_day) if next_day else None,
                 "next_return_pct": 100 * next_return if next_return is not None else None,
             })
     if len(points) <= limit:
@@ -368,7 +483,7 @@ def inspection_for_day(payload, requested_day):
     global MARKETS
     if MARKETS is None:
         MARKETS = {"silver": MARKET}
-    selected = date.fromisoformat(requested_day)
+    selected = parse_date(requested_day)
     weights = portfolio_allocations(payload)
     result = {"requested_date": requested_day, "commodities": {}}
     resolved_days = []
@@ -380,7 +495,11 @@ def inspection_for_day(payload, requested_day):
         available_days = sorted(market[3])
         if not available_days:
             continue
-        actual = min(available_days, key=lambda day: abs(day - selected))
+        selected_value = observation_seconds(selected)
+        actual = min(
+            available_days,
+            key=lambda day: abs(observation_seconds(day) - selected_value),
+        )
         resolved_days.append(actual)
         candidates = [item for item in market[3].get(actual, [])
                       if item["days"] >= p.min_days]
@@ -553,6 +672,10 @@ def outlier_statistics(rows, limit=50):
 def sleeve_result(payload, market=None, product="silver"):
     p = parameters(product_payload(payload, product))
     market = market or MARKET
+    common_observations = [
+        observation for observation in market[3] if observation in market[0]
+    ]
+    source_resolution_seconds = market_resolution_seconds(common_observations)
     rows, missing = run_backtest(*market, p)
     if not rows:
         raise ValueError("No observations remain with these parameters")
@@ -560,7 +683,37 @@ def sleeve_result(payload, market=None, product="silver"):
     sampled = rows[::stride]
     if sampled[-1] is not rows[-1]:
         sampled.append(rows[-1])
-    fields = ["date", "interval_return_pct", "simple_cumulative_return_pct",
+    spreadsheet_fields = [
+        "date", "exit_date", "mode", "interval_return_pct", "starting_nav",
+        "ending_nav", "slv_price",
+        "slv_exit_price", "slv_weight_pct", "replicating_leg_value",
+        "treasury_weight_pct", "treasury_position_price_index",
+        "futures_treasury_value", "lease_book_value", "keep_book_value",
+        "lease_book_start_value", "lease_book_end_value",
+        "keep_book_start_value", "keep_book_end_value",
+        "lease_book_external_transfer", "keep_book_external_transfer",
+        "lease_book_underlying_value", "keep_book_underlying_value",
+        "underlying_price_index",
+        "lease_book_effective_proportion_pct",
+        "keep_book_effective_proportion_pct",
+        "lease_book_underlying_daily_return_pct",
+        "keep_book_underlying_daily_return_pct",
+        "lease_book_underlying_compounded_index",
+        "keep_book_underlying_compounded_index",
+        "combined_books_underlying_compounded_index",
+        "reconstructed_nav", "nav_reconstruction_difference",
+        "nav_reconstruction_difference_pct",
+    ]
+    holding_fields = [
+        "name", "holding_type", "book", "side", "contract_type", "price",
+        "exit_price", "quantity", "end_quantity", "units_expensed",
+        "position_pct", "notional_value", "start_value", "end_value",
+        "gross_pnl_value", "expense_rate", "expense_value", "pnl_value",
+        "internal_transfer_value",
+        "spot_price", "exit_spot_price", "premium_pct",
+        "matched_usd_rate_pct", "lease_pct", "maturity_days",
+    ]
+    fields = ["date", "exit_date", "interval_return_pct", "simple_cumulative_return_pct",
               "compounded_return_pct", "slv_weight_pct", "treasury_weight_pct",
               "long_futures_notional_pct", "short_futures_notional_pct",
               "long_weighted_maturity_days", "short_weighted_maturity_days",
@@ -570,13 +723,47 @@ def sleeve_result(payload, market=None, product="silver"):
               "matched_long_extension_interval_return_pct",
               "long_book_cumulative_return_pct", "short_book_cumulative_return_pct",
               "matched_long_extension_cumulative_return_pct",
+              "lease_book_interval_return_pct", "keep_book_interval_return_pct",
+              "keep_book_contribution_interval_return_pct",
+              "replicating_fund_book_interval_return_pct",
+              "futures_treasury_book_interval_return_pct",
+              "lease_book_factor_interval_return_pct",
+              "keep_book_factor_interval_return_pct",
+              "lease_fund_factor_interval_return_pct",
+              "lease_futures_treasury_factor_interval_return_pct",
+              "lease_book_compounded_return_pct",
+              "keep_book_compounded_return_pct",
+              "keep_book_contribution_compounded_return_pct",
+              "replicating_fund_book_compounded_return_pct",
+              "futures_treasury_book_compounded_return_pct",
+              "lease_book_attributed_factor_compounded_return_pct",
+              "keep_book_attributed_factor_compounded_return_pct",
+              "lease_fund_attributed_factor_compounded_return_pct",
+              "lease_futures_treasury_attributed_factor_compounded_return_pct",
+              "replicating_leg_value", "futures_treasury_value",
+              "lease_book_value", "keep_book_value",
+              "replicating_leg_underlying_value",
+              "futures_treasury_underlying_value",
+              "lease_book_underlying_value", "keep_book_underlying_value",
+              "underlying_price_index",
+              "lease_book_effective_proportion_pct",
+              "keep_book_effective_proportion_pct",
+              "lease_book_underlying_daily_return_pct",
+              "keep_book_underlying_daily_return_pct",
+              "lease_book_underlying_compounded_index",
+              "keep_book_underlying_compounded_index",
+              "combined_books_underlying_compounded_index",
+              "reconstructed_nav", "nav_reconstruction_difference",
+              "nav_reconstruction_difference_pct",
+              "initial_replicating_leg_value",
+              "initial_futures_treasury_value",
               "long_futures_daily_return_pct", "short_futures_daily_return_pct",
               "slv_daily_return_pct", "treasury_daily_return_pct",
               "long_futures_cumulative_return_pct", "short_futures_cumulative_return_pct",
               "slv_cumulative_return_pct", "treasury_cumulative_return_pct",
               "long_futures_compounded_return_pct", "short_futures_compounded_return_pct",
               "slv_compounded_return_pct", "treasury_compounded_return_pct",
-              "slv_price", "long_weighted_future_price", "short_weighted_future_price",
+              "slv_price", "slv_exit_price", "long_weighted_future_price", "short_weighted_future_price",
               "treasury_position_price_index", "sgov_proxy_price_index",
               "long_weighted_forward_premium_pct",
               "short_weighted_forward_premium_pct", "cash_plus_slv_weight_pct",
@@ -600,7 +787,8 @@ def sleeve_result(payload, market=None, product="silver"):
     slv_nav = 1.0
     slv_nav_values = [slv_nav]
     for row in rows:
-        slv_nav *= 1 + row["slv_daily_return_pct"] / 100
+        if row["slv_daily_return_pct"] is not None:
+            slv_nav *= 1 + row["slv_daily_return_pct"] / 100
         slv_nav_values.append(slv_nav)
     comparisons = []
     for selection in ("weighted_lease_rate", "highest_lease_rate"):
@@ -641,13 +829,34 @@ def sleeve_result(payload, market=None, product="silver"):
     return {
         "_full_rows": rows,
         "series": [[row[k] for k in fields] for row in sampled],
+        "book_return_distributions": [[
+            row["exit_date"],
+            row["lease_book_underlying_daily_return_pct"],
+            row["keep_book_underlying_daily_return_pct"],
+        ] for row in rows],
         "fields": fields,
         "product": product,
         "product_label": PRODUCTS.get(product, {}).get("label", product.title()),
+        "market_data_resolution_seconds": source_resolution_seconds,
+        "execution_interval_seconds": (
+            p.execution_interval_seconds or source_resolution_seconds),
         "direct_proxy": PRODUCTS.get(product, {}).get("spot_source"),
         "replicating_etf": PRODUCTS.get(product, {}).get("etf"),
         "replication_type": PRODUCTS.get(product, {}).get("replication"),
+        "holding_label": PRODUCTS.get(product, {}).get(
+            "holding_label", "Replicating fund"),
         "futures_prices": futures_price_series(sampled, market[1]),
+        "held_futures_diagnostics": [row.get("held_futures", []) for row in sampled],
+        "holding_fields": holding_fields,
+        "spreadsheet_rows": [
+            {**{field: row.get(field) for field in spreadsheet_fields},
+             "held_futures": row.get("held_futures", []),
+             "holding_ledger": [
+                 [item.get(field) for field in holding_fields]
+                 for item in row.get("holding_ledger", [])
+             ]}
+            for row in rows
+        ],
         "futures_diagnostics": futures_diagnostics(sampled, market[3], p),
         "statistics_points": statistics_points(market[3], market[1], p),
         "treasury_statistics_points": treasury_statistics_points(market[2]),
@@ -689,6 +898,12 @@ def sleeve_result(payload, market=None, product="silver"):
             # Compatibility aliases for older saved browser results.
             "direct_silver_return": 100 * (slv_nav - 1),
             "direct_silver_max_drawdown": max_drawdown(slv_nav_values),
+            "max_nav_reconstruction_difference": max(
+                abs(row["nav_reconstruction_difference"]) for row in rows),
+            "max_nav_reconstruction_relative_difference": max(
+                abs(row["nav_reconstruction_difference_pct"]) / 100
+                for row in rows),
+            "nav_reconstruction_verified": True,
             **change_stats,
         },
     }
@@ -723,17 +938,21 @@ def aggregate_portfolio(sleeves, target_weights, rebalance):
         "other": "other_return_contribution_pct",
     }
     maps = {
-        key: {row["date"]: row for row in sleeve["_full_rows"]}
+        key: {(row["date"], row.get("exit_date", row["date"])): row
+              for row in sleeve["_full_rows"]}
         for key, sleeve in sleeves.items()
     }
-    dates = sorted(set.intersection(*(set(rows) for rows in maps.values())))
-    if not dates:
+    intervals = sorted(set.intersection(*(set(rows) for rows in maps.values())))
+    if not intervals:
         raise ValueError("The selected commodities have no overlapping history")
     nav = 1.0
     simple = 0.0
     direct_nav = 1.0
+    direct_unrebalanced_nav = 1.0
     sleeve_values = dict(target_weights)
     direct_values = dict(target_weights)
+    direct_unrebalanced_values = dict(target_weights)
+    asset_factor_nav = {key: 1.0 for key in target_weights}
     output = []
     attribution = []
     previous_period = None
@@ -746,7 +965,7 @@ def aggregate_portfolio(sleeves, target_weights, rebalance):
     }
     if rebalance not in schedules:
         raise ValueError("Invalid rebalancing choice")
-    for day in dates:
+    for day, exit_day in intervals:
         period = schedules[rebalance](day)
         if rebalance != "none" and previous_period is not None and period != previous_period:
             sleeve_values = {key: nav * weight for key, weight in target_weights.items()}
@@ -755,21 +974,23 @@ def aggregate_portfolio(sleeves, target_weights, rebalance):
         previous_period = period
         start_nav = sum(sleeve_values.values())
         start_direct = sum(direct_values.values())
+        start_direct_unrebalanced = sum(direct_unrebalanced_values.values())
         contributions = {}
         direct_contributions = {}
-        day_attribution = {"date": day, "assets": {}}
+        direct_unrebalanced_contributions = {}
+        day_attribution = {"date": exit_day, "start_date": day, "assets": {}}
         for key in target_weights:
             effective_weight = sleeve_values[key] / start_nav
             if key == "treasury":
-                reference = maps[next(iter(sleeves))][day]
+                reference = maps[next(iter(sleeves))][(day, exit_day)]
                 daily = reference["treasury_daily_return_pct"] / 100
                 direct_daily = daily
                 component_values = {"treasury": 100 * effective_weight * daily}
             else:
-                daily = maps[key][day]["interval_return_pct"] / 100
-                direct_daily = maps[key][day]["slv_daily_return_pct"] / 100
+                daily = maps[key][(day, exit_day)]["interval_return_pct"] / 100
+                direct_daily = maps[key][(day, exit_day)]["slv_daily_return_pct"] / 100
                 component_values = {
-                    name: effective_weight * maps[key][day].get(field, 0.0)
+                    name: effective_weight * maps[key][(day, exit_day)].get(field, 0.0)
                     for name, field in component_fields.items()
                 }
                 component_values["other"] += (
@@ -778,6 +999,9 @@ def aggregate_portfolio(sleeves, target_weights, rebalance):
             contributions[key] = effective_weight * daily
             direct_contributions[key] = (
                 direct_values[key] / start_direct * direct_daily)
+            direct_unrebalanced_contributions[key] = (
+                direct_unrebalanced_values[key] /
+                start_direct_unrebalanced * direct_daily)
             day_attribution["assets"][key] = {
                 "effective_weight_pct": 100 * effective_weight,
                 "contribution_pct": 100 * contributions[key],
@@ -787,16 +1011,30 @@ def aggregate_portfolio(sleeves, target_weights, rebalance):
             }
             sleeve_values[key] *= 1 + daily
             direct_values[key] *= 1 + direct_daily
+            direct_unrebalanced_values[key] *= 1 + direct_daily
         daily_return = sum(contributions.values())
         direct_return = sum(direct_contributions.values())
+        direct_unrebalanced_return = sum(
+            direct_unrebalanced_contributions.values())
+        asset_logs = multiplicative_log_contributions(
+            daily_return, contributions)
+        for key, log_contribution in asset_logs.items():
+            asset_factor_nav[key] *= math.exp(log_contribution)
         nav *= 1 + daily_return
         direct_nav *= 1 + direct_return
+        direct_unrebalanced_nav *= 1 + direct_unrebalanced_return
         simple += daily_return
         row = [
-            day, 100 * daily_return, 100 * simple, 100 * (nav - 1),
-            100 * direct_return, 100 * (direct_nav - 1), nav,
+            exit_day, day, 100 * daily_return, 100 * simple, 100 * (nav - 1),
+            100 * direct_return, 100 * (direct_nav - 1), start_nav, nav,
         ]
         row.extend(100 * contributions[key] for key in target_weights)
+        row.extend([
+            100 * direct_unrebalanced_return,
+            100 * (direct_unrebalanced_nav - 1),
+        ])
+        row.extend(
+            100 * (asset_factor_nav[key] - 1) for key in target_weights)
         output.append(row)
         day_attribution["portfolio_return_pct"] = 100 * daily_return
         day_attribution["reconciled_pct"] = sum(
@@ -804,10 +1042,14 @@ def aggregate_portfolio(sleeves, target_weights, rebalance):
             for asset in day_attribution["assets"].values())
         attribution.append(day_attribution)
     fields = [
-        "date", "interval_return_pct", "simple_cumulative_return_pct",
+        "date", "start_date", "interval_return_pct", "simple_cumulative_return_pct",
         "compounded_return_pct", "direct_daily_return_pct",
-        "direct_compounded_return_pct", "nav",
-    ] + [f"{key}_contribution_pct" for key in target_weights]
+        "direct_compounded_return_pct", "start_nav", "nav",
+    ] + [f"{key}_contribution_pct" for key in target_weights] + [
+        "direct_unrebalanced_daily_return_pct",
+        "direct_unrebalanced_compounded_return_pct",
+    ] + [f"{key}_attributed_factor_compounded_return_pct"
+         for key in target_weights]
     return fields, output, attribution
 
 
@@ -819,6 +1061,13 @@ def result(payload):
     commodity_weights = {
         key: value for key, value in weights.items() if key != "treasury"
     }
+    requested_interval = number(
+        payload, "execution_interval_seconds", 0, 0)
+    if requested_interval and set(commodity_weights) != {"btc"}:
+        raise ValueError(
+            "A custom execution interval is supported only when Bitcoin is "
+            "the sole commodity; a standalone Treasury allocation may still "
+            "be included")
     unavailable = [key for key in commodity_weights if key not in MARKETS]
     if unavailable:
         details = "; ".join(
@@ -843,6 +1092,12 @@ def result(payload):
         aggregation_sleeves = {"_cash_reference": cash_reference}
     fields, series, attribution = aggregate_portfolio(
         aggregation_sleeves, weights, rebalance)
+    frequency_reference = sleeves.get("btc") or next(
+        iter(sleeves.values()), cash_reference)
+    source_resolution_seconds = frequency_reference.get(
+        "market_data_resolution_seconds")
+    effective_execution_interval_seconds = frequency_reference.get(
+        "execution_interval_seconds")
     if (len(sleeves) == 1 and "silver" in sleeves and rebalance == "daily"
             and "treasury" not in weights):
         # Keep the legacy silver-only response shape without making the
@@ -853,10 +1108,15 @@ def result(payload):
         answer = dict(sleeves["silver"])
         answer["portfolio"] = {
             "weights": {"silver": 1.0}, "rebalancing": rebalance,
+            "market_data_resolution_seconds": source_resolution_seconds,
+            "execution_interval_seconds": effective_execution_interval_seconds,
             "available_products": PRODUCTS,
         }
         answer["daily_attribution"] = attribution
+        answer["portfolio_fields"] = fields
+        answer["portfolio_series"] = series
         answer["commodity_sleeves"] = sleeves
+        answer["parameters"] = dict(payload)
         answer["treasury_statistics_points"] = next(
             iter(sleeves.values()))["treasury_statistics_points"]
         answer.pop("_full_rows", None)
@@ -874,7 +1134,22 @@ def result(payload):
     direct_nav_values = [1.0] + [
         1 + row[fields.index("direct_compounded_return_pct")] / 100
         for row in series]
+    direct_unrebalanced_nav_values = [1.0] + [
+        1 + row[fields.index(
+            "direct_unrebalanced_compounded_return_pct")] / 100
+        for row in series]
+    longest_interval_row = max(
+        series,
+        key=lambda row: elapsed_days(
+            parse_date(row[fields.index("start_date")]),
+            parse_date(row[fields.index("date")]),
+        ))
+    longest_interval_days = elapsed_days(
+        parse_date(longest_interval_row[fields.index("start_date")]),
+        parse_date(longest_interval_row[fields.index("date")]),
+    )
     return {
+        "parameters": dict(payload),
         "fields": fields,
         "series": series,
         "daily_attribution": attribution,
@@ -883,18 +1158,29 @@ def result(payload):
         "treasury_rate_change_points": treasury_change_points,
         "portfolio": {
             "weights": weights, "rebalancing": rebalance,
+            "market_data_resolution_seconds": source_resolution_seconds,
+            "execution_interval_seconds": effective_execution_interval_seconds,
             "available_products": PRODUCTS,
         },
         "summary": {
-            "start": series[0][0], "end": series[-1][0],
+            "start": series[0][fields.index("start_date")],
+            "end": series[-1][fields.index("date")],
             "observations": len(series),
-            "simple_return": series[-1][2],
-            "compounded_return": series[-1][3],
-            "ending_nav": series[-1][6],
+            "simple_return": series[-1][fields.index(
+                "simple_cumulative_return_pct")],
+            "compounded_return": series[-1][fields.index(
+                "compounded_return_pct")],
+            "ending_nav": series[-1][fields.index("nav")],
             "max_drawdown": max_drawdown(nav_values),
-            "direct_holding_return": series[-1][5],
+            "direct_holding_return": series[-1][fields.index(
+                "direct_compounded_return_pct")],
             "direct_holding_max_drawdown": max_drawdown(direct_nav_values),
-            "direct_silver_return": series[-1][5],
+            "direct_unrebalanced_return": series[-1][fields.index(
+                "direct_unrebalanced_compounded_return_pct")],
+            "direct_unrebalanced_max_drawdown": max_drawdown(
+                direct_unrebalanced_nav_values),
+            "direct_silver_return": series[-1][fields.index(
+                "direct_compounded_return_pct")],
             "direct_silver_max_drawdown": max_drawdown(direct_nav_values),
             "missing_intervals": sum(
                 x["summary"]["missing_intervals"] for x in sleeves.values()),
@@ -905,6 +1191,11 @@ def result(payload):
             "avg_daily_notional_change_pct": sum(
                 commodity_weights[key] * sleeves[key]["summary"][
                     "avg_daily_notional_change_pct"] for key in sleeves),
+            "longest_holding_interval_days": longest_interval_days,
+            "longest_holding_interval_start": longest_interval_row[
+                fields.index("start_date")],
+            "longest_holding_interval_end": longest_interval_row[
+                fields.index("date")],
         },
     }
 

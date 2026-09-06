@@ -1,4 +1,7 @@
 -r requirements.txt
+# 2.35.0 percent-encodes Firestore's `(default)` database ID in gRPC routing
+# metadata and makes every Firestore call fail with HTTP 400.
+google-api-core[grpc]==2.34.0
 google-cloud-firestore>=2.19,<3
 google-cloud-run>=0.10,<1
 google-cloud-storage>=3,<4

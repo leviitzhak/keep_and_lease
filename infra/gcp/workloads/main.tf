@@ -4,7 +4,7 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = "~> 6.0"
+      version = "~> 7.0"
     }
   }
 }
@@ -14,12 +14,19 @@ provider "google" {
   region  = var.region
 }
 
+data "google_project" "current" {
+  project_id = var.project_id
+}
+
 locals {
-  prefix                 = "keep-and-lease"
+  preview                = var.deployment_target == "preview"
+  prefix                 = local.preview ? "keep-and-lease-preview" : "keep-and-lease"
   web_service_account    = "keep-lease-web@${var.project_id}.iam.gserviceaccount.com"
   worker_service_account = "keep-lease-worker@${var.project_id}.iam.gserviceaccount.com"
   market_data_bucket     = "${var.project_id}-market-data"
   results_bucket         = "${var.project_id}-results"
+  firestore_collection   = local.preview ? "backtests_preview" : "backtests"
+  cache_collection       = local.preview ? "backtest_cache_preview" : "backtest_cache"
 }
 
 resource "google_cloud_run_v2_job" "calculation" {
@@ -64,12 +71,24 @@ resource "google_cloud_run_v2_job" "calculation" {
           value = local.results_bucket
         }
         env {
+          name  = "KEEP_AND_LEASE_FIRESTORE_COLLECTION"
+          value = local.firestore_collection
+        }
+        env {
+          name  = "KEEP_AND_LEASE_FIRESTORE_CACHE_COLLECTION"
+          value = local.cache_collection
+        }
+        env {
           name  = "KEEP_AND_LEASE_MARKET_DATA_BUCKET"
           value = local.market_data_bucket
         }
         env {
           name  = "KEEP_AND_LEASE_IMAGE_REF"
           value = var.worker_image
+        }
+        env {
+          name  = "KEEP_AND_LEASE_MAX_RESULT_BYTES"
+          value = tostring(var.max_result_bytes)
         }
       }
     }
@@ -89,6 +108,7 @@ resource "google_cloud_run_v2_service" "web" {
   location            = var.region
   deletion_protection = false
   ingress             = "INGRESS_TRAFFIC_ALL"
+  iap_enabled         = var.iap_enabled
 
   template {
     service_account                  = local.web_service_account
@@ -134,6 +154,14 @@ resource "google_cloud_run_v2_service" "web" {
         value = local.results_bucket
       }
       env {
+        name  = "KEEP_AND_LEASE_FIRESTORE_COLLECTION"
+        value = local.firestore_collection
+      }
+      env {
+        name  = "KEEP_AND_LEASE_FIRESTORE_CACHE_COLLECTION"
+        value = local.cache_collection
+      }
+      env {
         name  = "KEEP_AND_LEASE_WORKER_IMAGE_REF"
         value = var.worker_image
       }
@@ -144,6 +172,10 @@ resource "google_cloud_run_v2_service" "web" {
       env {
         name  = "KEEP_AND_LEASE_ALLOWED_ORIGIN_REGEX"
         value = var.allowed_origin_regex
+      }
+      env {
+        name  = "KEEP_AND_LEASE_MAX_RESULT_BYTES"
+        value = tostring(var.max_result_bytes)
       }
 
       startup_probe {
@@ -159,6 +191,13 @@ resource "google_cloud_run_v2_service" "web" {
   }
 
   depends_on = [google_cloud_run_v2_job_iam_member.web_executes_calculation]
+}
+
+check "exclusive_web_authentication_mode" {
+  assert {
+    condition     = !(var.iap_enabled && var.allow_unauthenticated)
+    error_message = "IAP and unauthenticated Cloud Run invocation cannot be enabled together."
+  }
 }
 
 resource "google_cloud_run_v2_service_iam_member" "public_web" {
@@ -177,4 +216,24 @@ resource "google_cloud_run_v2_service_iam_member" "deploy_invoker" {
   name     = google_cloud_run_v2_service.web.name
   role     = "roles/run.servicesInvoker"
   member   = "serviceAccount:keep-lease-github@${var.project_id}.iam.gserviceaccount.com"
+}
+
+resource "google_cloud_run_v2_service_iam_member" "codex_operator_preview_invoker" {
+  count = local.preview ? 1 : 0
+
+  project  = var.project_id
+  location = google_cloud_run_v2_service.web.location
+  name     = google_cloud_run_v2_service.web.name
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:keep-lease-codex-operator@${var.project_id}.iam.gserviceaccount.com"
+}
+
+resource "google_cloud_run_v2_service_iam_member" "iap_service_agent_invoker" {
+  count = var.iap_enabled ? 1 : 0
+
+  project  = var.project_id
+  location = google_cloud_run_v2_service.web.location
+  name     = google_cloud_run_v2_service.web.name
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:service-${data.google_project.current.number}@gcp-sa-iap.iam.gserviceaccount.com"
 }

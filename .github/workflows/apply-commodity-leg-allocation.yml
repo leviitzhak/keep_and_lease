@@ -1,0 +1,54 @@
+name: Apply commodity-leg allocation migration
+
+on:
+  push:
+    branches:
+      - agent/commodity-leg-allocation
+    paths:
+      - scripts/migrate_commodity_leg_allocation.py
+      - .github/workflows/apply-commodity-leg-allocation.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/commodity-leg-allocation
+          fetch-depth: 0
+
+      - name: Apply allocation migration
+        run: python scripts/migrate_commodity_leg_allocation.py
+
+      - name: Validate Python
+        run: python -m py_compile backtest_silver_lease_strategy.py
+
+      - name: Check allocation invariants in source
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'slv_weight = 1.0 - futures_treasury_share' backtest_silver_lease_strategy.py
+          grep -q 'treasury_weight = futures_treasury_share' backtest_silver_lease_strategy.py
+          grep -q 'long_notional = futures_treasury_share' backtest_silver_lease_strategy.py
+          grep -q 'base_long_total = slv_weight + sum(base_longs.values())' backtest_silver_lease_strategy.py
+          grep -q 'Maximum futures + Treasuries (% of commodity leg)' public/silver_strategy_gui.html
+          grep -q 'Maximum short notional (% of commodity leg)' public/silver_strategy_gui.html
+
+      - name: Commit migrated implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'No migration changes to commit.'
+            exit 0
+          fi
+          git commit -m 'feat: make commodity leg allocation complementary'
+          git push origin HEAD:agent/commodity-leg-allocation

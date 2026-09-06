@@ -15,6 +15,7 @@ class Job:
     id: str
     parameters: dict[str, Any]
     parameter_hash: str
+    owner_id: str | None = None
     status: str = "queued"
     stage: str = "queued"
     detail: str = "Waiting for the calculation worker"

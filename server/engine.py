@@ -10,7 +10,6 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-import backtest_silver_lease_strategy as strategy
 import silver_strategy_gui as gui
 
 ProgressCallback = Callable[[str, str], None]
@@ -42,8 +41,15 @@ class StrategyEngine:
                 return
             notify = progress or (lambda _stage, _detail: None)
             notify("loading_data", f"Loading market histories from {self.data_root}")
-            gui.MARKET = strategy.build_market(self.data_root)
             gui.MARKETS = gui.build_markets(self.data_root)
+            if "silver" not in gui.MARKETS:
+                detail = gui.MARKET_LOAD_ERRORS.get(
+                    "silver", "canonical silver market data is unavailable"
+                )
+                raise ValueError(f"Unable to load the required silver market: {detail}")
+            # Keep the legacy single-market alias synchronized without loading
+            # the same histories a second time.
+            gui.MARKET = gui.MARKETS["silver"]
             self._loaded = True
             self._loaded_at = time.time()
             notify("ready", "Calculation engine and market histories are ready")
@@ -77,9 +83,10 @@ class StrategyEngine:
         else:
             manifest = hashlib.sha256()
             for name in (
-                "gold_silver.zip", "si.zip", "gc.zip", "cl.zip", "w.zip",
+                "gold_silver.zip", "si.zip", "cl.zip", "w.zip",
                 "c.zip", "s.zip", "sp.zip", "DCOILWTICO.csv", "DGS1.csv",
                 "DGS2.csv", "DGS3.csv", "DGS5.csv", "DTB3.csv", "DTB6.csv",
+                "data/manifest.json", "data/market.sqlite3",
             ):
                 path = self.data_root / name
                 manifest.update(name.encode("utf-8"))

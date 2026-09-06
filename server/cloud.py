@@ -45,9 +45,18 @@ def runtime_provenance() -> dict[str, Any]:
     }
 
 
-def parameter_hash(parameters: dict[str, Any], provenance: dict[str, Any]) -> str:
+def parameter_hash(
+    parameters: dict[str, Any],
+    provenance: dict[str, Any],
+    owner_id: str | None = None,
+) -> str:
     encoded = json.dumps(
-        {"schema_version": 1, "parameters": parameters, "provenance": provenance},
+        {
+            "schema_version": 1,
+            "parameters": parameters,
+            "provenance": provenance,
+            **({"owner_id": owner_id} if owner_id else {}),
+        },
         sort_keys=True,
         separators=(",", ":"),
         ensure_ascii=False,
@@ -141,11 +150,14 @@ class FirestoreJobRepository:
         return value
 
     def submit(
-        self, parameters: dict[str, Any], provenance: dict[str, Any]
+        self,
+        parameters: dict[str, Any],
+        provenance: dict[str, Any],
+        owner_id: str | None = None,
     ) -> tuple[Job, bool, bool]:
         from google.cloud import firestore
 
-        digest = parameter_hash(parameters, provenance)
+        digest = parameter_hash(parameters, provenance, owner_id)
         cache_ref = self.cache.document(digest)
         transaction = self.client.transaction()
 
@@ -168,6 +180,7 @@ class FirestoreJobRepository:
                 id=uuid.uuid4().hex,
                 parameters=dict(parameters),
                 parameter_hash=digest,
+                owner_id=owner_id,
                 provenance=dict(provenance),
             )
             job.logs.append(
@@ -187,6 +200,22 @@ class FirestoreJobRepository:
         if not snapshot.exists:
             return None
         return _job_from_document(job_id, snapshot.to_dict())
+
+    def latest_completed(self, owner_id: str | None = None) -> Job | None:
+        """Find the newest durable result without requiring a composite index."""
+        latest = None
+        for snapshot in self.jobs.where("status", "==", "completed").stream():
+            value = snapshot.to_dict()
+            if value.get("status") != "completed" or not value.get("result_uri"):
+                continue
+            job = _job_from_document(snapshot.id, value)
+            if job.owner_id != owner_id:
+                continue
+            if latest is None or (
+                job.completed_at or job.created_at
+            ) > (latest.completed_at or latest.created_at):
+                latest = job
+        return latest
 
     def _transition(
         self,
@@ -564,15 +593,17 @@ class CloudJobService:
             os.getenv("KEEP_AND_LEASE_HEARTBEAT_TIMEOUT_SECONDS", "120")
         )
 
-    def submit(self, parameters: dict[str, Any]) -> tuple[Job, bool]:
+    def submit(
+        self, parameters: dict[str, Any], owner_id: str | None = None
+    ) -> tuple[Job, bool]:
         job, cached, should_launch = self.repository.submit(
-            parameters, self.provenance
+            parameters, self.provenance, owner_id
         )
         if not should_launch and job.status in {"queued", "running"}:
             job = self._reconcile(job) or job
             if job.status == "failed":
                 job, cached, should_launch = self.repository.submit(
-                    parameters, self.provenance
+                    parameters, self.provenance, owner_id
                 )
         if should_launch:
             try:
@@ -587,6 +618,9 @@ class CloudJobService:
     def get(self, job_id: str) -> Job | None:
         job = self.repository.get(job_id)
         return self._reconcile(job) if job else None
+
+    def latest_completed(self, owner_id: str | None = None) -> Job | None:
+        return self.repository.latest_completed(owner_id)
 
     def _reconcile(self, job: Job) -> Job | None:
         if job.status not in {"queued", "running"}:

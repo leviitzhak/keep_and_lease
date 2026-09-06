@@ -18,11 +18,19 @@ async function jsonRequest(url, options = {}) {
     headers: {"content-type": "application/json", ...(options.headers || {})},
     cache: "no-store",
   });
-  let body = null;
-  try { body = await response.json(); } catch { /* handled below */ }
+  const raw = await response.text();
+  let body = null, parseError = null;
+  if (raw) {
+    try { body = JSON.parse(raw); } catch (error) { parseError = error; }
+  }
   if (!response.ok) {
     const detail = body?.detail || body?.error || `HTTP ${response.status}`;
     throw new Error(typeof detail === "string" ? detail : JSON.stringify(detail));
+  }
+  if (!raw) throw new Error(`Empty response from ${new URL(url).pathname}`);
+  if (parseError) {
+    const type = response.headers.get("content-type") || "unknown content type";
+    throw new Error(`Invalid JSON from ${new URL(url).pathname} (${type}): ${parseError.message}`);
   }
   return body;
 }
@@ -60,7 +68,9 @@ async function initialize() {
     if (health.schema_version !== 1) throw new Error("Unsupported server schema");
     report("Server calculation ready", health.loaded ? "market cache is warm" : "market data will load on the first run", 1);
     self.postMessage({type: "ready", engine: "server", capabilities: health});
-    self.onmessage = event => handleServerMessage(base, event.data);
+    self.onmessage = event => handleServerMessage(
+      base, event.data, config.requestedEngine === "auto"
+    );
   } catch (error) {
     if (config.requestedEngine === "server") {
       self.postMessage({type: "error", error: `Calculation server unavailable: ${error.message || error}`});
@@ -83,9 +93,37 @@ async function runServerBacktest(base, data) {
   }
   if (state.status !== "completed") throw new Error(state.error || state.detail || `Backtest ${state.status}`);
   report("Downloading calculation result", `${state.elapsed_seconds.toFixed(1)} seconds`, 1);
-  return jsonRequest(apiUrl(base, created.result_url));
+  const result = await jsonRequest(apiUrl(base, created.result_url));
+  if (!result || typeof result !== "object" || !result.summary) {
+    throw new Error("Calculation server returned a result without a summary");
+  }
+  return result;
 }
-async function handleServerMessage(base, data) {
+function runBrowserRequest(data, reason) {
+  report("Retrying with browser calculation", reason);
+  return new Promise((resolve, reject) => {
+    const fallback = new Worker("/backtest-worker-v12.js?v=18");
+    let submitted = false;
+    fallback.onmessage = event => {
+      const message = event.data || {};
+      if (message.type === "progress") { self.postMessage(message); return; }
+      if (message.type === "ready" && !submitted) {
+        submitted = true;
+        fallback.postMessage(data);
+        return;
+      }
+      if (message.type === "error" && message.id == null) {
+        fallback.terminate(); reject(new Error(message.error || "Browser calculation initialization failed")); return;
+      }
+      if (message.id === data.id) {
+        fallback.terminate();
+        message.error ? reject(new Error(message.error)) : resolve(message.result);
+      }
+    };
+    fallback.onerror = event => { fallback.terminate(); reject(new Error(event.message || "Browser calculation worker failed")); };
+  });
+}
+async function handleServerMessage(base, data, allowBrowserFallback) {
   if (!data || !["run", "inspect"].includes(data.type)) return;
   try {
     const result = data.type === "inspect"
@@ -96,6 +134,17 @@ async function handleServerMessage(base, data) {
       : await runServerBacktest(base, data);
     self.postMessage({id: data.id, result});
   } catch (error) {
+    if (allowBrowserFallback && data.type === "run") {
+      try {
+        const result = await runBrowserRequest(data, error.message || String(error));
+        if (!result || typeof result !== "object" || !result.summary) throw new Error("Browser calculation returned an invalid result");
+        self.postMessage({id: data.id, result});
+        return;
+      } catch (fallbackError) {
+        self.postMessage({id: data.id, error: `Server calculation failed (${error.message || error}); browser retry failed (${fallbackError.message || fallbackError})`});
+        return;
+      }
+    }
     self.postMessage({id: data.id, error: error.message || String(error)});
   }
 }

@@ -63,6 +63,7 @@ next-env.d.ts
 /public/DTB6.csv
 /public/backtest_silver_lease_strategy.py
 /public/silver_strategy_gui.py
+/public/market_data_store.py
 
 # AWS/Terraform local state and credentials-bearing configuration.
 /infra/aws/.terraform/
@@ -74,3 +75,5 @@ next-env.d.ts
 
 # Temporary credential file created by google-github-actions/auth.
 gha-creds-*.json
+public/data/*.sqlite3
+public/data/*.tmp

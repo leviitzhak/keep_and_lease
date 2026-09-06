@@ -14,27 +14,34 @@ import json
 import math
 import re
 import zipfile
-from bisect import bisect_right
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from dataclasses import replace
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 
 from maturity_scoring import (
-    BoundaryAnchors, RelativeAdjustment, adjusted_score, allocate_scores,
+    BoundaryAnchors, PureMaturityAdjustment, RelativeAdjustment, adjusted_score, allocate_scores,
     signed_distance,
 )
 from rate_change_attribution import InstrumentAttribution, build_rate_change_point
+from market_data_store import (
+    ASSET_BY_PREFIX, data_directory, read_cached_asset, read_contract_csvs,
+    read_spot_csv, load_intraday_market,
+)
 
 MONTHS = dict(zip("FGHJKMNQUVXZ", range(1, 13)))
 TENORS = [(91, "DTB3"), (182, "DTB6"), (365, "DGS1"),
           (730, "DGS2"), (1095, "DGS3"), (1825, "DGS5")]
+SECONDS_PER_DAY = 24 * 60 * 60
 
 
 @dataclass
 class Parameters:
     min_days: int
+    reactivity: str = "same_day"
+    long_allocation_half_life_days: float = 0.0
+    short_allocation_half_life_days: float = 0.0
     roll_only_if_better: bool = True
     force_roll_at_min_days: bool = True
     enable_short_book: bool = True
@@ -52,18 +59,28 @@ class Parameters:
     long_maturity_line_intercept: float = 0.0
     long_maturity_line_slope_per_year: float = 0.004
     long_relative_strength: float = 1.0
+    long_score_rate_scale: float | None = None
+    long_score_adjustment_clip: float | None = None
+    long_pure_maturity_strength: float = 0.0
+    long_pure_maturity_scale_days: float = 365.0
+    long_pure_maturity_clip: float = 3.0
     long_maturity_bonus_per_year: float = 0.004
     long_extreme_qualification_rate: float = 0.08
     long_extreme_maturity_advantage_per_year: float = 0.005
     long_extreme_maturity_bonus_per_year: float = 0.01
-    max_long_future: float = 0.50
+    max_futures_treasury_fraction: float = 0.50
     negative_short_start_rate: float = -0.005
     negative_short_full_rate: float = -0.15
-    max_short_fraction_of_slv: float = 0.50
+    max_short_fraction_of_long_leg: float = 0.50
     short_contract_selection: str = "weighted_lease_rate"
     short_maturity_line_intercept: float = 0.0
     short_maturity_line_slope_per_year: float = 0.004
     short_relative_strength: float = 1.0
+    short_score_rate_scale: float | None = None
+    short_score_adjustment_clip: float | None = None
+    short_pure_maturity_strength: float = 0.0
+    short_pure_maturity_scale_days: float = 365.0
+    short_pure_maturity_clip: float = 3.0
     score_rate_scale: float = 0.01
     score_adjustment_clip: float = 3.0
     short_maturity_bonus_per_year: float = 0.004
@@ -73,14 +90,81 @@ class Parameters:
     bond_mode: str = "accrual"
     treasury_asset: str = "matched_maturity"
     treasury_allocation_mode: str = "shortest_rolling"
+    futures_contract_type: str = "regular"
+    inverse_payoff_conversion_fee: float = 0.0
+    inverse_min_conversion_btc: float = 0.0
+    trading_calendar: str = "business_days"
+    execution_interval_seconds: float = 0.0
+
+
+@dataclass
+class InversePayoffAccount:
+    """Native BTC settlement balance awaiting conversion into strategy USD."""
+
+    pending_btc: float = 0.0
+    cumulative_conversion_fees_usd: float = 0.0
+
+    def settle_btc(self, btc_payoff, end_spot, conversion_fee_rate=0.0,
+                   minimum_conversion_btc=0.0, force_conversion=False):
+        if minimum_conversion_btc < 0:
+            raise ValueError("minimum BTC conversion amount must be non-negative")
+        if not 0.0 <= conversion_fee_rate < 1.0:
+            raise ValueError("conversion fee rate must be in [0, 1)")
+        self.pending_btc += btc_payoff
+        should_convert = (force_conversion or minimum_conversion_btc == 0 or
+                          abs(self.pending_btc) >= minimum_conversion_btc)
+        converted_btc = self.pending_btc if should_convert else 0.0
+        gross_usd = converted_btc * end_spot
+        fee_usd = abs(converted_btc) * end_spot * conversion_fee_rate
+        if should_convert:
+            self.pending_btc = 0.0
+            self.cumulative_conversion_fees_usd += fee_usd
+        return {"interval_btc_payoff": btc_payoff,
+                "converted_btc": converted_btc,
+                "gross_converted_usd": gross_usd,
+                "conversion_fee_usd": fee_usd,
+                "recognized_usd_payoff": gross_usd - fee_usd,
+                "pending_btc": self.pending_btc,
+                "pending_btc_spot_value_usd": self.pending_btc * end_spot,
+                "conversion_triggered": should_convert}
+
+    def settle(self, start_future, end_future, end_spot,
+               signed_usd_notional=1.0, conversion_fee_rate=0.0,
+               minimum_conversion_btc=0.0, force_conversion=False):
+        payoff = inverse_futures_usd_payoff(
+            start_future, end_future, end_spot, signed_usd_notional, 0.0)
+        return self.settle_btc(payoff["btc_payoff"], end_spot,
+                               conversion_fee_rate, minimum_conversion_btc,
+                               force_conversion)
 
 
 def clamp(x, low=0.0, high=1.0):
     return max(low, min(high, x))
 
 
+def smooth_allocation(target, previous, half_life_days, elapsed_days):
+    """Move an allocation toward its target with a calendar-day half-life.
+
+    A zero half-life disables smoothing.  Contract ranking remains current;
+    this function changes only the total notional allocated to a leg.
+    """
+    if previous is None or half_life_days <= 0:
+        return target
+    alpha = 1.0 - 2.0 ** (-max(0.0, elapsed_days) / half_life_days)
+    return previous + alpha * (target - previous)
+
+
 def parse_date(value):
+    """Parse a daily date or an ISO timestamp without discarding resolution."""
     value = value.strip().strip('"')
+    if "T" in value or " " in value:
+        try:
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            if parsed.tzinfo is not None:
+                parsed = parsed.astimezone(timezone.utc).replace(tzinfo=None)
+            return parsed
+        except ValueError:
+            pass
     for fmt in ("%m/%d/%Y", "%Y-%m-%d", "%y%m%d"):
         try:
             return datetime.strptime(value, fmt).date()
@@ -89,8 +173,81 @@ def parse_date(value):
     raise ValueError(value)
 
 
+def observation_seconds(value):
+    """Monotonic scalar for both date-only and intraday observations."""
+    if isinstance(value, datetime):
+        if value.tzinfo is not None:
+            value = value.astimezone(timezone.utc).replace(tzinfo=None)
+        return ((value.toordinal() * SECONDS_PER_DAY) +
+                value.hour * 3600 + value.minute * 60 + value.second +
+                value.microsecond / 1_000_000)
+    return value.toordinal() * SECONDS_PER_DAY
+
+
+def elapsed_days(start, end):
+    return (observation_seconds(end) - observation_seconds(start)) / SECONDS_PER_DAY
+
+
+def days_to_expiry(expiry, observation):
+    """Fractional calendar days to a date-only or timestamped expiry."""
+    if isinstance(expiry, datetime):
+        expiry_observation = expiry
+        if not isinstance(observation, datetime):
+            observation = datetime.combine(observation, time.min)
+    elif isinstance(observation, datetime):
+        expiry_observation = datetime.combine(expiry, time.min)
+    else:
+        expiry_observation = expiry
+    return elapsed_days(observation, expiry_observation)
+
+
+def market_resolution_seconds(observations):
+    """Infer the finest positive spacing present in a market timeline."""
+    values = sorted({observation_seconds(item) for item in observations})
+    deltas = [right - left for left, right in zip(values, values[1:])
+              if right > left]
+    return min(deltas) if deltas else None
+
+
+def execution_timeline(observations, interval_seconds=0):
+    """Select the next available quote at each requested execution interval.
+
+    A zero interval means every available observation.  A custom interval must
+    be a whole multiple of the detected source resolution. Missing scheduled
+    marks move execution to the next available quote and restart the clock
+    there, matching the existing next-available-observation convention.
+    """
+    timeline = sorted(observations, key=observation_seconds)
+    if not timeline or not interval_seconds:
+        return timeline
+    resolution = market_resolution_seconds(timeline)
+    if resolution is None:
+        raise ValueError("Cannot infer market-data resolution from one observation")
+    if interval_seconds + 1e-9 < resolution:
+        raise ValueError(
+            "Execution interval is finer than the available market-data "
+            f"resolution ({resolution:g} seconds)")
+    multiple = interval_seconds / resolution
+    if abs(multiple - round(multiple)) > 1e-9:
+        raise ValueError(
+            "Execution interval must be a whole multiple of the available "
+            f"market-data resolution ({resolution:g} seconds)")
+    selected = [timeline[0]]
+    next_execution = observation_seconds(timeline[0]) + interval_seconds
+    for observation in timeline[1:]:
+        current = observation_seconds(observation)
+        if current + 1e-9 < next_execution:
+            continue
+        selected.append(observation)
+        next_execution = current + interval_seconds
+    return selected
+
+
 def expiry_from_symbol(symbol):
     """Infer the contract month from TurtleTrader's PREFIXyyM symbols."""
+    deribit = re.fullmatch(r"BTC-(\d{2}[A-Z]{3}\d{2})", symbol.upper())
+    if deribit:
+        return datetime.strptime(deribit.group(1), "%d%b%y").date()
     match = re.fullmatch(r"[A-Z]+(\d{2})([FGHJKMNQUVXZ])", symbol.upper())
     if not match:
         return None
@@ -114,6 +271,14 @@ def read_generic_contracts(root, archive_name, symbol_prefix):
     decimal exchange prices.  A prefix filter also excludes the stray CC
     (cocoa) file bundled in the corn archive.
     """
+    asset = ASSET_BY_PREFIX.get(symbol_prefix.upper())
+    if asset:
+        cached = read_cached_asset(Path(root), asset)
+        if cached is not None:
+            return cached[1], cached[2]
+        materialized = data_directory(Path(root)) / asset / "futures"
+        if materialized.is_dir():
+            return read_contract_csvs(Path(root), asset, symbol_prefix)
     contracts, volumes = {}, {}
     with zipfile.ZipFile(root / archive_name) as archive:
         for filename in archive.namelist():
@@ -160,7 +325,7 @@ def build_proxy_market(root, archive_name, symbol_prefix):
         if not expiry:
             continue
         for day, value in prices.items():
-            days = (expiry - day).days
+            days = days_to_expiry(expiry, day)
             if days > 0:
                 quotes[day].append((days, -volumes.get((symbol, day), 0.0),
                                     symbol, value))
@@ -172,7 +337,7 @@ def build_proxy_market(root, archive_name, symbol_prefix):
         if not expiry:
             continue
         for day, future in prices.items():
-            days = (expiry - day).days
+            days = days_to_expiry(expiry, day)
             physical = spot.get(day)
             rate = usd_rate(rates, day, days) if days > 0 else None
             if days <= 0 or not physical or rate is None:
@@ -197,7 +362,7 @@ def build_spot_market(root, archive_name, symbol_prefix, spot):
         if not expiry:
             continue
         for day, future in prices.items():
-            days = (expiry - day).days
+            days = days_to_expiry(expiry, day)
             physical = spot.get(day)
             rate = usd_rate(rates, day, days) if days > 0 else None
             if days <= 0 or not physical or rate is None:
@@ -213,15 +378,157 @@ def build_spot_market(root, archive_name, symbol_prefix, spot):
             contracts, rates, by_day)
 
 
+def _utc_naive(value):
+    if value.tzinfo is not None:
+        return value.astimezone(timezone.utc).replace(tzinfo=None)
+    return value
+
+
+def _intraday_contract_expirations(market):
+    """Read exact exchange expiries when the selected provider records them."""
+
+    paths = [market.provider.directory / "manifest.json"]
+    # Tardis quote files for Deribit contracts can reuse the exchange metadata
+    # captured with the candle archive.
+    paths.append(
+        market.provider.directory.parent / "deribit_1m" / "manifest.json")
+    expirations = {}
+    for manifest_path in dict.fromkeys(paths):
+        if not manifest_path.exists():
+            continue
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            expirations.update({
+                symbol.upper(): datetime.fromisoformat(
+                    details["expiration_timestamp"].replace("Z", "+00:00"))
+                for symbol, details in manifest.get("contracts", {}).items()
+                if details.get("expiration_timestamp")
+            })
+        except (OSError, TypeError, ValueError, KeyError,
+                json.JSONDecodeError):
+            continue
+    return expirations
+
+
+def _select_intraday_spot_session(market, observations, sample_day=None):
+    """Do not bridge disconnected free-sample days as continuous history."""
+
+    manifest_path = market.provider.directory / "manifest.json"
+    if not manifest_path.exists():
+        return observations
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        sessions = manifest.get("sample_sessions", [])
+        complete = [
+            row for row in sessions
+            if row.get("missing_minutes", 1) == 0
+        ]
+        if not complete:
+            return observations
+        if sample_day is None:
+            selected = max(complete, key=lambda row: row["date"])
+        else:
+            selected = next(
+                row for row in complete if row["date"] == str(sample_day))
+        start = datetime.fromisoformat(
+            selected["from_timestamp"].replace("Z", "+00:00"))
+        end = datetime.fromisoformat(
+            selected["to_timestamp_exclusive"].replace("Z", "+00:00"))
+        # Bar labels span [start, end); their no-look-ahead effective times
+        # span (start, end].
+        return {
+            instant: price for instant, price in observations.items()
+            if start < instant <= end
+        }
+    except (OSError, StopIteration, TypeError, ValueError, KeyError,
+            json.JSONDecodeError):
+        if sample_day is not None:
+            raise ValueError(
+                f"No complete Kraken sample session for {sample_day}")
+        return observations
+
+
+def build_intraday_btc_market(root, sample_day=None):
+    """Build the BTC curve from independently configured spot/futures feeds.
+
+    Kraken minute closes define the strategy decision grid. Futures are read as
+    no-look-ahead snapshots on that grid. A future switch from Deribit candles
+    to Tardis tick quotes is therefore a configuration change, not a strategy
+    engine change.
+    """
+
+    spot_market = load_intraday_market(Path(root), role="spot")
+    futures_market = load_intraday_market(Path(root), role="futures")
+    spot_by_instant = {}
+    for observation in spot_market.iter_observations():
+        if observation.symbol == "BTC-USD" and observation.reference_price > 0:
+            spot_by_instant[observation.effective_time] = (
+                observation.reference_price)
+    spot_by_instant = _select_intraday_spot_session(
+        spot_market, spot_by_instant, sample_day)
+    if not spot_by_instant:
+        raise FileNotFoundError(
+            "The configured BTC intraday spot provider produced no observations")
+
+    rates = read_rates(root)
+    expirations = _intraday_contract_expirations(futures_market)
+    spot, contracts, by_day = {}, defaultdict(dict), defaultdict(list)
+    schedule = sorted(spot_by_instant)
+    snapshots = futures_market.iter_snapshots(
+        schedule, max_age=timedelta(minutes=1))
+    for instant, snapshot in zip(schedule, snapshots):
+        day = _utc_naive(instant)
+        physical = spot_by_instant[instant]
+        curve = []
+        for symbol, observation in snapshot.observations.items():
+            if not symbol.startswith("BTC-") or symbol == "BTC-USD":
+                continue
+            expiry = expirations.get(symbol) or expiry_from_symbol(symbol)
+            if expiry is None:
+                continue
+            days = days_to_expiry(expiry, day)
+            rate = usd_rate(rates, day, days) if days > 0 else None
+            if days <= 0 or rate is None:
+                continue
+            future = observation.reference_price
+            premium = future / physical - 1
+            lease = rate - premium * 365 / days
+            contracts[symbol][day] = future
+            curve.append({
+                "symbol": symbol,
+                "days": days,
+                "future": future,
+                "spot": physical,
+                "rate": rate,
+                "premium": premium,
+                "lease": lease,
+                "volume": observation.volume or 0.0,
+            })
+        if curve:
+            spot[day] = physical
+            by_day[day] = curve
+    if not by_day:
+        raise ValueError(
+            "BTC intraday spot and futures providers have no usable overlap")
+    return spot, dict(contracts), rates, by_day
+
+
 def read_zip_spot(root, member):
     result = {}
-    with zipfile.ZipFile(root / "gold_silver.zip") as archive:
-        stream = io.TextIOWrapper(archive.open(member), encoding="utf-8-sig")
+    archive_path = root / "gold_silver.zip"
+    with zipfile.ZipFile(archive_path) as archive:
+        try:
+            member_stream = archive.open(member)
+        except KeyError as exc:
+            raise FileNotFoundError(
+                f"{archive_path} does not contain {member}"
+            ) from exc
+        stream = io.TextIOWrapper(member_stream, encoding="utf-8-sig")
         for row in csv.DictReader(stream):
             try:
                 value = float(row["price"])
                 if value > 0:
-                    result[date.fromisoformat(row["date"])] = value
+                    result[parse_date(row["date"])] = value
             except (ValueError, TypeError, KeyError):
                 pass
     return result
@@ -234,17 +541,27 @@ def read_csv_spot(root, filename, value_column):
             try:
                 value = float(row[value_column])
                 if value > 0:
-                    result[date.fromisoformat(row["observation_date"])] = value
+                    result[parse_date(row["observation_date"])] = value
             except (ValueError, TypeError, KeyError):
                 pass
     return result
 
 
 def read_spot(root):
+    cached = read_cached_asset(Path(root), "silver")
+    if cached is not None:
+        return cached[0]
+    if (data_directory(Path(root)) / "silver").is_dir():
+        return read_spot_csv(Path(root), "silver")
     return read_zip_spot(root, "silver_price.csv")
 
 
 def read_contracts(root, spot):
+    cached = read_cached_asset(Path(root), "silver")
+    if cached is not None:
+        return cached[1], cached[2]
+    if (data_directory(Path(root)) / "silver" / "futures").is_dir():
+        return read_contract_csvs(Path(root), "silver", "SI", spot)
     contracts = {}
     volumes = {}
     with zipfile.ZipFile(root / "si.zip") as archive:
@@ -289,7 +606,7 @@ def read_rates(root):
         with open(root / f"{name}.csv", encoding="utf-8-sig") as stream:
             for row in csv.DictReader(stream):
                 try:
-                    observations.append((date.fromisoformat(row["observation_date"]),
+                    observations.append((parse_date(row["observation_date"]),
                                          float(row[name]) / 100))
                 except (ValueError, TypeError, KeyError):
                     pass
@@ -298,23 +615,35 @@ def read_rates(root):
     return series
 
 
+def _rate_available_at(observation, query):
+    """Return when a Treasury mark may first be used by the backtest.
+
+    Date-only Treasury rows are closing marks. They remain usable on the same
+    date for date-only (daily-close) calculations. On an intraday timeline the
+    file does not identify an exact publication time, so the conservative
+    convention makes a dated mark available at 00:00 UTC on the next day.
+    Timestamped Treasury rows become available at their exact timestamps.
+    """
+    if isinstance(query, datetime) and not isinstance(observation, datetime):
+        return datetime.combine(observation + timedelta(days=1), time.min)
+    return observation
+
+
 def asof_rate(series, tenor, day):
+    """Latest Treasury observation available at ``day``; never look ahead."""
     observations = series[tenor]
     if not observations:
         return None
-    index = bisect_right(observations, (day, float("inf"))) - 1
-    if index >= 0 and observations[index][0] == day:
-        return observations[index][1]
-    right_index = index + 1
-    if index < 0:
-        return observations[0][1]
-    if right_index >= len(observations):
-        return observations[-1][1]
-    left_day, left_rate = observations[index]
-    right_day, right_rate = observations[right_index]
-    alpha = ((day - left_day).days /
-             (right_day - left_day).days)
-    return left_rate + alpha * (right_rate - left_rate)
+    target = observation_seconds(day)
+    low, high = 0, len(observations)
+    while low < high:
+        middle = (low + high) // 2
+        available = _rate_available_at(observations[middle][0], day)
+        if observation_seconds(available) <= target:
+            low = middle + 1
+        else:
+            high = middle
+    return observations[low - 1][1] if low else None
 
 
 def usd_rate(series, day, days):
@@ -396,7 +725,7 @@ def build_market(root):
         if not expiry:
             continue
         for day, future in prices.items():
-            days = (expiry - day).days
+            days = days_to_expiry(expiry, day)
             physical = spot.get(day)
             rate = usd_rate(rates, day, days) if days > 0 else None
             if days <= 0 or not physical or rate is None:
@@ -425,8 +754,19 @@ def scoring_boundary(p, direction):
 def scoring_adjustment(p, direction):
     return RelativeAdjustment(
         strength=getattr(p, f"{direction}_relative_strength"),
-        rate_scale=p.score_rate_scale,
-        clip=p.score_adjustment_clip,
+        rate_scale=(getattr(p, f"{direction}_score_rate_scale")
+                    or p.score_rate_scale),
+        clip=(getattr(p, f"{direction}_score_adjustment_clip")
+              if getattr(p, f"{direction}_score_adjustment_clip") is not None
+              else p.score_adjustment_clip),
+    )
+
+
+def pure_maturity_adjustment(p, direction):
+    return PureMaturityAdjustment(
+        strength=getattr(p, f"{direction}_pure_maturity_strength"),
+        scale_days=getattr(p, f"{direction}_pure_maturity_scale_days"),
+        clip=getattr(p, f"{direction}_pure_maturity_clip"),
     )
 
 
@@ -442,7 +782,7 @@ def maturity_line_adjusted_score(base_score, contract, p, direction):
     return adjusted_score(
         base_score, contract["lease"], contract["days"],
         scoring_boundary(p, direction), scoring_adjustment(p, direction),
-        direction)
+        direction, pure_maturity_adjustment(p, direction))
 
 
 def score_diagnostic(contract, p, direction, eligibility_threshold,
@@ -456,14 +796,20 @@ def score_diagnostic(contract, p, direction, eligibility_threshold,
     boundary = scoring_boundary(p, direction)
     adjustment = scoring_adjustment(p, direction)
     distance = signed_distance(rate, contract["days"], boundary, direction)
-    final = adjustment.score(max(0.0, base), distance) if eligible else 0.0
+    rate_adjustment = adjustment.signed_adjustment(distance)
+    pure_adjustment = pure_maturity_adjustment(
+        p, direction).signed_adjustment(contract["days"], direction)
+    final = (max(0.0, base) / adjustment.rate_scale
+             + rate_adjustment + pure_adjustment
+             if eligible else None)
     return {
         "symbol": contract["symbol"], "direction": direction,
         "maturity_days": contract["days"], "rate_pct": 100 * rate,
-        "boundary_pct": 100 * boundary.value(contract["days"]),
+        "boundary_value_pct": 100 * boundary.value(contract["days"]),
         "eligible": eligible, "signed_distance_pct": 100 * distance,
         "base_score": max(0.0, base),
-        "relative_multiplier": adjustment.multiplier(distance),
+        "relative_adjustment": rate_adjustment,
+        "pure_maturity_adjustment": pure_adjustment,
         "final_score": final, "target_weight_pct": 100 * target_weight,
     }
 
@@ -485,7 +831,7 @@ def market_diagnostics_for_day(candidates, p):
         base_score = max(1e-9, -contract["lease"])
         score = maturity_line_adjusted_score(
             base_score, contract, p, "short")
-        ranked.append((contract["symbol"], max(score, 1e-9)))
+        ranked.append((contract["symbol"], score))
     ranked.sort(key=lambda item: item[1], reverse=True)
     shorts = proportional_allocation(ranked, 1.0)
     short_total = sum(shorts.values())
@@ -526,7 +872,7 @@ def _sticky_contract_book(desired, previous, contract_map, qualifying_symbols,
             for symbol, weight in held.items()}
 
 
-def positions_for_day(candidates, p, previous=None):
+def positions_for_day(candidates, p, previous=None, elapsed_days=1.0):
     eligible = [x for x in candidates if x["days"] >= p.min_days]
     if not eligible:
         return None
@@ -594,40 +940,62 @@ def positions_for_day(candidates, p, previous=None):
         (short_start_rate - p.negative_short_full_rate))
     if p.short_futures_entry_mode == "fixed":
         negative_strength = 1.0
-    slv_weight = clamp(
-        (p.slv_start_rate - long_signal) /
-        (p.slv_start_rate - p.slv_full_rate))
-    if p.slv_entry_mode == "fixed":
-        slv_weight = 1.0
-    if not p.enable_slv_leg:
-        slv_weight = 0.0
-    treasury_weight = ((1.0 - slv_weight)
-                       if p.enable_cash_long_futures_leg else 0.0)
+    # The configured commodity sleeve is the complete long commodity leg.
+    # A share of that leg is implemented by Treasury collateral + long futures;
+    # the complementary share is held in the replicating fund.  Therefore,
+    # whenever both implementations are enabled, fund + futures replication = 1.
+    futures_treasury_share = (
+        p.max_futures_treasury_fraction * positive_strength
+        if p.enable_cash_long_futures_leg else 0.0)
+    futures_treasury_share = clamp(futures_treasury_share)
+    futures_treasury_share = smooth_allocation(
+        futures_treasury_share,
+        previous.get("base_treasury") if previous else None,
+        p.long_allocation_half_life_days,
+        elapsed_days,
+    )
+    # The fund is structurally the complement of futures replication.  Keep
+    # accepting the legacy parameter for JSON compatibility, but never allow
+    # it to leave the base commodity leg under-invested.
+    slv_weight = 1.0 - futures_treasury_share
+    treasury_weight = futures_treasury_share
 
-    # Treasury and SLV form the fully invested base, while long futures are an
-    # overlay sized independently by their positive lease signal.
+    # Long-futures notional equals the Treasury-funded replication share; it is
+    # no longer an independent overlay on top of a fully invested base.
     base_longs = {}
-    long_notional = (p.max_long_future * positive_strength
-                     if p.enable_cash_long_futures_leg else 0.0)
-    if long_candidates and p.long_contract_selection == "weighted_lease_rate":
+    long_notional = futures_treasury_share
+    allocation_long_candidates = (
+        long_candidates if long_candidates else
+        (eligible if long_notional > 0 else []))
+    allocation_selected_positive = (
+        selected_positive if selected_positive else
+        (select_long(allocation_long_candidates)
+         if allocation_long_candidates else None))
+    if allocation_long_candidates and p.long_contract_selection == "weighted_lease_rate":
         long_score_threshold = (
-            min(x["lease"] for x in long_candidates) - 1e-9
-            if p.long_futures_entry_mode == "fixed"
+            min(x["lease"] for x in allocation_long_candidates) - 1e-9
+            if p.long_futures_entry_mode == "fixed" or not long_candidates
             else p.positive_entry_rate)
         base_longs = proportional_allocation([
             (x["symbol"], maturity_line_adjusted_score(
                 x["lease"] - long_score_threshold, x, p, "long"))
-            for x in long_candidates
+            for x in allocation_long_candidates
         ], long_notional)
-    elif selected_positive:
-        base_longs[selected_positive["symbol"]] = (
+    elif allocation_selected_positive:
+        base_longs[allocation_selected_positive["symbol"]] = (
             long_notional)
-    total_short = (p.max_short_fraction_of_slv * negative_strength
+    total_short = (p.max_short_fraction_of_long_leg * negative_strength
                    if p.enable_short_book else 0.0)
+    total_short = smooth_allocation(
+        total_short,
+        previous.get("long_extension") if previous else None,
+        p.short_allocation_half_life_days,
+        elapsed_days,
+    )
     # The short book is defined as short futures plus an equal-sized extension
     # of the active base long book.  If both long sleeves are inactive there is
     # no composition to extend, so the complete short book must also be zero.
-    if treasury_weight + slv_weight + sum(base_longs.values()) <= 0:
+    if slv_weight + sum(base_longs.values()) <= 0:
         total_short = 0.0
 
     # Score trades off negative lease edge against a preference for longer
@@ -641,32 +1009,41 @@ def positions_for_day(candidates, p, previous=None):
         max(x["lease"] for x in short_candidates) + 1e-9
         if short_candidates and p.short_futures_entry_mode == "fixed"
         else short_start_rate)
-    for x in short_candidates:
+    allocation_short_candidates = (
+        short_candidates if short_candidates else
+        (eligible if total_short > 0 else []))
+    allocation_short_threshold = (
+        max(x["lease"] for x in allocation_short_candidates) + 1e-9
+        if allocation_short_candidates and not short_candidates
+        else short_score_threshold)
+    for x in allocation_short_candidates:
         # A short's lease edge is the magnitude of lease rate minus entry
         # threshold. It is positive because qualifying leases are below entry.
-        base_score = max(0.0, short_score_threshold - x["lease"])
+        base_score = max(0.0, allocation_short_threshold - x["lease"])
         x["short_score"] = maturity_line_adjusted_score(
             base_score, x, p, "short")
-    if short_candidates and p.short_contract_selection == "lowest_lease_rate":
-        lowest = min(short_candidates, key=lambda x: (x["lease"], x["days"], -x["volume"]))
+    if allocation_short_candidates and p.short_contract_selection == "lowest_lease_rate":
+        lowest = min(allocation_short_candidates, key=lambda x: (x["lease"], x["days"], -x["volume"]))
         shorts = {lowest["symbol"]: total_short}
     else:
-        scores = [(x["symbol"], x["short_score"]) for x in short_candidates]
+        scores = [(x["symbol"], x["short_score"])
+                  for x in allocation_short_candidates]
         shorts = proportional_allocation(scores, total_short)
 
     # Resize with the signal, but change contracts only for a better lease or
     # when the configured minimum-maturity boundary forces a roll.
     base_longs = _sticky_contract_book(
         base_longs, previous.get("base_longs") if previous else None,
-        contract_map, {x["symbol"] for x in long_candidates}, "long", p)
+        contract_map, {x["symbol"] for x in allocation_long_candidates}, "long", p)
     shorts = _sticky_contract_book(
         shorts, previous.get("shorts") if previous else None,
-        contract_map, {x["symbol"] for x in short_candidates}, "short", p)
+        contract_map, {x["symbol"] for x in allocation_short_candidates}, "short", p)
 
     # A short-futures position is paired with an equally sized extension of
-    # the complete base long book.  The extension retains the same relative
-    # mix of long futures, SLV, and Treasuries.
-    base_long_total = treasury_weight + slv_weight + sum(base_longs.values())
+    # the complete long commodity leg.  Treasury collateral is not counted as
+    # a second long leg: fund exposure + long-futures exposure is the commodity
+    # leg against which the short fraction is defined.
+    base_long_total = slv_weight + sum(base_longs.values())
     long_extension = total_short
     extension_ratio = long_extension / base_long_total if base_long_total else 0.0
     treasury = treasury_weight * (1.0 + extension_ratio)
@@ -720,14 +1097,60 @@ def positions_for_day(candidates, p, previous=None):
             "bond_days": bond_days, "contracts": contract_map}
 
 
+def _rate_change_boundaries(rates, start, end, tenors=None):
+    """Observable rate-update times strictly inside a holding interval."""
+    selected_tenors = tenors or tuple(tenor for tenor, _ in TENORS)
+    start_value = observation_seconds(start)
+    end_value = observation_seconds(end)
+    boundaries = {}
+    for tenor in selected_tenors:
+        observations = rates.get(tenor, [])
+        low, high = 0, len(observations)
+        while low < high:
+            middle = (low + high) // 2
+            available = _rate_available_at(observations[middle][0], start)
+            if observation_seconds(available) <= start_value:
+                low = middle + 1
+            else:
+                high = middle
+        for index in range(low, len(observations)):
+            observation = observations[index][0]
+            available = _rate_available_at(observation, start)
+            value = observation_seconds(available)
+            if value >= end_value:
+                break
+            boundaries[value] = available
+    return [boundaries[value] for value in sorted(boundaries)]
+
+
+def accrued_yield_return(rates, start, end, days, tenors=None):
+    """Accrue causally, changing yield only when a new mark is observable."""
+    boundaries = _rate_change_boundaries(rates, start, end, tenors)
+    points = [start, *boundaries, end]
+    factor = 1.0
+    for left, right in zip(points, points[1:]):
+        segment_days = elapsed_days(left, right)
+        if segment_days <= 0:
+            continue
+        remaining = max(1 / SECONDS_PER_DAY,
+                        days - elapsed_days(start, left))
+        if tenors and len(tenors) == 1:
+            rate = asof_rate(rates, tenors[0], left)
+        else:
+            rate = usd_rate(rates, left, remaining)
+        if rate is not None:
+            factor *= 1 + rate * segment_days / 365
+    return factor - 1
+
+
 def bond_return(rates, day, next_day, days, mode):
-    elapsed = (next_day - day).days
+    elapsed = elapsed_days(day, next_day)
+    if mode == "accrual":
+        return accrued_yield_return(rates, day, next_day, days)
     current_yield = usd_rate(rates, day, days)
     if current_yield is None:
         return 0.0
-    if mode == "accrual":
-        return current_yield * elapsed / 365
-    remaining = max(1.0, days - elapsed)
+    remaining = max(1 / SECONDS_PER_DAY, days - elapsed)
     next_yield = usd_rate(rates, next_day, remaining)
     if next_yield is None:
         return current_yield * elapsed / 365
@@ -738,9 +1161,8 @@ def bond_return(rates, day, next_day, days, mode):
 
 def treasury_position_return(rates, day, next_day, days, p):
     if p.treasury_asset == "sgov_proxy":
-        rate = asof_rate(rates, 91, day)
-        elapsed = (next_day - day).days
-        return 0.0 if rate is None else rate * elapsed / 365
+        return accrued_yield_return(
+            rates, day, next_day, TENORS[0][0], (TENORS[0][0],))
     if p.treasury_allocation_mode == "rate_weighted_maturities":
         available = [
             (tenor, asof_rate(rates, tenor, day))
@@ -777,6 +1199,38 @@ def futures_interval_return(symbol, day, next_day, contracts):
     if day not in prices or next_day not in prices or prices[day] <= 0:
         return 0.0, False
     return prices[next_day] / prices[day] - 1, True
+
+
+def inverse_futures_usd_payoff(start_future, end_future, end_spot,
+                               signed_usd_notional=1.0,
+                               conversion_fee_rate=0.0):
+    """Convert an inverse future's native BTC payoff into USD.
+
+    ``signed_usd_notional`` is positive for a long and negative for a short.
+    The conversion fee is charged on the absolute USD amount converted, so it
+    reduces both positive and negative native settlements.  The function is
+    normalized naturally: passing a notional of one returns a portfolio-return
+    contribution per dollar of futures notional.
+    """
+    values = (start_future, end_future, end_spot)
+    if any(value is None or not math.isfinite(value) or value <= 0
+           for value in values):
+        raise ValueError("inverse futures and spot prices must be positive")
+    if not math.isfinite(signed_usd_notional):
+        raise ValueError("signed USD notional must be finite")
+    if (not math.isfinite(conversion_fee_rate) or
+            not 0.0 <= conversion_fee_rate < 1.0):
+        raise ValueError("conversion fee rate must be in [0, 1)")
+    btc_payoff = signed_usd_notional * (
+        1.0 / start_future - 1.0 / end_future)
+    gross_usd_payoff = btc_payoff * end_spot
+    conversion_fee = abs(btc_payoff) * end_spot * conversion_fee_rate
+    return {
+        "btc_payoff": btc_payoff,
+        "gross_usd_payoff": gross_usd_payoff,
+        "conversion_fee": conversion_fee,
+        "net_usd_payoff": gross_usd_payoff - conversion_fee,
+    }
 
 
 def weighted_contract_value(positions, contracts, field):
@@ -850,35 +1304,102 @@ def _rescaled_book_return(book, target_total, day, next_day, contracts, directio
     return result, True
 
 
+def multiplicative_log_contributions(total_return, contributions):
+    """Map additive daily contributions to exact, order-free return factors.
+
+    If ``total_return = sum(contributions.values())``, the returned log
+    contributions sum to ``log1p(total_return)``.  Consequently, multiplying
+    ``exp(log_contribution)`` for every component reconstructs exactly
+    ``1 + total_return`` (up to floating-point precision).
+    """
+    if total_return <= -1.0:
+        raise ValueError("multiplicative attribution requires return > -100%")
+    values = dict(contributions)
+    if not values:
+        return {}
+    # Absorb tiny arithmetic drift so the identity remains exact in output.
+    anchor = max(values, key=lambda name: abs(values[name]))
+    values[anchor] += total_return - sum(values.values())
+    scale = (math.log1p(total_return) / total_return
+             if abs(total_return) > 1e-15 else 1.0)
+    logs = {name: value * scale for name, value in values.items()}
+    logs[anchor] += math.log1p(total_return) - sum(logs.values())
+    return logs
+
+
 def run_backtest(spot, contracts, rates, by_day, p):
     # Ignore stray weekend records. Exchange holidays have no observation, so
     # each interval automatically runs to the next available business day.
-    days = sorted(day for day in by_day if day in spot and day.weekday() < 5)
+    if p.trading_calendar not in ("business_days", "all_days"):
+        raise ValueError("invalid trading calendar")
+    available_days = sorted(day for day in by_day if day in spot and
+                            (p.trading_calendar == "all_days" or
+                             day.weekday() < 5))
+    days = execution_timeline(
+        available_days, p.execution_interval_seconds)
     output = []
     simple = 0.0
     long_simple = 0.0
     extension_simple = 0.0
     short_simple = 0.0
     nav = 1.0
+    lease_book_nav = 1.0
+    keep_book_nav = 1.0
+    keep_contribution_nav = 1.0
+    replicating_fund_book_nav = 1.0
+    futures_treasury_book_nav = 1.0
+    lease_factor_nav = 1.0
+    keep_factor_nav = 1.0
+    lease_fund_factor_nav = 1.0
+    lease_futures_treasury_factor_nav = 1.0
+    lease_value = 1.0
+    keep_value = 0.0
+    lease_underlying_contribution_nav = 1.0
+    keep_underlying_contribution_nav = 1.0
+    combined_underlying_nav = 1.0
+    previous_lease_underlying_value = 1.0
+    previous_keep_underlying_value = 0.0
+    replicating_value = None
+    futures_treasury_value = None
+    initial_commodity_price = None
     asset_simple = {"long_futures": 0.0, "short_futures": 0.0, "slv": 0.0, "treasury": 0.0}
     asset_nav = {"long_futures": 1.0, "short_futures": 1.0, "slv": 1.0, "treasury": 1.0}
     sgov_proxy_nav = 1.0
     missing_futures_intervals = []
     previous_valid_position = None
-    scheduled_positions = {}
     previous_position = None
-    for signal_day, execution_day in zip(days, days[1:]):
-        previous_position = positions_for_day(
-            by_day[signal_day], p, previous_position)
-        scheduled_positions[execution_day] = previous_position
-    # Signal at t, execute at t+1, and measure P&L from t+1 to t+2.
-    for signal_day, execution_day, exit_day in zip(days, days[1:], days[2:]):
-        position = scheduled_positions.get(execution_day)
-        if position is None or execution_day not in spot or exit_day not in spot:
+    inverse_account = InversePayoffAccount()
+    inverse_pending_btc_by_book = {
+        "base_long": 0.0,
+        "extension_long": 0.0,
+        "short": 0.0,
+    }
+    if p.reactivity == "same_day":
+        intervals = list(zip(days, days, days[1:]))
+    elif p.reactivity == "next_day":
+        intervals = list(zip(days, days[1:], days[2:]))
+    else:
+        raise ValueError("reactivity must be 'same_day' or 'next_day'")
+    previous_signal_day = None
+    # Same-day mode forms the close-derived signal and rebalances at that close;
+    # next-day mode executes it at the following available close.  In either
+    # case, the resulting position earns the execution-to-exit return.
+    for interval_index, (signal_day, execution_day, exit_day) in enumerate(intervals):
+        signal_elapsed = (elapsed_days(previous_signal_day, signal_day)
+                          if previous_signal_day else 0.0)
+        position = positions_for_day(
+            by_day[signal_day], p, previous_position, signal_elapsed)
+        if position is None:
+            previous_signal_day = signal_day
             continue
-        lag = (execution_day - signal_day).days
-        holding_days = max(1.0, position["bond_days"] - lag)
-        elapsed = (exit_day - execution_day).days
+        previous_position = position
+        previous_signal_day = signal_day
+        if execution_day not in spot or exit_day not in spot:
+            continue
+        execution_lag = elapsed_days(signal_day, execution_day)
+        holding_days = max(
+            1 / SECONDS_PER_DAY, position["bond_days"] - execution_lag)
+        elapsed = elapsed_days(execution_day, exit_day)
         treasury_return = treasury_position_return(rates, execution_day, exit_day, holding_days, p)
         sgov_proxy_return = treasury_position_return(
             rates, execution_day, exit_day, holding_days,
@@ -889,15 +1410,44 @@ def run_backtest(spot, contracts, rates, by_day, p):
                             position["base_slv"] * spot_return)
         short_futures_return = 0.0
         long_futures_contribution = 0.0
+        base_long_futures_contribution = 0.0
+        long_futures_contributions = {}
+        base_long_futures_contributions = {}
+        short_futures_contributions = {}
         valid_interval = True
         short_total = sum(position["shorts"].values())
         long_total = sum(position["longs"].values())
+        interval_inverse_btc = 0.0
+        interval_inverse_btc_by_book = {
+            "base_long": 0.0,
+            "extension_long": 0.0,
+            "short": 0.0,
+        }
         for symbol, weight in position["longs"].items():
             value, found = futures_interval_return(symbol, execution_day, exit_day, contracts)
-            contribution = weight * value
+            if p.futures_contract_type == "inverse" and found:
+                inverse_price_change = (
+                    1 / contracts[symbol][execution_day] -
+                    1 / contracts[symbol][exit_day])
+                base_weight = position["base_longs"].get(symbol, 0.0)
+                extension_weight = weight - base_weight
+                base_btc = nav * base_weight * inverse_price_change
+                extension_btc = nav * extension_weight * inverse_price_change
+                interval_inverse_btc_by_book["base_long"] += base_btc
+                interval_inverse_btc_by_book["extension_long"] += extension_btc
+                interval_inverse_btc += base_btc + extension_btc
+                contribution = 0.0
+            else:
+                contribution = weight * value
             long_futures_contribution += contribution
             portfolio_return += contribution
-            base_long_return += position["base_longs"].get(symbol, 0.0) * value
+            base_contribution = position["base_longs"].get(symbol, 0.0) * value
+            if p.futures_contract_type == "inverse":
+                base_contribution = 0.0
+            long_futures_contributions[symbol] = contribution
+            base_long_futures_contributions[symbol] = base_contribution
+            base_long_futures_contribution += base_contribution
+            base_long_return += base_contribution
             if not found:
                 missing_futures_intervals.append({
                     "signal_date": signal_day.isoformat(),
@@ -907,8 +1457,17 @@ def run_backtest(spot, contracts, rates, by_day, p):
             valid_interval = valid_interval and found
         for symbol, weight in position["shorts"].items():
             value, found = futures_interval_return(symbol, execution_day, exit_day, contracts)
-            contribution = -weight * value
+            if p.futures_contract_type == "inverse" and found:
+                short_btc = -nav * weight * (
+                    1 / contracts[symbol][execution_day] -
+                    1 / contracts[symbol][exit_day])
+                interval_inverse_btc_by_book["short"] += short_btc
+                interval_inverse_btc += short_btc
+                contribution = 0.0
+            else:
+                contribution = -weight * value
             short_futures_return += contribution
+            short_futures_contributions[symbol] = contribution
             portfolio_return += contribution
             if not found:
                 missing_futures_intervals.append({
@@ -921,6 +1480,57 @@ def run_backtest(spot, contracts, rates, by_day, p):
         # observation. Skip that entire portfolio interval instead.
         if not valid_interval:
             continue
+
+        inverse_settlement = None
+        if p.futures_contract_type == "inverse":
+            for book, btc_payoff in interval_inverse_btc_by_book.items():
+                inverse_pending_btc_by_book[book] += btc_payoff
+            inverse_settlement = inverse_account.settle_btc(
+                interval_inverse_btc, spot[exit_day],
+                p.inverse_payoff_conversion_fee,
+                p.inverse_min_conversion_btc,
+                interval_index == len(intervals) - 1)
+            recognized_by_book = {book: 0.0 for book in inverse_pending_btc_by_book}
+            if inverse_settlement["conversion_triggered"]:
+                absolute_pending = sum(
+                    abs(value) for value in inverse_pending_btc_by_book.values())
+                for book, pending_btc in inverse_pending_btc_by_book.items():
+                    fee_share = (
+                        inverse_settlement["conversion_fee_usd"]
+                        * abs(pending_btc) / absolute_pending
+                        if absolute_pending else 0.0)
+                    recognized_by_book[book] = (
+                        pending_btc * spot[exit_day] - fee_share) / nav
+                    inverse_pending_btc_by_book[book] = 0.0
+
+            base_recognized = recognized_by_book["base_long"]
+            extension_recognized = recognized_by_book["extension_long"]
+            short_recognized = recognized_by_book["short"]
+            long_futures_contribution += base_recognized + extension_recognized
+            short_futures_return += short_recognized
+            base_long_futures_contribution += base_recognized
+            base_long_return += base_recognized
+            portfolio_return += (
+                base_recognized + extension_recognized + short_recognized)
+
+            base_total = sum(position["base_longs"].values())
+            extension_total = long_total - base_total
+            for symbol, weight in position["longs"].items():
+                base_weight = position["base_longs"].get(symbol, 0.0)
+                extension_weight = weight - base_weight
+                base_contribution = (
+                    base_recognized * base_weight / base_total
+                    if base_total else 0.0)
+                extension_contribution = (
+                    extension_recognized * extension_weight / extension_total
+                    if extension_total else 0.0)
+                base_long_futures_contributions[symbol] = base_contribution
+                long_futures_contributions[symbol] = (
+                    base_contribution + extension_contribution)
+            if short_total:
+                for symbol, weight in position["shorts"].items():
+                    short_futures_contributions[symbol] = (
+                        short_recognized * weight / short_total)
 
         # Exact daily return attribution. Futures price returns are separated
         # into the contemporaneous silver move and basis-related effects. The
@@ -992,21 +1602,85 @@ def run_backtest(spot, contracts, rates, by_day, p):
                       treasury_component + lease_carry_component +
                       lease_repricing_component + roll_component)
         attribution_residual = portfolio_return - attributed
-        matched_long_extension_return = position["extension_ratio"] * base_long_return
+        # The extension normally scales the base long book exactly.  For an
+        # inverse contract whose BTC settlements accumulate before conversion,
+        # however, the recognized extension payoff reflects the historical
+        # pending balance rather than only today's extension ratio.  Use its
+        # actual futures contribution and scale only the contemporaneous
+        # non-futures part of the base book.
+        extension_long_futures_contribution = (
+            long_futures_contribution - base_long_futures_contribution)
+        base_nonfuture_return = (
+            base_long_return - base_long_futures_contribution)
+        matched_long_extension_return = (
+            position["extension_ratio"] * base_nonfuture_return
+            + extension_long_futures_contribution)
         short_book_return = matched_long_extension_return + short_futures_return
+        fund_lease_contribution = position["base_slv"] * spot_return
+        futures_treasury_lease_contribution = (
+            position["base_treasury"] * treasury_return +
+            base_long_futures_contribution)
+        replication_weight = sum(position["base_longs"].values())
+        futures_treasury_book_return = (
+            treasury_return + base_long_futures_contribution / replication_weight
+            if replication_weight > 0 else None)
+        keep_book_standalone_return = (
+            short_book_return / short_total if short_total > 0 else None)
+        strategy_logs = multiplicative_log_contributions(
+            portfolio_return,
+            {"lease": base_long_return, "keep": short_book_return})
+        lease_logs = multiplicative_log_contributions(
+            base_long_return,
+            {"fund": fund_lease_contribution,
+             "futures_treasury": futures_treasury_lease_contribution})
+        starting_nav = nav
+        lease_book_start_value = lease_value
+        keep_book_start_value = keep_value
+        treasury_start_price_index = 100 * asset_nav["treasury"]
+        if replicating_value is None:
+            replicating_value = position["base_slv"]
+            futures_treasury_value = position["base_treasury"]
+            initial_commodity_price = spot[execution_day]
+        replicating_value += starting_nav * fund_lease_contribution
+        futures_treasury_value += starting_nav * futures_treasury_lease_contribution
+        lease_value += starting_nav * base_long_return
+        keep_value += starting_nav * short_book_return
         simple += portfolio_return
         long_simple += base_long_return
         extension_simple += matched_long_extension_return
         short_simple += short_book_return
         nav *= 1 + portfolio_return
+        lease_book_nav *= 1 + base_long_return
+        keep_contribution_nav *= 1 + short_book_return
+        replicating_fund_book_nav *= 1 + spot_return
+        if keep_book_standalone_return is not None:
+            keep_book_nav *= 1 + keep_book_standalone_return
+        if futures_treasury_book_return is not None:
+            futures_treasury_book_nav *= 1 + futures_treasury_book_return
+        lease_factor_nav *= math.exp(strategy_logs["lease"])
+        keep_factor_nav *= math.exp(strategy_logs["keep"])
+        lease_fund_factor_nav *= math.exp(lease_logs["fund"])
+        lease_futures_treasury_factor_nav *= math.exp(
+            lease_logs["futures_treasury"])
         sgov_proxy_nav *= 1 + sgov_proxy_return
-        # Standalone leg returns always represent a fully invested leg.  They
-        # are deliberately independent of the portfolio's allocation signal.
+        # Leg-return charts describe instruments the strategy actually held
+        # over this interval.  A disabled or zero-sized leg is absent rather
+        # than being replaced by a hypothetical diagnostic portfolio.
+        # These two reference returns are also used by the multi-asset
+        # aggregator for its direct-hold benchmark and standalone Treasury.
         asset_returns = {"slv": spot_return, "treasury": treasury_return}
         for key, selected, direction in (
-                ("long_futures", position["long_leg"], 1.0),
-                ("short_futures", position["short_leg"], -1.0)):
+                ("long_futures", position["longs"], 1.0),
+                ("short_futures", position["shorts"], -1.0)):
             selected_total = sum(selected.values())
+            if p.futures_contract_type == "inverse":
+                recognized_contribution = (
+                    long_futures_contribution
+                    if key == "long_futures" else short_futures_return)
+                asset_returns[key] = (
+                    recognized_contribution / selected_total
+                    if selected_total else None)
+                continue
             selected_return = 0.0
             selected_valid = bool(selected_total)
             for symbol, weight in selected.items():
@@ -1026,12 +1700,13 @@ def run_backtest(spot, contracts, rates, by_day, p):
             if value is not None:
                 asset_simple[key] += value
                 asset_nav[key] *= 1 + value
+        treasury_end_price_index = 100 * asset_nav["treasury"]
         long_weighted_days = weighted_contract_value(position["longs"], position["contracts"], "days")
         short_weighted_days = weighted_contract_value(position["shorts"], position["contracts"], "days")
-        # Chart diagnostics describe the displayed (exit) date, rather than the
-        # earlier signal date used for the portfolio. This keeps them aligned
-        # with the spot/futures quotes and date shown by the chart tooltip.
-        market_diagnostics = market_diagnostics_for_day(by_day.get(exit_day, []), p)
+        # Diagnostics describe the curve that decided the allocation. Futures
+        # trade prices below are still measured on the execution close.
+        market_diagnostics = market_diagnostics_for_day(
+            by_day.get(signal_day, []), p)
         diagnostic_contracts = (market_diagnostics["contracts"]
                                 if market_diagnostics else {})
         diagnostic_longs = market_diagnostics["longs"] if market_diagnostics else {}
@@ -1045,29 +1720,27 @@ def run_backtest(spot, contracts, rates, by_day, p):
         short_forward_maturity_days = weighted_contract_value(
             diagnostic_shorts, diagnostic_contracts, "days")
         long_weighted_future_price = weighted_futures_price(
-            diagnostic_longs, contracts, exit_day)
+            diagnostic_longs, contracts, execution_day)
         short_weighted_future_price = weighted_futures_price(
-            diagnostic_shorts, contracts, exit_day)
+            diagnostic_shorts, contracts, execution_day)
         long_usd_rate = matched_usd_rate_details(
-            rates, exit_day, diagnostic_longs, diagnostic_contracts)
+            rates, signal_day, diagnostic_longs, diagnostic_contracts)
         short_usd_rate = matched_usd_rate_details(
-            rates, exit_day, diagnostic_shorts, diagnostic_contracts)
-        # The currently held position is rebalanced on the displayed exit date.
-        # Compare it with the next scheduled position and weight prices by the
-        # absolute notional traded when several contracts change together.
-        next_position = scheduled_positions.get(exit_day)
-        next_longs = next_position["longs"] if next_position else {}
-        next_shorts = next_position["shorts"] if next_position else {}
+            rates, signal_day, diagnostic_shorts, diagnostic_contracts)
+        # Rebalance at the displayed close.  Compare with the preceding
+        # position and weight the executed contracts by absolute traded notional.
+        prior_longs = previous_valid_position["longs"] if previous_valid_position else {}
+        prior_shorts = previous_valid_position["shorts"] if previous_valid_position else {}
         (entered_long_price, entered_long_size,
          exited_long_price, exited_long_size) = futures_trade_prices(
-            position["longs"], next_longs, contracts, exit_day)
+            prior_longs, position["longs"], contracts, execution_day)
         (entered_short_price, entered_short_size,
          exited_short_price, exited_short_size) = futures_trade_prices(
-            position["shorts"], next_shorts, contracts, exit_day)
+            prior_shorts, position["shorts"], contracts, execution_day)
         long_trade_details = futures_trade_details(
-            position["longs"], next_longs, contracts, exit_day)
+            prior_longs, position["longs"], contracts, execution_day)
         short_trade_details = futures_trade_details(
-            position["shorts"], next_shorts, contracts, exit_day)
+            prior_shorts, position["shorts"], contracts, execution_day)
         # Premium charts are market diagnostics, not position diagnostics.  Use
         # the threshold-independent books so a null means that a source quote
         # is unavailable, rather than merely that the strategy did not trade.
@@ -1075,6 +1748,186 @@ def run_backtest(spot, contracts, rates, by_day, p):
             diagnostic_longs, diagnostic_contracts, "premium")
         short_weighted_premium = weighted_contract_value(
             diagnostic_shorts, diagnostic_contracts, "premium")
+        held_futures = []
+        for side, book in (("long", position["longs"]),
+                           ("short", position["shorts"])):
+            for symbol, weight in book.items():
+                contract = position["contracts"].get(symbol, {})
+                price = contracts.get(symbol, {}).get(execution_day)
+                contract_usd_rate = matched_usd_rate_details(
+                    rates, signal_day, {symbol: weight},
+                    {symbol: contract})
+                held_futures.append({
+                    "symbol": symbol, "side": side,
+                    "contract_type": p.futures_contract_type,
+                    "weight_pct": 100 * weight,
+                    "price": price,
+                    "exit_price": contracts.get(symbol, {}).get(exit_day),
+                    "spot_price": spot[execution_day],
+                    "exit_spot_price": spot[exit_day],
+                    "premium_pct": (
+                        100 * (price / spot[execution_day] - 1)
+                        if price is not None and spot[execution_day] else None),
+                    "matched_usd_rate_pct": (
+                        100 * contract_usd_rate["rate"]
+                        if contract_usd_rate["rate"] is not None else None),
+                    "lease_pct": (
+                        100 * contract["lease"]
+                        if contract.get("lease") is not None else None),
+                    "maturity_days": contract.get("days"),
+                })
+        extension_slv = position["slv"] - position["base_slv"]
+        extension_treasury = position["treasury"] - position["base_treasury"]
+
+        def cash_holding(book, start_value, end_value):
+            return {
+                "name": f"{book.title()} cash / margin / financing",
+                "holding_type": "cash",
+                "book": book,
+                "side": "cash",
+                "contract_type": None,
+                "price": 1.0,
+                "exit_price": 1.0,
+                "quantity": start_value,
+                "end_quantity": end_value,
+                "units_expensed": 0.0,
+                "position_pct": None,
+                "notional_value": None,
+                "start_value": start_value,
+                "end_value": end_value,
+                "gross_pnl_value": 0.0,
+                "expense_rate": None,
+                "expense_value": 0.0,
+                "pnl_value": 0.0,
+                "internal_transfer_value": end_value - start_value,
+                "spot_price": spot[execution_day],
+                "exit_spot_price": spot[exit_day],
+                "premium_pct": None,
+                "matched_usd_rate_pct": None,
+                "lease_pct": None,
+                "maturity_days": None,
+            }
+
+        holding_ledger = []
+        cash_adjustments = {"lease": 0.0, "keep": 0.0}
+        nonfuture_start_values = {"lease": 0.0, "keep": 0.0}
+        for (book, holding_type, name, weight, start_price, end_price,
+             exact_return) in (
+            ("lease", "direct", "Direct commodity holding",
+             position["base_slv"], spot[execution_day], spot[exit_day], spot_return),
+            ("lease", "treasury", "Treasury collateral",
+             position["base_treasury"], treasury_start_price_index,
+             treasury_end_price_index, treasury_return),
+            ("keep", "direct", "Direct commodity holding extension",
+             extension_slv, spot[execution_day], spot[exit_day], spot_return),
+            ("keep", "treasury", "Treasury collateral extension",
+             extension_treasury, treasury_start_price_index,
+             treasury_end_price_index, treasury_return),
+        ):
+            if abs(weight) <= 1e-15:
+                continue
+            start_value = starting_nav * weight
+            quantity = start_value / start_price if start_price else None
+            pnl_value = start_value * exact_return
+            gross_pnl_value = (
+                quantity * (end_price - start_price)
+                if quantity is not None else 0.0)
+            expense_rate = p.slv_expense if holding_type == "direct" else None
+            expense_value = (
+                start_value * p.slv_expense * elapsed / 365
+                if holding_type == "direct" else 0.0)
+            units_expensed = (
+                expense_value / end_price
+                if holding_type == "direct" and end_price else 0.0)
+            end_quantity = (
+                quantity - units_expensed if quantity is not None else None)
+            end_value = (
+                end_quantity * end_price
+                if end_quantity is not None else None)
+            internal_transfer = end_value - start_value - pnl_value
+            # The proxy expense is represented as a gradual reduction in fund
+            # units.  This preserves the existing net return exactly while
+            # avoiding an artificial expense transfer between the holding and
+            # cash.  Other non-futures holdings retain their prior roll-forward.
+            if holding_type == "direct":
+                internal_transfer = 0.0
+            cash_adjustments[book] -= internal_transfer
+            nonfuture_start_values[book] += start_value
+            holding_ledger.append({
+                "name": name, "holding_type": holding_type, "book": book,
+                "side": "long", "contract_type": None,
+                "price": start_price, "exit_price": end_price,
+                "quantity": quantity, "end_quantity": end_quantity,
+                "units_expensed": units_expensed,
+                "position_pct": 100 * weight,
+                "notional_value": None, "start_value": start_value,
+                "end_value": end_value,
+                "gross_pnl_value": gross_pnl_value,
+                "expense_rate": expense_rate,
+                "expense_value": expense_value,
+                "pnl_value": pnl_value,
+                "internal_transfer_value": internal_transfer,
+                "spot_price": spot[execution_day],
+                "exit_spot_price": spot[exit_day], "premium_pct": None,
+                "matched_usd_rate_pct": None, "lease_pct": None,
+                "maturity_days": holding_days if holding_type == "treasury" else None,
+            })
+
+        held_by_key = {(item["side"], item["symbol"]): item
+                       for item in held_futures}
+        future_books = []
+        for symbol, total_weight in position["longs"].items():
+            base_weight = position["base_longs"].get(symbol, 0.0)
+            extension_weight = total_weight - base_weight
+            if base_weight > 1e-15:
+                future_books.append((
+                    "lease", "long", symbol, base_weight,
+                    base_long_futures_contributions.get(symbol, 0.0)))
+            if extension_weight > 1e-15:
+                future_books.append((
+                    "keep", "long", symbol, extension_weight,
+                    long_futures_contributions.get(symbol, 0.0) -
+                    base_long_futures_contributions.get(symbol, 0.0)))
+        for symbol, weight in position["shorts"].items():
+            future_books.append((
+                "keep", "short", symbol, weight,
+                short_futures_contributions.get(symbol, 0.0)))
+        for book, side, symbol, weight, contribution in future_books:
+            market = held_by_key[(side, symbol)]
+            signed_weight = weight if side == "long" else -weight
+            price = market["price"]
+            notional_value = starting_nav * signed_weight
+            holding_ledger.append({
+                **market, "name": symbol, "holding_type": "future",
+                "book": book, "side": side,
+                "quantity": (
+                    notional_value / price
+                    if p.futures_contract_type != "inverse" and price else None),
+                "end_quantity": (
+                    notional_value / price
+                    if p.futures_contract_type != "inverse" and price else None),
+                "units_expensed": 0.0,
+                "position_pct": 100 * signed_weight,
+                "notional_value": notional_value,
+                # Exchange-traded futures are carried at zero after daily
+                # settlement; their economic exposure is the notional above.
+                "start_value": 0.0, "end_value": 0.0,
+                "gross_pnl_value": starting_nav * contribution,
+                "expense_rate": None,
+                "expense_value": 0.0,
+                "pnl_value": starting_nav * contribution,
+                "internal_transfer_value": -starting_nav * contribution,
+            })
+            cash_adjustments[book] += starting_nav * contribution
+
+        lease_cash_start = lease_book_start_value - nonfuture_start_values["lease"]
+        keep_cash_start = keep_book_start_value - nonfuture_start_values["keep"]
+        holding_ledger.extend([
+            cash_holding("lease", lease_cash_start,
+                         lease_cash_start + cash_adjustments["lease"]),
+            cash_holding("keep", keep_cash_start,
+                         keep_cash_start + cash_adjustments["keep"]),
+        ])
         if short_total:
             short_maturities = [position["contracts"][s]["days"] for s in position["shorts"]]
             shortest_short_maturity_days = min(short_maturities)
@@ -1091,12 +1944,60 @@ def run_backtest(spot, contracts, rates, by_day, p):
         else:
             weighted_days = position["bond_days"]
             largest_share = 0.0
-        output.append({"date": exit_day.isoformat(), "signal_date": signal_day.isoformat(),
+        commodity_price_index = spot[exit_day] / initial_commodity_price
+        lease_underlying_value = lease_value / commodity_price_index
+        keep_underlying_value = keep_value / commodity_price_index
+        previous_total_underlying_value = (
+            previous_lease_underlying_value + previous_keep_underlying_value)
+        if abs(previous_total_underlying_value) <= 1e-15:
+            raise ValueError(
+                "commodity-quoted book value reached zero; returns are undefined")
+        lease_underlying_return = (
+            (lease_underlying_value - previous_lease_underlying_value) /
+            previous_total_underlying_value)
+        keep_underlying_return = (
+            (keep_underlying_value - previous_keep_underlying_value) /
+            previous_total_underlying_value)
+        lease_effective_proportion = (
+            previous_lease_underlying_value / previous_total_underlying_value)
+        keep_effective_proportion = (
+            previous_keep_underlying_value / previous_total_underlying_value)
+        lease_underlying_contribution_nav *= 1 + lease_underlying_return
+        keep_underlying_contribution_nav *= 1 + keep_underlying_return
+        combined_underlying_nav *= (
+            1 + lease_underlying_return + keep_underlying_return)
+        reconstructed_nav = commodity_price_index * combined_underlying_nav
+        nav_reconstruction_difference = nav - reconstructed_nav
+        nav_reconstruction_difference_pct = (
+            100 * nav_reconstruction_difference / nav if nav else 0.0)
+        if abs(nav_reconstruction_difference) > 1e-10 * max(1.0, abs(nav)):
+            raise AssertionError(
+                "commodity-quoted lease/keep returns do not reconstruct NAV "
+                f"on {exit_day.isoformat()}: {nav_reconstruction_difference}")
+        previous_lease_underlying_value = lease_underlying_value
+        previous_keep_underlying_value = keep_underlying_value
+        output.append({"date": execution_day.isoformat(), "exit_date": exit_day.isoformat(),
+                       "signal_date": signal_day.isoformat(),
                        "execution_date": execution_day.isoformat(), "mode": position["mode"],
                        "signal_annual_pct": 100 * position["signal"],
                        "positive_signal_annual_pct": 100 * position["positive_signal"],
                        "negative_signal_annual_pct": 100 * position["negative_signal"],
                        "interval_return_pct": 100 * portfolio_return,
+                       "starting_nav": starting_nav,
+                       "ending_nav": nav,
+                       "lease_book_start_value": lease_book_start_value,
+                       "lease_book_end_value": lease_value,
+                       "keep_book_start_value": keep_book_start_value,
+                       "keep_book_end_value": keep_value,
+                       "lease_book_external_transfer": 0.0,
+                       "keep_book_external_transfer": 0.0,
+                       "futures_contract_type": p.futures_contract_type,
+                       "inverse_interval_btc_payoff": inverse_settlement["interval_btc_payoff"] if inverse_settlement else None,
+                       "inverse_converted_btc": inverse_settlement["converted_btc"] if inverse_settlement else None,
+                       "inverse_pending_btc": inverse_settlement["pending_btc"] if inverse_settlement else None,
+                       "inverse_pending_btc_spot_value_usd": inverse_settlement["pending_btc_spot_value_usd"] if inverse_settlement else None,
+                       "inverse_conversion_fee_usd": inverse_settlement["conversion_fee_usd"] if inverse_settlement else None,
+                       "inverse_recognized_usd_payoff": inverse_settlement["recognized_usd_payoff"] if inverse_settlement else None,
                        "silver_price_return_contribution_pct": 100 * silver_price_component,
                        "slv_expense_contribution_pct": 100 * slv_expense_component,
                        "treasury_return_contribution_pct": 100 * treasury_component,
@@ -1109,12 +2010,76 @@ def run_backtest(spot, contracts, rates, by_day, p):
                        "matched_long_extension_interval_return_pct": (
                            100 * matched_long_extension_return),
                        "short_book_interval_return_pct": 100 * short_book_return,
+                       "lease_book_interval_return_pct": 100 * base_long_return,
+                       "keep_book_interval_return_pct": (
+                           100 * keep_book_standalone_return
+                           if keep_book_standalone_return is not None else None),
+                       "keep_book_contribution_interval_return_pct": (
+                           100 * short_book_return),
+                       "replicating_fund_book_interval_return_pct": 100 * spot_return,
+                       "futures_treasury_book_interval_return_pct": (
+                           100 * futures_treasury_book_return
+                           if futures_treasury_book_return is not None else None),
+                       "lease_book_factor_interval_return_pct": (
+                           100 * math.expm1(strategy_logs["lease"])),
+                       "keep_book_factor_interval_return_pct": (
+                           100 * math.expm1(strategy_logs["keep"])),
+                       "lease_fund_factor_interval_return_pct": (
+                           100 * math.expm1(lease_logs["fund"])),
+                       "lease_futures_treasury_factor_interval_return_pct": (
+                           100 * math.expm1(lease_logs["futures_treasury"])),
                        "simple_cumulative_return_pct": 100 * simple,
                        "long_book_cumulative_return_pct": 100 * long_simple,
                        "matched_long_extension_cumulative_return_pct": (
                            100 * extension_simple),
                        "short_book_cumulative_return_pct": 100 * short_simple,
                        "compounded_return_pct": 100 * (nav - 1), "nav": nav,
+                       "replicating_leg_value": replicating_value,
+                       "futures_treasury_value": futures_treasury_value,
+                       "lease_book_value": lease_value,
+                       "keep_book_value": keep_value,
+                       "replicating_leg_underlying_value": replicating_value / commodity_price_index,
+                       "futures_treasury_underlying_value": futures_treasury_value / commodity_price_index,
+                       "lease_book_underlying_value": lease_underlying_value,
+                       "keep_book_underlying_value": keep_underlying_value,
+                       "underlying_price_index": commodity_price_index,
+                       "lease_book_effective_proportion_pct": (
+                           100 * lease_effective_proportion),
+                       "keep_book_effective_proportion_pct": (
+                           100 * keep_effective_proportion),
+                       "lease_book_underlying_daily_return_pct": (
+                           100 * lease_underlying_return),
+                       "keep_book_underlying_daily_return_pct": (
+                           100 * keep_underlying_return),
+                       "lease_book_underlying_compounded_index": (
+                           lease_underlying_contribution_nav),
+                       "keep_book_underlying_compounded_index": (
+                           keep_underlying_contribution_nav),
+                       "combined_books_underlying_compounded_index": (
+                           combined_underlying_nav),
+                       "reconstructed_nav": reconstructed_nav,
+                       "nav_reconstruction_difference": (
+                           nav_reconstruction_difference),
+                       "nav_reconstruction_difference_pct": (
+                           nav_reconstruction_difference_pct),
+                       "initial_replicating_leg_value": position["base_slv"],
+                       "initial_futures_treasury_value": position["base_treasury"],
+                       "lease_book_compounded_return_pct": 100 * (lease_book_nav - 1),
+                       "keep_book_compounded_return_pct": 100 * (keep_book_nav - 1),
+                       "keep_book_contribution_compounded_return_pct": (
+                           100 * (keep_contribution_nav - 1)),
+                       "replicating_fund_book_compounded_return_pct": (
+                           100 * (replicating_fund_book_nav - 1)),
+                       "futures_treasury_book_compounded_return_pct": (
+                           100 * (futures_treasury_book_nav - 1)),
+                       "lease_book_attributed_factor_compounded_return_pct": (
+                           100 * (lease_factor_nav - 1)),
+                       "keep_book_attributed_factor_compounded_return_pct": (
+                           100 * (keep_factor_nav - 1)),
+                       "lease_fund_attributed_factor_compounded_return_pct": (
+                           100 * (lease_fund_factor_nav - 1)),
+                       "lease_futures_treasury_attributed_factor_compounded_return_pct": (
+                           100 * (lease_futures_treasury_factor_nav - 1)),
                        "long_futures_daily_return_pct": (
                            100 * asset_returns["long_futures"]
                            if asset_returns["long_futures"] is not None else None),
@@ -1134,7 +2099,8 @@ def run_backtest(spot, contracts, rates, by_day, p):
                        "short_futures_compounded_return_pct": 100 * (asset_nav["short_futures"] - 1),
                        "slv_compounded_return_pct": 100 * (asset_nav["slv"] - 1),
                        "treasury_compounded_return_pct": 100 * (asset_nav["treasury"] - 1),
-                       "slv_price": spot[exit_day],
+                       "slv_price": spot[execution_day],
+                       "slv_exit_price": spot[exit_day],
                        "long_weighted_future_price": long_weighted_future_price,
                        "short_weighted_future_price": short_weighted_future_price,
                        "entered_long_futures_price": entered_long_price,
@@ -1145,8 +2111,8 @@ def run_backtest(spot, contracts, rates, by_day, p):
                        "entered_short_futures_size_pct": 100 * entered_short_size,
                        "exited_long_futures_size_pct": 100 * exited_long_size,
                        "exited_short_futures_size_pct": 100 * exited_short_size,
-                       "resulting_long_futures_size_pct": 100 * sum(next_longs.values()),
-                       "resulting_short_futures_size_pct": 100 * sum(next_shorts.values()),
+                       "resulting_long_futures_size_pct": 100 * sum(position["longs"].values()),
+                       "resulting_short_futures_size_pct": 100 * sum(position["shorts"].values()),
                        "long_futures_trade_details": long_trade_details,
                        "short_futures_trade_details": short_trade_details,
                        "long_matched_usd_rate_pct": (
@@ -1191,6 +2157,8 @@ def run_backtest(spot, contracts, rates, by_day, p):
                        "largest_futures_maturity_share_pct": 100 * largest_share,
                        "long_symbols": ";".join(position["longs"]),
                        "short_symbols": ";".join(position["shorts"])})
+        output[-1]["held_futures"] = held_futures
+        output[-1]["holding_ledger"] = holding_ledger
         previous_valid_position = position
     return output, missing_futures_intervals
 
@@ -1220,7 +2188,8 @@ def parse_args():
                                  "weighted_lease_rate"],
                         default="shortest_maturity",
                         help="How to select among long contracts above the entry rate")
-    parser.add_argument("--max-long-future", type=float, default=0.50)
+    parser.add_argument("--max-futures-treasury-fraction", type=float, default=0.50,
+                        help="Maximum fraction of the full commodity leg implemented with Treasury collateral + long futures")
     parser.add_argument("--long-maturity-bonus-per-year", type=float, default=0.004,
                         help="Added long score per year shorter than the longest candidate")
     parser.add_argument("--negative-short-start-rate", type=float, default=-0.005,
@@ -1252,10 +2221,10 @@ def main():
                                 positive_full_rate=args.positive_full_rate,
                                 long_contract_selection=args.long_contract_selection,
                                 long_maturity_bonus_per_year=args.long_maturity_bonus_per_year,
-                                max_long_future=args.max_long_future,
+                                max_futures_treasury_fraction=args.max_futures_treasury_fraction,
                                 negative_short_start_rate=args.negative_short_start_rate,
                                 negative_short_full_rate=args.negative_short_full_rate,
-                                max_short_fraction_of_slv=args.max_short_fraction_of_slv,
+                                max_short_fraction_of_long_leg=args.max_short_fraction_of_long_leg,
                                 short_contract_selection=args.short_contract_selection,
                                 short_maturity_bonus_per_year=args.short_maturity_bonus_per_year,
                                 bond_mode=args.bond_mode,

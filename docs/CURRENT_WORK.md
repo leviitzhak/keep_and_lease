@@ -6,24 +6,33 @@ branch._
 
 ## Active change set
 
-- Status: keyless cloud-agent GUI/API access activated and verified end-to-end;
-  approved-user direct Cloud Run IAP cutover documented but not implemented
-- Integration: unmerged; production deployment remains on `master`
-- Current implementation branch: [`agent/cloud-autonomous-access`](https://github.com/leviitzhak/keep_and_lease/tree/agent/cloud-autonomous-access)
+- Status: BTC intraday execution and GCP-first preview validation are implemented;
+  the combined branch is being deployed, checked, and merged.
+- Active branch: `agent/btc-intraday-deribit-data`
 - Previous generalized application review: [PR #22 — Complete generalized multi-commodity implementation](https://github.com/leviitzhak/keep_and_lease/pull/22)
 - Render services' configured source branch: [`agent/fixed-render-preview-deploys`](https://github.com/leviitzhak/keep_and_lease/tree/agent/fixed-render-preview-deploys). Deploy hooks override this default with the exact commit pushed to the current implementation branch.
 - Application version: `1.3`
 - First verified Cloud Run revision:
   `fc4400e9a18a4e68846f250b64efee7fc0429ad7`
-- Current production deployment commit verified by the private operator:
-  `08b583696f52314b54e3be6bd6f1d39497b10a1c`
+- Last documented private stable commit verified by the private operator:
+  `08b583696f52314b54e3be6bd6f1d39497b10a1c` (same application content as
+  `a3d457516bda8b74a8b23db3f5bb2f491296ea10`)
 - First successful autonomous private health/GUI run:
   [Cloud agent operator #2](https://github.com/leviitzhak/keep_and_lease/actions/runs/32643381753)
-- Exact deployed revision: read `Version … · commit …` in the [preview GUI](https://keep-and-lease-fixed-preview.onrender.com), or compare [`build-info.json`](https://keep-and-lease-fixed-preview.onrender.com/build-info.json) with the API [`engine_commit`](https://keep-and-lease-fixed-preview-api.onrender.com/api/v1/health).
+- Cloud Run URL: <https://keep-and-lease-web-vfk2j2rgoq-zf.a.run.app>. Anonymous
+  requests return `403 Forbidden`; use the authenticated Cloud SDK proxy until
+  selected-user browser authentication is implemented.
+- Private GCP preview URL:
+  <https://keep-and-lease-preview-web-vfk2j2rgoq-zf.a.run.app>. Normal
+  feature-branch deployments run an authenticated GUI and multi-commodity smoke
+  test; the keyless cloud-agent operator can independently select this target and
+  enforce its exact deployed SHA.
+- For the separate Render preview, read `Version … · commit …` in the [preview GUI](https://keep-and-lease-fixed-preview.onrender.com), or compare [`build-info.json`](https://keep-and-lease-fixed-preview.onrender.com/build-info.json) with the API [`engine_commit`](https://keep-and-lease-fixed-preview-api.onrender.com/api/v1/health).
 
 ## Scope being completed
 
 - Generalized multi-commodity strategy and independent cash/Treasury sleeve.
+- Independent shorter-long/longer-short pure-maturity scoring multiplier.
 - One canonical scoring pipeline and removal of the duplicate legacy formula path.
 - Multi-commodity GUI, plots, statistics, decomposition, inspected-day audit, and
   parameter persistence.
@@ -40,24 +49,24 @@ branch._
   containers, workload Terraform, and GitHub OIDC deployment workflow.
 - A branch-restricted, keyless GitHub OIDC operator that can collect non-secret
   health/build evidence, render the private GUI, and run sanitized fixed-fixture
-  API smoke tests without exposing a Google credential to Codex.
+  API smoke tests against stable or preview without exposing a Google credential
+  to Codex.
+- BTC-only intraday execution/rebalancing at whole multiples of the detected
+  one-minute market resolution, using causal latest-observable Treasury accrual.
 - A documented direct Cloud Run IAP migration that keeps the existing
   internet-reachable `run.app` URL, allowlists approved Google users and machine
   identities, preserves the keyless operator, and keeps anonymous access disabled.
+- Cross-session restoration of the latest completed durable backtest, complete
+  rate-change plots, explicit empty-plot states, and canonical loading of the
+  three GUI-selectable materialized markets.
 
 ## Explicitly deferred
 
-- The pure shorter-long/longer-short maturity multiplier is planned for a later
-  change set.
-- Investigate the initial private GUI's two HTTP 404 console messages and
-  `portfolio_series` null-reference page error. The page still renders with HTTP
-  200 and reports the server engine ready; the operator artifact preserves the
-  diagnostic without exposing credentials.
-- Implement the reviewed direct Cloud Run IAP cutover: complete the one-time
-  no-organization External OAuth setup in the console; add the approved-user,
-  operator, deployment, and IAP-service-agent policies; switch machine-token
-  audiences; and verify allowed, denied, operator, and deployment paths before
-  removing direct operator invocation. Anonymous access remains disabled.
+- Complete the one-time no-organization External OAuth setup, manually add approved
+  humans plus the operator and deployment identities in the Google Cloud IAP
+  policy, set the two `GCP_IAP_*` repository variables, apply the foundation delta,
+  deploy direct IAP, and verify allowed, denied, operator, and deployment paths
+  before removing direct operator invocation. Anonymous access remains disabled.
 - Cloud Run numerical/cancellation/replacement acceptance tests and capacity
   measurements remain deployment work. The fixed Render services, deploy-hook
   secrets, and public URL variables are configured; only the optional

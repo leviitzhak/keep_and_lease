@@ -22,7 +22,11 @@ npm run dev
 
 The development command copies market data and Python sources from the
 repository root and the Pyodide runtime from `node_modules` into generated
-public assets.
+public assets. It then starts the canonical FastAPI/CPython calculation server
+and the Sites GUI together. Vite proxies same-origin `/api/v1/*` requests to the
+local API, and the Sites iframe requests `engine=server`, matching the GCP API
+contract without silently falling back to browser calculation. Use
+`KEEP_AND_LEASE_LOCAL_API_PORT` to select a non-default API port.
 
 ## Build
 
@@ -56,26 +60,54 @@ Set `KEEP_AND_LEASE_COMPUTE_API_URL=http://localhost:8000` before building the
 GUI. Add `?engine=pyodide` to the GUI URL to explicitly use the preserved browser
 engine, or `?engine=server` to require the API without fallback.
 
-## Durable Google Cloud execution
+## Active deployment: Google Cloud
+
+**Google Cloud Run is the current and authoritative deployment path.** The stable
+working version and the separate feature-branch preview should use the Google
+Cloud infrastructure and `.github/workflows/deploy-google-cloud.yml`; do not
+create or use Render services for current deployments or previews.
 
 The Google Cloud path replaces the process-local queue with Firestore metadata,
 one Cloud Run Job per calculation, and immutable gzip results in Cloud Storage.
 Separate web/worker images, Cloud Run v2 Terraform, and the keyless GitHub
 deployment workflow are implemented. The foundation is provisioned; follow
-[`docs/GOOGLE_CLOUD_RUN_SETUP.md`](docs/GOOGLE_CLOUD_RUN_SETUP.md) for deployment
-operations and the remaining private calculation acceptance tests.
+[`docs/GOOGLE_CLOUD_RUN_SETUP.md`](docs/GOOGLE_CLOUD_RUN_SETUP.md) for deployment,
+preview/access operations, and remaining acceptance tests.
 
-## Fixed Render preview
+The local Sites preview currently has known compatibility gaps and is intentionally
+not part of the normal validation path. Do not start it before a GCP deployment or
+repair it incidentally. Push a coherent feature branch to deploy the authoritative
+GCP preview, then use the deployment smoke test and, when needed, the bounded
+keyless cloud-agent operator to inspect the private deployed GUI. Persistent Sites
+compatibility remains deferred work.
 
-The repository includes `render.preview.yaml` and a GitHub Actions workflow for
-deploying one commit to a persistent GUI/API preview pair. Follow
-[`docs/RENDER_FIXED_PREVIEW.md`](docs/RENDER_FIXED_PREVIEW.md) to provision the
-services, store their deploy hooks, configure their stable URLs, verify commit
-provenance, or rebuild the preview from another workspace.
+## Render (legacy / retired)
 
-The provisioned preview tracks deployments triggered from
-[`agent/multi-commodity-preview`](https://github.com/leviitzhak/keep_and_lease/tree/agent/multi-commodity-preview):
+The repository still contains historical Render configuration and documentation
+for provenance and possible cleanup. **The Render deployment workflow has been
+discarded and is not an active deployment target.** Render URLs, deploy hooks,
+`render.preview.yaml`, and Render-specific workflows must not be treated as the
+current preview or production procedure.
 
-- GUI: <https://keep-and-lease-fixed-preview.onrender.com>
-- API health and running commit: <https://keep-and-lease-fixed-preview-api.onrender.com/api/v1/health>
-- GUI build metadata: <https://keep-and-lease-fixed-preview.onrender.com/build-info.json>
+See the Google Cloud documentation above for all new deployment and preview work.
+
+
+## Commodity-leg allocation semantics
+
+Each configured commodity proportion is the **full long commodity leg**. Within that leg, the replicating fund and the Treasury-collateralized long-futures replication are complementary: if `a(r)` is the futures+Treasuries share, the replicating-fund share is `1 - a(r)`. The parameter `max_futures_treasury_fraction` caps `a(r)`, so `1 - max_futures_treasury_fraction` is the minimum replicating-fund share. The replicating fund is structurally mandatory; legacy JSON containing `enable_slv_leg=false` is accepted but the value is ignored.
+
+The short parameter `max_short_fraction_of_long_leg` is measured against the full long commodity leg, not against only the fund or only the futures portion. A short position is paired with an equal-sized extension of the complete long commodity implementation.
+
+## Book return decomposition
+
+The lease book is the base long commodity implementation: replicating fund plus Treasury-collateralized long futures. The keep book is the incremental matched long extension plus short futures. The GUI quotes both books in units of the underlying commodity by dividing their dollar values by the underlying price index `P(t) / P(0)`.
+
+Let `U_lease(t)` and `U_keep(t)` be those commodity-quoted values and let `U_total(t-1) = U_lease(t-1) + U_keep(t-1)`. The displayed daily contributions are
+
+`r_lease(t) = [U_lease(t) - U_lease(t-1)] / U_total(t-1)`
+
+and the corresponding formula for `r_keep(t)`. This is equivalent to scaling each book's own commodity-quoted return by its effective start-of-interval proportion. The combined series is chain-linked from 1 and verified on every date using
+
+`NAV(t) = P(t) / P(0) * product(s <= t)[1 + r_lease(s) + r_keep(s)]`.
+
+The prior standalone-compounded and multiplicative-attribution plot families are retained in the calculation output for compatibility but are not displayed in the GUI.

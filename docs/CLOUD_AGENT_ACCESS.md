@@ -14,8 +14,9 @@ The control path is:
    the existing GitHub OIDC provider.
 3. The workflow impersonates
    `keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com`.
-4. The operator calls the private Cloud Run origin with a short-lived,
-   audience-bound identity token.
+4. The request selects the fixed `stable` or `preview` Cloud Run target. The
+   operator calls that private origin with a short-lived, audience-bound identity
+   token and can require its full deployed commit SHA to match.
 5. Health, build metadata, sanitized fixed-fixture backtest status, and an
    authenticated Playwright screenshot are uploaded as a one-day workflow
    artifact.
@@ -28,9 +29,15 @@ in the repository, a GitHub secret, an artifact, or the Codex agent filesystem.
 
 `infra/gcp/codex_operator.tf` creates a dedicated service account with only:
 
-- `roles/run.invoker` on `keep-and-lease-web`;
+- `roles/run.invoker` on `keep-and-lease-web` and
+  `keep-and-lease-preview-web`;
 - `roles/iam.workloadIdentityUser` for the exact GitHub ref
   `refs/heads/agent/cloud-autonomous-access`.
+
+The foundation owns the stable invoker binding. The isolated preview workload
+state adds the same service account as an invoker only on
+`keep-and-lease-preview-web`, so each normal preview deployment ensures the
+machine-access binding exists without broadening the operator's project roles.
 
 It has no direct Firestore, Cloud Storage, Cloud Run Job execution, deployment,
 Artifact Registry, Terraform-state, or service-account administration access. A
@@ -55,8 +62,10 @@ terraform plan
 terraform apply
 ```
 
-The plan should add one service account and two IAM bindings. It must not replace
-the web service, calculation Job, buckets, Firestore database, or GitHub deployment
+The foundation plan remains unchanged for this preview extension. The next normal
+preview deployment plans and applies only the preview service's operator invoker
+binding alongside its ordinary workload update. It must not replace either web
+service, calculation Job, buckets, Firestore database, or GitHub deployment
 identity.
 
 No new GitHub secret is required. The workflow reuses the existing identifier
@@ -71,9 +80,16 @@ non-billable GUI/API inspection looks like:
 {
   "schema_version": 1,
   "request_id": "deployed-health-gui",
+  "target": "preview",
+  "expected_commit": "0123456789abcdef0123456789abcdef01234567",
   "actions": ["health", "gui"]
 }
 ```
+
+`target` is restricted to `stable` or `preview` and defaults to `stable` for old
+requests. `expected_commit`, when present, must be the full lowercase 40-character
+Git SHA. Both the API/build check and the rendered-GUI check fail if the deployed
+revision differs.
 
 Pushing that one path starts **Cloud agent operator**. The workflow does not accept
 shell commands, arbitrary URLs, arbitrary artifact paths, or arbitrary Google Cloud
@@ -85,6 +101,7 @@ An API calculation is opt-in and must state that it is billable:
 {
   "schema_version": 1,
   "request_id": "bounded-silver-smoke",
+  "target": "preview",
   "actions": ["health", "backtest"],
   "backtest": {
     "confirm_billable": true,
@@ -95,6 +112,12 @@ An API calculation is opt-in and must state that it is billable:
   }
 }
 ```
+
+A request-only push under `.cloud-agent/requests/` starts the operator without
+starting another GCP deployment. This prevents the diagnostic request from
+replacing or racing the preview revision it is meant to inspect. Pushes that also
+change application, infrastructure, workflow, or documentation files still run
+the normal deployment workflow.
 
 Because this is a public repository, the operator accepts only reviewed smoke
 fixtures defined in `scripts/cloud-agent-operator.py`; arbitrary strategy
@@ -122,25 +145,20 @@ parameters, raw Cloud Logging entries, result bodies, credentials, or other priv
 data to this workflow. Deeper private diagnostics require a private control plane,
 such as a private repository workflow or an authenticated MCP tunnel.
 
-## Planned IAP compatibility
+## IAP compatibility
 
-The verified operator currently sends a Cloud Run audience token directly to the
-private `run.app` origin and holds `roles/run.invoker`. Enabling IAP without
-changing this workflow first would block the operator even though its Cloud Run IAM
-binding still exists, because IAP authenticates the request before Cloud Run IAM.
+The workflow supports both access modes. Without direct IAP it mints an ID token
+for the selected Cloud Run origin. When `GCP_IAP_ENABLED=true`, both authentication
+steps instead use `GCP_IAP_CLIENT_ID` as the audience while retaining the email
+claim. The browser keeps its origin-only Authorization-header rule, so neither
+token form is sent to third-party origins.
 
-During the approved-user IAP migration:
-
-1. add the operator service account to the IAP allowlist with
-   `roles/iap.httpsResourceAccessor`;
-2. set the non-secret `GCP_IAP_CLIENT_ID` repository variable;
-3. change both Google authentication steps in
-   `.github/workflows/cloud-agent-operator.yml` to use that client ID as the ID
-   token audience while retaining the email claim;
-4. keep the browser's origin-only Authorization-header rule, so the IAP token is
-   never sent to third-party origins; and
-5. run a non-billable `health + gui` request before removing the old direct
-   `roles/run.invoker` binding.
+Before checking an IAP-protected target, its IAP policy must grant
+`roles/iap.httpsResourceAccessor` to the operator service account. Run
+`scripts/configure-cloud-run-iap-access.sh` once for each target; the helper
+defaults to the preview service and adds the human, deployment, and operator
+principals without storing their credentials. Run a non-billable `health + gui`
+request after any IAP-policy or OAuth-client change.
 
 The operator must use programmatic IAP authentication; it does not use the human
 Google sign-in screen. The workflow must remain keyless. Google's

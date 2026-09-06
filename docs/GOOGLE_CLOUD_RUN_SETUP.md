@@ -1,6 +1,6 @@
 # Google Cloud Run deployment design and implementation state
 
-## Current state — 2026-08-23
+## Current state — 2026-09-06
 
 The Google Cloud foundation is provisioned and verified. The durable application
 split, containers, workload Terraform, and keyless deployment workflow are
@@ -8,10 +8,19 @@ implemented. The private web service and calculation Job were first deployed fro
 commit `fc4400e9a18a4e68846f250b64efee7fc0429ad7`; the production workflow now
 deploys `master`, currently verified by the private operator at commit
 `08b583696f52314b54e3be6bd6f1d39497b10a1c` (application version `1.3`).
-The branch-restricted keyless operator has been applied and verified end-to-end:
-the API returned `status=ok` and the private GUI rendered with HTTP 200. Direct
-Cloud Run IAP for approved human users is documented below but is not yet enabled.
-Bounded calculation, cancellation, and replacement acceptance tests remain.
+The branch-restricted keyless operator has been applied and verified end-to-end
+against stable: the API returned `status=ok` and the private GUI rendered with
+HTTP 200. It now accepts only the fixed `stable` or `preview` target and can
+require an exact deployed commit SHA. Preview workload Terraform maintains the
+operator's preview invoker binding. Direct Cloud Run IAP Terraform, manual
+human/machine allowlisting, and dual-mode deployment/operator token audiences are
+implemented; IAP activation still requires the one-time no-organization OAuth
+setup and repository variables described below.
+The pure-maturity branch was inspected on Cloud Run and the service was returned
+to private access; anonymous requests to the public URL return `403`. Bounded
+deployment acceptance now renders the authenticated GUI and runs a three-commodity
+strategy after every stable or preview deployment. Cancellation and replacement
+acceptance tests remain.
 
 ### Provisioned foundation
 
@@ -49,7 +58,7 @@ bucket accessible to the deployment identity for workload state only.
 | Job metadata | `FirestoreJobRepository` | Firestore `backtests` and `backtest_cache` |
 | Results | `GcsResultStore` | immutable `jobs/<job-id>/result.json.gz` objects |
 | Workloads | `infra/gcp/workloads/` | `gs://keep-and-lease-terraform-workloads/cloud-run` state |
-| Deployment | `.github/workflows/deploy-google-cloud.yml` | `master` push or manual OIDC build/push/plan/apply/health check |
+| Deployment | `.github/workflows/deploy-google-cloud.yml` | any branch push or manual OIDC build/push/plan/apply/GUI and strategy smoke test; `master` maps to stable and every other branch maps to preview |
 
 The local and Render modes retain `JobStore`, the existing in-process queue. Cloud
 mode is selected with `KEEP_AND_LEASE_JOB_BACKEND=cloud`; it never starts the
@@ -70,16 +79,21 @@ server adapter but contains no market archives or Pyodide fallback payload.
 5. The worker runs the canonical `StrategyEngine` once. It checks that application,
    engine, data-manifest, and worker-image provenance match the submitted immutable
    identifiers.
-6. Strict JSON encoding enforces the configured result limit. The worker creates a
-   deterministic gzip object with `if_generation_match=0`, CRC32C transport
-   checking, and SHA-256 checksums for compressed and uncompressed bytes.
+6. Strict JSON encoding enforces the Terraform-managed result limit. The workload
+   configuration sets `KEEP_AND_LEASE_MAX_RESULT_BYTES` to 268,435,456 bytes
+   (256 MiB) for both the worker and web service so detailed holding ledgers remain
+   available for later plots, statistics, and spreadsheet exports. The worker then
+   creates a deterministic gzip object with `if_generation_match=0`, CRC32C
+   transport checking, and SHA-256 checksums for compressed and uncompressed bytes.
 7. A final Firestore transaction records `completed`, the `gs://` result pointer,
    checksums, timings, peak RSS, execution name, and exact provenance.
 8. `GET /api/v1/backtests/{id}` reads Firestore. It also converts expired queued
    leases or worker heartbeats into a durable `failed/worker_lost` state.
 9. `GET /api/v1/backtests/{id}/result` checks the completed record and streams the
-   gzip object from the configured result bucket; the browser receives the same
-   canonical JSON object after HTTP decompression.
+   gzip object from the configured result bucket without a `Content-Length` header,
+   so Cloud Run uses chunked transfer encoding for results larger than the 32 MiB
+   non-streaming HTTP/1 response limit. The browser receives the same canonical
+   JSON object after HTTP decompression.
 10. `DELETE /api/v1/backtests/{id}` durably requests cancellation. Queued work is
     cancelled before claim; running work uses the recorded execution name to call
     Cloud Run cancellation and the worker treats SIGTERM during cancellation as a
@@ -134,6 +148,8 @@ the project owner from an authenticated Cloud Shell checkout:
 ```bash
 cd ~/keep_and_lease
 git pull
+./scripts/install-terraform-cloud-shell.sh
+export PATH="$HOME/.local/bin:$PATH"
 cd infra/gcp
 terraform init
 terraform fmt -check
@@ -142,24 +158,97 @@ terraform plan
 terraform apply
 ```
 
-The foundation state remains under `foundation`; Cloud Run resources use the
-separate protected workload-state bucket.
+The installer pins Terraform `1.15.9` under persistent Cloud Shell storage at
+`$HOME/.local/bin` and adds that directory to future Bash sessions. Run the printed
+`export PATH=...` command once in the current session. The foundation state remains
+under `foundation`; Cloud Run resources use the separate protected workload-state
+bucket.
 
 ### 2. Run the GitHub workflow
 
-A push to `master` runs **Deploy Google Cloud workloads** automatically. The
-workflow also retains `workflow_dispatch` so a reviewed commit can be deployed
-manually. It:
+A push to `master` runs **Deploy Google Cloud workloads** automatically against the
+`stable` target. A push to any other branch automatically deploys that commit to
+the shared `preview` target, except for request-only changes beneath
+`.cloud-agent/requests/`; those trigger diagnostics without redeploying. The
+workflow also retains `workflow_dispatch` for reruns or explicitly selected refs.
+Manual runs expose a
+`deployment_target` choice that defaults to `preview` and an
+`allow_unauthenticated` input that defaults to `false`; the latter must remain false
+until the planned authentication and abuse controls are implemented. A stable run
+is rejected unless its selected ref is `master`. The workflow:
 
 1. authenticates with the existing OIDC provider;
 2. builds and pushes separate web/worker images;
 3. resolves immutable digests;
-4. initializes `infra/gcp/workloads/` against the dedicated workload-state bucket;
+4. initializes `infra/gcp/workloads/` against the target's separate state prefix;
 5. runs `terraform fmt -check`, `validate`, `plan`, and `apply`;
 6. mints a short-lived identity token for the deployed service's exact audience
    through the existing GitHub OIDC trust, then invokes the private health
-   endpoint; and
-7. publishes the URI and immutable image references in the workflow summary.
+   endpoint;
+7. opens the private GUI in authenticated headless Chromium, confirms that its
+   build metadata is the exact deployed SHA and that the server engine is ready;
+8. submits a daily-rebalanced 30% silver, 30% gold, 30% S&P 500, and 10% Treasury
+   strategy through the GUI, then verifies non-empty calculation sleeves and
+   rendered lease-rate canvases for all three commodities; and
+9. retains the browser report and screenshot for seven days and publishes the URI,
+   immutable images, smoke job ID, and observation count in the workflow summary.
+
+#### Feature-branch preview convention
+
+Every deployable non-`master` branch push automatically runs **Deploy Google Cloud
+workloads** for that exact commit against the private preview target. This includes
+branches outside `agent/**` and documentation-only commits. A push changing only
+`.cloud-agent/requests/**` is intentionally ignored so an operator check cannot
+replace or race the preview revision it names. Manual dispatch with
+`deployment_target=preview` and `allow_unauthenticated=false` remains available
+for a rerun without another commit.
+
+There is one shared preview service, not one service per branch. Non-`master`
+deployment runs use the same concurrency group and are serialized; the most recent
+completed branch deployment determines which commit the preview URL serves.
+
+The targets remain available at two independent links:
+
+- `stable` uses `keep-and-lease-web`, `keep-and-lease-calculation`, Terraform state
+  prefix `cloud-run`, and Firestore collections `backtests`/`backtest_cache`;
+- `preview` uses `keep-and-lease-preview-web`,
+  `keep-and-lease-preview-calculation`, Terraform state prefix
+  `cloud-run-preview`, and Firestore collections
+  `backtests_preview`/`backtest_cache_preview`.
+
+Both targets share immutable container storage, market inputs, and the results
+bucket, but preview deployment and job state cannot replace stable resources or
+reuse/cancel stable jobs. Record the feature branch and exact commit SHA before
+dispatch. A successful preview requires both the workflow's authenticated health
+check and its rendered-GUI/multi-commodity smoke test. The browser check also
+confirms that the GUI version footer reports the same SHA. Report the workflow run
+and private preview URL with the change handoff.
+
+For an independent working-agent check, synchronize the permanent
+`agent/cloud-autonomous-access` branch with the current operator implementation,
+then submit a bounded request with `target=preview` and the full deployed SHA in
+`expected_commit`. Read the workflow summary and sanitized evidence through the
+GitHub connector. Request-only pushes do not consume another deployment. See
+[CLOUD_AGENT_ACCESS.md](CLOUD_AGENT_ACCESS.md).
+
+#### Commit identity and SHA preservation
+
+A normal authenticated `git push` transfers the existing Git commit objects and
+therefore preserves their SHAs exactly. GitHub does not rewrite those commits.
+Creating equivalent changes through GitHub file/tree/commit APIs is a different
+operation: the API creates new commit objects on the current remote parent using
+the GitHub account's author/committer identity and a new timestamp. Even when the
+file tree and message are identical, those changed fields produce different SHAs.
+
+Prefer normal `git push` when deployment provenance must retain a locally reported
+SHA. If a connected GitHub app must create the remote commit instead, fetch it
+immediately and treat the GitHub-generated SHA as canonical; do not maintain a
+parallel local history with equivalent content and different commit IDs.
+
+The existing public commit history and its author email metadata are accepted for
+now and will not be rewritten solely for privacy. For future commits, prefer
+GitHub's ID-based `noreply` commit address and enable the account setting that
+keeps email addresses private. This changes future commit metadata only.
 
 Required repository Actions variables remain:
 
@@ -168,13 +257,52 @@ Required repository Actions variables remain:
 - `GCP_WORKLOAD_IDENTITY_PROVIDER=projects/989708711229/locations/global/workloadIdentityPools/github/providers/github`
 - `GCP_DEPLOY_SERVICE_ACCOUNT=keep-lease-github@keep-and-lease.iam.gserviceaccount.com`
 
-These are identifiers, not secrets.
+IAP activation additionally requires:
 
-### 3. Open the private GUI
+- `GCP_IAP_ENABLED=true`
+- `GCP_IAP_CLIENT_ID=<OAuth client ID created by the IAP console setup>`
 
-The deployed service URL is currently
+These are identifiers, not secrets. All IAP accessors—human and machine—are
+managed only in the Google Cloud IAP policy. This keeps personal email addresses
+out of the public repository and its public Actions logs, and lets an owner add or
+remove a user without a Terraform deployment. Keep `GCP_IAP_ENABLED` absent or
+`false` until the foundation delta, OAuth setup, client ID, and complete allowlist
+are ready.
+
+#### Persistent Cloud Shell and IAP allowlist helper
+
+Use `scripts/configure-cloud-run-iap-access.sh` for the one-time setup of a new
+Cloud Run service or to restore Cloud Shell configuration. It keeps the Cloud SDK
+configuration under the user's persistent Cloud Shell home directory, prompts for
+the human account instead of storing it in the repository, selects this project and
+region, authenticates when necessary, and adds the human plus the two standard
+machine principals to the named service. The permission changes are additive and
+the script asks for confirmation before applying them. It also installs a private
+shell initializer so Cloud Shell cannot leave a later session on the Console's
+unrelated launch project.
+
+From the repository root:
+
+```bash
+scripts/configure-cloud-run-iap-access.sh \
+  --account=your-google-account@example.com \
+  --service=keep-and-lease-preview-web
+```
+
+The service defaults to `keep-and-lease-preview-web`, so `--service` may be
+omitted for the normal preview setup. The script is safe to rerun and prints the
+resulting IAP policy.
+
+### 3. Open the two private GUIs
+
+The stable working-version URL is
 <https://keep-and-lease-web-vfk2j2rgoq-zf.a.run.app>. Until browser authentication
-is added, use the authenticated Cloud SDK proxy from Cloud Shell:
+is added, use the authenticated Cloud SDK proxy from Cloud Shell. The preview URL
+is created on its first preview deployment and is published in that workflow's
+summary. Both services must have the same approved human and machine identities in
+their IAP access policies.
+
+Stable proxy:
 
 ```bash
 gcloud run services proxy keep-and-lease-web \
@@ -183,11 +311,24 @@ gcloud run services proxy keep-and-lease-web \
   --port=8080
 ```
 
-Leave the command running and select **Web preview > Preview on port 8080** in
+Preview proxy:
+
+```bash
+gcloud run services proxy keep-and-lease-preview-web \
+  --project=keep-and-lease \
+  --region=me-west1 \
+  --port=8081
+```
+
+Leave the selected command running and select **Web preview** for its port in
 Cloud Shell. The proxy attaches the caller's Google identity to requests. This is
 an operator path, not a public application URL.
 
-### 4. Bounded operator calculation smoke test
+### 4. Manual bounded operator calculation smoke test
+
+The deployment workflow now performs the stronger rendered-GUI and
+multi-commodity check automatically. The commands below remain useful for an
+independent operator diagnosis.
 
 From an identity with Cloud Run invoke permission:
 
@@ -213,7 +354,7 @@ the local canonical engine before treating the deployment as accepted.
 
 “Public URL” has two materially different meanings for this application.
 
-### Planned next change: internet-reachable URL with an approved-user allowlist
+### Internet-reachable URL with an approved-user allowlist
 
 Enable [Identity-Aware Proxy (IAP) directly on the Cloud Run
 service](https://docs.cloud.google.com/run/docs/securing/identity-aware-proxy-cloud-run).
@@ -241,31 +382,34 @@ The IAP service agent is
 is verified, the operator's direct `roles/run.invoker` binding can be removed:
 IAP, rather than the original caller, invokes the service.
 
-#### Required implementation
+#### Activation procedure
 
-1. Enable `iap.googleapis.com` in foundation Terraform.
+1. Apply the foundation Terraform delta. It only enables `iap.googleapis.com`; the
+   deployment identity is deliberately not allowed to administer IAP policy.
 2. Because project `keep-and-lease` is not attached to a Google organization,
    perform the first IAP/OAuth activation in the Google Cloud console. Configure an
    **External** OAuth audience and let the console auto-generate the project OAuth
    client, or configure an equivalent custom client. Google does not support
    creating that first no-organization OAuth client entirely through Terraform.
-3. Record the non-secret IAP OAuth client ID as the GitHub repository variable
-   `GCP_IAP_CLIENT_ID`. Do not store the OAuth client secret in the repository,
-   GitHub Actions artifacts, or the Codex environment.
-4. Set `iap_enabled = true` on `google_cloud_run_v2_service.web` in workload
-   Terraform.
-5. Grant `roles/run.invoker` on the web service to the IAP service agent.
-6. Manage approved users, groups, the Codex operator, and the deployment identity
-   with `google_iap_web_cloud_run_service_iam_member` or an authoritative
-   `google_iap_web_cloud_run_service_iam_binding`.
-7. Update both the deployment health check and
-   `.github/workflows/cloud-agent-operator.yml` to request an ID token whose
-   audience is `GCP_IAP_CLIENT_ID`, with the service-account email claim included.
-   Keep a reviewed direct/IAP mode switch during migration so IAP is not enabled
-   before both machine callers are ready.
+3. In the service's **Security → IAP → Edit policy** page, grant
+   `roles/iap.httpsResourceAccessor` to every approved human Google account and to
+   both machine principals:
+   `serviceAccount:keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com`
+   and
+   `serviceAccount:keep-lease-github@keep-and-lease.iam.gserviceaccount.com`.
+   Keep the complete list in Google Cloud rather than the public repository.
+4. Set the two `GCP_IAP_*` repository variables listed above. Do not store the OAuth
+   client secret in the repository, GitHub Actions artifacts, or the Codex
+   environment.
+5. Run **Deploy Google Cloud workloads** with `allow_unauthenticated=false`.
+   Terraform enables direct IAP and grants the IAP service agent Cloud Run
+   invocation. It does not read or modify the IAP access policy.
+6. The deployment and operator workflows automatically switch their keyless ID
+   token audience from the Cloud Run URI to `GCP_IAP_CLIENT_ID` when
+   `GCP_IAP_ENABLED=true`.
 
 A Google-managed IAP OAuth client is sufficient for normal browser access. The
-planned machine path uses the configured IAP client ID. If a client configuration
+machine path uses the configured IAP client ID. If a client configuration
 does not support that OIDC flow, use Google's documented keyless service-account
 signed-JWT path instead; do not introduce a service-account key.
 
@@ -273,10 +417,10 @@ signed-JWT path instead; do not introduce a service-account key.
 
 1. Prepare and review the Terraform and dual-mode workflow changes while the
    service still uses direct Cloud Run IAM.
-2. Complete the one-time console OAuth/IAP configuration and record
-   `GCP_IAP_CLIENT_ID`.
-3. Add the human and service-account IAP allowlist entries and the IAP service-agent
-   Cloud Run invoker binding.
+2. Complete the one-time console OAuth/IAP configuration, manually add every human
+   and machine accessor listed above, and record `GCP_IAP_CLIENT_ID`.
+3. Apply the IAP service-agent Cloud Run invoker binding through workload
+   Terraform.
 4. Enable IAP and switch both machine workflows to the IAP audience.
 5. Verify all acceptance cases below before removing the operator's old direct
    Cloud Run invoker binding. If a machine check fails, disable IAP and restore the
@@ -298,6 +442,12 @@ signed-JWT path instead; do not introduce a service-account key.
 Setting `allow_unauthenticated=true` would immediately remove the `403`, but must
 not be done on the current combined GUI/API service: every anonymous visitor would
 also reach the endpoint that starts billable calculation Jobs.
+
+The option was used briefly on 2026-08-21 to inspect the GUI. Automatic calculation
+on initial page load was removed first, and a subsequent private deployment removed
+the `allUsers` invoker binding. A direct unauthenticated request was then verified to
+return `403`. This was a temporary diagnostic deployment, not an approved public
+operating mode.
 
 Before an anonymous launch, implement and test all of the following:
 

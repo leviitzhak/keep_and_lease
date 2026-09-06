@@ -1,6 +1,6 @@
 # Keep & Lease — Project State
 
-_Last updated: 2026-08-20_
+_Last updated: 2026-09-06_
 
 ## Purpose
 
@@ -8,14 +8,15 @@ Build an interactive research and backtesting application for strategies that al
 
 ## Current scope
 
-- Commodities: silver first, with the same analysis framework extended to gold and other supported commodities.
+- Commodities: silver, gold, S&P 500, and BTC through the same registered-market
+  framework, with other data-backed commodities remaining extensible.
 - Cash/Treasuries: treated as another investable curve, using interest rates rather than lease rates.
 - Instruments: physical-backed ETFs, futures at several maturities, and Treasury/cash positions.
 - Outputs: daily positions, returns, cumulative returns, diagnostics, contract-level inspection, and cross-sectional scatter plots.
 
 ## Core design decisions
 
-1. Signals are calculated on day `t`; trades are executed on day `t+1`.
+1. Signals are calculated and trades are executed at the close of day `t`; the resulting position earns the following close-to-close interval return.
 2. Long and short futures books may coexist at different maturities.
 3. A long futures contract remains eligible only when its lease rate satisfies the long-side eligibility rule.
 4. A short futures contract remains eligible only when its lease rate satisfies the short-side eligibility rule; a maturity bonus must not make an otherwise ineligible contract tradable.
@@ -47,7 +48,8 @@ Build an interactive research and backtesting application for strategies that al
 4. `maturity_scoring.py` is the single formula implementation used by trading and inspected-day diagnostics.
 5. The GUI includes synchronized inspection, score audits, per-commodity and Treasury scatters, hierarchical decomposition, statistics, and versioned parameter sets.
 6. Unavailable or corrupt market archives are isolated and reported only if the user selects the affected commodity.
-7. The pure shorter-long/longer-short maturity multiplier remains explicitly deferred.
+7. The optional pure-maturity multiplier independently favors shorter long and
+   longer short contracts; zero strength preserves the previous scoring.
 8. A queued `/api/v1` CPython service now calls the same canonical Python engine,
    while the GUI's v13 adapter preserves the v12 Pyodide worker as an explicit or
    automatic fallback.
@@ -58,11 +60,23 @@ Build an interactive research and backtesting application for strategies that al
 10. The Google Cloud foundation is provisioned. Durable Firestore jobs, immutable
     compressed GCS results, a scale-to-zero Cloud Run web service, one-shot
     calculation Job, containers, Terraform, and OIDC deployment workflow are
-    implemented and deployed from `master`. The authenticated health check and
-    private operator GUI path work; bounded calculation, cancellation, and
-    replacement acceptance tests remain. Direct Cloud Run IAP is the planned
-    selected-user browser access mode; anonymous access remains gated on application
-    authentication, ownership, quotas, and abuse/spending controls.
+    implemented and deployed. The `agent/pure-maturity-multiplier` revision was
+    temporarily exposed for GUI inspection, then returned to private Cloud Run IAM
+    access on 2026-08-21; unauthenticated requests now return `403`. The authenticated
+    health check and private operator GUI path work; bounded calculation,
+    cancellation, and replacement acceptance tests remain. Direct IAP Terraform,
+    manual human/machine allowlist instructions, and dual-mode keyless workflow
+    audiences are implemented; one-time OAuth activation, manual policy setup, and
+    acceptance verification remain.
+    Anonymous calculation access remains disabled.
+11. BTC-only strategies accept execution/rebalancing frequencies at whole
+    multiples of the detected intraday market-data resolution. Intraday Treasury
+    valuation accrues at the latest observable yield without future backfill or
+    interpolation.
+12. The local Sites preview is intentionally outside the normal validation path
+    while its compatibility gaps remain unfixed. Feature branches deploy to the
+    private GCP preview, whose built-in smoke test and bounded keyless operator can
+    verify the exact deployed SHA and rendered GUI.
 
 ## Active review and planned architecture
 

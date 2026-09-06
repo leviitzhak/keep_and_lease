@@ -1,0 +1,25 @@
+{
+  "active_provider": "deribit_1m",
+  "active_providers": {
+    "futures": "deribit_1m",
+    "spot": "kraken_1m"
+  },
+  "providers": {
+    "deribit_1m": {
+      "format": "deribit_candles",
+      "path": "deribit_1m",
+      "resolution": "1m"
+    },
+    "kraken_1m": {
+      "format": "kraken_spot_candles",
+      "path": "kraken_1m",
+      "resolution": "1m"
+    },
+    "tardis_quotes": {
+      "format": "tardis_quotes",
+      "path": "tardis_quotes",
+      "resolution": "tick"
+    }
+  },
+  "schema_version": 2
+}

@@ -4,6 +4,7 @@ from maturity_scoring import (
     BoundaryAnchors,
     RelativeAdjustment,
     adjusted_score,
+    allocate_scores,
     score_contracts,
     signed_distance,
 )
@@ -74,13 +75,38 @@ class RelativeScoringTests(unittest.TestCase):
         self.assertEqual(
             adjusted_score(1.7, 0.20, 365, self.boundary,
                            adjustment, "long"),
-            1.7,
+            170.0,
         )
 
     def test_extreme_adjustment_is_clipped_and_non_negative(self):
         self.assertEqual(self.adjustment.normalized(10.0), 2.0)
         self.assertEqual(self.adjustment.normalized(-10.0), -2.0)
         self.assertEqual(self.adjustment.multiplier(-10.0), 0.0)
+
+    def test_softmax_accepts_negative_logits_and_preserves_target(self):
+        weights = allocate_scores({"below": -2.0, "above": 1.0}, 0.75)
+        self.assertGreater(weights["below"], 0.0)
+        self.assertGreater(weights["above"], weights["below"])
+        self.assertAlmostEqual(sum(weights.values()), 0.75)
+
+    def test_equal_logits_split_the_target_equally(self):
+        weights = allocate_scores({"A": 0.0, "B": 0.0}, 1.0)
+        self.assertAlmostEqual(weights["A"], 0.5)
+        self.assertAlmostEqual(weights["B"], 0.5)
+
+    def test_below_line_eligible_contract_keeps_positive_weight(self):
+        contracts = [
+            {"symbol": "A", "days": 100, "lease": 0.001},
+            {"symbol": "B", "days": 200, "lease": 0.002},
+        ]
+        weights, diagnostics = score_contracts(
+            contracts, direction="long", eligibility_threshold=0.0,
+            boundary=self.boundary, adjustment=self.adjustment, target=1.0)
+        self.assertEqual(set(weights), {"A", "B"})
+        self.assertGreater(weights["A"], 0.0)
+        self.assertGreater(weights["B"], 0.0)
+        self.assertAlmostEqual(sum(weights.values()), 1.0)
+        self.assertTrue(all(row["final_score"] < 0 for row in diagnostics))
 
     def test_short_distance_uses_negative_rate(self):
         maturity = 180

@@ -25,18 +25,27 @@ class JobStore:
         self._worker = threading.Thread(target=self._work, daemon=True)
         self._worker.start()
 
-    def parameter_hash(self, parameters: dict[str, Any]) -> str:
+    def parameter_hash(
+        self, parameters: dict[str, Any], owner_id: str | None = None
+    ) -> str:
         provenance = (
             self.engine.provenance() if hasattr(self.engine, "provenance") else {}
         )
         encoded = json.dumps(
-            {"schema_version": 1, "parameters": parameters, "provenance": provenance},
+            {
+                "schema_version": 1,
+                "parameters": parameters,
+                "provenance": provenance,
+                **({"owner_id": owner_id} if owner_id else {}),
+            },
             sort_keys=True, separators=(",", ":"), ensure_ascii=False
         ).encode("utf-8")
         return hashlib.sha256(encoded).hexdigest()
 
-    def submit(self, parameters: dict[str, Any]) -> tuple[Job, bool]:
-        digest = self.parameter_hash(parameters)
+    def submit(
+        self, parameters: dict[str, Any], owner_id: str | None = None
+    ) -> tuple[Job, bool]:
+        digest = self.parameter_hash(parameters, owner_id)
         with self._lock:
             cached_id = self._completed_by_hash.get(digest)
             if cached_id and cached_id in self._jobs:
@@ -44,7 +53,13 @@ class JobStore:
             provenance = (
                 self.engine.provenance() if hasattr(self.engine, "provenance") else {}
             )
-            job = Job(uuid.uuid4().hex, dict(parameters), digest, provenance=provenance)
+            job = Job(
+                uuid.uuid4().hex,
+                dict(parameters),
+                digest,
+                owner_id=owner_id,
+                provenance=provenance,
+            )
             job.logs.append({
                 "at": job.created_at, "stage": job.stage, "detail": job.detail,
             })
@@ -55,6 +70,21 @@ class JobStore:
     def get(self, job_id: str) -> Job | None:
         with self._lock:
             return self._jobs.get(job_id)
+
+    def latest_completed(self, owner_id: str | None = None) -> Job | None:
+        """Return the most recently completed in-process job, if any."""
+        with self._lock:
+            completed = [
+                job for job in self._jobs.values()
+                if job.status == "completed"
+                and job.result is not None
+                and job.owner_id == owner_id
+            ]
+            return max(
+                completed,
+                key=lambda job: job.completed_at or job.created_at,
+                default=None,
+            )
 
     def result(self, job: Job) -> dict[str, Any] | None:
         return job.result

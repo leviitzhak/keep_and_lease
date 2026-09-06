@@ -40,6 +40,13 @@
 ## Phase 5 — operationalization
 
 - Move the default calculation path from browser Pyodide to a versioned server-side asynchronous backtest API.
+- Serve the same canonical GUI revision in Sites and Google Cloud, and route both
+  GUIs to the same versioned calculation API through deployment-specific,
+  authenticated configuration.
+- Add a strict server mode for published previews: if the API is unavailable,
+  report that error visibly instead of silently falling back to browser Pyodide.
+- Display and verify the GUI commit, API/engine commit, and selected execution
+  engine together.
 - Preserve progress logs, result provenance, cancellation, resource limits, and identical-result caching.
 - Validate CPython/Pyodide equivalence before retiring the browser fallback.
 - Benchmark a two-instance AWS option: normally available production plus a shared, automatically stopped PR-preview host.

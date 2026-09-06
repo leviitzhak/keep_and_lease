@@ -3,11 +3,27 @@ name: Deploy Google Cloud workloads
 on:
   push:
     branches:
-      - master
+      - "**"
+    paths-ignore:
+      - .cloud-agent/requests/**
   workflow_dispatch:
+    inputs:
+      deployment_target:
+        description: Stable working version or feature-branch preview
+        required: true
+        type: choice
+        options:
+          - preview
+          - stable
+        default: preview
+      allow_unauthenticated:
+        description: Expose the web GUI and API without Cloud Run IAM authentication
+        required: true
+        type: boolean
+        default: false
 
 concurrency:
-  group: google-cloud-production
+  group: google-cloud-${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'stable' || github.event_name == 'push' && 'preview' || inputs.deployment_target }}
   cancel-in-progress: false
 
 permissions:
@@ -17,10 +33,13 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     env:
       PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
       REGION: ${{ vars.GCP_REGION }}
+      IAP_ENABLED: ${{ vars.GCP_IAP_ENABLED == 'true' }}
+      IAP_CLIENT_ID: ${{ vars.GCP_IAP_CLIENT_ID }}
+      DEPLOYMENT_TARGET: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'stable' || github.event_name == 'push' && 'preview' || inputs.deployment_target }}
 
     steps:
       - name: Check out repository
@@ -37,6 +56,22 @@ jobs:
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
+
+      - name: Validate access configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$DEPLOYMENT_TARGET" in
+            stable|preview) ;;
+            *) echo "Invalid deployment target: $DEPLOYMENT_TARGET" >&2; exit 2 ;;
+          esac
+          if [[ "$DEPLOYMENT_TARGET" == "stable" && "$GITHUB_REF" != "refs/heads/master" ]]; then
+            echo "The stable target may only be deployed from master." >&2
+            exit 2
+          fi
+          if [[ "$IAP_ENABLED" == "true" ]]; then
+            test -n "$IAP_CLIENT_ID"
+          fi
 
       - name: Resolve immutable build metadata
         id: metadata
@@ -117,8 +152,15 @@ jobs:
           TF_VAR_region: ${{ vars.GCP_REGION }}
           TF_VAR_web_image: ${{ steps.images.outputs.web_image }}
           TF_VAR_worker_image: ${{ steps.images.outputs.worker_image }}
+          TF_VAR_deployment_target: ${{ env.DEPLOYMENT_TARGET }}
+          TF_VAR_allow_unauthenticated: ${{ vars.GCP_IAP_ENABLED != 'true' && github.event_name == 'workflow_dispatch' && inputs.allow_unauthenticated || false }}
+          TF_VAR_iap_enabled: ${{ vars.GCP_IAP_ENABLED == 'true' }}
         run: |
-          terraform init -input=false
+          state_prefix="cloud-run"
+          if [[ "$DEPLOYMENT_TARGET" == "preview" ]]; then
+            state_prefix="cloud-run-preview"
+          fi
+          terraform init -input=false -reconfigure -backend-config="prefix=${state_prefix}"
           terraform fmt -check
           terraform validate
           terraform plan -input=false -out=tfplan
@@ -130,7 +172,25 @@ jobs:
           TF_VAR_region: ${{ vars.GCP_REGION }}
           TF_VAR_web_image: ${{ steps.images.outputs.web_image }}
           TF_VAR_worker_image: ${{ steps.images.outputs.worker_image }}
+          TF_VAR_deployment_target: ${{ env.DEPLOYMENT_TARGET }}
+          TF_VAR_allow_unauthenticated: ${{ vars.GCP_IAP_ENABLED != 'true' && github.event_name == 'workflow_dispatch' && inputs.allow_unauthenticated || false }}
+          TF_VAR_iap_enabled: ${{ vars.GCP_IAP_ENABLED == 'true' }}
         run: terraform apply -input=false -auto-approve tfplan
+
+      - name: Report failed Cloud Run startup logs
+        if: failure()
+        run: |
+          service_name="keep-and-lease-web"
+          if [[ "$DEPLOYMENT_TARGET" == "preview" ]]; then
+            service_name="keep-and-lease-preview-web"
+          fi
+          gcloud logging read \
+            "resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"${service_name}\"" \
+            --project="$PROJECT_ID" \
+            --freshness=30m \
+            --limit=100 \
+            --order=desc \
+            --format=json
 
       - name: Resolve deployed web URI
         id: web
@@ -144,10 +204,10 @@ jobs:
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
           token_format: id_token
-          id_token_audience: ${{ steps.web.outputs.web_uri }}
+          id_token_audience: ${{ vars.GCP_IAP_ENABLED == 'true' && vars.GCP_IAP_CLIENT_ID || steps.web.outputs.web_uri }}
           id_token_include_email: true
 
-      - name: Verify private web health
+      - name: Verify authenticated web health
         id: verify
         env:
           IDENTITY_TOKEN: ${{ steps.health_auth.outputs.id_token }}
@@ -159,21 +219,87 @@ jobs:
             "${WEB_URI}/api/v1/health")"
           test "$(jq -r '.status' <<<"$health")" = "ok"
           test "$(jq -r '.execution_backend' <<<"$health")" = "cloud-run-job"
+          test "$(jq -r '.engine_commit' <<<"$health")" = "$GITHUB_SHA"
           echo "web_uri=${WEB_URI}" >> "$GITHUB_OUTPUT"
           jq . <<<"$health"
+
+      - name: Prepare browser smoke-test runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          browser_dir="${RUNNER_TEMP}/keep-lease-browser"
+          mkdir -p "$browser_dir"
+          cp scripts/cloud-agent-browser.cjs "$browser_dir/run.cjs"
+          cd "$browser_dir"
+          npm init --yes >/dev/null
+          npm install --no-save --no-package-lock playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Check rendered GUI and run multi-commodity strategy
+        env:
+          KEEP_AND_LEASE_WEB_URI: ${{ steps.verify.outputs.web_uri }}
+          KEEP_AND_LEASE_ID_TOKEN: ${{ steps.health_auth.outputs.id_token }}
+          KEEP_AND_LEASE_EXPECTED_COMMIT: ${{ github.sha }}
+          KEEP_AND_LEASE_RUN_SMOKE_STRATEGY: "true"
+          KEEP_AND_LEASE_OUTPUT_DIR: ${{ runner.temp }}/deployment-smoke
+        run: |
+          set -euo pipefail
+          browser_dir="${RUNNER_TEMP}/keep-lease-browser"
+          mkdir -p "$KEEP_AND_LEASE_OUTPUT_DIR"
+          cd "$browser_dir"
+          node run.cjs
+
+      - name: Report failed deployment verification logs
+        if: failure()
+        run: |
+          service_name="keep-and-lease-web"
+          calculation_job="keep-and-lease-calculation"
+          if [[ "$DEPLOYMENT_TARGET" == "preview" ]]; then
+            service_name="keep-and-lease-preview-web"
+            calculation_job="keep-and-lease-preview-calculation"
+          fi
+          gcloud logging read \
+            "resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"${service_name}\"" \
+            --project="$PROJECT_ID" \
+            --freshness=30m \
+            --limit=100 \
+            --order=desc \
+            --format=json
+          gcloud logging read \
+            "resource.type=\"cloud_run_job\" AND resource.labels.job_name=\"${calculation_job}\"" \
+            --project="$PROJECT_ID" \
+            --freshness=30m \
+            --limit=100 \
+            --order=desc \
+            --format=json
+
+      - name: Upload deployment smoke-test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-smoke-${{ env.DEPLOYMENT_TARGET }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/deployment-smoke
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Publish deployment summary
         env:
           WEB_URI: ${{ steps.verify.outputs.web_uri }}
           WEB_IMAGE: ${{ steps.images.outputs.web_image }}
           WORKER_IMAGE: ${{ steps.images.outputs.worker_image }}
+          SMOKE_REPORT: ${{ runner.temp }}/deployment-smoke/gui-report.json
         run: |
           {
             echo "## Google Cloud deployment"
             echo
+            echo "- Target: \`${DEPLOYMENT_TARGET}\`"
             echo "- Commit: \`${GITHUB_SHA}\`"
             echo "- Private web service: ${WEB_URI}"
+            echo "- IAP enabled: \`${IAP_ENABLED}\`"
             echo "- Web image: \`${WEB_IMAGE}\`"
             echo "- Worker image: \`${WORKER_IMAGE}\`"
-            echo "- Calculation Job: \`keep-and-lease-calculation\`"
+            echo "- Calculation Job: \`$(terraform -chdir=infra/gcp/workloads output -raw calculation_job)\`"
+            echo "- GUI smoke check: \`passed\`"
+            echo "- Multi-commodity smoke job: \`$(jq -r '.strategy.jobId' "$SMOKE_REPORT")\`"
+            echo "- Smoke-test observations: \`$(jq -r '.strategy.observations' "$SMOKE_REPORT")\`"
           } >> "$GITHUB_STEP_SUMMARY"

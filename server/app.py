@@ -6,7 +6,7 @@ import json
 import os
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Response, status
+from fastapi import FastAPI, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
@@ -88,6 +88,14 @@ def create_app(
     def browser_worker() -> FileResponse:
         return static_file("backtest-worker-v13.js", "text/javascript")
 
+    @app.get("/fflate.js", include_in_schema=False)
+    def spreadsheet_runtime() -> FileResponse:
+        return static_file("fflate.js", "text/javascript")
+
+    @app.get("/backtest-workbook-v1.js", include_in_schema=False)
+    def spreadsheet_template_runtime() -> FileResponse:
+        return static_file("backtest-workbook-v1.js", "text/javascript")
+
     @app.get("/build-info.json", include_in_schema=False)
     def build_info() -> dict[str, Any]:
         capabilities = (
@@ -104,14 +112,31 @@ def create_app(
     def compute_config() -> dict[str, str]:
         return {"apiBaseUrl": ""}
 
+    def requester_id(request: Request) -> str | None:
+        raw = (
+            request.headers.get("x-goog-authenticated-user-id")
+            or request.headers.get("x-goog-authenticated-user-email")
+        )
+        return raw.strip().lower() if raw and raw.strip() else None
+
+    def owned_job(job_id: str, request: Request) -> Any:
+        job = job_service.get(job_id)
+        if not job or job.owner_id != requester_id(request):
+            raise HTTPException(404, "Unknown backtest job")
+        return job
+
     @app.post("/api/v1/backtests", status_code=status.HTTP_202_ACCEPTED)
-    def create_backtest(request: BacktestRequest, response: Response) -> dict[str, Any]:
+    def create_backtest(
+        request: BacktestRequest, http_request: Request, response: Response
+    ) -> dict[str, Any]:
         if request.schema_version != 1:
             raise HTTPException(400, "Unsupported schema_version")
         encoded_size = len(json.dumps(request.parameters).encode("utf-8"))
         if encoded_size > 100_000:
             raise HTTPException(413, "Parameter document is too large")
-        job, cached = job_service.submit(request.parameters)
+        job, cached = job_service.submit(
+            request.parameters, requester_id(http_request)
+        )
         if cached:
             response.status_code = status.HTTP_200_OK
         return {
@@ -121,18 +146,26 @@ def create_app(
             "result_url": f"/api/v1/backtests/{job.id}/result",
         }
 
+    @app.get("/api/v1/backtests/latest")
+    def latest_backtest(request: Request) -> Any:
+        job = job_service.latest_completed(requester_id(request))
+        if job is None:
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
+        return {
+            **job.public(),
+            "cached": True,
+            "status_url": f"/api/v1/backtests/{job.id}",
+            "result_url": f"/api/v1/backtests/{job.id}/result",
+        }
+
     @app.get("/api/v1/backtests/{job_id}")
-    def backtest_status(job_id: str) -> dict[str, Any]:
-        job = job_service.get(job_id)
-        if not job:
-            raise HTTPException(404, "Unknown backtest job")
+    def backtest_status(job_id: str, request: Request) -> dict[str, Any]:
+        job = owned_job(job_id, request)
         return job.public()
 
     @app.get("/api/v1/backtests/{job_id}/result")
-    def backtest_result(job_id: str) -> Any:
-        job = job_service.get(job_id)
-        if not job:
-            raise HTTPException(404, "Unknown backtest job")
+    def backtest_result(job_id: str, request: Request) -> Any:
+        job = owned_job(job_id, request)
         if job.status == "failed":
             raise HTTPException(422, job.error or "Backtest failed")
         if job.status == "cancelled":
@@ -144,8 +177,9 @@ def create_app(
             raise HTTPException(409, "Backtest result is not ready")
         if isinstance(result, ResultStream):
             headers = dict(result.headers)
-            if result.content_length is not None:
-                headers["Content-Length"] = str(result.content_length)
+            # Do not set Content-Length for large result objects. Starlette then
+            # uses chunked transfer encoding, avoiding Cloud Run's 32 MiB limit
+            # for non-streaming HTTP/1 responses while preserving gzip streaming.
             return StreamingResponse(
                 result.body,
                 media_type=result.media_type,
@@ -156,7 +190,8 @@ def create_app(
         return result
 
     @app.delete("/api/v1/backtests/{job_id}")
-    def cancel_backtest(job_id: str) -> dict[str, Any]:
+    def cancel_backtest(job_id: str, request: Request) -> dict[str, Any]:
+        owned_job(job_id, request)
         job = job_service.cancel(job_id)
         if not job:
             raise HTTPException(404, "Unknown backtest job")

@@ -28,9 +28,9 @@ jobs:
     env:
       PROJECT_ID: keep-and-lease
       REGION: me-west1
-      WEB_URI: https://keep-and-lease-web-vfk2j2rgoq-zf.a.run.app
+      STABLE_WEB_URI: https://keep-and-lease-web-vfk2j2rgoq-zf.a.run.app
+      PREVIEW_WEB_URI: https://keep-and-lease-preview-web-vfk2j2rgoq-zf.a.run.app
       IAP_ENABLED: ${{ vars.GCP_IAP_ENABLED == 'true' }}
-      TOKEN_AUDIENCE: ${{ vars.GCP_IAP_ENABLED == 'true' && vars.GCP_IAP_CLIENT_ID || 'https://keep-and-lease-web-vfk2j2rgoq-zf.a.run.app' }}
       OPERATOR_SERVICE_ACCOUNT: keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com
       OUTPUT_DIR: cloud-agent-output
 
@@ -51,8 +51,17 @@ jobs:
             *) echo "Request path is outside .cloud-agent" >&2; exit 2 ;;
           esac
           test -f "$request_path"
+          target="$(jq -er '(.target // "stable") | select(. == "stable" or . == "preview")' "$request_path")"
+          expected_commit="$(jq -er '(.expected_commit // "") | select(. == "" or test("^[0-9a-f]{40}$"))' "$request_path")"
+          case "$target" in
+            stable) web_uri="$STABLE_WEB_URI" ;;
+            preview) web_uri="$PREVIEW_WEB_URI" ;;
+          esac
           echo "path=$request_path" >> "$GITHUB_OUTPUT"
           echo "gui=$(jq -r '.actions | index("gui") != null' "$request_path")" >> "$GITHUB_OUTPUT"
+          echo "target=$target" >> "$GITHUB_OUTPUT"
+          echo "web_uri=$web_uri" >> "$GITHUB_OUTPUT"
+          echo "expected_commit=$expected_commit" >> "$GITHUB_OUTPUT"
 
       - name: Initialize sanitized evidence directory
         if: always()
@@ -82,12 +91,12 @@ jobs:
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ env.OPERATOR_SERVICE_ACCOUNT }}
           token_format: id_token
-          id_token_audience: ${{ env.TOKEN_AUDIENCE }}
+          id_token_audience: ${{ vars.GCP_IAP_ENABLED == 'true' && vars.GCP_IAP_CLIENT_ID || steps.request.outputs.web_uri }}
           id_token_include_email: true
 
       - name: Validate bounded request
         env:
-          KEEP_AND_LEASE_WEB_URI: ${{ env.WEB_URI }}
+          KEEP_AND_LEASE_WEB_URI: ${{ steps.request.outputs.web_uri }}
           KEEP_AND_LEASE_ID_TOKEN: ${{ steps.google_auth.outputs.id_token }}
         run: |
           python scripts/cloud-agent-operator.py \
@@ -103,7 +112,7 @@ jobs:
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ env.OPERATOR_SERVICE_ACCOUNT }}
           token_format: id_token
-          id_token_audience: ${{ env.TOKEN_AUDIENCE }}
+          id_token_audience: ${{ vars.GCP_IAP_ENABLED == 'true' && vars.GCP_IAP_CLIENT_ID || steps.request.outputs.web_uri }}
           id_token_include_email: true
 
       - name: Check rendered private GUI
@@ -111,8 +120,9 @@ jobs:
         shell: bash
         env:
           REQUEST_PATH: ${{ steps.request.outputs.path }}
-          KEEP_AND_LEASE_WEB_URI: ${{ env.WEB_URI }}
+          KEEP_AND_LEASE_WEB_URI: ${{ steps.request.outputs.web_uri }}
           KEEP_AND_LEASE_ID_TOKEN: ${{ steps.google_auth_browser.outputs.id_token }}
+          KEEP_AND_LEASE_EXPECTED_COMMIT: ${{ steps.request.outputs.expected_commit }}
           KEEP_AND_LEASE_OUTPUT_DIR: ${{ github.workspace }}/${{ env.OUTPUT_DIR }}
         run: |
           set -euo pipefail
@@ -129,7 +139,11 @@ jobs:
             echo "## Keep & Lease cloud operator"
             echo
             echo "- Request: \`${{ steps.request.outputs.path }}\`"
-            echo "- Commit: \`${GITHUB_SHA}\`"
+            echo "- Operator commit: \`${GITHUB_SHA}\`"
+            echo "- Target: \`${{ steps.request.outputs.target }}\`"
+            if test -n "${{ steps.request.outputs.expected_commit }}"; then
+              echo "- Expected deployed commit: \`${{ steps.request.outputs.expected_commit }}\`"
+            fi
             if test -f "$OUTPUT_DIR/health.json"; then
               echo "- Health: \`$(jq -r '.status' "$OUTPUT_DIR/health.json")\`"
               echo "- Backend: \`$(jq -r '.execution_backend' "$OUTPUT_DIR/health.json")\`"
