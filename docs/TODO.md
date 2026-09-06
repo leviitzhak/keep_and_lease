@@ -4,6 +4,41 @@ This checklist reflects the application synchronized from the deployed Sites che
 
 ## Higher priority
 
+- [ ] Add a plot of the volume traded by the strategy, based on actual simulated
+  fills (not market-wide volume).
+- [ ] Add a progress bar and cancellation option to spreadsheet generation and
+  download.
+- [ ] Add a progress bar when loading detailed plots.
+- [ ] Add a progress bar for the full audit download.
+- [ ] Later, if suitable data becomes available, investigate how historical
+  bid/ask quotes and additional order-book depth can improve backtesting,
+  including executable prices, available size, partial fills and slippage.
+
+
+- [x] Keep full 90-day BTC minute computation within existing worker limits using
+  immutable audit chunks and on-demand detail/export. All 129,599 intervals are
+  retained; local full worker measurement is 3,186.3 MiB RAM / 63.54 MiB initial
+  JSON. The approved export UX preserves full ledgers in numbered XLSX parts.
+- [x] Separate regular long-only BTC execution from stale candle valuation.
+  Preserve genuine observation age, actual quantities, delayed fills, partial
+  size limits and explicit trading costs. Full zero-cost result is +43.73%; the
+  1 bp fee/side sensitivity is −39.84%. No zero-volume futures fills remain.
+  Candle execution is still an explicit research assumption, not quote validation.
+- [x] Add an authenticated deployment gate for the exact feature SHA and full
+  BTC resource/audit/export acceptance. Every candidate revision must pass in
+  the authoritative private GCP preview before merge approval; the active PR
+  linked from `CURRENT_WORK.md` records its result.
+- [ ] Obtain individual CME BTC/MBT regular-futures quote/trade history and exact
+  expiry metadata through an entitled source. Until then, label Deribit inverse
+  USD quotes used with linear P&L as a regular-futures **research price proxy**.
+  CME DataMine is a documented acquisition route; no full-window download or
+  purchase has been made. See `BTC_EXECUTION_FIX_PROPOSAL.md`.
+
+- [ ] Add contemporaneous USDT/USD conversion or a genuine continuous BTC/USD
+  feed and compare with the Binance parity-assumed proxy. Quantify peg and
+  cross-venue basis separately before interpreting short-maturity lease signals
+  as economic carry. See `USDT_USD_BASIS.md`.
+
 - [ ] Do not activate the lease book for BTC inverse futures when their required
   BTC collateral is itself held idle and earns no yield. In that construction,
   the collateral drag prevents the lease book from being expected to follow the
@@ -18,6 +53,11 @@ This checklist reflects the application synchronized from the deployed Sites che
   03.01.1985 for the `strategy full silver long gradual` parameter set.
 
 ## Implemented
+
+- [x] Stream complete finalized engine audit rows without retaining the full
+  history; stream alternative comparisons into summary accumulators, reusing the
+  selected main calculation. Complete audit chunks, owner-scoped APIs and on-demand
+  GUI details are implemented. No simulation state resets at storage boundaries.
 
 - [x] BTC-only execution/rebalancing accepts any whole multiple of the detected
   common market-data resolution. Intraday Treasury valuation carries the latest

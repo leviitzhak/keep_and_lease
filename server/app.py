@@ -197,6 +197,63 @@ def create_app(
             raise HTTPException(404, "Unknown backtest job")
         return job.public()
 
+    def completed_audit(job_id, request):
+        from backtest_audit import load_manifest
+        job = owned_job(job_id, request)
+        if job.status != "completed":
+            raise HTTPException(409, "Backtest audit is not ready")
+        try:
+            store = job_service.audit_store(job)
+            return store, load_manifest(store)
+        except (KeyError, FileNotFoundError, AttributeError):
+            raise HTTPException(404, "No stored audit for this job") from None
+
+    @app.get("/api/v1/backtests/{job_id}/audit")
+    def audit_manifest(job_id: str, request: Request):
+        return completed_audit(job_id, request)[1]
+
+    @app.get("/api/v1/backtests/{job_id}/audit/{product}/{index}")
+    def audit_chunk(job_id: str, product: str, index: int, request: Request, section: str = "raw"):
+        from backtest_audit import read_chunk, project_row
+        store, manifest = completed_audit(job_id, request)
+        entries = manifest["datasets"].get(product, {}).get("chunks", [])
+        if index < 0 or index >= len(entries) or entries[index]["index"] != index:
+            raise HTTPException(404, "Unknown audit chunk")
+        if section not in ("raw", "spreadsheet", "rate_change"):
+            raise HTTPException(400, "Unknown audit section")
+        # Fully validate one bounded chunk before returning any of its records.
+        rows = [project_row(row, product, section) for row in read_chunk(store, entries[index])]
+        if section == "rate_change":
+            rows = [point for group in rows for point in group]
+        return {"product": product, "index": index, "rows": rows,
+                "sha256": entries[index]["sha256"]}
+
+    @app.get("/api/v1/backtests/{job_id}/audit-download/{product}")
+    def audit_download(job_id: str, product: str, request: Request):
+        import hashlib
+        store, manifest = completed_audit(job_id, request)
+        dataset = manifest["datasets"].get(product)
+        if dataset is None:
+            raise HTTPException(404, "Unknown audit dataset")
+        def chunks():
+            for entry in dataset["chunks"]:
+                data = store.get(entry["object"])
+                if hashlib.sha256(data).hexdigest() != entry["compressed_sha256"]:
+                    raise ValueError("Audit checksum mismatch")
+                yield data
+        # Concatenated gzip members are a single valid, lossless JSONL gzip file.
+        return StreamingResponse(chunks(), media_type="application/gzip", headers={
+            "Cache-Control": "private, no-store",
+            "Content-Disposition": f'attachment; filename="{product}-full-audit.jsonl.gz"'})
+
+    @app.get("/api/v1/backtests/{job_id}/audit-download")
+    def audit_archive(job_id: str, request: Request):
+        from backtest_audit import archive_chunks
+        store, manifest = completed_audit(job_id, request)
+        return StreamingResponse(archive_chunks(store, manifest), media_type="application/zip", headers={
+            "Cache-Control": "private, no-store",
+            "Content-Disposition": 'attachment; filename="keep-and-lease-full-audit.zip"'})
+
     @app.post("/api/v1/inspections")
     def inspect_day(request: InspectionRequest) -> dict[str, Any]:
         if request.schema_version != 1:

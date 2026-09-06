@@ -40,8 +40,13 @@ class MarketObservation:
     available_at: datetime | None = None
     bid_price: float | None = None
     ask_price: float | None = None
+    bid_size: float | None = None
+    ask_size: float | None = None
     volume: float | None = None
     observed: bool = True
+    source_symbol: str | None = None
+    quote_currency: str | None = None
+    usd_conversion_rate_assumed: float | None = None
 
     @property
     def effective_time(self) -> datetime:
@@ -238,6 +243,37 @@ class KrakenSpotCandleCsvProvider:
             yield self._stream(path, start, end, symbols)
 
 
+class BinanceSpotCandleCsvProvider(KrakenSpotCandleCsvProvider):
+    """Explicit USDT-at-par research proxy; never present it as measured USD."""
+
+    name = "binance_spot_candles_1m"
+
+    def _stream(self, path, start, end, symbols):
+        if symbols is not None and "BTC-USD" not in symbols:
+            return
+        with _open_csv_text(path) as stream:
+            for row in csv.DictReader(stream):
+                timestamp = _utc_timestamp(row["timestamp"])
+                if start is not None and timestamp < start:
+                    continue
+                if end is not None and timestamp >= end:
+                    break
+                if row["symbol"] != "BTC-USDT":
+                    raise ValueError("Binance USD proxy requires BTC-USDT source rows")
+                close = float(row["close"])
+                if not 0 < close < float("inf"):
+                    raise ValueError("Invalid Binance close")
+                yield MarketObservation(
+                    timestamp=timestamp,
+                    available_at=timestamp + timedelta(minutes=1),
+                    symbol="BTC-USD", reference_price=close,
+                    source="binance", source_kind="candle_1m_usdt_parity_proxy",
+                    volume=float(row["volume"]), observed=int(row["trade_count"]) > 0,
+                    source_symbol="BTC-USDT", quote_currency="USDT",
+                    usd_conversion_rate_assumed=1.0,
+                )
+
+
 class TardisQuoteCsvProvider:
     """Read timestamp-sorted Tardis normalized quote CSVs."""
 
@@ -270,6 +306,10 @@ class TardisQuoteCsvProvider:
                     reference_price=(bid + ask) / 2,
                     bid_price=bid,
                     ask_price=ask,
+                    # Optional normalized BTC quantities. Raw venue amounts
+                    # are not assumed to be BTC (inverse venues use USD face).
+                    bid_size=float(row["bid_size_btc"]) if row.get("bid_size_btc") else None,
+                    ask_size=float(row["ask_size_btc"]) if row.get("ask_size_btc") else None,
                     source=row.get("exchange") or "tardis",
                     source_kind="quote",
                 )
@@ -385,6 +425,8 @@ def load_intraday_market(
         adapter = DeribitCandleCsvProvider(source)
     elif format_name == "kraken_spot_candles":
         adapter = KrakenSpotCandleCsvProvider(source)
+    elif format_name == "binance_spot_candles":
+        adapter = BinanceSpotCandleCsvProvider(source)
     elif format_name == "tardis_quotes":
         adapter = TardisQuoteCsvProvider(source)
     else:
@@ -407,6 +449,33 @@ def data_directory(root: Path) -> Path:
         if candidate.is_dir():
             return candidate
     return root / "data"
+
+
+def source_manifest_hash(root: Path) -> str:
+    """Hash source bytes, including intraday data/config, without a large copy.
+
+    The optional generated SQLite cache is excluded: source files define the
+    data identity and are identical in the checkout and deployed images.
+    """
+    import hashlib
+    root = Path(root)
+    names = ("gold_silver.zip", "si.zip", "gc.zip", "cl.zip", "w.zip", "c.zip",
+             "s.zip", "sp.zip", "DCOILWTICO.csv", "DGS1.csv", "DGS2.csv",
+             "DGS3.csv", "DGS5.csv", "DTB3.csv", "DTB6.csv")
+    files = [(name, root / name) for name in names]
+    directory = data_directory(root)
+    files.extend(("data/" + path.relative_to(directory).as_posix(), path)
+                 for path in directory.rglob("*") if path.is_file()
+                 and path.name not in {"market.sqlite3", "market.sqlite3-wal", "market.sqlite3-shm"})
+    digest = hashlib.sha256()
+    for name, path in sorted(files):
+        digest.update(name.encode() + b"\0")
+        if path.is_file():
+            with path.open("rb") as stream:
+                while chunk := stream.read(1024 * 1024):
+                    digest.update(chunk)
+        digest.update(b"\0")
+    return digest.hexdigest()
 
 
 def database_path(root: Path) -> Path:

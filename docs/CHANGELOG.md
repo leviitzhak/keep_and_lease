@@ -1,5 +1,43 @@
 # Changelog
 
+## 2026-09-06 — Preserve edits during durable result restoration
+
+- Keep Run disabled until engine and saved-result initialization finish.
+- Discard a late saved result when strategy parameters have been edited.
+- Preserve supplied BTC profiles when importing a preset without a silver profile.
+- Initialize the deployment smoke fixture independently of the last saved preset.
+
+
+## 2026-09-06 — observed regular BTC execution and bounded audit outputs
+
+- Preserved the tested regular BTC full-long gradual preset and the legacy/fee
+  sensitivity presets. Orders require later genuine observations, hold quantities
+  while unfilled, and account for actual fill costs; zero-volume candles only value
+  held inventory. The 90-day result is +43.73% before costs and −39.84% with an
+  illustrative 1 bp fee/side, versus +32.80% direct holding.
+- Stored complete minute audit ledgers in immutable bounded GCS chunks, with
+  owner-scoped reads, full archive downloads, on-demand plots and streaming XLSX
+  exports. Reused the selected comparison and streamed alternative summaries.
+- Kept 60-second execution and existing cloud limits. Full local worker peak is
+  3,186.3 MiB and initial JSON 63.54 MiB; the complete XLSX exports at 1,711.9 MiB
+  peak with all 129,599 intervals and 285 passing check worksheets.
+- Included intraday files/config in data provenance and added branch-specific
+  authenticated BTC resource/audit/export acceptance to the deployment workflow.
+- Documented the inverse/linear maturity-payoff equivalence, its limitations,
+  CME history acquisition plan and unresolved contemporaneous USDT/USD basis.
+
+## 2026-09-06 — continuous BTC minute spot proxy
+
+- Added checksum-verified Binance BTC/USDT minute archive ingestion, with a
+  strict complete-grid check, deterministic compressed output and source hashes.
+- Added a provider adapter with explicit USDT quote currency/parity assumption;
+  futures and strategy accounting remain unchanged, and Kraken samples remain.
+- Updated GUI coverage/source warnings and corrected its obsolete daily-resolution
+  helper. Added historical USDT/USD basis research and a follow-up FX-control task.
+- Futures refresh now preserves the independently selected spot/tick providers.
+- Indexed immutable Treasury observation times for full minute-history runs;
+  verified parity with ordinary lookups at daily and intraday boundaries.
+
 ## 2026-09-06 — GCP-first preview validation and agent preview access
 
 - Removed the local Sites preview from the normal implementation and validation

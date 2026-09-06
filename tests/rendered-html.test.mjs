@@ -1,6 +1,102 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import vm from "node:vm";
+
+test("BTC-only preset import preserves its execution and cost profile", async () => {
+  const html=await readFile(new URL("../public/silver_strategy_gui.html",import.meta.url),"utf8");
+  const source=html.split('\n').find(line=>line.startsWith('function applyParameters('));
+  const preset=JSON.parse(await readFile(new URL("../strategies/research-btc-long-gradual-1m-fee-1bp.json",import.meta.url),"utf8"));
+  const fields=new Map(Object.keys(preset.parameters).map(name=>[name,{value:''}]));
+  const context={commodityProfiles:{},COMMODITIES:['silver','gold','sp500','btc'],
+    LEG_FIELDS:['slv_expense','futures_contract_type','execution_model','trading_fee_bps'],
+    form:{elements:{namedItem:name=>fields.get(name)}},loadCommodity:()=>{}};
+  vm.runInNewContext(source,context);
+  context.applyParameters(preset.parameters);
+  assert.equal(context.commodityProfiles.btc.trading_fee_bps,'1');
+  assert.equal(context.commodityProfiles.btc.execution_model,'observed');
+  assert.deepEqual(context.commodityProfiles.btc,preset.parameters.commodity_parameters.btc);
+  assert.ok(context.commodityProfiles.silver);
+});
+
+test("Run waits for saved-result restoration as well as server readiness", async () => {
+  const html=await readFile(new URL("../public/silver_strategy_gui.html",import.meta.url),"utf8");
+  assert.match(html, /<button id="run"[^>]*\bdisabled\b/);
+  const handler=html.split('\n').find(line=>line.startsWith('worker.onmessage='));
+  let finishRestore;
+  const context={worker:{},workerReady:false,button:{disabled:true},status:{},
+    parametersReady:Promise.resolve(),resultsReady:new Promise(resolve=>{finishRestore=resolve}),
+    $:()=>({}),pending:new Map()};
+  vm.runInNewContext(handler,context);
+  const ready=context.worker.onmessage({data:{type:'ready',engine:'server'}});
+  await Promise.resolve();
+  assert.equal(context.workerReady,false);
+  assert.equal(context.button.disabled,true);
+  finishRestore(true);
+  await ready;
+  assert.equal(context.workerReady,true);
+  assert.equal(context.button.disabled,false);
+  assert.match(context.status.textContent,/Last saved run restored/);
+});
+
+test("late durable results preserve edits and untouched sessions still restore", async () => {
+  const html=await readFile(new URL("../public/silver_strategy_gui.html",import.meta.url),"utf8");
+  const source=html.split('\n').find(line=>line.startsWith('async function restoreLastResult('));
+  for(const editDuringLoad of [true,false]) {
+    let finishBody,bodyStarted;
+    const started=new Promise(resolve=>{bodyStarted=resolve});
+    const body=new Promise(resolve=>{finishBody=resolve});
+    const prior={summary:{observations:2}},saved={summary:{observations:129599}};
+    const applied=[],shown=[];
+    const context={parameterRevision:0,last:prior,computationApiUrl:async path=>path,
+      fetch:async path=>path.endsWith('/latest')
+        ? {ok:true,status:200,json:async()=>({result_url:'/saved',parameters:{weight_btc:100}})}
+        : {ok:true,status:200,json:()=>{bodyStarted();return body}},
+      normalizePortfolioResult:value=>value,applyParameters:value=>applied.push(value),
+      showSummary:value=>shown.push(value),draw:()=>{},console};
+    vm.runInNewContext(source,context);
+    const restored=context.restoreLastResult();
+    await started;
+    if(editDuringLoad)context.parameterRevision++;
+    finishBody(saved);
+    assert.equal(await restored,!editDuringLoad);
+    assert.equal(context.last,editDuringLoad?prior:saved);
+    assert.equal(applied.length,editDuringLoad?0:1);
+    assert.equal(shown.length,editDuringLoad?0:1);
+  }
+});
+
+test("large minute charts retain every point without argument-limit errors", async () => {
+  const html=await readFile(new URL("../public/silver_strategy_gui.html",import.meta.url),"utf8");
+  const start=html.indexOf('function lineChart('),end=html.indexOf('\nfunction ',start+1);
+  const bounds=html.split('\n').filter(line=>/^function array(?:Minimum|Maximum)\(/.test(line)).join('\n');
+  const drawing=Object.fromEntries(['scale','clearRect','fillText','beginPath','moveTo','lineTo','stroke','arc','fill','save','translate','rotate','restore'].map(name=>[name,()=>{}]));
+  const canvas={style:{},parentElement:{clientWidth:800,querySelector:()=>({textContent:'Large minute chart'})},getContext:()=>drawing};
+  const rows=Array.from({length:129600},(_,i)=>['2026-06-06',i,-i,2*i]);
+  const charts=new Map();
+  const context={canvas,rows,charts,matchMedia:()=>({matches:false}),devicePixelRatio:1,ensureLegend:()=>{},num:Number,fmt:String,hover:()=>{},leave:()=>{}};
+  vm.runInNewContext(bounds+'\n'+html.slice(start,end)+"\nlineChart(canvas,rows,[{i:1},{i:2},{i:3}],'value',{zero:false});",context);
+  const rendered=charts.get(canvas);
+  assert.equal(rendered.rows,rows);
+  assert.ok(rendered.scales.left.low < -129599);
+  assert.ok(rendered.scales.left.high > 2*129599);
+});
+
+test("every numeric default satisfies its browser range and step constraints", async () => {
+  const html = await readFile(new URL("../public/silver_strategy_gui.html", import.meta.url), "utf8");
+  for (const tag of html.matchAll(/<input\b[^>]*>/g)) {
+    const attributes = Object.fromEntries([...tag[0].matchAll(/([\w-]+)="([^"]*)"/g)].map(match=>[match[1],match[2]]));
+    if (attributes.type !== "number" || attributes.value === undefined) continue;
+    const value=Number(attributes.value), minimum=Number(attributes.min??0), step=Number(attributes.step??1);
+    assert.ok(Number.isFinite(value), attributes.name);
+    if (attributes.min !== undefined) assert.ok(value>=minimum, attributes.name+" minimum");
+    if (attributes.max !== undefined) assert.ok(value<=Number(attributes.max), attributes.name+" maximum");
+    if (attributes.step !== "any") {
+      const offset=(value-(attributes.min!==undefined?minimum:value))/step;
+      assert.ok(Math.abs(offset-Math.round(offset))<1e-8, attributes.name+" step mismatch");
+    }
+  }
+});
 
 const developmentPreviewMeta =
   /<meta(?=[^>]*\bname=["']codex-preview["'])(?=[^>]*\bcontent=["']development["'])[^>]*>/i;
@@ -89,6 +185,11 @@ test("exposes BTC source-resolution execution intervals and causal Treasury guid
     "utf8",
   );
   assert.match(html, /name="execution_interval_seconds"/);
+  assert.match(html, /Binance BTC\/USDT/);
+  assert.match(html, /No historical USDT\/USD conversion is applied/);
+  assert.match(html, /6 June–3 September 2026 UTC/);
+  assert.match(html, /one minute \(60 seconds\)/);
+  assert.doesNotMatch(html, /currently packaged history is daily/);
   assert.match(html, /whole multiple of the detected BTC data resolution/);
   assert.match(html, /latest observable yield/);
   assert.match(html, /no future daily mark or time interpolation/);
@@ -456,7 +557,8 @@ test("daily holdings builder emits contract columns and auditable formulas", asy
     },
     sleeves: { silver: { series: sleeve.series } },
   };
-  const makeRows = new Function("plotRangeSource", "num", "xlsxColumn", `${source}; return spreadsheetRows;`)(
+  const bounds=html.split('\n').filter(line=>/^function array(?:Minimum|Maximum)\(/.test(line)).join('\n');
+  const makeRows = new Function("plotRangeSource", "num", "xlsxColumn", `${bounds}\n${source}; return spreadsheetRows;`)(
     context,
     (value) => { const parsed = Number(value); return Number.isFinite(parsed) ? parsed : null; },
     (index) => { let name = ""; for (let n = index + 1; n; n = Math.floor((n - 1) / 26)) name = String.fromCharCode(65 + (n - 1) % 26) + name; return name; },

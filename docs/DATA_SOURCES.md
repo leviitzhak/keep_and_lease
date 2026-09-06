@@ -31,7 +31,33 @@ reference, while bid and ask are retained for executable sell and buy prices.
 
 Retain adjusted and unadjusted prices, distributions where relevant, expense ratio history, currency, and trading calendar.
 
-The intraday BTC spot feed is Kraken's best bid and ask delivered in Tardis'
+The default intraday BTC spot feed is Binance BTC/USDT one-minute trade OHLC,
+downloaded from the [official public archive](https://github.com/binance/binance-public-data).
+The bounded window matches the futures: `[2026-06-06, 2026-09-04)` UTC.
+The downloader checks each archive's published SHA-256, normalizes both Binance
+millisecond and microsecond timestamps, and rejects missing/duplicate minutes,
+invalid OHLC values and incomplete tails before replacing data. It uses monthly
+ZIPs where published and daily ZIPs otherwise. No missing minutes are invented.
+
+Run `python scripts/refresh-binance-intraday-data.py --activate` to download the
+window in the Deribit manifest and select `binance_1m` for the spot role. Explicit
+`--start` and exclusive `--end` dates are supported. Raw ZIPs are transient;
+deterministic `binance_1m/spot.csv.gz` plus its provenance manifest are canonical.
+The packaged file contains 129,600 bars (90 complete UTC days), about 2.67 MiB
+compressed. `python scripts/check-btc-minute-backtest.py` runs the saved
+full-silver-long parameters mapped to a 100% BTC portfolio and reports the
+available window, performance, runtime, memory and serialized-result size.
+The data rows retain `BTC-USDT`; the provider explicitly maps to the engine's
+`BTC-USD` research proxy and retains the source symbol, quote currency and assumed
+conversion rate on observations. No bid/ask quotes are synthesized.
+
+**Currency caveat:** no historical FX correction is applied: USDT/USD=1 is an
+assumption. USD futures versus unconverted USDT spot mix stablecoin and
+cross-venue basis into the implied lease rate and strategy returns. See
+[USDT/USD risk and historical deviations](USDT_USD_BASIS.md). These results are
+not a calibrated executable arbitrage backtest.
+
+The retained optional Kraken spot feed is its best bid and ask delivered in Tardis'
 normalized quote schema. The checked-in free samples cover the complete UTC
 days 2026-07-01, 2026-08-01, and 2026-09-01. They contain 2,773,814 valid quote
 updates aggregated to 4,320 one-minute midpoint OHLC bars with no missing
@@ -40,7 +66,7 @@ afterward are both normalized to `BTC-USD`. The per-file source hashes and the
 aggregation convention live in `btc/intraday/kraken_1m/manifest.json`.
 
 The legacy daily BTC path retains Yahoo BTC-USD composite candles for
-compatibility when no intraday configuration is present. Both spot series are
+compatibility when no intraday configuration is present. These spot series are
 independent of Deribit's perpetual future.
 
 The legacy loader preserves ISO timestamps when present instead of truncating
@@ -48,7 +74,7 @@ them to dates. Backtests infer the finest common BTC spot/futures spacing from
 loaded observations. The packaged Kraken samples exercise the complete
 one-minute strategy path, but their three isolated days are a plumbing and
 accounting validation set, not a continuous performance-research history. The
-default GUI backtest therefore selects the latest complete sample day instead
+Kraken-configured backtest therefore selects the latest complete sample day instead
 of inventing a holding return across the month-long gaps.
 
 ### Treasury/cash curve

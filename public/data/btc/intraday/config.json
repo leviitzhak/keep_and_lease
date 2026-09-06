@@ -2,9 +2,14 @@
   "active_provider": "deribit_1m",
   "active_providers": {
     "futures": "deribit_1m",
-    "spot": "kraken_1m"
+    "spot": "binance_1m"
   },
   "providers": {
+    "binance_1m": {
+      "format": "binance_spot_candles",
+      "path": "binance_1m",
+      "resolution": "1m"
+    },
     "deribit_1m": {
       "format": "deribit_candles",
       "path": "deribit_1m",

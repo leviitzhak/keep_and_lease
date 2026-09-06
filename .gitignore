@@ -64,6 +64,8 @@ next-env.d.ts
 /public/backtest_silver_lease_strategy.py
 /public/silver_strategy_gui.py
 /public/market_data_store.py
+/public/observed_execution.py
+/public/backtest_audit.py
 
 # AWS/Terraform local state and credentials-bearing configuration.
 /infra/aws/.terraform/

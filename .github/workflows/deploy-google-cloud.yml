@@ -84,10 +84,7 @@ jobs:
           web_image="${registry}/web:${GITHUB_SHA}"
           worker_image="${registry}/worker:${GITHUB_SHA}"
           data_manifest_hash="$(
-            sha256sum \
-              gold_silver.zip si.zip gc.zip cl.zip w.zip c.zip s.zip sp.zip \
-              DCOILWTICO.csv DGS1.csv DGS2.csv DGS3.csv DGS5.csv DTB3.csv DTB6.csv |
-              sha256sum | cut -d' ' -f1
+            python -c 'from pathlib import Path; from market_data_store import source_manifest_hash; print(source_manifest_hash(Path(".")))'
           )"
           {
             echo "registry=${registry}"
@@ -247,6 +244,31 @@ jobs:
           browser_dir="${RUNNER_TEMP}/keep-lease-browser"
           mkdir -p "$KEEP_AND_LEASE_OUTPUT_DIR"
           cd "$browser_dir"
+          node run.cjs
+
+      - name: Mint identity token for BTC acceptance
+        if: github.ref_name == 'agent/btc-binance-minute-data'
+        id: btc_auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+          token_format: id_token
+          id_token_audience: ${{ vars.GCP_IAP_ENABLED == 'true' && vars.GCP_IAP_CLIENT_ID || steps.web.outputs.web_uri }}
+          id_token_include_email: true
+
+      - name: Verify full BTC minute result and on-demand GUI exports
+        if: github.ref_name == 'agent/btc-binance-minute-data'
+        env:
+          KEEP_AND_LEASE_WEB_URI: ${{ steps.verify.outputs.web_uri }}
+          KEEP_AND_LEASE_ID_TOKEN: ${{ steps.btc_auth.outputs.id_token }}
+          KEEP_AND_LEASE_EXPECTED_COMMIT: ${{ github.sha }}
+          KEEP_AND_LEASE_RUN_BTC_AUDIT: "true"
+          KEEP_AND_LEASE_BTC_PRESET: ${{ github.workspace }}/strategies/full-btc-long-gradual-1m-regular.json
+          KEEP_AND_LEASE_OUTPUT_DIR: ${{ runner.temp }}/deployment-smoke/btc
+        run: |
+          mkdir -p "$KEEP_AND_LEASE_OUTPUT_DIR"
+          cd "${RUNNER_TEMP}/keep-lease-browser"
           node run.cjs
 
       - name: Report failed deployment verification logs

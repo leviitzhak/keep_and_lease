@@ -79,12 +79,23 @@ server adapter but contains no market archives or Pyodide fallback payload.
 5. The worker runs the canonical `StrategyEngine` once. It checks that application,
    engine, data-manifest, and worker-image provenance match the submitted immutable
    identifiers.
-6. Strict JSON encoding enforces the Terraform-managed result limit. The workload
-   configuration sets `KEEP_AND_LEASE_MAX_RESULT_BYTES` to 268,435,456 bytes
-   (256 MiB) for both the worker and web service so detailed holding ledgers remain
-   available for later plots, statistics, and spreadsheet exports. The worker then
-   creates a deterministic gzip object with `if_generation_match=0`, CRC32C
-   transport checking, and SHA-256 checksums for compressed and uncompressed bytes.
+6. Strict incremental JSON encoding enforces the unchanged Terraform-managed
+   268,435,456-byte result limit. It compresses directly into the result object
+   without allocating a second full uncompressed JSON string/bytes pair.
+   Intraday runs stream full canonical rows to immutable
+   `jobs/<job-id>/audit/<product>/<index>.jsonl.gz` chunks, bounded by 1,024 rows,
+   one UTC day and 8 MiB uncompressed. The final `audit/manifest.json` records
+   all row counts, interval/NAV boundaries, exact parameters, engine/data provenance
+   and SHA-256 checksums. GCS uploads use `if_generation_match=0` and CRC32C.
+   Data provenance now hashes the intraday source files and provider configuration
+   as well as daily histories; generated SQLite cache bytes do not define identity.
+   Cancelled/failed jobs cannot expose their partial uploads; normal bucket
+   retention applies to leftover objects. The initial result contains summaries,
+   the existing sampled chart series, full distributions/portfolio intervals and
+   the manifest; heavy ledgers and attribution points are fetched on demand.
+   Local full-worker BTC acceptance is 3,186.3 MiB RSS / 63.54 MiB initial JSON,
+   within the existing 4 GiB / 256 MiB limits. See
+   [BTC_EXECUTION_FIX_PROPOSAL.md](BTC_EXECUTION_FIX_PROPOSAL.md).
 7. A final Firestore transaction records `completed`, the `gs://` result pointer,
    checksums, timings, peak RSS, execution name, and exact provenance.
 8. `GET /api/v1/backtests/{id}` reads Firestore. It also converts expired queued
@@ -98,6 +109,25 @@ server adapter but contains no market archives or Pyodide fallback payload.
     cancelled before claim; running work uses the recorded execution name to call
     Cloud Run cancellation and the worker treats SIGTERM during cancellation as a
     durable `cancelled` state.
+
+Completed-job audit routes use the same authenticated owner check as the result:
+
+- `GET /api/v1/backtests/{id}/audit`: complete manifest.
+- `GET /api/v1/backtests/{id}/audit/{product}/{index}?section=raw|spreadsheet|rate_change`:
+  one fully checksum-validated bounded chunk, optionally projected for the GUI.
+- `GET /api/v1/backtests/{id}/audit-download`: streamed ZIP with the manifest and
+  every original compressed audit chunk, without recalculation.
+- `GET /api/v1/backtests/{id}/audit-download/{product}`: concatenated gzip JSONL for
+  one complete dataset. Object names are validated against the stored manifest;
+  arbitrary bucket paths are not accepted.
+
+Only the active `agent/btc-binance-minute-data` feature branch additionally runs
+full BTC acceptance after the normal multi-commodity deployment smoke. A fresh
+short-lived machine token is minted; the browser loads the saved regular preset,
+checks the exact result/resource bounds, reads first/last chunks, loads one day
+of detailed plots and downloads its XLSX. Evidence contains numerical checks,
+resource sizes and a screenshot; it does not publish complete result bodies.
+No Google credential is copied into the workspace or artifacts.
 
 Launch errors, calculation errors, serialization limits, SIGTERM interruption,
 expired heartbeats, cancellation, and rejected remote-cancellation calls are written
