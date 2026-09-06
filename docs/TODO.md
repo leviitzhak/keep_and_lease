@@ -4,6 +4,18 @@ This checklist reflects the application synchronized from the deployed Sites che
 
 ## Higher priority
 
+- [ ] Make the full 90-day BTC minute GUI result practical within the existing
+  worker limits (bounded date windows and/or chunked on-demand ledgers). The
+  measured full result is 817 MiB with 6.1 GiB peak memory, above the deployed
+  256 MiB / 4 GiB limits. Audit its anomalous +3,637% strategy return before
+  interpreting performance, including stale/no-trade futures candle execution.
+  See `BTC_MINUTE_VALIDATION.md`; the source import itself has no missing minutes.
+
+- [ ] Add contemporaneous USDT/USD conversion or a genuine continuous BTC/USD
+  feed and compare with the Binance parity-assumed proxy. Quantify peg and
+  cross-venue basis separately before interpreting short-maturity lease signals
+  as economic carry. See `USDT_USD_BASIS.md`.
+
 - [ ] Do not activate the lease book for BTC inverse futures when their required
   BTC collateral is itself held idle and earns no yield. In that construction,
   the collateral drag prevents the lease book from being expected to follow the

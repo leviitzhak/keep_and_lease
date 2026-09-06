@@ -6,9 +6,10 @@ branch._
 
 ## Active change set
 
-- Status: BTC intraday execution and GCP-first preview validation are implemented;
-  the combined branch is being deployed, checked, and merged.
-- Active branch: `agent/btc-intraday-deribit-data`
+- Status: continuous Binance minute data and the labeled USDT proxy are ready
+  locally. Deployment is gated by full-run memory/output limits and an anomalous
+  strategy return; see [BTC_MINUTE_VALIDATION.md](BTC_MINUTE_VALIDATION.md).
+- Active branch: `agent/btc-binance-minute-data`
 - Previous generalized application review: [PR #22 — Complete generalized multi-commodity implementation](https://github.com/leviitzhak/keep_and_lease/pull/22)
 - Render services' configured source branch: [`agent/fixed-render-preview-deploys`](https://github.com/leviitzhak/keep_and_lease/tree/agent/fixed-render-preview-deploys). Deploy hooks override this default with the exact commit pushed to the current implementation branch.
 - Application version: `1.3`

@@ -73,6 +73,10 @@ Build an interactive research and backtesting application for strategies that al
     multiples of the detected intraday market-data resolution. Intraday Treasury
     valuation accrues at the latest observable yield without future backfill or
     interpolation.
+    The default BTC spot feed is continuous Binance BTC/USDT minute candles
+    over 6 June–3 September 2026, explicitly used as a USD proxy at assumed
+    USDT/USD parity. Kraken sample days and interchangeable tick adapters remain
+    available; historical FX correction is still a research follow-up.
 12. The local Sites preview is intentionally outside the normal validation path
     while its compatibility gaps remain unfixed. Feature branches deploy to the
     private GCP preview, whose built-in smoke test and bounded keyless operator can

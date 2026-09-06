@@ -89,6 +89,11 @@ test("exposes BTC source-resolution execution intervals and causal Treasury guid
     "utf8",
   );
   assert.match(html, /name="execution_interval_seconds"/);
+  assert.match(html, /Binance BTC\/USDT/);
+  assert.match(html, /No historical USDT\/USD conversion is applied/);
+  assert.match(html, /6 June–3 September 2026 UTC/);
+  assert.match(html, /one minute \(60 seconds\)/);
+  assert.doesNotMatch(html, /currently packaged history is daily/);
   assert.match(html, /whole multiple of the detected BTC data resolution/);
   assert.match(html, /latest observable yield/);
   assert.match(html, /no future daily mark or time interpolation/);

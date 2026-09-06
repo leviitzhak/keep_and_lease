@@ -42,6 +42,9 @@ class MarketObservation:
     ask_price: float | None = None
     volume: float | None = None
     observed: bool = True
+    source_symbol: str | None = None
+    quote_currency: str | None = None
+    usd_conversion_rate_assumed: float | None = None
 
     @property
     def effective_time(self) -> datetime:
@@ -238,6 +241,37 @@ class KrakenSpotCandleCsvProvider:
             yield self._stream(path, start, end, symbols)
 
 
+class BinanceSpotCandleCsvProvider(KrakenSpotCandleCsvProvider):
+    """Explicit USDT-at-par research proxy; never present it as measured USD."""
+
+    name = "binance_spot_candles_1m"
+
+    def _stream(self, path, start, end, symbols):
+        if symbols is not None and "BTC-USD" not in symbols:
+            return
+        with _open_csv_text(path) as stream:
+            for row in csv.DictReader(stream):
+                timestamp = _utc_timestamp(row["timestamp"])
+                if start is not None and timestamp < start:
+                    continue
+                if end is not None and timestamp >= end:
+                    break
+                if row["symbol"] != "BTC-USDT":
+                    raise ValueError("Binance USD proxy requires BTC-USDT source rows")
+                close = float(row["close"])
+                if not 0 < close < float("inf"):
+                    raise ValueError("Invalid Binance close")
+                yield MarketObservation(
+                    timestamp=timestamp,
+                    available_at=timestamp + timedelta(minutes=1),
+                    symbol="BTC-USD", reference_price=close,
+                    source="binance", source_kind="candle_1m_usdt_parity_proxy",
+                    volume=float(row["volume"]), observed=int(row["trade_count"]) > 0,
+                    source_symbol="BTC-USDT", quote_currency="USDT",
+                    usd_conversion_rate_assumed=1.0,
+                )
+
+
 class TardisQuoteCsvProvider:
     """Read timestamp-sorted Tardis normalized quote CSVs."""
 
@@ -385,6 +419,8 @@ def load_intraday_market(
         adapter = DeribitCandleCsvProvider(source)
     elif format_name == "kraken_spot_candles":
         adapter = KrakenSpotCandleCsvProvider(source)
+    elif format_name == "binance_spot_candles":
+        adapter = BinanceSpotCandleCsvProvider(source)
     elif format_name == "tardis_quotes":
         adapter = TardisQuoteCsvProvider(source)
     else:

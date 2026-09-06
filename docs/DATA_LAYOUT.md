@@ -7,10 +7,10 @@ The canonical target layout is `public/data/<asset>/`, with simple CSV files:
 - `treasuries/yields/*.csv` and optional `treasuries/fund.csv`
 - `sp500/spot.csv`, `sp500/fund.csv`, and `sp500/futures/*.csv`
 - `btc/spot.csv`, `btc/futures/*.csv`, and `btc/coverage.json`
-- `btc/intraday/kraken_1m/spot.csv.gz` and
+- `btc/intraday/binance_1m/spot.csv.gz`, optional `btc/intraday/kraken_1m/spot.csv.gz`, and
   `btc/intraday/deribit_1m/futures/*.csv.gz`
 
-The checked-in materialized data currently occupies about 15 MiB. A complete
+The materialized data directory currently occupies about 30 MiB. A complete
 daily research set for the four assets should normally remain below roughly
 100–250 MiB as plain CSV, depending mainly on the number of individual futures
 contracts and whether ETF OHLCV, distributions, and both price and total-return
@@ -40,8 +40,10 @@ Available today:
 - BTC: 493 Deribit dated contracts were enumerated on 2 September 2026; 462
   contain archived daily candles. Yahoo BTC-USD supplies the legacy daily spot
   composite. The intraday path contains 93 Deribit futures over the bounded
-  2026-06-06 through 2026-09-04 window plus 4,320 Kraken one-minute midpoint
-  bars on the free sample days 2026-07-01, 2026-08-01, and 2026-09-01.
+  `[2026-06-06, 2026-09-04)` window plus continuous Binance BTC/USDT minute
+  trade candles used as a USD proxy assuming USDT/USD parity. The retained
+  optional Kraken data has 4,320 one-minute midpoint bars on the free sample
+  days 2026-07-01, 2026-08-01, and 2026-09-01.
   The audited overlap is continuous from 6 January 2017, while at least two
   simultaneously observed contracts are available from 9 February 2017.
   `btc/coverage.json` records exact coverage and contract metadata and can be

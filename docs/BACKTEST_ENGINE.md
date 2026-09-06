@@ -12,17 +12,23 @@ For a BTC-only commodity portfolio, `execution_interval_seconds=0` selects every
 common spot/futures mark. A positive value selects the next available mark at
 that cadence and must be a whole multiple of the finest detected common-market
 resolution. Requests finer than the data are rejected. The active BTC path uses
-Kraken one-minute midpoint candles and Deribit one-minute dated-futures candles,
-so its finest interval is 60 seconds. The packaged Kraken history consists of
-three free sample days rather than a continuous institutional research set.
-The default packaged run uses the latest complete sample session and never
-bridges the unavailable time between monthly samples.
+Binance BTC/USDT one-minute trade candles and Deribit one-minute dated-futures
+candles, so its finest interval is 60 seconds. Binance prices are a USD proxy
+assuming USDT/USD=1, not FX-adjusted USD prices. The continuous packaged window
+is 6 June through 3 September 2026 UTC. Candle closes become observable at the
+following minute boundary (the final boundary is 4 September 00:00 UTC).
+Kraken remains an optional provider with three isolated samples; only that
+provider's sample-session manifest restricts runs to its latest complete day.
 
 Treasury accrual is piecewise causal. The latest observable yield is applied
 until a later yield mark becomes available, at which point the remaining
 interval accrues at the new yield. The engine never backfills from a future mark
 and never interpolates through time between daily yields. It may still
 interpolate across available Treasury tenors to match a futures maturity.
+Loaded immutable Treasury series cache separate daily/intraday availability
+indices. Binary searches use those indices instead of repeatedly converting
+historical dates. The latest-observable-yield rule and all accrual arithmetic
+are unchanged; plain dict/list inputs retain their original lookup path.
 
 ## Observation sequence
 

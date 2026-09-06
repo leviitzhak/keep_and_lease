@@ -14,6 +14,7 @@ import json
 import math
 import re
 import zipfile
+from bisect import bisect_right
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from dataclasses import replace
@@ -451,7 +452,7 @@ def _select_intraday_spot_session(market, observations, sample_day=None):
 def build_intraday_btc_market(root, sample_day=None):
     """Build the BTC curve from independently configured spot/futures feeds.
 
-    Kraken minute closes define the strategy decision grid. Futures are read as
+    Configured spot minute closes define the strategy decision grid. Futures are read as
     no-look-ahead snapshots on that grid. A future switch from Deribit candles
     to Tardis tick quotes is therefore a configuration change, not a strategy
     engine change.
@@ -599,6 +600,23 @@ def read_contracts(root, spot):
     return contracts, volumes
 
 
+class IndexedRateSeries(dict):
+    """Immutable tenor observations with reusable causal search indices.
+
+    Replacing a tenor externally safely falls back to the ordinary search.
+    Ordinary dict/list fixtures keep the same supported API and behavior.
+    """
+
+    def __init__(self, series):
+        super().__init__({tenor: tuple(rows) for tenor, rows in series.items()})
+        self.time_indices = {}
+        for tenor, rows in self.items():
+            self.time_indices[tenor] = (rows,
+                tuple(observation_seconds(day) for day, _ in rows),
+                tuple(observation_seconds(_rate_available_at(day, datetime.min))
+                      for day, _ in rows))
+
+
 def read_rates(root):
     series = {}
     for tenor, name in TENORS:
@@ -612,7 +630,7 @@ def read_rates(root):
                     pass
         observations.sort()
         series[tenor] = observations
-    return series
+    return IndexedRateSeries(series)
 
 
 def _rate_available_at(observation, query):
@@ -635,6 +653,11 @@ def asof_rate(series, tenor, day):
     if not observations:
         return None
     target = observation_seconds(day)
+    cached = getattr(series, "time_indices", {}).get(tenor)
+    if cached is not None and cached[0] is observations:
+        times = cached[2 if isinstance(day, datetime) else 1]
+        index = bisect_right(times, target)
+        return observations[index - 1][1] if index else None
     low, high = 0, len(observations)
     while low < high:
         middle = (low + high) // 2
@@ -1106,6 +1129,10 @@ def _rate_change_boundaries(rates, start, end, tenors=None):
     for tenor in selected_tenors:
         observations = rates.get(tenor, [])
         low, high = 0, len(observations)
+        cached = getattr(rates, "time_indices", {}).get(tenor)
+        if cached is not None and cached[0] is observations:
+            low = bisect_right(cached[2 if isinstance(start, datetime) else 1], start_value)
+            high = low
         while low < high:
             middle = (low + high) // 2
             available = _rate_available_at(observations[middle][0], start)

@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-09-06 — continuous BTC minute spot proxy
+
+- Added checksum-verified Binance BTC/USDT minute archive ingestion, with a
+  strict complete-grid check, deterministic compressed output and source hashes.
+- Added a provider adapter with explicit USDT quote currency/parity assumption;
+  futures and strategy accounting remain unchanged, and Kraken samples remain.
+- Updated GUI coverage/source warnings and corrected its obsolete daily-resolution
+  helper. Added historical USDT/USD basis research and a follow-up FX-control task.
+- Futures refresh now preserves the independently selected spot/tick providers.
+- Indexed immutable Treasury observation times for full minute-history runs;
+  verified parity with ordinary lookups at daily and intraday boundaries.
+
 ## 2026-09-06 — GCP-first preview validation and agent preview access
 
 - Removed the local Sites preview from the normal implementation and validation

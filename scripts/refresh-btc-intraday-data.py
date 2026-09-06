@@ -225,6 +225,9 @@ def download_contract(instrument, start_ms: int, end_ms: int, target: Path):
 
 def write_config():
     CONFIG.parent.mkdir(parents=True, exist_ok=True)
+    # A futures refresh must not reset independently chosen spot/tick providers.
+    if CONFIG.exists():
+        return
     payload = {
         "schema_version": 2,
         "active_provider": "deribit_1m",

@@ -48,7 +48,7 @@ PRODUCTS = {
               "spot_source": "nearest live future (cash-index history pending)",
               "etf": "SPY / IVV", "replication": "equity-backed"},
     "btc": {"label": "Bitcoin", "archive": None, "prefix": "BTC",
-            "spot_source": "Kraken BTC/USD one-minute midpoint",
+            "spot_source": "Binance BTC/USDT one-minute close (USD proxy; USDT/USD=1 assumed)",
             "etf": "Direct BTC holding", "replication": "direct holding",
             "holding_label": "Direct holding",
             "parameter_defaults": {
@@ -120,7 +120,16 @@ def _build_btc_market(root):
     intraday_config = (
         data_directory(Path(root)) / "btc" / "intraday" / "config.json")
     if intraday_config.exists():
+        config = json.loads(intraday_config.read_text())
+        provider = os.getenv("KEEP_AND_LEASE_INTRADAY_SPOT_PROVIDER",
+                             config["active_providers"]["spot"])
+        PRODUCTS["btc"]["spot_source"] = {
+            "binance_1m": "Binance BTC/USDT one-minute close (USD proxy; USDT/USD=1 assumed)",
+            "kraken_1m": "Kraken BTC/USD one-minute midpoint",
+            "tardis_quotes": "Configured Tardis BTC/USD quote midpoint",
+        }.get(provider, f"Configured intraday spot provider: {provider}")
         return build_intraday_btc_market(root)
+    PRODUCTS["btc"]["spot_source"] = "Yahoo BTC-USD daily composite"
     return build_spot_market(
         root, None, "BTC", _asset_spot(root, "btc", "spot.csv"))
 
