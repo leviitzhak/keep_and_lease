@@ -120,6 +120,13 @@ async function main() {
           && candidate.request().method() === "POST";
       }, { timeout: 120000 });
 
+      // This fresh test context may restore a previous strategy
+      // under the deployment identity. Start the fixture from form defaults.
+      await page.evaluate(() => {
+        form.reset();
+        commodityProfiles = {};
+        activeCommodity = 'silver';
+      });
       const proportions = runBtcAudit ? {
         weight_silver:"0",weight_gold:"0",weight_sp500:"0",weight_btc:"100",weight_treasury:"0"
       } : {

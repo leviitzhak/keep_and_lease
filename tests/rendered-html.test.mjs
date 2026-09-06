@@ -3,6 +3,53 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import vm from "node:vm";
 
+test("Run waits for saved-result restoration as well as server readiness", async () => {
+  const html=await readFile(new URL("../public/silver_strategy_gui.html",import.meta.url),"utf8");
+  assert.match(html, /<button id="run"[^>]*\bdisabled\b/);
+  const handler=html.split('\n').find(line=>line.startsWith('worker.onmessage='));
+  let finishRestore;
+  const context={worker:{},workerReady:false,button:{disabled:true},status:{},
+    parametersReady:Promise.resolve(),resultsReady:new Promise(resolve=>{finishRestore=resolve}),
+    $:()=>({}),pending:new Map()};
+  vm.runInNewContext(handler,context);
+  const ready=context.worker.onmessage({data:{type:'ready',engine:'server'}});
+  await Promise.resolve();
+  assert.equal(context.workerReady,false);
+  assert.equal(context.button.disabled,true);
+  finishRestore(true);
+  await ready;
+  assert.equal(context.workerReady,true);
+  assert.equal(context.button.disabled,false);
+  assert.match(context.status.textContent,/Last saved run restored/);
+});
+
+test("late durable results preserve edits and untouched sessions still restore", async () => {
+  const html=await readFile(new URL("../public/silver_strategy_gui.html",import.meta.url),"utf8");
+  const source=html.split('\n').find(line=>line.startsWith('async function restoreLastResult('));
+  for(const editDuringLoad of [true,false]) {
+    let finishBody,bodyStarted;
+    const started=new Promise(resolve=>{bodyStarted=resolve});
+    const body=new Promise(resolve=>{finishBody=resolve});
+    const prior={summary:{observations:2}},saved={summary:{observations:129599}};
+    const applied=[],shown=[];
+    const context={parameterRevision:0,last:prior,computationApiUrl:async path=>path,
+      fetch:async path=>path.endsWith('/latest')
+        ? {ok:true,status:200,json:async()=>({result_url:'/saved',parameters:{weight_btc:100}})}
+        : {ok:true,status:200,json:()=>{bodyStarted();return body}},
+      normalizePortfolioResult:value=>value,applyParameters:value=>applied.push(value),
+      showSummary:value=>shown.push(value),draw:()=>{},console};
+    vm.runInNewContext(source,context);
+    const restored=context.restoreLastResult();
+    await started;
+    if(editDuringLoad)context.parameterRevision++;
+    finishBody(saved);
+    assert.equal(await restored,!editDuringLoad);
+    assert.equal(context.last,editDuringLoad?prior:saved);
+    assert.equal(applied.length,editDuringLoad?0:1);
+    assert.equal(shown.length,editDuringLoad?0:1);
+  }
+});
+
 test("large minute charts retain every point without argument-limit errors", async () => {
   const html=await readFile(new URL("../public/silver_strategy_gui.html",import.meta.url),"utf8");
   const start=html.indexOf('function lineChart('),end=html.indexOf('\nfunction ',start+1);

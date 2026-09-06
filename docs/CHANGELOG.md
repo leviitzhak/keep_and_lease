@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-06 — Preserve edits during durable result restoration
+
+- Keep Run disabled until engine and saved-result initialization finish.
+- Discard a late saved result when strategy parameters have been edited.
+- Initialize the deployment smoke fixture independently of the last saved preset.
+
+
 ## 2026-09-06 — observed regular BTC execution and bounded audit outputs
 
 - Preserved the tested regular BTC full-long gradual preset and the legacy/fee

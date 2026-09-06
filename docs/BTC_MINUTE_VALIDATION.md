@@ -98,7 +98,7 @@ and two legacy gold/oil portfolio tests because oil is outside the enabled marke
 set. This does not establish coverage for disabled commodities or the skipped
 1969 golden workbook. Focused follow-up checks cover later audit/API/UI changes.
 The normal build and artifact validation also completed. A focused follow-up of
-59 execution, audit, API and cloud-workflow tests passed after the full discovery. All 23 HTML checks and six workbook tests pass, including numeric form validity,
+59 execution, audit, API and cloud-workflow tests passed after the full discovery. All 25 HTML checks and six workbook tests pass, including numeric form validity,
 full-minute chart bounds, streaming workbook equivalence,
 minute timestamp preservation, and cost reconciliation.
 
@@ -205,3 +205,16 @@ histogram and scatter bounds now scan values rather than expanding whole arrays
 as function arguments. Every point and interval remains available; no execution,
 return, data or export sampling changed. The same 129,600-point chart regression
 passes after the change. This also protects full-period detailed-plot loading.
+
+
+### Restoration readiness correction
+
+Revision `55e0102f69820ef15b4090791111801f42f0ea7a` exposed a startup race in
+the private multi-commodity smoke. The Run button was initially enabled while
+the worker reported server readiness, before the previous durable result had
+finished loading. That restore could overwrite newly edited portfolio weights.
+Run is now disabled until engine and restoration initialization finish; late
+restoration is discarded if parameters were edited. A deferred-response test
+checks this ordering and confirms an untouched session still restores normally.
+The smoke fixture also resets its fresh browser context to form defaults before
+selecting weights, so a previous BTC preset cannot contaminate the daily test.
