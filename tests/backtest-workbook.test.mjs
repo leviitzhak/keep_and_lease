@@ -217,3 +217,40 @@ test("rejects multiple commodity sleeves until a portfolio template is defined",
     /exactly one commodity sleeve/,
   );
 });
+
+test("streams the same complete workbook without retaining uncompressed worksheets", async () => {
+  const sheets=globalThis.KeepLeaseWorkbook.buildSheets({result,period});
+  async function* source(){for(const sheet of sheets)yield sheet}
+  const blob=await globalThis.KeepLeaseWorkbook.workbookStream(source(),fflate);
+  const actual=fflate.unzipSync(new Uint8Array(await blob.arrayBuffer()));
+  const expected=fflate.unzipSync(globalThis.KeepLeaseWorkbook.workbookBytes(sheets,fflate));
+  assert.deepEqual(actual,expected);
+});
+
+test("minute timestamps and signal times survive Excel serialization", () => {
+  const rows=structuredClone(spreadsheetRows);
+  rows[0].date='2026-06-06T00:01:00';rows[0].exit_date='2026-06-06T00:02:00';
+  rows[0].signal_date='2026-06-06T00:00:00';
+  const model={...result,commodity_sleeves:{silver:{...result.commodity_sleeves.silver,spreadsheet_rows:[rows[0]]}}};
+  const selection={start:rows[0].exit_date,end:rows[0].exit_date,rows:[[rows[0].exit_date,rows[0].date,7.4,1,1.074]]};
+  const files=fflate.unzipSync(KeepLeaseWorkbook.workbookBytes(KeepLeaseWorkbook.buildSheets({result:model,period:selection}),fflate));
+  const xml=fflate.strFromU8(files['xl/worksheets/sheet3.xml']);
+  const serial=ref=>Number(xml.match(new RegExp('<c r="'+ref+'"[^>]*><v>([^<]+)</v>'))[1]);
+  assert.ok(Math.abs(serial('B3')-serial('A3')-1/1440)<1e-10);
+  assert.ok(Math.abs(serial('A3')-serial('D3')-1/1440)<1e-10);
+});
+
+test("execution costs appear in contribution and formula reconciliation", () => {
+  const record=structuredClone(spreadsheetRows[0]);
+  record.ending_nav-=0.001;record.interval_return_pct-=0.1;record.lease_book_end_value-=0.001;
+  const leaseCash=record.holding_ledger[3];
+  for(const name of ['end_value','end_quantity','internal_transfer_value'])leaseCash[holdingFields.indexOf(name)]-=0.001;
+  record.holding_ledger.push(holding({name:'Execution cost',holding_type:'cost',book:'lease',side:'cash',price:1,exit_price:1,quantity:0,end_quantity:0,start_value:0,end_value:0,gross_pnl_value:0,expense_value:0.001,pnl_value:-0.001,internal_transfer_value:0.001}));
+  const model={...result,commodity_sleeves:{silver:{...result.commodity_sleeves.silver,spreadsheet_rows:[record]}}};
+  const selection={start:record.exit_date,end:record.exit_date,rows:[[record.exit_date,record.date,record.interval_return_pct,1,record.ending_nav]]};
+  const sheets=KeepLeaseWorkbook.buildSheets({result:model,period:selection});
+  const headers=sheets[2].rows[1].cells.map(cell=>cell.value),cells=sheets[2].rows[2].cells;
+  assert.equal(cells[headers.indexOf('Execution cost contribution')].value,-0.001);
+  assert.ok(Math.abs(cells[headers.indexOf('Detailed return difference')].value)<1e-12);
+  assert.equal(sheets[3].rows.at(-1)[1].value,'OK');
+});

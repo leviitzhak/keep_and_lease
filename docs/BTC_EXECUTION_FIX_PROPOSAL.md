@@ -1,9 +1,87 @@
-# BTC minute execution and output: findings and proposed fix
+# BTC minute execution and output: findings and implemented fix
 
 Investigation date: 6 September 2026. Branch: `agent/btc-binance-minute-data`.
 The preserved starting commit is `82e8d7e7c5c13c19912947ecf70ee620d6b6ca92`.
-No execution assumptions or cloud resource limits have been changed by this
-investigation. Publication remains gated; the design below is not implemented.
+The user approved the execution and on-demand export redesign. It is now
+implemented locally; deployment verification is tracked in `CURRENT_WORK.md`.
+Cloud resource limits are unchanged. The old assumptions remain reproducible
+through an explicit `legacy_close` research preset.
+
+## Implemented result and limits
+
+The saved strategy is `strategies/full-btc-long-gradual-1m-regular.json`. It maps
+**full silver long gradual** to 100% BTC, regular futures, no short book, no direct
+holding expense and 60-second execution. The original silver preset is unchanged.
+The legacy-close reproduction and one-basis-point fee sensitivity also have saved
+presets. `scripts/check-btc-minute-backtest.py` reads the regular BTC preset.
+
+| Full 90-day execution model | Strategy return | Direct holding | Intervals / missing |
+| --- | ---: | ---: | ---: |
+| Legacy regular close | +3,640.5349891% | +32.8013623% | 129,599 / 0 |
+| Observed, zero costs | +43.7335811% | +32.8013623% | 129,599 / 0 |
+| Observed, 1 bp fee per side | −39.8436771% | +32.8013623% | 129,599 / 0 |
+
+The one-basis-point fee is illustrative, **not a measured fee schedule**. It is
+charged to actual futures and direct BTC quantity changes. Spread/slippage remain
+zero in that sensitivity. Frequent rebalancing makes costs economically decisive;
+the zero-cost +43.73% is not a tradable-performance claim.
+
+The complete deployed-engine simulation, including all four loaded markets and
+the exact worker JSON encoder, measures **3,186.3 MiB peak RSS**, **63.54 MiB initial
+JSON**, and **311.79 seconds** locally. It fits the existing 4,096 / 256 MiB limits.
+This is a local worker-path measurement with a filesystem upload substitute, not
+a measurement of live GCS latency or Cloud Run RSS. The full audit contains
+129,599 BTC rows in 285 chunks (254.57 MiB compressed) and 129,599 portfolio rows
+in 181 chunks (11.66 MiB compressed). Simulation state never restarts at a chunk
+boundary. Reports are in `docs/validation/btc-minute/observed*.json`.
+
+`ObservedExecution` holds actual BTC quantities and cash. Each minute produces a
+new target when fresh eligible observations exist; only a later eligible bar or
+quote can fill an order. A candle's entire interval must follow its order signal.
+No-trade candles retain genuine mark age and can value held instruments but cannot
+fill orders. A missing valuation/expiry settlement causes an explicit error;
+there is no invented settlement or deleted interval. No held expiry was missing
+in the full-window run. Treasury remains the existing causal synthetic Treasury
+model; this is not a model of actual CME margin calls or broker collateral rules.
+
+Observed mode supports regular long-only intraday BTC. `auto` selects it for
+regular intraday data; inverse mode remains the explicitly limited legacy research
+path. Daily commodity accounting is unchanged. `next_day` adds one observation of
+latency in observed mode while retaining the initial direct-holding interval.
+Quotes use ask for buys and bid for sells. Optional sizes must already be
+normalized to BTC; raw Deribit USD contract-face amounts are not treated as BTC.
+Quote feeds without normalized size expose `size_validated=false` in the audit.
+Current candle fills remain a research assumption, with configurable fees,
+half-spread, slippage, maximum quote age and volume participation. Initial NAV is
+normalized to **USD 1**, with fractional units; participation therefore cannot be
+interpreted as capacity for a real account or compliance with exchange lot sizes.
+
+The zero-cost run has 196,775 total futures/spot fill records, 104,009 intervals
+with pending orders, 97,047 intervals holding stale marks, and **zero zero-volume
+futures fills**. The oldest held valuation mark is 8,760 seconds old. Stale
+valuation remains an explicit limitation rather than an executable bargain.
+
+Detailed audit rows include signal and fill times, prices, actual quantity
+changes, pending orders, mark quality, costs, and complete accounting ledgers.
+Immutable gzip JSONL chunks have SHA-256 checksums for both representations,
+counts and NAV boundaries; GCS uses CRC32C-checked, create-only uploads. The
+manifest is published after all chunks, and APIs expose it only for completed,
+owner-matched jobs. Cancelled/failed jobs cannot expose a successful audit.
+
+The GUI initially loads summaries and its existing sampled chart views; every
+statistic, distribution and portfolio interval still uses the full population.
+Detailed plots fetch the selected period on request, with progress/cancellation.
+Attribution reads one necessary chunk. Complete raw audit downloads do not rerun
+the strategy. A full-range XLSX is compressed one numbered ledger/check part at a
+time, preserving all minutes, holding fields and source NAV in one workbook.
+Its manifest records boundaries and hashes. Formula roll-forwards and normalized
+underlying indices restart from each worksheet opening; **engine positions and
+NAV never restart**. Timestamp cells now preserve minutes and signal times. The full workbook measures
+427,540,700 bytes and 1,711.9 MiB peak RSS in a Node stress test using the actual
+GUI export function (372.79 seconds); all 285 check worksheets report OK. This
+is a local browser-code test, not a live Chromium memory measurement.
+The detailed accounting template still supports exactly one commodity sleeve;
+its existing multi-sleeve limitation is an explicit error.
 
 ## Requested strategy and measured results
 
@@ -11,7 +89,7 @@ The test copies the **silver commodity profile** from `strategies/full silver
 long gradual`, maps it to 100% BTC, uses **regular** futures, zero direct-holding
 expense, no short book, and 60-second execution. Other allocation, maturity,
 roll, Treasury and smoothing parameters are preserved. The original saved
-strategy is unchanged. The harness now defaults to regular futures; the GUI's
+strategy is unchanged. The harness defaults to the saved observed regular-futures preset; the GUI's
 general BTC default remains inverse unless the BTC profile explicitly overrides it.
 
 The prices remain Deribit inverse-futures candle closes, used as a hypothetical
@@ -38,13 +116,12 @@ It uses no future prices and does not edit data files. **It is a sensitivity
 experiment with synthetic marks, not an executable strategy or a validated
 replacement feed.** In particular, +167% is not a corrected performance claim.
 
-## Established failure mechanism
+## Established failure mechanism in the legacy model
 
-The provider preserves `MarketObservation.observed=False` for zero-volume
-candles, but `build_intraday_btc_market` drops that flag. It retains volume
-without using it to restrict fills. Its one-minute age check measures the
-timestamp of the freshly emitted candle, not the age of its underlying trade.
-`run_backtest` then resizes positions at these closes unconditionally.
+The provider preserved `MarketObservation.observed=False` for zero-volume
+candles, but the former `build_intraday_btc_market` dropped that flag. The former
+one-minute age check measured the newly emitted candle timestamp rather than
+the underlying trade age. Legacy execution resized at those closes unconditionally.
 
 The full regular audit records:
 
@@ -80,7 +157,7 @@ The near-identical inverse/regular results rule out the inverse payoff formula
 as the main explanation for this particular anomaly; the separate idle-BTC
 collateral limitation remains.
 
-## Proposed execution correction
+## Approved execution design
 
 1. Preserve observation quality through the engine and audit: actual observation
    time, available time, last genuine trade/quote time, bid, ask, sizes, source and
@@ -111,9 +188,9 @@ Simply filtering zero-volume contracts out of `by_day` is not a sufficient fix:
 the current target-allocation engine could drop held contracts or skip intervals.
 Likewise, delaying by one minute alone leaves the +955% result above.
 
-## Memory and output findings
+## Memory investigation before the approved redesign
 
-Two safe changes are implemented locally:
+The initial investigation implemented two safe changes:
 
 - `run_backtest(..., row_sink=..., retain_fields=...)` emits every finalized
   complete audit row. Normal callers still receive the same full rows. An empty
@@ -143,7 +220,7 @@ the Cloud Run worker's additional `json.dumps(...).encode(...)` buffer copies.
 HTTP gzip/chunked transfer is already implemented. It does not solve full Python
 object retention, the uncompressed result limit, or full browser JSON decoding.
 
-## Proposed output correction and UX decision
+## Approved output design and UX trade-off
 
 Keep the existing 4 GiB worker and 256 MiB response limits initially. Implement
 one continuous simulation with bounded row consumption, online comparison
@@ -167,13 +244,13 @@ range. Full audit download remains available without recalculation. All metrics,
 distributions and accounting must use the complete interval population; any
 display sampling must remain explicit and must not affect execution or exports.
 
-**UX trade-off for review:** the first request for detailed plots or an export
+**Approved UX trade-off:** the first request for detailed plots or an export
 needs a loading step/network access instead of having all 822 MiB preloaded.
-Cache fetched chunks, display progress and actionable retry errors, and preserve
+Bound detail reads, display progress and actionable retry errors, and preserve
 the selected range. A full-period spreadsheet may take longer to assemble than
 a short-range export; do not silently shorten the range or drop ledger columns.
-No cloud resource increase is proposed. This UX/output change has deliberately
-not been implemented before that discussion.
+No cloud resource increase is required by the measured worker path. The user
+approved the loading step before implementation.
 
 Acceptance gates: identical interval/ledger/NAV results on fixed fixtures across
 chunk boundaries; complete reassembly and checksum verification; correct access
@@ -205,3 +282,22 @@ linear P&L is `N*(F1/F0-1)`; inverse P&L converted at spot is
 `N*(1/F0-1/F1)*S1`, equal to linear P&L times `S1/F1` for that interval. This
 explains why the two tested payoff paths are close when spot and futures are close.
 It does not justify identical executable quotes or Treasury-earning BTC collateral.
+
+## Why the inverse quote is a usable research proxy
+
+The user's maturity-payoff argument is correct under a shared terminal price.
+For `q` BTC of linear futures entered at `F0`, USD payoff at maturity is
+`q*(S_T-F0)`. An inverse contract with USD face `N=q*F0` pays
+`N*(1/F0-1/S_T)` BTC. Converted at that same terminal `S_T`, it has exactly the
+same USD payoff. This is a payoff equivalence, not physical exchange of principal:
+[CME Bitcoin futures are cash-settled in USD](https://www.cmegroup.com/education/courses/introduction-to-bitcoin/what-are-bitcoin-futures),
+and [Deribit inverse futures settle in BTC](https://support.deribit.com/hc/en-us/articles/31424938981533-Inverse-Futures).
+
+Before maturity, closing the inverse position at `F_t` locks a BTC amount.
+Converting it immediately at spot `S_t` gives the comparable linear exit payoff
+multiplied by `S_t/F_t`. Holding the BTC until maturity does not lock a fixed USD
+amount. Daily variation margin, collateral yields, funding/discounting, different
+settlement indices and cross-venue liquidity can therefore produce different
+quotes and realized cash flows. The test accepts equal **quoted prices** as the
+user-authorized research proxy while using regular USD P&L and Treasury accounting;
+it does not carry over inverse BTC collateral or claim exact arbitrage equality.

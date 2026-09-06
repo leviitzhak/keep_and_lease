@@ -43,6 +43,9 @@ const repositoryAssets = [
   "DGS3.csv", "DGS5.csv", "DTB3.csv", "DTB6.csv",
   "backtest_silver_lease_strategy.py", "silver_strategy_gui.py",
   "maturity_scoring.py", "rate_change_attribution.py", "market_data_store.py",
+  "observed_execution.py",
+  "backtest_audit.py",
+  "silver_strategy_gui.html",
 ];
 
 for (const name of repositoryAssets) {

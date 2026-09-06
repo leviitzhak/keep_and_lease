@@ -30,6 +30,7 @@ from market_data_store import (
     ASSET_BY_PREFIX, data_directory, read_cached_asset, read_contract_csvs,
     read_spot_csv, load_intraday_market,
 )
+from observed_execution import ObservedExecution
 
 MONTHS = dict(zip("FGHJKMNQUVXZ", range(1, 13)))
 TENORS = [(91, "DTB3"), (182, "DTB6"), (365, "DGS1"),
@@ -96,6 +97,13 @@ class Parameters:
     inverse_min_conversion_btc: float = 0.0
     trading_calendar: str = "business_days"
     execution_interval_seconds: float = 0.0
+    execution_model: str = "legacy_close"
+    execution_delay_seconds: float = 0.0
+    max_quote_age_seconds: float = 60.0
+    trading_fee_bps: float = 0.0
+    half_spread_bps: float = 0.0
+    slippage_bps: float = 0.0
+    max_volume_participation: float = 1.0
 
 
 @dataclass
@@ -461,10 +469,12 @@ def build_intraday_btc_market(root, sample_day=None):
     spot_market = load_intraday_market(Path(root), role="spot")
     futures_market = load_intraday_market(Path(root), role="futures")
     spot_by_instant = {}
+    spot_observations = {}
     for observation in spot_market.iter_observations():
         if observation.symbol == "BTC-USD" and observation.reference_price > 0:
             spot_by_instant[observation.effective_time] = (
                 observation.reference_price)
+            spot_observations[observation.effective_time] = observation
     spot_by_instant = _select_intraday_spot_session(
         spot_market, spot_by_instant, sample_day)
     if not spot_by_instant:
@@ -477,6 +487,7 @@ def build_intraday_btc_market(root, sample_day=None):
     schedule = sorted(spot_by_instant)
     snapshots = futures_market.iter_snapshots(
         schedule, max_age=timedelta(minutes=1))
+    last_observed = {}
     for instant, snapshot in zip(schedule, snapshots):
         day = _utc_naive(instant)
         physical = spot_by_instant[instant]
@@ -492,6 +503,10 @@ def build_intraday_btc_market(root, sample_day=None):
             if days <= 0 or rate is None:
                 continue
             future = observation.reference_price
+            available_at = _utc_naive(observation.effective_time)
+            if observation.observed:
+                last_observed[symbol] = available_at
+            genuine_at = last_observed.get(symbol)
             premium = future / physical - 1
             lease = rate - premium * 365 / days
             contracts[symbol][day] = future
@@ -504,6 +519,18 @@ def build_intraday_btc_market(root, sample_day=None):
                 "premium": premium,
                 "lease": lease,
                 "volume": observation.volume or 0.0,
+                "observed": observation.observed,
+                "available_at": available_at,
+                "observation_start": _utc_naive(observation.timestamp),
+                "last_observed_at": genuine_at,
+                "quote_age_seconds": ((day - genuine_at).total_seconds()
+                                      if genuine_at else None),
+                "source_kind": observation.source_kind,
+                "source": observation.source,
+                "bid": observation.bid_price, "ask": observation.ask_price,
+                "bid_size": observation.bid_size, "ask_size": observation.ask_size,
+                "spot_observed": spot_observations[instant].observed,
+                "expiry": expiry.isoformat(),
             })
         if curve:
             spot[day] = physical
@@ -839,7 +866,11 @@ def score_diagnostic(contract, p, direction, eligibility_threshold,
 
 def market_diagnostics_for_day(candidates, p):
     """Select chart diagnostics from quotes available on the charted day."""
-    eligible = [x for x in candidates if x["days"] >= p.min_days]
+    eligible = [x for x in candidates if x["days"] >= p.min_days
+                and (p.execution_model != "observed" or
+                     (x.get("observed", False) and
+                      x.get("quote_age_seconds") is not None and
+                      x["quote_age_seconds"] <= p.max_quote_age_seconds))]
     if not eligible:
         return None
     contracts = {x["symbol"]: x for x in eligible}
@@ -1372,6 +1403,17 @@ def run_backtest(spot, contracts, rates, by_day, p, *, row_sink=None,
                              day.weekday() < 5))
     days = execution_timeline(
         available_days, p.execution_interval_seconds)
+    intraday_source = bool(days and by_day[days[0]] and
+                           "source_kind" in by_day[days[0]][0])
+    if p.execution_model == "auto":
+        p = replace(p, execution_model=(
+            "observed" if intraday_source and p.futures_contract_type == "regular"
+            else "legacy_close"))
+    observed_execution = None
+    if p.execution_model == "observed":
+        if not intraday_source:
+            raise ValueError("Observed execution requires intraday observation-quality metadata")
+        observed_execution = ObservedExecution(p, spot[days[0]], market_resolution_seconds(days))
     output = []
     simple = 0.0
     long_simple = 0.0
@@ -1409,7 +1451,7 @@ def run_backtest(spot, contracts, rates, by_day, p, *, row_sink=None,
         "extension_long": 0.0,
         "short": 0.0,
     }
-    if p.reactivity == "same_day":
+    if p.reactivity == "same_day" or observed_execution is not None:
         intervals = list(zip(days, days, days[1:]))
     elif p.reactivity == "next_day":
         intervals = list(zip(days, days[1:], days[2:]))
@@ -1424,13 +1466,17 @@ def run_backtest(spot, contracts, rates, by_day, p, *, row_sink=None,
                           if previous_signal_day else 0.0)
         position = positions_for_day(
             by_day[signal_day], p, previous_position, signal_elapsed)
-        if position is None:
+        if position is None and observed_execution is None:
             previous_signal_day = signal_day
             continue
-        previous_position = position
+        if position is not None:
+            previous_position = position
         previous_signal_day = signal_day
         if execution_day not in spot or exit_day not in spot:
             continue
+        if observed_execution is not None:
+            position = observed_execution.position(
+                position, execution_day, spot[execution_day], by_day[execution_day], nav)
         execution_lag = elapsed_days(signal_day, execution_day)
         holding_days = max(
             1 / SECONDS_PER_DAY, position["bond_days"] - execution_lag)
@@ -1443,6 +1489,10 @@ def run_backtest(spot, contracts, rates, by_day, p, *, row_sink=None,
         portfolio_return = position["treasury"] * treasury_return + position["slv"] * spot_return
         base_long_return = (position["base_treasury"] * treasury_return +
                             position["base_slv"] * spot_return)
+        execution_audit = position.get("execution_audit")
+        execution_cost = execution_audit["total_cost_usd"] / nav if execution_audit else 0.0
+        portfolio_return -= execution_cost
+        base_long_return -= execution_cost
         short_futures_return = 0.0
         long_futures_contribution = 0.0
         base_long_futures_contribution = 0.0
@@ -1514,6 +1564,8 @@ def run_backtest(spot, contracts, rates, by_day, p, *, row_sink=None,
         # Do not invent a zero futures return when a held contract has no next
         # observation. Skip that entire portfolio interval instead.
         if not valid_interval:
+            if observed_execution is not None:
+                raise ValueError(f"Missing valuation/settlement for held futures at {exit_day.isoformat()}; no interval was silently omitted")
             continue
 
         inverse_settlement = None
@@ -1655,6 +1707,9 @@ def run_backtest(spot, contracts, rates, by_day, p, *, row_sink=None,
         futures_treasury_lease_contribution = (
             position["base_treasury"] * treasury_return +
             base_long_futures_contribution)
+        if execution_audit:
+            fund_lease_contribution -= execution_audit["direct_cost_usd"] / nav
+            futures_treasury_lease_contribution -= execution_audit["future_cost_usd"] / nav
         replication_weight = sum(position["base_longs"].values())
         futures_treasury_book_return = (
             treasury_return + base_long_futures_contribution / replication_weight
@@ -1685,6 +1740,9 @@ def run_backtest(spot, contracts, rates, by_day, p, *, row_sink=None,
         extension_simple += matched_long_extension_return
         short_simple += short_book_return
         nav *= 1 + portfolio_return
+        if observed_execution is not None:
+            observed_execution.settle(execution_day, exit_day, spot[execution_day],
+                                      spot[exit_day], contracts, treasury_return, elapsed, nav)
         lease_book_nav *= 1 + base_long_return
         keep_contribution_nav *= 1 + short_book_return
         replicating_fund_book_nav *= 1 + spot_return
@@ -1776,6 +1834,16 @@ def run_backtest(spot, contracts, rates, by_day, p, *, row_sink=None,
             prior_longs, position["longs"], contracts, execution_day)
         short_trade_details = futures_trade_details(
             prior_shorts, position["shorts"], contracts, execution_day)
+        if execution_audit:
+            long_trade_details = [{"symbol": f["symbol"], "price": f["price"],
+                                   "size_pct": 100 * abs(f["quantity_change"]) * f["price"] / starting_nav,
+                                   "action": "entry" if f["quantity_change"] > 0 else "exit"}
+                                  for f in execution_audit["fills"] if f["symbol"] != "BTC-USD"]
+            short_trade_details = []
+            entered_long_size = sum(f["size_pct"] for f in long_trade_details if f["action"] == "entry") / 100
+            exited_long_size = sum(f["size_pct"] for f in long_trade_details if f["action"] == "exit") / 100
+            entered_long_price = (sum(f["price"] * f["size_pct"] for f in long_trade_details if f["action"] == "entry") / (100 * entered_long_size) if entered_long_size else None)
+            exited_long_price = (sum(f["price"] * f["size_pct"] for f in long_trade_details if f["action"] == "exit") / (100 * exited_long_size) if exited_long_size else None)
         # Premium charts are market diagnostics, not position diagnostics.  Use
         # the threshold-independent books so a null means that a source quote
         # is unavailable, rather than merely that the strategy did not trade.
@@ -1957,6 +2025,13 @@ def run_backtest(spot, contracts, rates, by_day, p, *, row_sink=None,
 
         lease_cash_start = lease_book_start_value - nonfuture_start_values["lease"]
         keep_cash_start = keep_book_start_value - nonfuture_start_values["keep"]
+        if execution_audit and execution_audit["total_cost_usd"]:
+            cost = execution_audit["total_cost_usd"]
+            item = cash_holding("lease", 0.0, 0.0)
+            item.update(name="Execution fees and spread/slippage", holding_type="cost",
+                        expense_value=cost, pnl_value=-cost, internal_transfer_value=cost)
+            holding_ledger.append(item)
+            cash_adjustments["lease"] -= cost
         holding_ledger.extend([
             cash_holding("lease", lease_cash_start,
                          lease_cash_start + cash_adjustments["lease"]),
@@ -2194,6 +2269,10 @@ def run_backtest(spot, contracts, rates, by_day, p, *, row_sink=None,
                        "short_symbols": ";".join(position["shorts"])})
         output[-1]["held_futures"] = held_futures
         output[-1]["holding_ledger"] = holding_ledger
+        if execution_audit:
+            output[-1]["execution_audit"] = execution_audit
+            output[-1]["signal_date"] = execution_audit["order_signal_time"]
+            output[-1]["trading_cost_value"] = execution_audit["total_cost_usd"]
         if row_sink is not None:
             row_sink(output[-1])
         if retain_fields is not None:

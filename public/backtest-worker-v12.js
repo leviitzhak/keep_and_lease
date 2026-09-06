@@ -5,6 +5,7 @@ const DATA_FILES = [
   "DGS5.csv", "DTB3.csv", "DTB6.csv", "backtest_silver_lease_strategy.py",
   "silver_strategy_gui.py", "maturity_scoring.py", "rate_change_attribution.py",
   "market_data_store.py",
+  "observed_execution.py", "backtest_audit.py",
   "gc.zip", "cl.zip", "w.zip", "c.zip", "s.zip", "sp.zip",
   "DCOILWTICO.csv",
 ];

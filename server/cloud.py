@@ -569,6 +569,66 @@ class GcsResultStore:
             headers["X-Content-SHA256"] = job.result_checksum_sha256
         return ResultStream(chunks(), blob.size, headers)
 
+    def audit_store(self, job_id, metadata=None):
+        from backtest_audit import MAX_CHUNK_BYTES, MAX_MANIFEST_BYTES, validate_name
+        prefix = f"jobs/{_require_job_id(job_id)}/audit/"
+        bucket = self.bucket
+        class Store:
+            def put(self, name, data):
+                blob = bucket.blob(prefix + validate_name(name))
+                blob.cache_control = "private, no-store"
+                blob.metadata = dict(metadata or {})
+                blob.upload_from_string(data, content_type=("application/json" if name == "manifest.json" else "application/gzip"),
+                                        if_generation_match=0, checksum="crc32c")
+            def get(self, name):
+                from google.api_core.exceptions import NotFound
+                blob = bucket.blob(prefix + validate_name(name))
+                try:
+                    blob.reload()
+                except NotFound:
+                    raise FileNotFoundError("No stored audit for this job") from None
+                limit = MAX_MANIFEST_BYTES if name == "manifest.json" else 2 * MAX_CHUNK_BYTES
+                if blob.size > limit:
+                    raise ValueError("Audit object exceeds its size limit")
+                return blob.download_as_bytes(checksum="crc32c")
+        return Store()
+
+    def write_json(self, job_id, value, metadata, maximum_bytes, check_cancelled=lambda: None):
+        """Strict streaming JSON encoding; never allocate an uncompressed copy."""
+        import io
+        compressed = io.BytesIO()
+        digest = hashlib.sha256()
+        size = buffered = 0
+        parts = []
+        with gzip.GzipFile(fileobj=compressed, mode="wb", mtime=0, compresslevel=6) as stream:
+            for part in json.JSONEncoder(allow_nan=False, separators=(",", ":")).iterencode(value):
+                data = part.encode("utf-8")
+                size += len(data)
+                if size > maximum_bytes:
+                    raise ValueError(f"Backtest result exceeds the {maximum_bytes}-byte server limit")
+                parts.append(data)
+                buffered += len(data)
+                if buffered >= 1024 * 1024:
+                    check_cancelled()
+                    data = b"".join(parts)
+                    digest.update(data)
+                    stream.write(data)
+                    parts, buffered = [], 0
+            data = b"".join(parts)
+            digest.update(data)
+            stream.write(data)
+        check_cancelled()
+        data = compressed.getvalue()
+        sha = digest.hexdigest()
+        compressed_sha = hashlib.sha256(data).hexdigest()
+        name = f"jobs/{_require_job_id(job_id)}/result.json.gz"
+        blob = self.bucket.blob(name)
+        blob.cache_control = "private, no-store"
+        blob.metadata = {**metadata, "original_content_type": "application/json",
+                         "result_sha256": sha, "compressed_sha256": compressed_sha}
+        blob.upload_from_string(data, content_type="application/gzip", if_generation_match=0, checksum="crc32c")
+        return StoredResult(f"gs://{self.bucket_name}/{name}", size, len(data), sha, compressed_sha)
+
 
 class CloudJobService:
     """Web-facing orchestrator: persist first, launch second, and never calculate."""
@@ -633,6 +693,9 @@ class CloudJobService:
 
     def result(self, job: Job) -> ResultStream:
         return self.results.open(job)
+
+    def audit_store(self, job: Job):
+        return self.results.audit_store(job.id)
 
     def cancel(self, job_id: str) -> Job | None:
         job = self.repository.request_cancel(job_id)

@@ -66,3 +66,15 @@ position-change costs. BTC also requires an explicit seven-day calendar policy
 and Treasury accrual across weekends before GUI activation.
 `public/data/manifest.json` is the machine-readable coverage and checksum
 inventory.
+
+
+Intraday curve records also carry `observed`, `available_at`, `observation_start`,
+`last_observed_at`, genuine `quote_age_seconds`, source kind, bid/ask and optional
+BTC-normalized side sizes. Empty candles do not refresh genuine trade age. Tardis
+side sizes are consumed only from explicit `bid_size_btc` / `ask_size_btc` columns;
+raw venue `*_amount` values may be USD face and are not assumed to be BTC.
+
+Source provenance hashes all materialized source files and provider configuration,
+including Binance/Deribit minute inputs, with bounded reads. The generated SQLite
+cache is excluded. Output audit chunks are stored under each durable job in GCS;
+they are outputs, not replacement market data. See `GOOGLE_CLOUD_RUN_SETUP.md`.

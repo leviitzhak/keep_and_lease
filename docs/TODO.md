@@ -4,18 +4,17 @@ This checklist reflects the application synchronized from the deployed Sites che
 
 ## Higher priority
 
-- [ ] Make the full 90-day BTC minute GUI result practical within the existing
-  worker limits using chunked on-demand ledgers and diagnostic detail, keeping
-  all one-minute execution intervals. After comparison-retention improvements,
-  the regular-futures GUI still uses 4,231.8 MiB RSS and returns 821.97 MiB JSON,
-  above 4,096 / 256 MiB limits. Review the export-loading trade-off before
-  implementation. See `BTC_EXECUTION_FIX_PROPOSAL.md`.
-- [ ] Separate execution quotes/fills from stale candle valuation. The exact
-  requested regular-futures BTC strategy returns +3,640.53%; 62.8% of recorded
-  contract-weight changes use zero-volume candles. Preserve genuine observation
-  age, keep actual quantities while orders await a valid fill, and apply latency,
-  liquidity and actual-quantity trading costs without skipping minute intervals.
-  Sensitivity controls reduce the anomaly but are not validated strategy returns.
+- [x] Keep full 90-day BTC minute computation within existing worker limits using
+  immutable audit chunks and on-demand detail/export. All 129,599 intervals are
+  retained; local full worker measurement is 3,186.3 MiB RAM / 63.54 MiB initial
+  JSON. The approved export UX preserves full ledgers in numbered XLSX parts.
+- [x] Separate regular long-only BTC execution from stale candle valuation.
+  Preserve genuine observation age, actual quantities, delayed fills, partial
+  size limits and explicit trading costs. Full zero-cost result is +43.73%; the
+  1 bp fee/side sensitivity is −39.84%. No zero-volume futures fills remain.
+  Candle execution is still an explicit research assumption, not quote validation.
+- [ ] Verify the exact published feature SHA and full BTC resource/audit/export
+  acceptance in the authoritative private GCP preview before approving a merge.
 - [ ] Obtain individual CME BTC/MBT regular-futures quote/trade history and exact
   expiry metadata through an entitled source. Until then, label Deribit inverse
   USD quotes used with linear P&L as a regular-futures **research price proxy**.
@@ -43,9 +42,9 @@ This checklist reflects the application synchronized from the deployed Sites che
 ## Implemented
 
 - [x] Stream complete finalized engine audit rows without retaining the full
-  history, and retain only summary inputs for alternative contract selections.
-  This reduces memory without changing strategy accounting; cloud audit chunks
-  and on-demand GUI details remain pending.
+  history; stream alternative comparisons into summary accumulators, reusing the
+  selected main calculation. Complete audit chunks, owner-scoped APIs and on-demand
+  GUI details are implemented. No simulation state resets at storage boundaries.
 
 - [x] BTC-only execution/rebalancing accepts any whole multiple of the detected
   common market-data resolution. Intraday Treasury valuation carries the latest

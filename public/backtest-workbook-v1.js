@@ -66,7 +66,8 @@
 
   function excelDateSerial(value) {
     if (!value) return null;
-    const date = new Date(`${String(value).slice(0, 10)}T00:00:00Z`);
+    const text = String(value);
+    const date = new Date(text.length > 10 ? (/[zZ]|[+-]\d\d:\d\d$/.test(text) ? text : text + "Z") : text + "T00:00:00Z");
     if (!Number.isFinite(date.getTime())) return null;
     return date.getTime() / 86400000 + 25569;
   }
@@ -140,7 +141,7 @@
   <numFmts count="3">
     <numFmt numFmtId="164" formatCode="0.000000;[Red](0.000000);-"/>
     <numFmt numFmtId="165" formatCode="0.0000%;[Red](0.0000%);-"/>
-    <numFmt numFmtId="166" formatCode="yyyy-mm-dd"/>
+    <numFmt numFmtId="166" formatCode="yyyy-mm-dd hh:mm:ss"/>
   </numFmts>
   <fonts count="5">
     <font><sz val="10"/><name val="Aptos"/></font>
@@ -183,7 +184,7 @@
 </styleSheet>`;
   }
 
-  function workbookBytes(sheets, fflateRuntime = global.fflate) {
+  function packageFiles(sheets, fflateRuntime = global.fflate) {
     if (!fflateRuntime || typeof fflateRuntime.zipSync !== "function") {
       throw new Error("Spreadsheet compression support is unavailable.");
     }
@@ -195,10 +196,45 @@
       "xl/_rels/workbook.xml.rels": utf8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((_, index) => `<Relationship Id="rId${index + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${index + 1}.xml"/>`).join("")}<Relationship Id="rId${sheets.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`),
       "xl/styles.xml": utf8(stylesXml()),
     };
+    return files;
+  }
+
+  function workbookBytes(sheets, fflateRuntime = global.fflate) {
+    const files = packageFiles(sheets, fflateRuntime);
+    const utf8 = fflateRuntime.strToU8;
     sheets.forEach((sheet, index) => {
       files[`xl/worksheets/sheet${index + 1}.xml`] = utf8(worksheetXml(sheet));
     });
     return fflateRuntime.zipSync(files, { level: 6 });
+  }
+
+  async function workbookStream(sheetSource, fflateRuntime = global.fflate) {
+    const parts = [], names = [];
+    let failure;
+    const zip = new fflateRuntime.Zip((error, data) => { if (error) failure = error; else parts.push(data); });
+    const add = (name, data) => {
+      const compressor = new fflateRuntime.ZipDeflate(name, { level: 6 });
+      // Zip retains its directory entries until end(). Give it only metadata,
+      // so a finished worksheet's Deflate input buffer can be collected.
+      const entry = { filename: name, compression: compressor.compression, flag: compressor.flag };
+      zip.add(entry);
+      compressor.ondata = (error, chunk, final) => {
+        entry.crc = compressor.crc; entry.size = compressor.size;
+        entry.ondata(error, chunk, final);
+      };
+      compressor.push(data, true);
+      if (failure) throw failure;
+    };
+    for await (const sheet of sheetSource) {
+      if (names.some(item => item.name === sheet.name)) throw Error("Duplicate workbook worksheet name");
+      names.push({ name: sheet.name });
+      add(`xl/worksheets/sheet${names.length}.xml`, fflateRuntime.strToU8(worksheetXml(sheet)));
+      await new Promise(resolve => setTimeout(resolve, 0));
+    }
+    for (const [name, data] of Object.entries(packageFiles(names, fflateRuntime))) add(name, data);
+    zip.end();
+    if (failure) throw failure;
+    return new Blob(parts, { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
   }
 
   function flattenParameters(parameters) {
@@ -320,6 +356,7 @@
       add("Direct/replicating net contribution", 31, "percentFormula"), add("Direct decomposition difference", 29, "percentFormula"),
       add("Treasury contribution", 22, "percentFormula"),
       add("Futures contribution", 22, "percentFormula"), add("Cash/financing contribution", 25, "percentFormula"),
+      add("Execution cost contribution", 25, "percentFormula"),
       add("Detailed contribution sum", 24, "percentFormula"), add("Detailed return difference", 24, "percentFormula"),
       add("Maximum holding P&L formula difference", 34, "formula"),
       add("Actual holding count", 20, "integer"),
@@ -418,7 +455,7 @@
       const calculatedReturn = startNav
         ? ledger.reduce((sum, item) => sum + finiteNumber(item.pnl_value, 0), 0) / startNav : 0;
       const contributions = {};
-      for (const type of ["direct", "treasury", "future", "cash"]) {
+      for (const type of ["direct", "treasury", "future", "cash", "cost"]) {
         contributions[type] = startNav ? ledger
           .filter((item) => item.holding_type === type)
           .reduce((sum, item) => sum + finiteNumber(item.pnl_value, 0), 0) / startNav : 0;
@@ -447,7 +484,7 @@
       put("Start date", dateCell(record.date));
       put("End date", dateCell(record.exit_date));
       put("Elapsed days", formula(`B${rowNumber}-A${rowNumber}`, Math.max(0, (Date.parse(record.exit_date) - Date.parse(record.date)) / 86400000), "integer"));
-      put("Signal date", dateCell(record.date));
+      put("Signal date", dateCell(Object.hasOwn(record, "signal_date") ? record.signal_date : record.date));
       put("Mode", record.mode || "");
       put("Start NAV", styled(startNav, "source"));
       put("Source total daily return", styled(sourceReturn, "percentSource"));
@@ -528,7 +565,8 @@
       put("Treasury contribution", formula(`SUM(${holdingGroups.map((group) => `IF(${slotReference(group.slot, "Type", rowNumber)}="treasury",${slotReference(group.slot, "Return contribution", rowNumber)},0)`).join(",")})`, contributions.treasury, "percentFormula"));
       put("Futures contribution", formula(`SUM(${holdingGroups.map((group) => `IF(${slotReference(group.slot, "Type", rowNumber)}="future",${slotReference(group.slot, "Return contribution", rowNumber)},0)`).join(",")})`, contributions.future, "percentFormula"));
       put("Cash/financing contribution", formula(`SUM(${holdingGroups.map((group) => `IF(${slotReference(group.slot, "Type", rowNumber)}="cash",${slotReference(group.slot, "Return contribution", rowNumber)},0)`).join(",")})`, contributions.cash, "percentFormula"));
-      put("Detailed contribution sum", formula(`SUM(${reference("Direct/replicating net contribution", rowNumber)},${reference("Treasury contribution", rowNumber)},${reference("Futures contribution", rowNumber)},${reference("Cash/financing contribution", rowNumber)})`, detailedSum, "percentFormula"));
+      put("Execution cost contribution", formula(`SUM(${holdingGroups.map((group) => `IF(${slotReference(group.slot, "Type", rowNumber)}="cost",${slotReference(group.slot, "Return contribution", rowNumber)},0)`).join(",")})`, contributions.cost, "percentFormula"));
+      put("Detailed contribution sum", formula(`SUM(${reference("Direct/replicating net contribution", rowNumber)},${reference("Treasury contribution", rowNumber)},${reference("Futures contribution", rowNumber)},${reference("Cash/financing contribution", rowNumber)},${reference("Execution cost contribution", rowNumber)})`, detailedSum, "percentFormula"));
       put("Detailed return difference", formula(`${reference("Source total daily return", rowNumber)}-${reference("Detailed contribution sum", rowNumber)}`, sourceReturn - detailedSum, "percentFormula"));
       const pnlFormulaDifferenceMaximum = Math.max(0, ...ledger.map((item) => {
         const gross = finiteNumber(item.gross_pnl_value,
@@ -596,10 +634,10 @@
             `IF(${slotReference(group.slot, "Type", rowNumber)}="direct",${slotReference(group.slot, "Start quantity / units", rowNumber)}-${slotReference(group.slot, "Units expensed", rowNumber)},IF(${slotReference(group.slot, "Type", rowNumber)}="cash",${slotReference(group.slot, "End value", rowNumber)},${slotReference(group.slot, "Start quantity / units", rowNumber)}))`, endQuantity,
           );
           values[group.start + fieldOrder.indexOf("Gross P&L before expense")] = formula(
-            `IF(${slotReference(group.slot, "Type", rowNumber)}="direct",${slotReference(group.slot, "Start quantity / units", rowNumber)}*(${slotReference(group.slot, "End price", rowNumber)}-${slotReference(group.slot, "Start price", rowNumber)}),${slotReference(group.slot, "Source economic P&L", rowNumber)})`, grossPnl,
+            `IF(${slotReference(group.slot, "Type", rowNumber)}="direct",${slotReference(group.slot, "Start quantity / units", rowNumber)}*(${slotReference(group.slot, "End price", rowNumber)}-${slotReference(group.slot, "Start price", rowNumber)}),IF(${slotReference(group.slot, "Type", rowNumber)}="cost",0,${slotReference(group.slot, "Source economic P&L", rowNumber)}))`, grossPnl,
           );
           values[group.start + fieldOrder.indexOf("Holding expense")] = formula(
-            `IF(${slotReference(group.slot, "Type", rowNumber)}="direct",${slotReference(group.slot, "Start value", rowNumber)}*${slotReference(group.slot, "Annual expense rate", rowNumber)}*${reference("Elapsed days", rowNumber)}/365,0)`, expenseValue,
+            `IF(${slotReference(group.slot, "Type", rowNumber)}="direct",${slotReference(group.slot, "Start value", rowNumber)}*${slotReference(group.slot, "Annual expense rate", rowNumber)}*${reference("Elapsed days", rowNumber)}/365,IF(${slotReference(group.slot, "Type", rowNumber)}="cost",-${slotReference(group.slot, "Source economic P&L", rowNumber)},0))`, expenseValue,
           );
           values[group.start + fieldOrder.indexOf("Economic P&L")] = formula(
             `${slotReference(group.slot, "Gross P&L before expense", rowNumber)}-${slotReference(group.slot, "Holding expense", rowNumber)}`, finiteNumber(item.pnl_value, 0),
@@ -783,6 +821,7 @@
     templateVersion: TEMPLATE_VERSION,
     buildSheets,
     workbookBytes,
+    workbookStream,
     excelColumn,
   });
 })(globalThis);

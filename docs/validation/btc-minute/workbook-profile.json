@@ -1,0 +1,9 @@
+{
+  "status": "Downloaded 129599 intervals in one workbook with 285 numbered ledger parts.",
+  "bytes": 427540700,
+  "seconds": 372.788,
+  "peak_rss_mib": 1711.87109375,
+  "check_worksheets": 285,
+  "verified_intervals": 129599,
+  "worksheets_with_review": []
+}

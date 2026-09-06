@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import os
 import threading
 import time
@@ -55,15 +54,19 @@ class StrategyEngine:
             notify("ready", "Calculation engine and market histories are ready")
 
     def run_backtest(
-        self, parameters: dict[str, Any], progress: ProgressCallback | None = None
+        self, parameters: dict[str, Any], progress: ProgressCallback | None = None,
+        *, audit_collection=None,
     ) -> dict[str, Any]:
         notify = progress or (lambda _stage, _detail: None)
         self.load(notify)
         notify("running", "Running the requested backtest")
         with self._execution_lock:
-            result = gui.result(parameters)
+            result = gui.result(parameters, audit_collection)
         notify("serializing", "Validating the complete result payload")
         return result
+
+    def run_backtest_with_audit(self, parameters, audit_collection, progress=None):
+        return self.run_backtest(parameters, progress, audit_collection=audit_collection)
 
     def inspect_day(
         self, parameters: dict[str, Any], requested_date: str
@@ -81,18 +84,8 @@ class StrategyEngine:
         if configured_manifest:
             manifest_hash = configured_manifest
         else:
-            manifest = hashlib.sha256()
-            for name in (
-                "gold_silver.zip", "si.zip", "cl.zip", "w.zip",
-                "c.zip", "s.zip", "sp.zip", "DCOILWTICO.csv", "DGS1.csv",
-                "DGS2.csv", "DGS3.csv", "DGS5.csv", "DTB3.csv", "DTB6.csv",
-                "data/manifest.json", "data/market.sqlite3",
-            ):
-                path = self.data_root / name
-                manifest.update(name.encode("utf-8"))
-                if path.exists():
-                    manifest.update(path.read_bytes())
-            manifest_hash = manifest.hexdigest()
+            from market_data_store import source_manifest_hash
+            manifest_hash = source_manifest_hash(self.data_root)
         self._provenance = {
             "application_version": version,
             "engine_commit": os.getenv(

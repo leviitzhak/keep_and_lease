@@ -40,6 +40,8 @@ class MarketObservation:
     available_at: datetime | None = None
     bid_price: float | None = None
     ask_price: float | None = None
+    bid_size: float | None = None
+    ask_size: float | None = None
     volume: float | None = None
     observed: bool = True
     source_symbol: str | None = None
@@ -304,6 +306,10 @@ class TardisQuoteCsvProvider:
                     reference_price=(bid + ask) / 2,
                     bid_price=bid,
                     ask_price=ask,
+                    # Optional normalized BTC quantities. Raw venue amounts
+                    # are not assumed to be BTC (inverse venues use USD face).
+                    bid_size=float(row["bid_size_btc"]) if row.get("bid_size_btc") else None,
+                    ask_size=float(row["ask_size_btc"]) if row.get("ask_size_btc") else None,
                     source=row.get("exchange") or "tardis",
                     source_kind="quote",
                 )
@@ -443,6 +449,33 @@ def data_directory(root: Path) -> Path:
         if candidate.is_dir():
             return candidate
     return root / "data"
+
+
+def source_manifest_hash(root: Path) -> str:
+    """Hash source bytes, including intraday data/config, without a large copy.
+
+    The optional generated SQLite cache is excluded: source files define the
+    data identity and are identical in the checkout and deployed images.
+    """
+    import hashlib
+    root = Path(root)
+    names = ("gold_silver.zip", "si.zip", "gc.zip", "cl.zip", "w.zip", "c.zip",
+             "s.zip", "sp.zip", "DCOILWTICO.csv", "DGS1.csv", "DGS2.csv",
+             "DGS3.csv", "DGS5.csv", "DTB3.csv", "DTB6.csv")
+    files = [(name, root / name) for name in names]
+    directory = data_directory(root)
+    files.extend(("data/" + path.relative_to(directory).as_posix(), path)
+                 for path in directory.rglob("*") if path.is_file()
+                 and path.name not in {"market.sqlite3", "market.sqlite3-wal", "market.sqlite3-shm"})
+    digest = hashlib.sha256()
+    for name, path in sorted(files):
+        digest.update(name.encode() + b"\0")
+        if path.is_file():
+            with path.open("rb") as stream:
+                while chunk := stream.read(1024 * 1024):
+                    digest.update(chunk)
+        digest.update(b"\0")
+    return digest.hexdigest()
 
 
 def database_path(root: Path) -> Path:

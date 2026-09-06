@@ -15,10 +15,15 @@ from .engine import StrategyEngine
 from .job_models import FINAL_STATES, Job
 
 
+class JobCancelled(Exception):
+    pass
+
+
 class JobStore:
     def __init__(self, engine: StrategyEngine) -> None:
         self.engine = engine
         self._jobs: dict[str, Job] = {}
+        self._audits = {}
         self._completed_by_hash: dict[str, str] = {}
         self._lock = threading.Lock()
         self._queue: queue.Queue[str] = queue.Queue()
@@ -89,6 +94,11 @@ class JobStore:
     def result(self, job: Job) -> dict[str, Any] | None:
         return job.result
 
+    def audit_store(self, job: Job):
+        if job.id not in self._audits:
+            raise FileNotFoundError("No stored audit for this job")
+        return self._audits[job.id]
+
     def cancel(self, job_id: str) -> Job | None:
         with self._lock:
             job = self._jobs.get(job_id)
@@ -130,22 +140,29 @@ class JobStore:
                         "stage": job.stage,
                         "detail": job.detail,
                     })
-                result = self.engine.run_backtest(
-                    job.parameters,
-                    lambda stage, detail, current=job: self._progress(
-                        current, stage, detail
-                    ),
-                )
-                encoded = json.dumps(
-                    result, allow_nan=False, separators=(",", ":")
-                ).encode("utf-8")
+                progress = lambda stage, detail, current=job: self._progress(current, stage, detail)
+                audit_store = None
+                if hasattr(self.engine, "run_backtest_with_audit"):
+                    from backtest_audit import AuditCollection, MemoryAuditStore
+                    audit_store = MemoryAuditStore()
+                    def check_cancelled():
+                        if job.cancellation_requested:
+                            raise JobCancelled("Calculation cancelled")
+                    audit = AuditCollection(audit_store, base_url=f"/api/v1/backtests/{job.id}/audit",
+                        provenance={**job.provenance, "parameter_hash": job.parameter_hash,
+                                    "parameters": job.parameters}, check_cancelled=check_cancelled)
+                    result = self.engine.run_backtest_with_audit(job.parameters, audit, progress)
+                else:
+                    result = self.engine.run_backtest(job.parameters, progress)
+                encoded_size = sum(len(part.encode("utf-8")) for part in
+                    json.JSONEncoder(allow_nan=False, separators=(",", ":")).iterencode(result))
                 maximum = int(os.getenv(
                     "KEEP_AND_LEASE_MAX_RESULT_BYTES", str(100 * 1024 * 1024)
                 ))
-                if len(encoded) > maximum:
+                if encoded_size > maximum:
                     raise ValueError(f"Backtest result exceeds the {maximum}-byte server limit")
                 with self._lock:
-                    job.result_size_bytes = len(encoded)
+                    job.result_size_bytes = encoded_size
                     job.completed_at = time.time()
                     if job.cancellation_requested:
                         job.status = "cancelled"
@@ -153,6 +170,8 @@ class JobStore:
                         job.detail = "Cancellation requested while running; completed result discarded"
                     else:
                         job.result = result
+                        if audit_store is not None and "audit" in result:
+                            self._audits[job.id] = audit_store
                         job.status = "completed"
                         job.stage = "completed"
                         job.detail = "Backtest completed"
@@ -164,9 +183,9 @@ class JobStore:
                     })
             except Exception as exc:  # noqa: BLE001 - persist a stable API error.
                 with self._lock:
-                    job.status = "failed"
-                    job.stage = "failed"
-                    job.error = str(exc)
+                    job.status = "cancelled" if isinstance(exc, JobCancelled) else "failed"
+                    job.stage = job.status
+                    job.error = None if isinstance(exc, JobCancelled) else str(exc)
                     job.detail = str(exc)
                     job.completed_at = time.time()
                     job.logs.append({

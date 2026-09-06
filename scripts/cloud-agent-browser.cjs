@@ -10,6 +10,7 @@ async function main() {
   const outputDir = process.env.KEEP_AND_LEASE_OUTPUT_DIR;
   const expectedCommit = process.env.KEEP_AND_LEASE_EXPECTED_COMMIT || "";
   const runSmokeStrategy = process.env.KEEP_AND_LEASE_RUN_SMOKE_STRATEGY === "true";
+  const runBtcAudit = process.env.KEEP_AND_LEASE_RUN_BTC_AUDIT === "true";
   if (!webUri || !token || !outputDir) {
     throw new Error("KEEP_AND_LEASE_WEB_URI, KEEP_AND_LEASE_ID_TOKEN, and KEEP_AND_LEASE_OUTPUT_DIR are required");
   }
@@ -91,7 +92,7 @@ async function main() {
       throw new Error(`Unexpected GUI title: ${documentState.title}`);
     }
 
-    if (runSmokeStrategy) {
+    if (runSmokeStrategy || runBtcAudit) {
       let submittedJobId = null;
       const observedResultResponses = new Map();
       let settleResultResponse;
@@ -119,7 +120,9 @@ async function main() {
           && candidate.request().method() === "POST";
       }, { timeout: 120000 });
 
-      const proportions = {
+      const proportions = runBtcAudit ? {
+        weight_silver:"0",weight_gold:"0",weight_sp500:"0",weight_btc:"100",weight_treasury:"0"
+      } : {
         weight_silver: "30",
         weight_gold: "30",
         weight_sp500: "30",
@@ -127,6 +130,10 @@ async function main() {
       };
       for (const [name, value] of Object.entries(proportions)) {
         await page.locator(`[name="${name}"]`).fill(value);
+      }
+      if (runBtcAudit) {
+        await page.locator("#parameterFile").setInputFiles(process.env.KEEP_AND_LEASE_BTC_PRESET);
+        await page.waitForFunction(() => document.querySelector('#status')?.textContent?.startsWith('Loaded '));
       }
       await page.locator('[name="portfolio_rebalancing"]').selectOption("daily");
       await page.locator("#run").click();
@@ -160,8 +167,8 @@ async function main() {
       if (!resultResponse.url().endsWith(`${submission.job_id}/result`)) {
         throw new Error("GUI downloaded a result for a different backtest job");
       }
-      const expectedCommodities = ["gold", "silver", "sp500"];
-      const expectedWeights = { silver: 0.3, gold: 0.3, sp500: 0.3, treasury: 0.1 };
+      const expectedCommodities = runBtcAudit ? ["btc"] : ["gold", "silver", "sp500"];
+      const expectedWeights = runBtcAudit ? {btc:1,treasury:0} : { silver: 0.3, gold: 0.3, sp500: 0.3, treasury: 0.1 };
       await page.waitForFunction((names) => {
         const observations = document.querySelector("#obs")?.textContent?.trim();
         const button = document.querySelector("#run");
@@ -180,7 +187,7 @@ async function main() {
           const value = Number(text.replaceAll(",", "").replace(/[^0-9.+-]/g, ""));
           return { text, value };
         };
-        const weights = Object.fromEntries(["silver", "gold", "sp500", "treasury"].map((name) => [
+        const weights = Object.fromEntries(["silver", "gold", "sp500", "btc", "treasury"].map((name) => [
           name,
           Number(document.querySelector(`[name="weight_${name}"]`)?.value) / 100,
         ]));
@@ -205,7 +212,7 @@ async function main() {
       if (JSON.stringify(rendered.commodities.sort()) !== JSON.stringify(expectedCommodities)) {
         throw new Error(`Unexpected rendered commodities: ${rendered.commodities.join(", ") || "none"}`);
       }
-      const expectedHeadings = ["Gold sleeve", "Silver sleeve", "S&P 500 sleeve"];
+      const expectedHeadings = runBtcAudit ? ["Bitcoin sleeve"] : ["Gold sleeve", "Silver sleeve", "S&P 500 sleeve"];
       for (const heading of expectedHeadings) {
         if (!rendered.headings.includes(heading)) {
           throw new Error(`Rendered result is missing the ${heading} section`);
@@ -221,6 +228,47 @@ async function main() {
         status: rendered.status,
         renderedLeaseCanvases: expectedCommodities,
       };
+      if (runBtcAudit) {
+        const evidence = await page.evaluate(async (statusUrl) => {
+          const state = await (await fetch(statusUrl)).json();
+          const result = plotRangeSource.result;
+          const audit = result.audit;
+          if (!audit?.datasets?.btc || audit.datasets.btc.rows !== 129599) throw Error('Incomplete BTC audit manifest');
+          for (const entry of [audit.datasets.btc.chunks[0], audit.datasets.btc.chunks.at(-1)]) {
+            const response = await fetch(audit.base_url+'/btc/'+entry.index);
+            if (!response.ok) throw Error('Stored BTC audit chunk is unavailable');
+            const chunk = await response.json();
+            if (chunk.sha256 !== entry.sha256 || chunk.rows.length !== entry.rows) throw Error('Audit chunk mismatch');
+          }
+          return {summary:result.summary,execution:result.commodity_sleeves.btc.execution,
+            auditRows:audit.datasets.btc.rows,peakRssMiB:state.peak_rss_mb,resultBytes:state.result_size_bytes};
+        }, submission.status_url);
+        if (evidence.summary.observations !== 129599 || evidence.summary.missing_intervals !== 0
+            || Math.abs(evidence.summary.compounded_return-43.733581054241654)>1e-6
+            || evidence.execution.zero_volume_fills !== 0
+            || !(evidence.peakRssMiB > 0 && evidence.peakRssMiB < 4096)
+            || !(evidence.resultBytes > 0 && evidence.resultBytes < 268435456)) {
+          throw Error('Full BTC result failed numerical or resource acceptance');
+        }
+        await page.locator('#plotPeriod').selectOption('range');
+        await page.locator('#plotStart').fill('2026-06-06');
+        await page.locator('#plotEnd').fill('2026-06-06');
+        await page.locator('#applyPlotRange').click();
+        await page.locator('#loadAuditDetails').click();
+        await page.waitForFunction(() => document.querySelector('#auditStatus')?.textContent?.startsWith('Detailed plots loaded'), null, {timeout:180000});
+        const downloadReady=page.waitForEvent('download',{timeout:180000});
+        await page.locator('#downloadSpreadsheet').click();
+        const download=await downloadReady;
+        if (await download.failure()) throw Error('BTC workbook download failed');
+        const downloadPath=await download.path();
+        evidence.workbookBytes=fs.statSync(downloadPath).size;
+        if (evidence.workbookBytes < 1000) throw Error('Empty BTC workbook');
+        const cdp=await context.newCDPSession(page);
+        await cdp.send('Performance.enable');
+        const metrics=await cdp.send('Performance.getMetrics');
+        evidence.browserHeapMiB=metrics.metrics.find(item=>item.name==='JSHeapUsedSize')?.value/1024**2;
+        strategy.btcAudit=evidence;
+      }
     }
 
     const sameOriginFailures = failedRequests.filter((request) => {

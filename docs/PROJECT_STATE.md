@@ -12,11 +12,20 @@ Build an interactive research and backtesting application for strategies that al
   framework, with other data-backed commodities remaining extensible.
 - Cash/Treasuries: treated as another investable curve, using interest rates rather than lease rates.
 - Instruments: physical-backed ETFs, futures at several maturities, and Treasury/cash positions.
-- Outputs: daily positions, returns, cumulative returns, diagnostics, contract-level inspection, and cross-sectional scatter plots.
+- Outputs: interval positions, returns, cumulative returns, diagnostics, contract-level
+  inspection and scatter plots. Complete minute ledgers are stored in immutable
+  audit chunks with on-demand GUI detail, full archive and XLSX downloads.
+- BTC acceptance: the saved full-long gradual regular strategy preserves all
+  129,599 intervals. Local full worker RSS / initial JSON are 3,186.3 / 63.54 MiB.
+  Zero-cost return is +43.73%; a 1 bp fee/side yields −39.84%, demonstrating cost
+  sensitivity. See `BTC_MINUTE_VALIDATION.md`; no profitability claim is established.
 
 ## Core design decisions
 
-1. Signals are calculated and trades are executed at the close of day `t`; the resulting position earns the following close-to-close interval return.
+1. Legacy daily signals execute at the same close and earn the next interval.
+   Observed regular long-only BTC uses later genuine observations for fills and
+   retains actual quantities while orders await execution; stale closes only value
+   inventory. Both models are explicitly selectable for research.
 2. Long and short futures books may coexist at different maturities.
 3. A long futures contract remains eligible only when its lease rate satisfies the long-side eligibility rule.
 4. A short futures contract remains eligible only when its lease rate satisfies the short-side eligibility rule; a maturity bonus must not make an otherwise ineligible contract tradable.

@@ -6,15 +6,17 @@ branch._
 
 ## Active change set
 
-- Status: continuous Binance minute data and the labeled USDT proxy are ready
-  locally. The requested regular-futures minute run reproduces the anomaly
-  (+3,640.53%); stale/no-trade execution is a demonstrated contributor. Complete
-  audit-row streaming and reduced comparison-ledger retention are implemented
-  locally, but the GUI still exceeds deployment limits. Review the execution and
-  on-demand-output design in [BTC_EXECUTION_FIX_PROPOSAL.md](BTC_EXECUTION_FIX_PROPOSAL.md)
-  before changing fill assumptions or export UX. No feature branch publication,
-  preview replacement or master merge has occurred. See also
-  [BTC_MINUTE_VALIDATION.md](BTC_MINUTE_VALIDATION.md).
+- Status: the approved regular BTC execution and on-demand audit redesign is
+  implemented and locally validated. Full 60-second execution retains 129,599
+  intervals: +43.7336% at zero costs versus +32.8014% direct holding; an illustrative
+  1 bp fee per side changes the strategy result to −39.8437%. The original silver
+  strategy and all three BTC presets are preserved in `strategies/`.
+  The full worker path measures 3,186.3 MiB RAM and 63.54 MiB initial JSON under
+  the unchanged 4 GiB / 256 MiB limits. Complete ledgers are stored as immutable
+  audit chunks. See [the findings and implementation](BTC_EXECUTION_FIX_PROPOSAL.md)
+  and [validation/caveats](BTC_MINUTE_VALIDATION.md). The exact feature revision
+  must pass the authenticated deployment workflow before preview approval.
+  No master merge is authorized.
 - Active branch: `agent/btc-binance-minute-data`
 - Previous generalized application review: [PR #22 — Complete generalized multi-commodity implementation](https://github.com/leviitzhak/keep_and_lease/pull/22)
 - Render services' configured source branch: [`agent/fixed-render-preview-deploys`](https://github.com/leviitzhak/keep_and_lease/tree/agent/fixed-render-preview-deploys). Deploy hooks override this default with the exact commit pushed to the current implementation branch.

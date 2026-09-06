@@ -2,51 +2,58 @@
 
 Validated locally on 6 September 2026. This change has not been deployed.
 
-## Continuation: regular futures and deployment proposal
+## Approved implementation and full-window acceptance
 
-The requested test is now explicitly **regular futures**, using Deribit inverse
-USD candle prices as a provisional regular-futures price proxy. The full GUI
-reproduces **+3,640.5349891%** versus BTC holding **+32.8013623%**, with 129,599
-one-minute intervals and zero missing returns. The earlier inverse result below
-was also reproduced with the streamed audit path: **+3,637.3487166%**.
+The preserved test now uses `strategies/full-btc-long-gradual-1m-regular.json`:
+100% BTC, regular USD futures accounting, full silver long gradual allocation
+parameters, no direct-holding expense, no short book, 60-second execution. It
+uses Deribit inverse USD quotes as an explicit regular-futures research price
+proxy and Binance BTC/USDT at assumed parity. The original silver preset remains
+unchanged. Legacy execution and a 1 bp fee sensitivity have separate saved presets.
 
-Stale/no-trade closes are a demonstrated contributor; the engine trades at
-zero-volume candles whose underlying prices can be many minutes old. Delay and
-causal synthetic-mark sensitivities reduce the anomaly but do not yield validated
-economic returns. Read [the findings and proposed execution/output fix](BTC_EXECUTION_FIX_PROPOSAL.md)
-for the measured controls, exact stale-price examples, remaining uncertainties,
-and proposed CME regular-futures acquisition plan.
+| Run | Strategy | Direct holding | Intervals / missing |
+| --- | ---: | ---: | ---: |
+| Legacy regular close | +3,640.5349891% | +32.8013623% | 129,599 / 0 |
+| Observed later fills, zero costs | +43.7335811% | +32.8013623% | 129,599 / 0 |
+| Observed later fills, 1 bp fee/side | −39.8436771% | +32.8013623% | 129,599 / 0 |
 
-Complete audit-row streaming and reduced comparison-row retention are implemented
-locally without changing strategy mathematics. The streamed regular audit peaks
-at **652.9 MiB RSS**; the canonical GUI still peaks at **4,231.8 MiB** and returns
-**821.97 MiB JSON**, exceeding both deployment limits. The full GUI profile took
-273.58 seconds including repeated per-section output sizing. These are local
-process measurements, not deployed worker acceptance tests; the worker's own
-JSON encoding adds buffers. No resources or export UX have been changed.
+There are zero zero-volume futures fills under observed execution. Actual
+quantities remain held while orders await a genuine observation. The change
+addresses an established stale-price/same-close execution artifact, but the
+remaining performance is **research-only**: later candle closes are not executable
+quotes, costs are illustrative, and contemporaneous USDT/USD has not been measured.
+See [the implementation and investigation](BTC_EXECUTION_FIX_PROPOSAL.md).
 
-Measured machine-readable reports are preserved in [validation/btc-minute](validation/btc-minute):
-`regular.json`, `inverse.json`, `delayed.json`, `stale-mark-control.json`,
-`combined-control.json`, and `gui-profile.json`. They record source window, mode,
-interval counts, summaries, peak RSS and sensitivity settings. The regular and
-inverse reports include bounded examples from the full audit stream; they are
-not full ledger downloads. The harness can persist **every** complete row through
-`--engine-only --audit-output /absolute/path/audit.jsonl.gz` when requested.
+The full deployed-engine path loads silver, gold, S&P 500 and BTC, computes the
+requested BTC result plus comparison statistics, writes complete audit chunks,
+and uses the exact worker incremental encoder. Local measured peak RSS is
+**3,186.3 MiB** and initial result JSON **63.54 MiB**, within the unchanged
+4,096 / 256 MiB limits. Runtime is 311.79 seconds. GCS uploads were replaced by
+bounded local writes for this measurement; live Cloud Run/GCS acceptance is a
+separate authenticated deployment check. The BTC audit has 285 compressed chunks
+and portfolio attribution 181; both preserve all 129,599 rows.
 
-Reproduction:
+Reports in [validation/btc-minute](validation/btc-minute) preserve the historical
+`regular`, `inverse`, `delayed`, `stale-mark-control`, `combined-control`, and
+`gui-profile` measurements, plus the new `observed`, `observed-worker`, and
+`observed-fee-1bp` reports. These compact reports contain measured summaries;
+complete audit ledgers are available through the immutable job audit download.
 
 ```bash
-python scripts/check-btc-minute-backtest.py --profile-output
-python scripts/check-btc-minute-backtest.py --engine-only
-python scripts/check-btc-minute-backtest.py --engine-only --contract-type inverse
-python scripts/check-btc-minute-backtest.py --engine-only --reactivity next_day
-python scripts/check-btc-minute-backtest.py --engine-only --stale-mark-control
-python scripts/check-btc-minute-backtest.py --engine-only --stale-mark-control --reactivity next_day
+# Uses a NEW directory: audit objects are immutable.
+python scripts/check-btc-minute-backtest.py --server-engine --chunk-output /tmp/btc-audit-new --report /tmp/btc-observed.json
+python scripts/check-btc-minute-backtest.py --engine-only --fee-bps 1
+# Explicit historical reproduction:
+python scripts/check-btc-minute-backtest.py --engine-only --execution-model legacy_close
+python scripts/check-btc-minute-backtest.py --engine-only --execution-model legacy_close --contract-type inverse
+python scripts/check-btc-minute-backtest.py --engine-only --execution-model legacy_close --reactivity next_day
+python scripts/check-btc-minute-backtest.py --engine-only --execution-model legacy_close --stale-mark-control
 ```
 
-`--days N` explicitly bounds a diagnostic window; it is never applied implicitly.
-The optional stale-mark control changes only the freshly built research market
-in memory, not the imported source files or production execution policy.
+`--days N` is an explicit diagnostic restriction and is never applied implicitly.
+`--audit-output` streams full engine JSONL gzip; `--chunk-output` produces the
+manifest and original chunks. Stale-mark controls are synthetic sensitivities,
+never a production feed correction or a claim about executable returns.
 
 ## Detailed validation caveats and their disposition
 
@@ -73,20 +80,39 @@ in memory, not the imported source files or production execution policy.
    can exercise the old implementation, with import order also affecting reuse of
    `sys.modules`. Run **`npm run prepare:assets` after Python edits**, then run
    tests in a fresh Python process. Root files remain canonical; do not manually
-   patch generated copies. Copies were regenerated for this continuation.
+   patch generated copies. Copies were regenerated for this continuation. Asset preparation also synchronizes
+   the tracked public HTML with the canonical root GUI to prevent the served page
+   from lagging the tested code.
 4. **Old fixture coverage assumptions also needed updating.** The portfolio
    coverage test still expected the 1,440-minute Kraken sample. Its expectations
    now match the active Binance 129,600-minute window. This is a data assertion
    update, not a calculation or sampling change.
 
-Current targeted validation comprises 91 passing engine/data/payoff/streaming/API
-tests, plus the 10 corrected roll-policy tests and the full active-market coverage
-test, and 21 passing rendered-HTML tests. The streaming regression checks complete
-ledger equality, projected comparison equality, inverse pending balances, both
-reactivity modes, causal research controls and propagation of audit-sink failures.
-The entire repository discovery/build/deployment suite has **not** been claimed
-as passing. No local Sites preview was started and no private GCP verification
-was performed, because the economic and output deployment gates remain open.
+The full repository Python discovery completed **142 tests with no failures and
+3 explicit skips** (685.46 seconds): the opt-in full 1969 workbook regression,
+and two legacy gold/oil portfolio tests because oil is outside the enabled market
+set. This does not establish coverage for disabled commodities or the skipped
+1969 golden workbook. Focused follow-up checks cover later audit/API/UI changes.
+The normal build and artifact validation also completed. A focused follow-up of
+59 execution, audit, API and cloud-workflow tests passed after the full discovery. The original 21 HTML
+checks and six workbook tests pass, including streaming workbook equivalence,
+minute timestamp preservation, and cost reconciliation.
+
+New execution/audit tests cover later-only fills, no-trade inventory retention,
+causality under future-price perturbation, partial volume fills, bid/ask costs,
+missing-settlement errors, complete ledger/chunk reconstruction, NAV continuity,
+checksums, partial failures/cancellation, ownership checks and streamed downloads.
+The Cloud Run deployment workflow additionally checks this feature branch's full
+BTC preset, exact SHA, resource limits, first/last audit chunks, detailed plots,
+and a one-day workbook in the authenticated GUI. Those real-cloud results must
+be read from the workflow; fake adapters and local tests are not substitutes.
+A full 129,599-interval XLSX stress test completed in 372.79 seconds: 427,540,700
+bytes, 1,711.9 MiB peak RSS in Node with a 1 GiB JS heap ceiling. All 285 check
+worksheets report OK, and their interval counts sum to 129,599. This runs the
+actual GUI export function and workbook module against stored audit chunks;
+it is not a live Chromium measurement. A metadata-only ZIP entry avoids retaining
+finished compressor buffers. See `validation/btc-minute/workbook-profile.json`.
+No local Sites preview was started.
 
 ## Data and focused checks
 
@@ -105,7 +131,7 @@ was performed, because the economic and output deployment gates remain open.
 
 ## Historical full-period inverse GUI calculation
 
-Reproduce with `python scripts/check-btc-minute-backtest.py --contract-type inverse`. It maps the saved
+Reproduce with `python scripts/check-btc-minute-backtest.py --execution-model legacy_close --contract-type inverse`. It maps the saved
 full-silver-long-gradual configuration to BTC-only, zero direct-holding expense,
 inverse futures and a 60-second execution interval. No accounting or economic
 parameters are fitted to the result.

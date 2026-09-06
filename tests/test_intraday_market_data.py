@@ -222,6 +222,22 @@ class IntradayMarketDataTests(unittest.TestCase):
         self.assertEqual(contracts["BTC-25SEP26"][instant], 101)
         self.assertGreater(curves[instant][0]["days"], 24)
 
+    def test_empty_candle_does_not_reset_genuine_trade_age(self):
+        self.write_candles()
+        self.write_kraken_candles()
+        path=self.root/"data/btc/intraday/kraken_1m/spot.csv.gz"
+        with gzip.open(path,"at") as stream:
+            stream.write("2026-09-01T00:01Z,BTC-USD,101,102,100,102,10\n")
+        for _,name in TENORS:
+            (self.root/f"{name}.csv").write_text(f"observation_date,{name}\n2026-08-31,5.0\n")
+        _,_,_,curves=build_intraday_btc_market(self.root)
+        first,second=sorted(curves)
+        self.assertTrue(curves[first][0]["observed"])
+        self.assertFalse(curves[second][0]["observed"])
+        self.assertEqual(curves[second][0]["last_observed_at"],first)
+        self.assertEqual(curves[second][0]["quote_age_seconds"],60)
+        self.assertEqual(curves[second][0]["available_at"],second)
+
     def test_checked_deribit_archive_has_selected_coverage(self):
         directory = ROOT / "public" / "data" / "btc" / "intraday" / "deribit_1m"
         manifest = json.loads(

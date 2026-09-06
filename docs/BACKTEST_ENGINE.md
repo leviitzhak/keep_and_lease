@@ -89,3 +89,43 @@ Benchmarks must use the same date range and return convention. Any benchmark exp
 - Roll continuity and contract identity tests.
 - Missing-data and empty-universe tests.
 - Reproducibility from saved parameters and data version.
+
+
+## Observed regular BTC execution and full-resolution audits
+
+The user-approved regular BTC test is saved in
+`strategies/full-btc-long-gradual-1m-regular.json`. GUI/API `execution_model=auto`
+selects observed execution for regular intraday data. Raw `Parameters` defaults
+to `legacy_close` for backwards-compatible research; explicit observed mode
+requires regular futures and the short book disabled. Daily legacy accounting is
+unchanged. `research-btc-long-gradual-1m-legacy-close.json` reproduces the former
+same-close assumption rather than silently changing old audit evidence.
+
+Observed execution separates current targets from actual quantities. Fills use
+strictly later genuine observations; a candle's opening must be at or after the
+signal. `execution_delay_seconds` adds latency and `next_day` adds one observation.
+No-trade candles can mark held inventory but cannot execute. Missing held prices
+or expiry settlements fail explicitly, preserving the fact that the interval
+cannot be valued. Every available 60-second accounting interval is retained.
+
+| GUI/API control | Default | Meaning |
+| --- | ---: | --- |
+| `max_quote_age_seconds` | 60 | Maximum genuine observation age for fills |
+| `trading_fee_bps` | 0 | Per-side fee on actual futures/direct BTC quantity changes |
+| `half_spread_bps` | 0 | Assumed half spread when bid/ask are absent |
+| `slippage_bps` | 0 | Additional per-side price adjustment |
+| `max_volume_participation` | 100 | Maximum percentage of normalized observed BTC volume/size |
+
+Initial capital is normalized to USD 1 and quantities are fractional. These
+controls do not establish account capacity, lot-size feasibility or actual broker
+margin requirements. Execution costs appear as an explicit holding-ledger expense
+and reconcile through both book NAV and contribution accounting. Prices remain
+Deribit inverse quotes proxying hypothetical regular futures; see
+`BTC_EXECUTION_FIX_PROPOSAL.md` for the payoff rationale and measured sensitivities.
+
+`run_backtest(row_sink=..., retain_fields=...)` emits each complete finalized row
+without requiring full-row retention. Durable jobs use immutable audit chunks;
+only lightweight summary/statistic inputs remain in memory. The chosen selection
+comparison reuses the main run; alternatives stream into summary accumulators.
+Chunk boundaries change storage only and never reset position quantities or NAV.
+See `GOOGLE_CLOUD_RUN_SETUP.md` for API routes, provenance, ownership and downloads.

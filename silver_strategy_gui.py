@@ -140,6 +140,8 @@ def number(payload, name, default, low=None, high=None):
     # Treat that the same as an omitted value so optional/defaulted controls do
     # not turn an otherwise valid backtest request into a float conversion error.
     value = float(default if raw is None or str(raw).strip() == "" else raw)
+    if not math.isfinite(value):
+        raise ValueError(f"{name} must be finite")
     if low is not None and value < low:
         raise ValueError(f"{name} must be at least {low}")
     if high is not None and value > high:
@@ -295,7 +297,16 @@ def parameters(payload):
             payload, "inverse_min_conversion_btc", 0, 0),
         trading_calendar=str(payload.get("trading_calendar", "business_days")),
         execution_interval_seconds=execution_interval_seconds,
+        execution_model=str(payload.get("execution_model", "auto")),
+        execution_delay_seconds=number(payload, "execution_delay_seconds", 0, 0, 86400),
+        max_quote_age_seconds=number(payload, "max_quote_age_seconds", 60, 0, 86400),
+        trading_fee_bps=number(payload, "trading_fee_bps", 0, 0, 1000),
+        half_spread_bps=number(payload, "half_spread_bps", 0, 0, 1000),
+        slippage_bps=number(payload, "slippage_bps", 0, 0, 1000),
+        max_volume_participation=number(payload, "max_volume_participation", 100, 0, 100) / 100,
     )
+    if p.execution_model not in {"auto", "observed", "legacy_close"}:
+        raise ValueError("Invalid execution model")
     if p.futures_contract_type not in {"regular", "inverse"}:
         raise ValueError("futures_contract_type must be 'regular' or 'inverse'")
     if p.trading_calendar not in {"business_days", "all_days"}:
@@ -678,50 +689,57 @@ def outlier_statistics(rows, limit=50):
     flagged.sort(key=lambda item: abs(item["robust_z"]), reverse=True)
     return {"median_pct": center, "mad_pct": mad, "count": len(flagged),
             "flagged": flagged[:limit]}
-def sleeve_result(payload, market=None, product="silver"):
+SPREADSHEET_FIELDS = ['date', 'exit_date', 'mode', 'interval_return_pct', 'starting_nav', 'ending_nav', 'slv_price', 'slv_exit_price', 'slv_weight_pct', 'replicating_leg_value', 'treasury_weight_pct', 'treasury_position_price_index', 'futures_treasury_value', 'lease_book_value', 'keep_book_value', 'lease_book_start_value', 'lease_book_end_value', 'keep_book_start_value', 'keep_book_end_value', 'lease_book_external_transfer', 'keep_book_external_transfer', 'lease_book_underlying_value', 'keep_book_underlying_value', 'underlying_price_index', 'lease_book_effective_proportion_pct', 'keep_book_effective_proportion_pct', 'lease_book_underlying_daily_return_pct', 'keep_book_underlying_daily_return_pct', 'lease_book_underlying_compounded_index', 'keep_book_underlying_compounded_index', 'combined_books_underlying_compounded_index', 'reconstructed_nav', 'nav_reconstruction_difference', 'nav_reconstruction_difference_pct', 'signal_date', 'trading_cost_value']
+
+HOLDING_FIELDS = ['name', 'holding_type', 'book', 'side', 'contract_type', 'price', 'exit_price', 'quantity', 'end_quantity', 'units_expensed', 'position_pct', 'notional_value', 'start_value', 'end_value', 'gross_pnl_value', 'expense_rate', 'expense_value', 'pnl_value', 'internal_transfer_value', 'spot_price', 'exit_spot_price', 'premium_pct', 'matched_usd_rate_pct', 'lease_pct', 'maturity_days']
+
+def sleeve_result(payload, market=None, product="silver", audit_collection=None):
     p = parameters(product_payload(payload, product))
     market = market or MARKET
     common_observations = [
         observation for observation in market[3] if observation in market[0]
     ]
     source_resolution_seconds = market_resolution_seconds(common_observations)
-    rows, missing = run_backtest(*market, p)
+    writer = (audit_collection.writer(product) if audit_collection is not None
+              and source_resolution_seconds and source_resolution_seconds < 86400 else None)
+    execution_stats = {"model": "legacy_close", "fills": 0, "pending_order_intervals": 0,
+                       "stale_valuation_intervals": 0, "maximum_mark_age_seconds": 0,
+                       "trading_cost_value": 0.0, "zero_volume_fills": 0}
+    def consume(row):
+        audit = row.get("execution_audit")
+        if audit:
+            execution_stats["model"] = audit["model"]
+            execution_stats["fills"] += len(audit["fills"])
+            execution_stats["pending_order_intervals"] += bool(audit["pending_orders"])
+            marks = audit["valuation_marks"]
+            execution_stats["stale_valuation_intervals"] += any(not m["observed"] for m in marks)
+            execution_stats["maximum_mark_age_seconds"] = max(
+                execution_stats["maximum_mark_age_seconds"],
+                max((m["quote_age_seconds"] or 0 for m in marks), default=0))
+            execution_stats["trading_cost_value"] += audit["total_cost_usd"]
+            execution_stats["zero_volume_fills"] += sum(not f["observed"] for f in audit["fills"])
+        if writer:
+            writer.emit(row)
+            for key in ("holding_ledger", "held_futures", "rate_change_attribution_points", "execution_audit"):
+                row.pop(key, None)
+    rows, missing = run_backtest(*market, p, row_sink=consume)
     if not rows:
         raise ValueError("No observations remain with these parameters")
     stride = max(1, (len(rows) + 4999) // 5000)
     sampled = rows[::stride]
     if sampled[-1] is not rows[-1]:
         sampled.append(rows[-1])
-    spreadsheet_fields = [
-        "date", "exit_date", "mode", "interval_return_pct", "starting_nav",
-        "ending_nav", "slv_price",
-        "slv_exit_price", "slv_weight_pct", "replicating_leg_value",
-        "treasury_weight_pct", "treasury_position_price_index",
-        "futures_treasury_value", "lease_book_value", "keep_book_value",
-        "lease_book_start_value", "lease_book_end_value",
-        "keep_book_start_value", "keep_book_end_value",
-        "lease_book_external_transfer", "keep_book_external_transfer",
-        "lease_book_underlying_value", "keep_book_underlying_value",
-        "underlying_price_index",
-        "lease_book_effective_proportion_pct",
-        "keep_book_effective_proportion_pct",
-        "lease_book_underlying_daily_return_pct",
-        "keep_book_underlying_daily_return_pct",
-        "lease_book_underlying_compounded_index",
-        "keep_book_underlying_compounded_index",
-        "combined_books_underlying_compounded_index",
-        "reconstructed_nav", "nav_reconstruction_difference",
-        "nav_reconstruction_difference_pct",
-    ]
-    holding_fields = [
-        "name", "holding_type", "book", "side", "contract_type", "price",
-        "exit_price", "quantity", "end_quantity", "units_expensed",
-        "position_pct", "notional_value", "start_value", "end_value",
-        "gross_pnl_value", "expense_rate", "expense_value", "pnl_value",
-        "internal_transfer_value",
-        "spot_price", "exit_spot_price", "premium_pct",
-        "matched_usd_rate_pct", "lease_pct", "maturity_days",
-    ]
+    if writer:
+        indices = list(range(0, len(rows), stride))
+        if indices[-1] != len(rows) - 1:
+            indices.append(len(rows) - 1)
+        for index, full in writer.selected(indices):
+            rows[index]["held_futures"] = full.get("held_futures", [])
+        writer.metadata.update(spreadsheet_fields=SPREADSHEET_FIELDS,
+                               holding_fields=HOLDING_FIELDS,
+                               execution=execution_stats)
+    spreadsheet_fields = SPREADSHEET_FIELDS
+    holding_fields = HOLDING_FIELDS
     fields = ["date", "exit_date", "interval_return_pct", "simple_cumulative_return_pct",
               "compounded_return_pct", "slv_weight_pct", "treasury_weight_pct",
               "long_futures_notional_pct", "short_futures_notional_pct",
@@ -800,49 +818,54 @@ def sleeve_result(payload, market=None, product="silver"):
             slv_nav *= 1 + row["slv_daily_return_pct"] / 100
         slv_nav_values.append(slv_nav)
     comparisons = []
-    # Alternative selections need summary inputs only. Retaining their complete
-    # holding/export ledgers increases peak memory without contributing to output.
-    comparison_fields = (
-        "compounded_return_pct", "long_futures_daily_return_pct",
-        "treasury_daily_return_pct", "long_futures_notional_pct",
-        "allocation_long_lease_signal_pct", "long_weighted_maturity_days",
-        "long_futures_trade_details",
-    )
+    # Reuse the selected run; stream each alternative into scalar accumulators.
+    # Retain just its return floats for the existing, exactly ordered two-pass
+    # volatility formula, never a second population of holdings or trade dicts.
     for selection in ("weighted_lease_rate", "highest_lease_rate"):
         comparison_parameters = replace(p, long_contract_selection=selection)
-        comparison_rows, _ = (rows, missing) if selection == p.long_contract_selection else run_backtest(
-            *market, comparison_parameters, retain_fields=comparison_fields)
-        if not comparison_rows:
+        count = 0
+        totals = {field: 0.0 for field in ("long_futures_notional_pct",
+                  "allocation_long_lease_signal_pct", "long_weighted_maturity_days")}
+        compound_nav = {field: 1.0 for field in ("long_futures_daily_return_pct", "treasury_daily_return_pct")}
+        long_daily = []
+        turnover = ending_return = 0.0
+        def compare_row(row):
+            nonlocal count, turnover, ending_return
+            if audit_collection:
+                audit_collection.check_cancelled()
+            count += 1
+            ending_return = row["compounded_return_pct"]
+            for field in totals:
+                totals[field] += row.get(field) or 0
+            for field in compound_nav:
+                if row.get(field) is not None:
+                    compound_nav[field] *= 1 + row[field] / 100
+            if row.get("long_futures_daily_return_pct") is not None:
+                long_daily.append(row["long_futures_daily_return_pct"])
+            turnover += sum(t["size_pct"] for t in row.get("long_futures_trade_details", []))
+        if selection == p.long_contract_selection:
+            for row in rows:
+                compare_row(row)
+        else:
+            run_backtest(*market, comparison_parameters, row_sink=compare_row, retain_fields=())
+        if not count:
             continue
-        def compound(field):
-            nav = 1.0
-            for row in comparison_rows:
-                value = row.get(field)
-                if value is not None:
-                    nav *= 1 + value / 100
-            return 100 * (nav - 1)
-        long_daily = [r["long_futures_daily_return_pct"] for r in comparison_rows
-                      if r.get("long_futures_daily_return_pct") is not None]
         mean_daily = sum(long_daily) / len(long_daily) if long_daily else 0.0
         annualized_volatility = ((sum((x - mean_daily) ** 2 for x in long_daily) /
                                   max(1, len(long_daily) - 1)) ** 0.5 * 252 ** 0.5
                                  if long_daily else None)
-        contract_turnover = sum(
-            sum(t["size_pct"] for t in r.get("long_futures_trade_details", []))
-            for r in comparison_rows) / len(comparison_rows)
         comparisons.append({
             "selection": selection,
-            "strategy_return_pct": comparison_rows[-1]["compounded_return_pct"],
-            "long_rolling_return_pct": compound("long_futures_daily_return_pct"),
-            "treasury_return_pct": compound("treasury_daily_return_pct"),
-            "mean_long_notional_pct": sum(r["long_futures_notional_pct"] for r in comparison_rows) / len(comparison_rows),
-            "mean_long_lease_pct": sum(r["allocation_long_lease_signal_pct"] for r in comparison_rows) / len(comparison_rows),
-            "mean_long_maturity_days": sum((r["long_weighted_maturity_days"] or 0) for r in comparison_rows) / len(comparison_rows),
-            "avg_daily_contract_turnover_pct": contract_turnover,
+            "strategy_return_pct": ending_return,
+            "long_rolling_return_pct": 100 * (compound_nav["long_futures_daily_return_pct"] - 1),
+            "treasury_return_pct": 100 * (compound_nav["treasury_daily_return_pct"] - 1),
+            "mean_long_notional_pct": totals["long_futures_notional_pct"] / count,
+            "mean_long_lease_pct": totals["allocation_long_lease_signal_pct"] / count,
+            "mean_long_maturity_days": totals["long_weighted_maturity_days"] / count,
+            "avg_daily_contract_turnover_pct": turnover / count,
             "long_annualized_volatility_pct": annualized_volatility,
             "worst_long_day_pct": min(long_daily) if long_daily else None,
         })
-        del comparison_rows
     return {
         "_full_rows": rows,
         "series": [[row[k] for k in fields] for row in sampled],
@@ -860,12 +883,14 @@ def sleeve_result(payload, market=None, product="silver"):
         "direct_proxy": PRODUCTS.get(product, {}).get("spot_source"),
         "replicating_etf": PRODUCTS.get(product, {}).get("etf"),
         "replication_type": PRODUCTS.get(product, {}).get("replication"),
+        "execution": execution_stats,
+        "detail_storage": "audit_chunks" if writer else "inline",
         "holding_label": PRODUCTS.get(product, {}).get(
             "holding_label", "Replicating fund"),
         "futures_prices": futures_price_series(sampled, market[1]),
         "held_futures_diagnostics": [row.get("held_futures", []) for row in sampled],
         "holding_fields": holding_fields,
-        "spreadsheet_rows": [
+        "spreadsheet_rows": ([] if writer else [
             {**{field: row.get(field) for field in spreadsheet_fields},
              "held_futures": row.get("held_futures", []),
              "holding_ledger": [
@@ -873,12 +898,12 @@ def sleeve_result(payload, market=None, product="silver"):
                  for item in row.get("holding_ledger", [])
              ]}
             for row in rows
-        ],
+        ]),
         "futures_diagnostics": futures_diagnostics(sampled, market[3], p),
         "statistics_points": statistics_points(market[3], market[1], p),
         "treasury_statistics_points": treasury_statistics_points(market[2]),
         "treasury_rate_change_points": treasury_rate_change_points(market[2]),
-        "rate_change_attribution_points": [
+        "rate_change_attribution_points": ([] if writer else [
             {**point, "commodity": product,
              "date": point["end_date"],
              "symbol": point["leg"],
@@ -887,7 +912,7 @@ def sleeve_result(payload, market=None, product="silver"):
             for row in rows
             for point in row.get("rate_change_attribution_points", [])
             if not point.get("excluded")
-        ],
+        ]),
         "annual_statistics": annual_statistics(rows),
         "extreme_return_statistics": extreme_return_statistics(rows),
         "outlier_statistics": outlier_statistics(rows),
@@ -943,7 +968,7 @@ def portfolio_allocations(payload):
     return {key: value / total for key, value in weights.items()}
 
 
-def aggregate_portfolio(sleeves, target_weights, rebalance):
+def aggregate_portfolio(sleeves, target_weights, rebalance, attribution_sink=None):
     """Combine independently calculated sleeves with explicit rebalancing."""
     component_fields = {
         "underlying_price": "silver_price_return_contribution_pct",
@@ -1057,7 +1082,11 @@ def aggregate_portfolio(sleeves, target_weights, rebalance):
         day_attribution["reconciled_pct"] = sum(
             asset["contribution_pct"]
             for asset in day_attribution["assets"].values())
-        attribution.append(day_attribution)
+        if attribution_sink:
+            attribution_sink(day_attribution)
+            attribution[:] = [day_attribution]
+        else:
+            attribution.append(day_attribution)
     fields = [
         "date", "start_date", "interval_return_pct", "simple_cumulative_return_pct",
         "compounded_return_pct", "direct_daily_return_pct",
@@ -1070,7 +1099,7 @@ def aggregate_portfolio(sleeves, target_weights, rebalance):
     return fields, output, attribution
 
 
-def result(payload):
+def result(payload, audit_collection=None):
     global MARKETS
     if MARKETS is None:
         MARKETS = {"silver": MARKET}
@@ -1095,7 +1124,7 @@ def result(payload):
             "). Set those proportions to zero or repair the market archive.")
     rebalance = str(payload.get("portfolio_rebalancing", "daily"))
     sleeves = {
-        key: sleeve_result(payload, MARKETS[key], key)
+        key: sleeve_result(payload, MARKETS[key], key, audit_collection)
         for key in commodity_weights
     }
     cash_reference = None
@@ -1107,8 +1136,14 @@ def result(payload):
         reference_key, reference_market = next(iter(MARKETS.items()))
         cash_reference = sleeve_result(payload, reference_market, reference_key)
         aggregation_sleeves = {"_cash_reference": cash_reference}
+    attribution_sink = (audit_collection.writer("portfolio").emit
+                        if audit_collection is not None and audit_collection.writers else None)
     fields, series, attribution = aggregate_portfolio(
-        aggregation_sleeves, weights, rebalance)
+        aggregation_sleeves, weights, rebalance, attribution_sink)
+    def finish(answer):
+        if audit_collection is not None and audit_collection.writers:
+            answer["audit"] = audit_collection.finish()
+        return answer
     frequency_reference = sleeves.get("btc") or next(
         iter(sleeves.values()), cash_reference)
     source_resolution_seconds = frequency_reference.get(
@@ -1139,7 +1174,7 @@ def result(payload):
         answer.pop("_full_rows", None)
         for sleeve in sleeves.values():
             sleeve.pop("_full_rows", None)
-        return answer
+        return finish(answer)
     for sleeve in sleeves.values():
         sleeve.pop("_full_rows", None)
     treasury_points = (next(iter(sleeves.values()))["treasury_statistics_points"]
@@ -1165,7 +1200,7 @@ def result(payload):
         parse_date(longest_interval_row[fields.index("start_date")]),
         parse_date(longest_interval_row[fields.index("date")]),
     )
-    return {
+    return finish({
         "parameters": dict(payload),
         "fields": fields,
         "series": series,
@@ -1214,7 +1249,7 @@ def result(payload):
             "longest_holding_interval_end": longest_interval_row[
                 fields.index("date")],
         },
-    }
+    })
 
 
 class Handler(SimpleHTTPRequestHandler):

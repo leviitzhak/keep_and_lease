@@ -104,38 +104,38 @@ class WorkerRunner:
                         raise ValueError(
                             f"Worker provenance mismatch for {key}: expected {expected}, got {actual}"
                         )
-                result = self.engine.run_backtest(job.parameters, progress)
+                def check_cancelled():
+                    if self.interrupted:
+                        raise WorkerInterrupted("Cloud Run sent SIGTERM to the calculation worker")
+                    if heartbeat.cancel_requested.is_set():
+                        raise CancellationRequested("Cancellation requested")
+
+                metadata = {"engine_commit": str(provenance.get("engine_commit", "unknown")),
+                            "data_manifest_hash": str(provenance.get("data_manifest_hash", "unknown")),
+                            "parameter_hash": job.parameter_hash}
+                if hasattr(self.engine, "run_backtest_with_audit") and hasattr(self.results, "audit_store"):
+                    from backtest_audit import AuditCollection
+                    audit = AuditCollection(self.results.audit_store(job_id, metadata),
+                        base_url=f"/api/v1/backtests/{job_id}/audit",
+                        provenance={**provenance, "parameter_hash": job.parameter_hash,
+                                    "parameters": job.parameters}, check_cancelled=check_cancelled)
+                    result = self.engine.run_backtest_with_audit(job.parameters, audit, progress)
+                else:
+                    result = self.engine.run_backtest(job.parameters, progress)
                 close_stage("encoding_result")
                 self.repository.progress(
                     job_id, lease_owner, "encoding_result", "Encoding the result as strict JSON"
                 )
-                encoded = json.dumps(
-                    result, allow_nan=False, separators=(",", ":")
-                ).encode("utf-8")
-                if len(encoded) > self.maximum_result_bytes:
-                    raise ValueError(
-                        f"Backtest result exceeds the {self.maximum_result_bytes}-byte server limit"
-                    )
-                if heartbeat.cancel_requested.is_set():
-                    raise CancellationRequested("Cancellation requested")
-
-                close_stage("uploading_result")
-                self.repository.progress(
-                    job_id, lease_owner, "uploading_result", "Publishing the compressed result"
-                )
-                stored = self.results.write(
-                    job_id,
-                    encoded,
-                    {
-                        "engine_commit": str(provenance.get("engine_commit", "unknown")),
-                        "data_manifest_hash": str(
-                            provenance.get("data_manifest_hash", "unknown")
-                        ),
-                        "parameter_hash": job.parameter_hash,
-                    },
-                )
-                if heartbeat.cancel_requested.is_set():
-                    raise CancellationRequested("Cancellation requested")
+                if hasattr(self.results, "write_json"):
+                    stored = self.results.write_json(job_id, result, metadata,
+                                                     self.maximum_result_bytes, check_cancelled)
+                else:
+                    encoded = json.dumps(result, allow_nan=False, separators=(",", ":")).encode("utf-8")
+                    if len(encoded) > self.maximum_result_bytes:
+                        raise ValueError(f"Backtest result exceeds the {self.maximum_result_bytes}-byte server limit")
+                    check_cancelled()
+                    stored = self.results.write(job_id, encoded, metadata)
+                check_cancelled()
                 close_stage("completed")
                 timings["total"] = time.monotonic() - started
                 self.repository.complete(

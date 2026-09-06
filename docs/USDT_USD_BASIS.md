@@ -65,3 +65,12 @@ that supplies the same engine-facing USD observation interface. Even with FX
 correction, cross-exchange basis and candle-versus-executable-quote differences
 remain. Also retain the separate existing caveat about idle BTC collateral in
 the inverse-futures lease book (see TODO).
+
+
+The approved observed-fill correction reduces the full zero-cost regular-futures
+result to +43.7336%; a 1 bp fee per side makes it −39.8437%. Neither experiment
+measures or removes the FX basis. The user's maturity-payoff equivalence supports
+using inverse USD quotes as an explicit regular-futures **research proxy**, but
+different terminal indices, pre-maturity BTC conversion, collateral and funding
+can still prevent price equality. See the payoff derivation and CME data plan in
+`BTC_EXECUTION_FIX_PROPOSAL.md`.
