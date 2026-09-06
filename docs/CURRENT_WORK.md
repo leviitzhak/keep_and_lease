@@ -7,7 +7,7 @@ branch._
 ## Active change set
 
 - Status: the approved regular BTC execution and on-demand audit redesign is
-  implemented and locally validated. Full 60-second execution retains 129,599
+  implemented, locally validated and published for private preview acceptance. Full 60-second execution retains 129,599
   intervals: +43.7336% at zero costs versus +32.8014% direct holding; an illustrative
   1 bp fee per side changes the strategy result to −39.8437%. The original silver
   strategy and all three BTC presets are preserved in `strategies/`.
@@ -18,6 +18,7 @@ branch._
   must pass the authenticated deployment workflow before preview approval.
   No master merge is authorized.
 - Active branch: `agent/btc-binance-minute-data`
+- Active review and exact-revision deployment evidence: [draft PR #37](https://github.com/leviitzhak/keep_and_lease/pull/37).
 - Previous generalized application review: [PR #22 — Complete generalized multi-commodity implementation](https://github.com/leviitzhak/keep_and_lease/pull/22)
 - Render services' configured source branch: [`agent/fixed-render-preview-deploys`](https://github.com/leviitzhak/keep_and_lease/tree/agent/fixed-render-preview-deploys). Deploy hooks override this default with the exact commit pushed to the current implementation branch.
 - Application version: `1.3`

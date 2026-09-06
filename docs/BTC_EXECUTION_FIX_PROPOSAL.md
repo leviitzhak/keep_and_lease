@@ -3,7 +3,8 @@
 Investigation date: 6 September 2026. Branch: `agent/btc-binance-minute-data`.
 The preserved starting commit is `82e8d7e7c5c13c19912947ecf70ee620d6b6ca92`.
 The user approved the execution and on-demand export redesign. It is now
-implemented locally; deployment verification is tracked in `CURRENT_WORK.md`.
+implemented and published; `CURRENT_WORK.md` links the active review and
+exact-revision deployment verification.
 Cloud resource limits are unchanged. The old assumptions remain reproducible
 through an explicit `legacy_close` research preset.
 

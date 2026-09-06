@@ -13,8 +13,10 @@ This checklist reflects the application synchronized from the deployed Sites che
   size limits and explicit trading costs. Full zero-cost result is +43.73%; the
   1 bp fee/side sensitivity is −39.84%. No zero-volume futures fills remain.
   Candle execution is still an explicit research assumption, not quote validation.
-- [ ] Verify the exact published feature SHA and full BTC resource/audit/export
-  acceptance in the authoritative private GCP preview before approving a merge.
+- [x] Add an authenticated deployment gate for the exact feature SHA and full
+  BTC resource/audit/export acceptance. Every candidate revision must pass in
+  the authoritative private GCP preview before merge approval; the active PR
+  linked from `CURRENT_WORK.md` records its result.
 - [ ] Obtain individual CME BTC/MBT regular-futures quote/trade history and exact
   expiry metadata through an entitled source. Until then, label Deribit inverse
   USD quotes used with linear P&L as a regular-futures **research price proxy**.

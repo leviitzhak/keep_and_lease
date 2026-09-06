@@ -1,6 +1,10 @@
 # Continuous BTC minute import: validation and deployment gate
 
-Validated locally on 6 September 2026. This change has not been deployed.
+Validated locally on 6 September 2026 and published on the feature branch.
+[PR #37](https://github.com/leviitzhak/keep_and_lease/pull/37) records the exact
+revision and authenticated private GCP acceptance evidence. Every candidate
+revision must pass the deployment workflow; local measurements below are
+identified separately from live Cloud Run results.
 
 ## Approved implementation and full-window acceptance
 
@@ -94,8 +98,8 @@ and two legacy gold/oil portfolio tests because oil is outside the enabled marke
 set. This does not establish coverage for disabled commodities or the skipped
 1969 golden workbook. Focused follow-up checks cover later audit/API/UI changes.
 The normal build and artifact validation also completed. A focused follow-up of
-59 execution, audit, API and cloud-workflow tests passed after the full discovery. The original 21 HTML
-checks and six workbook tests pass, including streaming workbook equivalence,
+59 execution, audit, API and cloud-workflow tests passed after the full discovery. All 23 HTML checks and six workbook tests pass, including numeric form validity,
+full-minute chart bounds, streaming workbook equivalence,
 minute timestamp preservation, and cost reconciliation.
 
 New execution/audit tests cover later-only fills, no-trade inventory retention,
@@ -114,7 +118,7 @@ it is not a live Chromium measurement. A metadata-only ZIP entry avoids retainin
 finished compressor buffers. See `validation/btc-minute/workbook-profile.json`.
 No local Sites preview was started.
 
-## Data and focused checks
+## Historical import checks before the execution fix
 
 - Binance source window: `[2026-06-06T00:00Z, 2026-09-04T00:00Z)`.
 - 129,600 candles; all 129,599 adjacent timestamp differences are 60 seconds.
@@ -127,7 +131,8 @@ No local Sites preview was started.
 - Broader discovery initially hit stale generated public Python copies; those
   were regenerated. Two roll-scoring assertions also fail on unchanged master,
   independently reproduced in an isolated export of that commit. Local FastAPI
-  dependencies are absent, so the complete API suite was not run.
+  dependencies were absent at that stage, so the complete API suite was not run.
+  The current validation and resolution are documented above.
 
 ## Historical full-period inverse GUI calculation
 
@@ -153,7 +158,10 @@ The return is **an anomalous research output, not a validated economic result**.
 Possible contributors requiring audit include execution on stale/no-trade
 Deribit candle closes, zero configured trading costs, cross-venue timing/basis,
 the USDT/USD parity assumption, and the existing idle-BTC-collateral caveat.
-None has yet been established as the cause or a complete explanation.
+At the initial import stage none had been established as the cause. The
+subsequent controlled investigation above establishes stale/no-trade and
+same-close execution as substantial artifacts; it does not eliminate the
+remaining basis, cost and collateral limitations.
 
 Treasury index optimization reduced observed market-build time from 138.9 to
 27.5 seconds and total runtime from 741.18 to 267.37 seconds. The optimized
@@ -162,20 +170,20 @@ MiB result and 6,289.5 MiB peak memory. Causal lookup and accrual tests also mat
 the unindexed path exactly. The optimization does not address result size or
 ledger memory retention.
 
-## Deployment is gated
+## Historical deployment blocker before the approved fix
 
 The existing Cloud Run worker has a 4 GiB memory limit and the configured result
-limit is 256 MiB. This full-minute result exceeds both. No cloud limits were
-increased and no preview replacement was triggered. Unreferenced content blobs
-were transferred using the GitHub connector and hash-checked, but do not
-constitute a published branch or deployed release.
+limit is 256 MiB. The original 817.31 MiB / 6,289.5 MiB result exceeded both.
+At the initial handoff, only unreferenced content blobs had been transferred;
+no branch or commit had been published. The branch is now published with the
+approved chunked-output and observed-execution implementation. Cloud limits
+remain unchanged; exact-revision acceptance is recorded on PR #37.
 
-Before activation on the deployed GUI, review the proposed single continuous
-simulation with chunked/on-demand outputs, then validate causal execution and
-rerun the full workload checks. Do not split calculations into independent date
-windows that reset positions or change strategy history. The
-full-resolution source data itself is small and complete; the blocker is the
-calculation/output path rather than data availability.
+The approved implementation runs one continuous simulation with chunked,
+on-demand outputs. It never splits execution into independent date windows
+that reset positions or change strategy history. The source data and all
+129,599 return intervals remain intact. Full worker and export measurements
+are listed above; the authenticated workflow enforces the live deployment gate.
 
 
 ### First preview acceptance correction
