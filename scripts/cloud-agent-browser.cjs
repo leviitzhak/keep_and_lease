@@ -136,6 +136,10 @@ async function main() {
         await page.waitForFunction(() => document.querySelector('#status')?.textContent?.startsWith('Loaded '));
       }
       await page.locator('[name="portfolio_rebalancing"]').selectOption("daily");
+      const invalidControls = await page.locator('#form').evaluate(form =>
+        [...form.elements].filter(field => field.willValidate && !field.checkValidity())
+          .map(field => ({name:field.name,message:field.validationMessage})));
+      if (invalidControls.length) throw new Error('Invalid strategy controls: '+JSON.stringify(invalidControls));
       await page.locator("#run").click();
 
       const submissionResponse = await submissionResponsePromise;
@@ -268,6 +272,15 @@ async function main() {
         const metrics=await cdp.send('Performance.getMetrics');
         evidence.browserHeapMiB=metrics.metrics.find(item=>item.name==='JSHeapUsedSize')?.value/1024**2;
         strategy.btcAudit=evidence;
+        console.log('BTC minute acceptance: '+JSON.stringify({
+          commit:expectedCommit,observations:evidence.summary.observations,
+          strategyReturnPct:evidence.summary.compounded_return,
+          directHoldingReturnPct:evidence.summary.direct_holding_return,
+          zeroVolumeFills:evidence.execution.zero_volume_fills,
+          peakRssMiB:evidence.peakRssMiB,resultBytes:evidence.resultBytes,
+          auditRows:evidence.auditRows,workbookBytes:evidence.workbookBytes,
+          browserHeapMiB:evidence.browserHeapMiB,
+        }));
       }
     }
 

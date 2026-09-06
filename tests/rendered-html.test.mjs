@@ -2,6 +2,22 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
+test("every numeric default satisfies its browser range and step constraints", async () => {
+  const html = await readFile(new URL("../public/silver_strategy_gui.html", import.meta.url), "utf8");
+  for (const tag of html.matchAll(/<input\b[^>]*>/g)) {
+    const attributes = Object.fromEntries([...tag[0].matchAll(/([\w-]+)="([^"]*)"/g)].map(match=>[match[1],match[2]]));
+    if (attributes.type !== "number" || attributes.value === undefined) continue;
+    const value=Number(attributes.value), minimum=Number(attributes.min??0), step=Number(attributes.step??1);
+    assert.ok(Number.isFinite(value), attributes.name);
+    if (attributes.min !== undefined) assert.ok(value>=minimum, attributes.name+" minimum");
+    if (attributes.max !== undefined) assert.ok(value<=Number(attributes.max), attributes.name+" maximum");
+    if (attributes.step !== "any") {
+      const offset=(value-(attributes.min!==undefined?minimum:value))/step;
+      assert.ok(Math.abs(offset-Math.round(offset))<1e-8, attributes.name+" step mismatch");
+    }
+  }
+});
+
 const developmentPreviewMeta =
   /<meta(?=[^>]*\bname=["']codex-preview["'])(?=[^>]*\bcontent=["']development["'])[^>]*>/i;
 

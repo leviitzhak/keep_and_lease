@@ -176,3 +176,14 @@ rerun the full workload checks. Do not split calculations into independent date
 windows that reset positions or change strategy history. The
 full-resolution source data itself is small and complete; the blocker is the
 calculation/output path rather than data availability.
+
+
+### First preview acceptance correction
+
+The first published revision (`d774093086f4aacdb0e2f1566dad6b20fba6df3d`)
+built and passed private health checks, but its multi-commodity GUI smoke timed
+out before submission. The new participation input had minimum 0.001, step 1 and
+default 100, which violates HTML step validity. It now accepts any percentage
+from 0 through 100. The browser smoke reports invalid form controls immediately,
+and an HTML regression verifies every numeric default against its bounds/step.
+This correction changes form validity only, not execution or measured returns.
