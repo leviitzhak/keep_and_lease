@@ -1354,7 +1354,15 @@ def multiplicative_log_contributions(total_return, contributions):
     return logs
 
 
-def run_backtest(spot, contracts, rates, by_day, p):
+def run_backtest(spot, contracts, rates, by_day, p, *, row_sink=None,
+                 retain_fields=None):
+    """Calculate every interval, optionally consuming audit rows as a stream.
+
+    ``row_sink`` receives each complete, finalized audit row. ``retain_fields``
+    restricts only the returned rows, never accounting or execution: None keeps
+    the legacy full rows; an empty collection retains none. A sink that needs
+    historical rows must persist them itself. Sink failures propagate.
+    """
     # Ignore stray weekend records. Exchange holidays have no observation, so
     # each interval automatically runs to the next available business day.
     if p.trading_calendar not in ("business_days", "all_days"):
@@ -2186,6 +2194,12 @@ def run_backtest(spot, contracts, rates, by_day, p):
                        "short_symbols": ";".join(position["shorts"])})
         output[-1]["held_futures"] = held_futures
         output[-1]["holding_ledger"] = holding_ledger
+        if row_sink is not None:
+            row_sink(output[-1])
+        if retain_fields is not None:
+            completed_row = output.pop()
+            if retain_fields:
+                output.append({key: completed_row[key] for key in retain_fields})
         previous_valid_position = position
     return output, missing_futures_intervals
 

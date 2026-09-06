@@ -64,7 +64,7 @@ class RollPolicyTests(unittest.TestCase):
             maturity_line_score({"lease": -0.02, "days": 365}, p, "short"),
             -0.01)
 
-    def test_line_distance_changes_existing_score_relatively(self):
+    def test_line_distance_adds_to_dimensionless_softmax_score(self):
         long_p = Parameters(
             min_days=10, long_maturity_line_intercept=0.02,
             long_maturity_line_slope_per_year=0.01)
@@ -74,11 +74,11 @@ class RollPolicyTests(unittest.TestCase):
         self.assertAlmostEqual(
             maturity_line_adjusted_score(
                 0.20, {"lease": 0.036, "days": 365}, long_p, "long"),
-            0.32)
+            20.6)  # 0.20 / 0.01 + (0.036 - 0.030) / 0.01
         self.assertAlmostEqual(
             maturity_line_adjusted_score(
                 0.20, {"lease": -0.036, "days": 365}, short_p, "short"),
-            0.32)
+            20.6)
 
     def test_pure_maturity_prefers_shorter_longs(self):
         p = Parameters(
@@ -102,12 +102,12 @@ class RollPolicyTests(unittest.TestCase):
             0.20, {"lease": -0.04, "days": 365}, p, "short")
         self.assertGreater(long, short)
 
-    def test_zero_pure_maturity_strength_is_backward_compatible(self):
+    def test_zero_pure_maturity_strength_preserves_normalized_base_score(self):
         p = Parameters(min_days=10, long_relative_strength=0)
         self.assertAlmostEqual(
             maturity_line_adjusted_score(
                 0.20, {"lease": 0.04, "days": 365}, p, "long"),
-            0.20)
+            20.0)  # Softmax input is dimensionless: base edge / rate scale.
 
 
 if __name__ == "__main__":

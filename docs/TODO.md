@@ -5,11 +5,22 @@ This checklist reflects the application synchronized from the deployed Sites che
 ## Higher priority
 
 - [ ] Make the full 90-day BTC minute GUI result practical within the existing
-  worker limits (bounded date windows and/or chunked on-demand ledgers). The
-  measured full result is 817 MiB with 6.1 GiB peak memory, above the deployed
-  256 MiB / 4 GiB limits. Audit its anomalous +3,637% strategy return before
-  interpreting performance, including stale/no-trade futures candle execution.
-  See `BTC_MINUTE_VALIDATION.md`; the source import itself has no missing minutes.
+  worker limits using chunked on-demand ledgers and diagnostic detail, keeping
+  all one-minute execution intervals. After comparison-retention improvements,
+  the regular-futures GUI still uses 4,231.8 MiB RSS and returns 821.97 MiB JSON,
+  above 4,096 / 256 MiB limits. Review the export-loading trade-off before
+  implementation. See `BTC_EXECUTION_FIX_PROPOSAL.md`.
+- [ ] Separate execution quotes/fills from stale candle valuation. The exact
+  requested regular-futures BTC strategy returns +3,640.53%; 62.8% of recorded
+  contract-weight changes use zero-volume candles. Preserve genuine observation
+  age, keep actual quantities while orders await a valid fill, and apply latency,
+  liquidity and actual-quantity trading costs without skipping minute intervals.
+  Sensitivity controls reduce the anomaly but are not validated strategy returns.
+- [ ] Obtain individual CME BTC/MBT regular-futures quote/trade history and exact
+  expiry metadata through an entitled source. Until then, label Deribit inverse
+  USD quotes used with linear P&L as a regular-futures **research price proxy**.
+  CME DataMine is a documented acquisition route; no full-window download or
+  purchase has been made. See `BTC_EXECUTION_FIX_PROPOSAL.md`.
 
 - [ ] Add contemporaneous USDT/USD conversion or a genuine continuous BTC/USD
   feed and compare with the Binance parity-assumed proxy. Quantify peg and
@@ -30,6 +41,11 @@ This checklist reflects the application synchronized from the deployed Sites che
   03.01.1985 for the `strategy full silver long gradual` parameter set.
 
 ## Implemented
+
+- [x] Stream complete finalized engine audit rows without retaining the full
+  history, and retain only summary inputs for alternative contract selections.
+  This reduces memory without changing strategy accounting; cloud audit chunks
+  and on-demand GUI details remain pending.
 
 - [x] BTC-only execution/rebalancing accepts any whole multiple of the detected
   common market-data resolution. Intraday Treasury valuation carries the latest

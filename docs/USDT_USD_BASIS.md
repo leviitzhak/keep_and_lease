@@ -49,6 +49,12 @@ illustrative formula sensitivities, not measured results in the imported window.
 Changing `q` also affects USD direct-holding returns and the conversion value of
 inverse-futures BTC payoffs. Constant numerical denomination is not an FX hedge.
 
+The 6 September execution audit reproduces the anomaly with **regular** futures
+and identifies stale/no-trade execution as a substantial contributor; see
+[BTC_EXECUTION_FIX_PROPOSAL.md](BTC_EXECUTION_FIX_PROPOSAL.md). This does not
+measure or rule out USDT/USD deviations. The spot-linked stale-mark sensitivity
+also keeps the parity assumption and must not be described as FX correction.
+
 ## Next research control
 
 Add an independent contemporaneous USDT/USD feed and compare FX-adjusted with

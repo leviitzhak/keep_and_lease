@@ -85,6 +85,12 @@ server adapter but contains no market archives or Pyodide fallback payload.
    available for later plots, statistics, and spreadsheet exports. The worker then
    creates a deterministic gzip object with `if_generation_match=0`, CRC32C
    transport checking, and SHA-256 checksums for compressed and uncompressed bytes.
+   The imported 90-day BTC minute workload remains deployment-gated: even after
+   reducing comparison-row retention, its regular-futures GUI result measures
+   821.97 MiB and 4,231.8 MiB RSS before worker encoding buffers. Complete engine
+   audit-row streaming exists locally, but GCS audit chunks and on-demand GUI
+   retrieval are a proposal, not this deployed storage contract. See
+   [BTC_EXECUTION_FIX_PROPOSAL.md](BTC_EXECUTION_FIX_PROPOSAL.md).
 7. A final Firestore transaction records `completed`, the `gs://` result pointer,
    checksums, timings, peak RSS, execution name, and exact provenance.
 8. `GET /api/v1/backtests/{id}` reads Firestore. It also converts expired queued

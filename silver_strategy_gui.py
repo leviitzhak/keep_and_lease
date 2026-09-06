@@ -800,13 +800,20 @@ def sleeve_result(payload, market=None, product="silver"):
             slv_nav *= 1 + row["slv_daily_return_pct"] / 100
         slv_nav_values.append(slv_nav)
     comparisons = []
+    # Alternative selections need summary inputs only. Retaining their complete
+    # holding/export ledgers increases peak memory without contributing to output.
+    comparison_fields = (
+        "compounded_return_pct", "long_futures_daily_return_pct",
+        "treasury_daily_return_pct", "long_futures_notional_pct",
+        "allocation_long_lease_signal_pct", "long_weighted_maturity_days",
+        "long_futures_trade_details",
+    )
     for selection in ("weighted_lease_rate", "highest_lease_rate"):
         comparison_parameters = replace(p, long_contract_selection=selection)
         comparison_rows, _ = (rows, missing) if selection == p.long_contract_selection else run_backtest(
-            *market, comparison_parameters)
+            *market, comparison_parameters, retain_fields=comparison_fields)
         if not comparison_rows:
             continue
-        change = position_change_stats(comparison_rows)
         def compound(field):
             nav = 1.0
             for row in comparison_rows:
@@ -835,6 +842,7 @@ def sleeve_result(payload, market=None, product="silver"):
             "long_annualized_volatility_pct": annualized_volatility,
             "worst_long_day_pct": min(long_daily) if long_daily else None,
         })
+        del comparison_rows
     return {
         "_full_rows": rows,
         "series": [[row[k] for k in fields] for row in sampled],
