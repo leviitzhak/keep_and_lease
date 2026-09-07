@@ -1,5 +1,9 @@
 # Continuous BTC minute import: validation and deployment gate
 
+The later raw-trade/one-second research pilot is documented separately in
+[BTC_TRADE_PILOT.md](BTC_TRADE_PILOT.md). Its isolated replay does not replace
+the minute engine or change the full-window measurements below.
+
 Validated locally on 6 September 2026 and published on the feature branch.
 [PR #37](https://github.com/leviitzhak/keep_and_lease/pull/37) records the exact
 revision and authenticated private GCP acceptance evidence. Every candidate

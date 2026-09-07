@@ -1,0 +1,8 @@
+{
+  "rows": 1782063,
+  "orders": 378252,
+  "fills": 939158,
+  "valuations": 86400,
+  "audit_sha256": "f3cec40cd169b626e8c331e2c26b2e9e448d5f7b633428fb2236336bc98f1ae5",
+  "status": "passed"
+}

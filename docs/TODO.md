@@ -4,6 +4,11 @@ This checklist reflects the application synchronized from the deployed Sites che
 
 ## Higher priority
 
+- [ ] Review and integrate the one-day raw-trade research pilot with the GUI and
+  worker before activating second/subsecond execution. See `BTC_TRADE_PILOT.md`:
+  subsequent-trade VWAP is a participation proxy, not book depth. Preserve
+  partial fills, causal timestamps and auditability when scaling beyond one day.
+
 - [ ] Add a plot of the volume traded by the strategy, based on actual simulated
   fills (not market-wide volume).
 - [ ] Add a progress bar and cancellation option to spreadsheet generation and
