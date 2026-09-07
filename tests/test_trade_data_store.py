@@ -88,3 +88,29 @@ class TradeDataStoreTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+    def test_bounded_remote_cache_preserves_events_and_limits_range_requests(self):
+        import io
+        from trade_data_store import BlockCachedReader, partition_trades
+        class Remote(io.BytesIO):
+            def __init__(self,data):super().__init__(data);self.requests=0
+            def size(self):return len(self.getbuffer())
+            def read(self,n=-1):self.requests+=1;return super().read(n)
+        out,store=self.converted()
+        for part in store.manifest['partitions']:
+            path=out/part['path']; remote=Remote(path.read_bytes())
+            with BlockCachedReader(remote) as cached:
+                expected=list(partition_trades(path))
+                actual=list(partition_trades(cached))
+                self.assertEqual(actual,expected)
+                self.assertLessEqual(remote.requests,2)
+        remote=Remote(bytes(range(256))*64)
+        with BlockCachedReader(remote,block_size=1024,max_blocks=2) as cached:
+            for offset in [0,1200,2400,3600,0,16380,17000]:
+                cached.seek(offset)
+                self.assertEqual(cached.read(100),remote.getvalue()[offset:offset+100])
+                self.assertLessEqual(sum(map(len,cached.blocks.values())),2048)
+            cached.seek(-5,2)
+            self.assertEqual(cached.read(),remote.getvalue()[-5:])
+            with self.assertRaises(ValueError):cached.seek(-1)
+        self.assertFalse(remote.closed)

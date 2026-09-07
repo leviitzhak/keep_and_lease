@@ -9,6 +9,7 @@ import resource
 import time
 import zipfile
 from itertools import chain
+from collections import OrderedDict
 from decimal import Decimal
 from pathlib import Path
 
@@ -144,6 +145,73 @@ def convert(raw_directory, destination, *, batch_rows=16384):
     return result
 
 
+class BlockCachedReader(io.RawIOBase):
+    """Seekable GCS input with at most two 4 MiB blocks retained.
+
+    Parquet reads many small column chunks. Coalescing neighboring range reads
+    avoids one inter-region round trip per column while keeping memory bounded.
+    The caller owns the underlying NativeFile; whole-file SHA is checked first.
+    """
+    def __init__(self, stream, block_size=4 * 1024 * 1024, max_blocks=2):
+        super().__init__()
+        self.stream, self.length = stream, stream.size()
+        self.block_size, self.max_blocks = block_size, max_blocks
+        if block_size <= 0 or max_blocks <= 0:
+            raise ValueError("Cache sizes must be positive")
+        self.position, self.blocks = 0, OrderedDict()
+
+    def readable(self):
+        return True
+
+    def seekable(self):
+        return True
+
+    def tell(self):
+        return self.position
+
+    def seek(self, offset, whence=0):
+        if whence not in (0, 1, 2):
+            raise ValueError("Invalid seek mode")
+        target = offset + (0 if whence == 0 else self.position if whence == 1 else self.length)
+        if target < 0:
+            raise ValueError("Negative seek")
+        self.position = target
+        return target
+
+    def read(self, size=-1):
+        if self.closed:
+            raise ValueError("Read of closed cache")
+        size = max(0, self.length - self.position) if size is None or size < 0 else size
+        remaining = min(size, max(0, self.length - self.position))
+        result = bytearray()
+        while remaining:
+            index, offset = divmod(self.position, self.block_size)
+            if index not in self.blocks:
+                if len(self.blocks) >= self.max_blocks:
+                    self.blocks.popitem(last=False)
+                self.stream.seek(index * self.block_size)
+                block = self.stream.read(min(self.block_size, self.length - index * self.block_size))
+                if len(block) != min(self.block_size, self.length - index * self.block_size):
+                    raise OSError("Truncated remote Parquet block")
+                self.blocks[index] = block
+            self.blocks.move_to_end(index)
+            block = self.blocks[index]
+            take = min(remaining, len(block) - offset)
+            result.extend(block[offset:offset + take])
+            self.position += take
+            remaining -= take
+        return bytes(result)
+
+    def readinto(self, buffer):
+        data = self.read(len(buffer))
+        buffer[:len(data)] = data
+        return len(data)
+
+    def close(self):
+        self.blocks.clear()
+        super().close()
+
+
 def partition_trades(path, *, batch_rows=8192, start_us=None, end_us=None, symbols=None, filesystem=None):
     import pyarrow.parquet as pq
     if not 1 <= batch_rows <= 65536:
@@ -214,7 +282,12 @@ class ParquetTradeStore:
                 digest.update(block)
         if digest.hexdigest() != item["sha256"]:
             raise ValueError("Parquet checksum mismatch")
-        yield from partition_trades(path, filesystem=self.filesystem, **kwargs)
+        if self.filesystem:
+            with self.filesystem.open_input_file(path) as remote:
+                with BlockCachedReader(remote) as cached:
+                    yield from partition_trades(cached, **kwargs)
+        else:
+            yield from partition_trades(path, **kwargs)
 
     def trades(self, *, batch_rows=8192, start_us=None, end_us=None, symbols=None):
         # Open one partition at a time per venue/market, not one per historical day.

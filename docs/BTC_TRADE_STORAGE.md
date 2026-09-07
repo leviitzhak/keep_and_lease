@@ -41,6 +41,10 @@ require a separate input batch for every historical day.
 The current implementation does a bounded checksum scan before reading a selected
 partition. This deliberately adds I/O for verification. GCS reads use Arrow's
 native authenticated filesystem, without a complete temporary local-file copy.
+An LRU read cache retains at most two 4 MiB blocks per open partition. It
+coalesces small Parquet column reads while preserving full-file SHA checks and
+page checksums. Only execution columns are decoded; neighboring encoded bytes
+may be fetched in the same block.
 The Cloud Run writable filesystem consumes RAM, so large caches there must not
 be treated as free disk.
 
@@ -200,3 +204,16 @@ its normal GCP preview acceptance. The existing health/GUI operator is unchanged
 Use the GUI's [period controls](BACKTEST_PERIOD.md) for shorter minute-engine
 runs. The uploaded raw-trade period is tested directly from GCS by the research
 runner; this does not activate a one-second GUI provider or download 90 days.
+
+
+### Bounded remote read cache
+
+The first live GCS validation ran much longer than the local replay. A local
+Parquet I/O trace found 2,778 read calls for the spot partition (17,193,813 bytes
+requested); replaying that access pattern with two 4 MiB cache blocks requires
+only seven block loads. The reader now uses this bounded cache for remote
+partitions. This is an I/O optimization, with unchanged schema, events, prices,
+strategy clock and accounting. Cache tests check exact decoded events, eviction,
+EOF, seeks and the retained-byte bound; the full pilot comparison verifies all
+5,739,608 events against the original local reader. Live timings are recorded
+with the cloud validation outcome in PR #38.
