@@ -240,6 +240,7 @@ jobs:
           KEEP_AND_LEASE_ID_TOKEN: ${{ steps.health_auth.outputs.id_token }}
           KEEP_AND_LEASE_EXPECTED_COMMIT: ${{ github.sha }}
           KEEP_AND_LEASE_RUN_SMOKE_STRATEGY: "true"
+          KEEP_AND_LEASE_RUN_SUBSECOND: "true"
           KEEP_AND_LEASE_OUTPUT_DIR: ${{ runner.temp }}/deployment-smoke
         run: |
           set -euo pipefail

@@ -1,12 +1,16 @@
 # Keep & Lease — Project State
 
-_Last updated: 2026-09-06_
+_Last updated: 2026-09-07_
 
 ## Purpose
 
 Build an interactive research and backtesting application for strategies that allocate among commodity ETFs, commodity futures across maturities, and Treasury/cash instruments. The application should expose all economically meaningful parameters in a GUI and make the daily decisions auditable.
 
 ## Current scope
+
+- Optional bounded BTC trade replay: June 25 uploaded data, millisecond decision
+  clocks, GCS worker audit, charts and full valuation CSV. See
+  [BTC_SUBSECOND_GUI.md](BTC_SUBSECOND_GUI.md) and `CURRENT_WORK.md` for preview status.
 
 - Commodities: silver, gold, S&P 500, and BTC through the same registered-market
   framework, with other data-backed commodities remaining extensible.

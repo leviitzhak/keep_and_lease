@@ -1,6 +1,14 @@
 # Backtest Engine
 
-## Time convention
+## Trade replay
+
+The optional `btc_data_source=trade_tape` path uses the uploaded June 25 raw
+trade dataset, with a positive whole-millisecond decision clock, subsequent
+partial fills and a bounded streamed audit. It bypasses the candle timeline
+and market loading below. See [BTC_SUBSECOND_GUI.md](BTC_SUBSECOND_GUI.md) for
+supported settings, limits and account conventions. The default is `minute`.
+
+## Time convention (candle engine)
 
 Signals use information available at observation `t`. The `reactivity`
 parameter executes changes either at that observation (`same_day`) or at the
@@ -11,7 +19,7 @@ instrument's actual trading calendar rather than a fixed timedelta.
 For a BTC-only commodity portfolio, `execution_interval_seconds=0` selects every
 common spot/futures mark. A positive value selects the next available mark at
 that cadence and must be a whole multiple of the finest detected common-market
-resolution. Requests finer than the data are rejected. The active BTC path uses
+resolution. Requests finer than the data are rejected. The default BTC path uses
 Binance BTC/USDT one-minute trade candles and Deribit one-minute dated-futures
 candles, so its finest interval is 60 seconds. Binance prices are a USD proxy
 assuming USDT/USD=1, not FX-adjusted USD prices. The continuous packaged window

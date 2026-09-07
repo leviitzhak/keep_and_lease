@@ -1,8 +1,8 @@
 # Immutable BTC trade storage: pilot implementation
 
 The first storage phase converts the verified 25 June 2026 raw-trade pilot into
-Parquet and reads it through the existing research account. It remains separate
-from the production GUI minute provider. The original silver/BTC strategies and
+Parquet and reads it through the existing research account. The GUI now offers it as an explicit bounded trade-replay source alongside
+the unchanged minute provider; see [BTC_SUBSECOND_GUI.md](BTC_SUBSECOND_GUI.md). The original silver/BTC strategies and
 source archives are preserved. Review: [PR #38](https://github.com/leviitzhak/keep_and_lease/pull/38).
 
 ## Format and identity
@@ -71,8 +71,8 @@ python scripts/check-btc-trade-pilot.py --parquet work/btc-trade-parquet/validat
 Use fresh output paths for reruns. `--data work/no-raw-inputs` demonstrates that
 the Parquet replay does not open the source archives. It still reads the existing
 causal Treasury files and saved strategy. Optional Arrow/storage dependencies are
-isolated in `requirements-trade-data.txt`; production image requirements are not
-changed. The uploader's API-core version matches the cloud stack's documented
+listed in `requirements-trade-data.txt`; the calculation worker now also
+installs Arrow 25.0.0 for GUI trade replay. The uploader's API-core version matches the cloud stack's documented
 Firestore routing fix.
 
 ## Cloud publication
@@ -202,7 +202,8 @@ at least 90 days requires the following changes:
    90-day preview run within the configured resource and output limits.
 
 The current research runner still explicitly accepts one UTC day. Production
-worker and GUI activation remain after these gates.
+multi-day worker/GUI activation remains after these gates. The one-day bounded
+GUI path is implemented in `BTC_SUBSECOND_GUI.md`.
 
 ## Giving automation access to the bucket
 
@@ -267,7 +268,8 @@ its normal GCP preview acceptance. The existing health/GUI operator is unchanged
 
 Use the GUI's [period controls](BACKTEST_PERIOD.md) for shorter minute-engine
 runs. The uploaded raw-trade period is tested directly from GCS by the research
-runner; this does not activate a one-second GUI provider or download 90 days.
+runner; the optional one-day GUI provider is now documented in
+`BTC_SUBSECOND_GUI.md`. No 90-day trade dataset is activated.
 
 
 ### Bounded remote read cache

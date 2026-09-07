@@ -59,6 +59,13 @@ class StrategyEngine:
     ) -> dict[str, Any]:
         gui.backtest_bounds(parameters)
         notify = progress or (lambda _stage, _detail: None)
+        from btc_trade_backtest import validate, run
+        if validate(parameters) is not None:
+            if audit_collection is None:
+                from backtest_audit import AuditCollection, MemoryAuditStore
+                audit_collection = AuditCollection(MemoryAuditStore())
+            with self._execution_lock:
+                return run(parameters, self.data_root, audit_collection, notify)
         self.load(notify)
         notify("running", "Running the requested backtest")
         with self._execution_lock:
@@ -72,6 +79,8 @@ class StrategyEngine:
     def inspect_day(
         self, parameters: dict[str, Any], requested_date: str
     ) -> dict[str, Any]:
+        if parameters.get("btc_data_source") == "trade_tape":
+            raise ValueError("Use the completed trade replay audit for subsecond holdings and marks")
         self.load()
         with self._execution_lock:
             return gui.inspection_for_day(parameters, requested_date)

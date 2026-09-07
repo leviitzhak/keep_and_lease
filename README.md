@@ -111,3 +111,11 @@ and the corresponding formula for `r_keep(t)`. This is equivalent to scaling eac
 `NAV(t) = P(t) / P(0) * product(s <= t)[1 + r_lease(s) + r_keep(s)]`.
 
 The prior standalone-compounded and multiplicative-attribution plot families are retained in the calculation output for compatibility but are not displayed in the GUI.
+
+## Subsecond BTC research runs
+
+Choose **BTC market data → Trade replay (research) → Load 500 ms BTC example**,
+then **Run strategy**. Uploaded coverage is 25 June 2026 UTC. Supported clocks
+start at 0.001 seconds, subject to a 200,000-decision window limit. See
+[BTC subsecond GUI](docs/BTC_SUBSECOND_GUI.md) for assumptions, settings and
+full-resolution audit/CSV downloads.
