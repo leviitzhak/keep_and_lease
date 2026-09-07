@@ -5,7 +5,9 @@ on:
     branches:
       - "**"
     paths-ignore:
-      - .cloud-agent/requests/**
+      - ".cloud-agent/requests/**"
+      - "docs/**"
+      - "**/*.md"
   workflow_dispatch:
     inputs:
       deployment_target:

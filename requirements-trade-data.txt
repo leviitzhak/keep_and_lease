@@ -1,5 +1,0 @@
-# Optional offline ingestion/research tools; not required by the current GUI.
-pyarrow==25.0.0
-# Optional publication CLI uses the existing cloud stack's compatible API core.
-google-cloud-storage==3.13.1
-google-api-core==2.34.0

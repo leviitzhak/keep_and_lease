@@ -227,11 +227,18 @@ is rejected unless its selected ref is `master`. The workflow:
 
 Every deployable non-`master` branch push automatically runs **Deploy Google Cloud
 workloads** for that exact commit against the private preview target. This includes
-branches outside `agent/**` and documentation-only commits. A push changing only
-`.cloud-agent/requests/**` is intentionally ignored so an operator check cannot
-replace or race the preview revision it names. Manual dispatch with
+branches outside `agent/**`. A push changing only `docs/**`, Markdown files, or
+`.cloud-agent/requests/**` is intentionally ignored. A mixed commit that also
+changes application, deployment, infrastructure, or data files still deploys.
+The request exclusion prevents an operator check from replacing or racing the
+preview revision it names. Manual dispatch with
 `deployment_target=preview` and `allow_unauthenticated=false` remains available
 for a rerun without another commit.
+
+For an exceptional non-documentation push that is explicitly authorized not to
+run any push-triggered GitHub Actions, include `[skip ci]` in the commit message.
+Use this only when the omitted deployment and checks are intentional; the path
+filters are the normal mechanism for documentation-only changes.
 
 There is one shared preview service, not one service per branch. Non-`master`
 deployment runs use the same concurrency group and are serialized; the most recent
