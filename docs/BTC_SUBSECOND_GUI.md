@@ -115,3 +115,11 @@ the strategy. The fixture now uses the canonical form. Its request diagnostics
 also distinguish a successfully downloaded CSV from a failed navigation: only
 a CSV whose saved content passed row-count verification may ignore the browser
 `net::ERR_ABORTED` download-navigation event.
+
+Final private GCP acceptance passed on 7 September 2026 for revision
+`ef0000cb294c622d8e8d40973b8c2cb1ca065042`,
+[workflow 34149398811](https://github.com/leviitzhak/keep_and_lease/actions/runs/34149398811).
+The rendered GUI passed 500 ms/GCS financial equivalence, all 600 CSV valuation
+rows, audit access, hover, and a 1 ms decision clock on fractional UTC bounds.
+The multi-commodity baseline also passed. The branch is ready for review in
+[PR #39](https://github.com/leviitzhak/keep_and_lease/pull/39); it is not merged.
