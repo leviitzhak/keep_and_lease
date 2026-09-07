@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "request_id": "health-gui-example",
+  "target": "preview",
+  "actions": ["health", "gui"]
+}

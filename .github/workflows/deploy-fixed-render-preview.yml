@@ -1,0 +1,115 @@
+name: Deploy fixed Render preview
+
+on:
+  push:
+    branches:
+      - agent/multi-commodity-preview
+  workflow_dispatch:
+
+concurrency:
+  group: fixed-render-preview
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      DEPLOY_SHA: ${{ github.sha }}
+      PREVIEW_API_URL: ${{ vars.PREVIEW_API_URL }}
+      PREVIEW_GUI_URL: ${{ vars.PREVIEW_GUI_URL }}
+
+    steps:
+      - name: Validate deployment configuration
+        env:
+          API_HOOK: ${{ secrets.RENDER_PREVIEW_API_DEPLOY_HOOK }}
+          GUI_HOOK: ${{ secrets.RENDER_PREVIEW_GUI_DEPLOY_HOOK }}
+        run: |
+          set -euo pipefail
+          test -n "$API_HOOK" || { echo "Missing RENDER_PREVIEW_API_DEPLOY_HOOK"; exit 1; }
+          test -n "$GUI_HOOK" || { echo "Missing RENDER_PREVIEW_GUI_DEPLOY_HOOK"; exit 1; }
+          test -n "$PREVIEW_API_URL" || { echo "Missing PREVIEW_API_URL"; exit 1; }
+          test -n "$PREVIEW_GUI_URL" || { echo "Missing PREVIEW_GUI_URL"; exit 1; }
+
+      - name: Trigger API and GUI deployments
+        env:
+          API_HOOK: ${{ secrets.RENDER_PREVIEW_API_DEPLOY_HOOK }}
+          GUI_HOOK: ${{ secrets.RENDER_PREVIEW_GUI_DEPLOY_HOOK }}
+        run: |
+          set -euo pipefail
+
+          trigger_deploy() {
+            local hook="$1"
+            local output="$2"
+            local separator="?"
+            if [[ "$hook" == *"?"* ]]; then
+              separator="&"
+            fi
+            curl --fail --silent --show-error --request POST \
+              --output "$output" \
+              "${hook}${separator}ref=${DEPLOY_SHA}"
+          }
+
+          trigger_deploy "$API_HOOK" /tmp/api-deploy.json &
+          api_pid=$!
+          trigger_deploy "$GUI_HOOK" /tmp/gui-deploy.json &
+          gui_pid=$!
+          wait "$api_pid"
+          wait "$gui_pid"
+          echo "Both Render deployments were accepted for ${DEPLOY_SHA}."
+
+      - name: Wait for the same commit on both services
+        run: |
+          set -euo pipefail
+
+          for attempt in $(seq 1 180); do
+            api_json="$(curl --fail --silent \
+              "${PREVIEW_API_URL}/api/v1/health" || true)"
+            gui_json="$(curl --fail --silent \
+              "${PREVIEW_GUI_URL}/build-info.json" || true)"
+
+            api_commit="$(jq -r '.engine_commit // empty' \
+              <<<"$api_json" 2>/dev/null || true)"
+            gui_commit="$(jq -r '.commit // empty' \
+              <<<"$gui_json" 2>/dev/null || true)"
+
+            echo "Attempt ${attempt}: API=${api_commit:-unavailable}, GUI=${gui_commit:-unavailable}"
+
+            if [[ "$api_commit" == "$DEPLOY_SHA" && "$gui_commit" == "$DEPLOY_SHA" ]]; then
+              echo "Both services are running ${DEPLOY_SHA}."
+              break
+            fi
+
+            if [[ "$attempt" == "180" ]]; then
+              echo "Timed out waiting for matching Render deployments."
+              exit 1
+            fi
+            sleep 10
+          done
+
+      - name: Verify GUI-to-API wiring
+        run: |
+          set -euo pipefail
+          configured_api="$(
+            curl --fail --silent "${PREVIEW_GUI_URL}/compute-config.json" |
+              jq -r '.apiBaseUrl // empty'
+          )"
+          if [[ "${configured_api%/}" != "${PREVIEW_API_URL%/}" ]]; then
+            echo "GUI API URL mismatch: ${configured_api:-empty}"
+            exit 1
+          fi
+          curl --fail --silent "${PREVIEW_API_URL}/api/v1/health" | jq .
+
+      - name: Publish preview addresses
+        run: |
+          {
+            echo "## Fixed Render preview"
+            echo
+            echo "- Commit: \`${DEPLOY_SHA}\`"
+            echo "- GUI: ${PREVIEW_GUI_URL}"
+            echo "- API health: ${PREVIEW_API_URL}/api/v1/health"
+            echo "- Strict server mode: ${PREVIEW_GUI_URL}/?engine=server"
+          } >> "$GITHUB_STEP_SUMMARY"

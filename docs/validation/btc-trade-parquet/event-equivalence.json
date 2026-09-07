@@ -1,0 +1,7 @@
+{
+  "status": "passed",
+  "events": 5739608,
+  "event_stream_sha256": "03d0e0a17eaa66a1d941b975178ea5e0b7125ce8a394da0e0a22baef6162f69d",
+  "wall_seconds": 61.385213382000074,
+  "parquet_manifest_sha256": "98c30c7156e872e72066e528a1415340f0c545270c248849760fbd40a0002f6f"
+}
