@@ -121,7 +121,7 @@ Completed-job audit routes use the same authenticated owner check as the result:
   one complete dataset. Object names are validated against the stored manifest;
   arbitrary bucket paths are not accepted.
 
-Only the active `agent/btc-binance-minute-data` feature branch additionally runs
+The `agent/btc-binance-minute-data` and `agent/btc-trade-pilot` feature branches additionally run
 full BTC acceptance after the normal multi-commodity deployment smoke. A fresh
 short-lived machine token is minted; the browser loads the saved regular preset,
 checks the exact result/resource bounds, reads first/last chunks, loads one day
@@ -227,11 +227,18 @@ is rejected unless its selected ref is `master`. The workflow:
 
 Every deployable non-`master` branch push automatically runs **Deploy Google Cloud
 workloads** for that exact commit against the private preview target. This includes
-branches outside `agent/**` and documentation-only commits. A push changing only
-`.cloud-agent/requests/**` is intentionally ignored so an operator check cannot
-replace or race the preview revision it names. Manual dispatch with
+branches outside `agent/**`. A push changing only `docs/**`, Markdown files, or
+`.cloud-agent/requests/**` is intentionally ignored. A mixed commit that also
+changes application, deployment, infrastructure, or data files still deploys.
+The request exclusion prevents an operator check from replacing or racing the
+preview revision it names. Manual dispatch with
 `deployment_target=preview` and `allow_unauthenticated=false` remains available
 for a rerun without another commit.
+
+For an exceptional non-documentation push that is explicitly authorized not to
+run any push-triggered GitHub Actions, include `[skip ci]` in the commit message.
+Use this only when the omitted deployment and checks are intentional; the path
+filters are the normal mechanism for documentation-only changes.
 
 There is one shared preview service, not one service per branch. Non-`master`
 deployment runs use the same concurrency group and are serialized; the most recent
@@ -543,6 +550,11 @@ commodities, and columns. Raw source archives remain available for audit. This
 migration must create a manifest and numerical equivalence fixtures before the
 bundled inputs are removed.
 
+The BTC raw-trade pilot now implements local Parquet conversion, bounded replay,
+and create-only GCS publication tooling, with raw/normalized equivalence checks.
+See `BTC_TRADE_STORAGE.md`. It has not replaced the production provider; actual
+GCS publication/read access and multi-day checkpoint integration remain gates.
+
 The synchronous `POST /api/v1/inspections` endpoint also remains local/Render-only;
 the scale-to-zero web service returns `503` because it must not load full market
 histories. Cloud inspection should be derived from a completed result or submitted
@@ -589,3 +601,25 @@ Do not make deletion of canonical data or Terraform state an implicit applicatio
 teardown step. Cloud Run workloads can be destroyed independently from
 `infra/gcp/workloads/`. Raw data, manifests, required results, audit metadata, and
 both Terraform state buckets require an explicit retention decision.
+
+
+### Browser transport recovery
+
+The Cloud Run config disables the unavailable Pyodide fallback. The server adapter
+uses bounded request deadlines and retries status/result reads against the same
+job, retaining its ID for an unchanged-parameter reconnect. It does not retry
+ambiguous creation requests automatically. See
+[BTC_CONNECTION_RECOVERY.md](BTC_CONNECTION_RECOVERY.md) for timings, diagnostics
+and limitations, and [BTC_TRADE_STORAGE.md](BTC_TRADE_STORAGE.md#giving-automation-access-to-the-bucket)
+for the separate, proposed market-bucket IAM setup.
+
+
+### Selected-period backtests and trade ingestion
+
+`backtest_start` / `backtest_end` restrict the actual simulation and comparison
+runs; see [BACKTEST_PERIOD.md](BACKTEST_PERIOD.md). The preview BTC gate now also
+fills a one-day range in the GUI and checks fresh NAV and complete 1,440-interval
+audit coverage. Cold market initialization still loads the packaged history.
+The separate [bounded GCS pilot](BTC_TRADE_STORAGE.md#running-the-bounded-cloud-pilot)
+uses the owner's newly granted market-bucket roles and the existing operator OIDC
+identity; it does not change the GUI market provider or cloud resource limits.

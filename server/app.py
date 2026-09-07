@@ -109,8 +109,9 @@ def create_app(
         }
 
     @app.get("/compute-config.json", include_in_schema=False)
-    def compute_config() -> dict[str, str]:
-        return {"apiBaseUrl": ""}
+    def compute_config() -> dict[str, Any]:
+        # The web image serves the server adapter, not the Pyodide runtime/data.
+        return {"apiBaseUrl": "", "browserFallback": False}
 
     def requester_id(request: Request) -> str | None:
         raw = (

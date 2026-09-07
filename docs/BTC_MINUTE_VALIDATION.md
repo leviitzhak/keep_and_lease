@@ -1,5 +1,9 @@
 # Continuous BTC minute import: validation and deployment gate
 
+The later raw-trade/one-second research pilot is documented separately in
+[BTC_TRADE_PILOT.md](BTC_TRADE_PILOT.md). Its isolated replay does not replace
+the minute engine or change the full-window measurements below.
+
 Validated locally on 6 September 2026 and published on the feature branch.
 [PR #37](https://github.com/leviitzhak/keep_and_lease/pull/37) records the exact
 revision and authenticated private GCP acceptance evidence. Every candidate
@@ -229,3 +233,14 @@ fee sensitivity and verifies that both the fee and observed execution mode
 survive import. Previously, the legacy fallback replaced the BTC profile with
 top-level defaults when no silver profile was present. CLI financial results
 were unaffected because the harness reads the saved BTC profile directly.
+
+
+### Interrupted connection recovery
+
+The trade-storage follow-up branch now runs the same full BTC minute preview
+acceptance gate, including a one-day GUI workbook, after changes to the server
+adapter. Previously that gate was restricted to the original minute branch.
+[BTC_CONNECTION_RECOVERY.md](BTC_CONNECTION_RECOVERY.md) explains the reported
+failure, confirmed adapter defects, bounded retries, and remaining uncertainty.
+The new adapter tests simulate transport/authentication problems; exact deployed
+acceptance results are recorded in PR #38.

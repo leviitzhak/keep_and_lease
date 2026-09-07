@@ -424,7 +424,7 @@ test("loads authenticated market assets sequentially with retries", async () => 
   assert.doesNotMatch(worker, /Promise\.all\(DATA_FILES/);
 });
 
-test("uses the server adapter while preserving the Pyodide worker fallback", async () => {
+test("uses the server adapter with deployment-aware browser initialization", async () => {
   const html = await readFile(
     new URL("../public/silver_strategy_gui.html", import.meta.url),
     "utf8",
@@ -442,8 +442,8 @@ test("uses the server adapter while preserving the Pyodide worker fallback", asy
   assert.match(adapter, /Empty response from/);
   assert.match(adapter, /Invalid JSON from/);
   assert.match(adapter, /result without a summary/);
-  assert.match(adapter, /function runBrowserRequest/);
-  assert.match(adapter, /config\.requestedEngine === "auto"/);
+  assert.doesNotMatch(adapter, /function runBrowserRequest/);
+  assert.match(adapter, /config\.browserFallback === false/);
   assert.match(html, /if\(data\.result==null\)/);
   assert.match(html, /!data\.summary/);
 });
@@ -598,4 +598,40 @@ test("embedded GUI script is syntactically valid", async () => {
   const match = html.match(/<script>([\s\S]*?)<\/script>/);
   assert.ok(match);
   assert.doesNotThrow(() => new Function(match[1]));
+});
+
+test("backtest UTC boundaries persist and older presets clear a previous range", async()=>{
+  const html=await readFile(new URL('../public/silver_strategy_gui.html',import.meta.url),'utf8');
+  for(const name of ['backtest_start','backtest_end'])assert.match(html,new RegExp('name="'+name+'" type="datetime-local"'));
+  const source=html.split('\n').find(line=>line.startsWith('function applyParameters('));
+  const fields=new Map(['backtest_start','backtest_end'].map(name=>[name,{value:''}]));
+  const context={commodityProfiles:{},COMMODITIES:['silver','btc'],LEG_FIELDS:[],
+    form:{elements:{namedItem:name=>fields.get(name)}},loadCommodity:()=>{}};
+  vm.runInNewContext(source,context);
+  context.applyParameters({backtest_start:'2026-06-25T03:00:00+03:00',backtest_end:'2026-06-26'});
+  assert.equal(fields.get('backtest_start').value,'2026-06-25T00:00:00');
+  assert.equal(fields.get('backtest_end').value,'2026-06-26T00:00:00');
+  context.applyParameters({});
+  assert.equal(fields.get('backtest_start').value,'');
+  assert.equal(fields.get('backtest_end').value,'');
+  const normalize=html.split('\n').find(line=>line.startsWith('function normalizePortfolioResult('));
+  const ctx={};vm.runInNewContext(normalize,ctx);
+  const period={actual_start:'2026-06-25',actual_end:'2026-06-26'};
+  assert.equal(ctx.normalizePortfolioResult({commodity_sleeves:{btc:{}},backtest_period:period}).backtest_period,period);
+});
+
+
+test("backtest boundaries are portfolio settings rather than commodity profiles", async()=>{
+  const html=await readFile(new URL('../public/silver_strategy_gui.html',import.meta.url),'utf8');
+  const globalLine=html.split('\n').find(line=>line.startsWith('const GLOBAL_FIELDS='));
+  const legLine=html.split('\n').find(line=>line.startsWith('const LEG_FIELDS='));
+  const capture=html.split('\n').find(line=>line.startsWith('function captureCommodity('));
+  const fields=[{name:'backtest_start',value:'2026-06-25T00:00'},
+    {name:'backtest_end',value:'2026-06-26T00:00'},{name:'min_days',value:'10'}];
+  fields.namedItem=name=>fields.find(f=>f.name===name);
+  const ctx={form:{elements:fields},commodityProfiles:{},activeCommodity:'btc'};
+  vm.runInNewContext(globalLine+'\n'+legLine+'\n'+capture+'\ncaptureCommodity();',ctx);
+  assert.equal(ctx.commodityProfiles.btc.min_days,'10');
+  assert.equal(Object.hasOwn(ctx.commodityProfiles.btc,'backtest_start'),false);
+  assert.equal(Object.hasOwn(ctx.commodityProfiles.btc,'backtest_end'),false);
 });

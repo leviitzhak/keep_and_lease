@@ -4,9 +4,29 @@ This checklist reflects the application synchronized from the deployed Sites che
 
 ## Higher priority
 
+- [x] Complete authenticated GCS publication/read validation for the tested
+  Parquet trade pilot. All 5,739,608 events, both financial summaries and both
+  complete audit hashes matched from GCS; see `BTC_TRADE_STORAGE.md`.
+
+- [x] Prevent automatic GCP deployments for documentation-only pushes. The
+  deployment workflow ignores `docs/**` and Markdown-only changes while mixed
+  application/documentation commits continue to deploy.
+
+- [ ] Prepare one-second backtests of at least 90 days using the ordered
+  implementation plan in `BTC_TRADE_STORAGE.md`: resumable daily ingestion and
+  range manifests; selected-partition reads; phase timing; continuous account
+  checkpoints; direct-to-GCS audit chunks; durable progress/cancel/resume;
+  shared verified inputs for main/comparison calculations; on-demand exports;
+  and multi-day equivalence, recovery and resource acceptance. Do not reset
+  holdings, pending fills, smoothing or Treasury accrual at day boundaries.
+
+- [ ] Review and integrate the one-day raw-trade research pilot with the GUI and
+  worker before activating second/subsecond execution. See `BTC_TRADE_PILOT.md`:
+  subsequent-trade VWAP is a participation proxy, not book depth. Preserve
+  partial fills, causal timestamps and auditability when scaling beyond one day.
+
 - [ ] Add a plot of the volume traded by the strategy, based on actual simulated
   fills (not market-wide volume).
-- [ ] Change deployment automatic workflow to not trigger a deployment for changes on the documentation only.
 - [ ] Add a progress bar and cancellation option to spreadsheet generation and
   download.
 - [ ] Add a progress bar when loading detailed plots.

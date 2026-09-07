@@ -6,20 +6,40 @@ branch._
 
 ## Active change set
 
-- Status: the approved regular BTC execution and on-demand audit redesign is
-  implemented, locally validated and published for private preview acceptance. Full 60-second execution retains 129,599
+- Current follow-up branch: `agent/btc-trade-pilot`, based on GitHub master
+  `5c79530c690a957c9b9677d228fbaeba1bd2cb0d`. PR #37 was merged with user approval;
+  the minute work below is completed history. This follow-up adds a one-day
+  raw-trade research replay and storage measurements; see
+  [BTC_TRADE_PILOT.md](BTC_TRADE_PILOT.md). The GUI still uses minute data.
+  The new pilot has not been approved for merge into master.
+  [PR #38](https://github.com/leviitzhak/keep_and_lease/pull/38) now also contains
+  the Parquet storage follow-up: [BTC_TRADE_STORAGE.md](BTC_TRADE_STORAGE.md).
+  The owner granted the operator bucket create/read access. The bounded GCS
+  upload/replay passed for all 5,739,608 events and both complete audit hashes,
+  with an 8 MiB remote-read cache per open partition. The measured capacity
+  replay took 145.35 seconds from GCS versus 87.34 seconds locally. The ordered
+  preparation plan for 90-day execution is in `BTC_TRADE_STORAGE.md`;
+  multi-day trade-worker/GUI integration remains outstanding.
+  Explicit UTC backtest start/end controls now restrict strategy computation;
+  see [BACKTEST_PERIOD.md](BACKTEST_PERIOD.md).
+  The latest follow-up fixes interrupted server-job polling and disables the
+  unavailable Cloud Run browser fallback; see [BTC_CONNECTION_RECOVERY.md](BTC_CONNECTION_RECOVERY.md).
+  The original user connection failure has no job ID/HTTP status, so its
+  underlying cause remains unconfirmed.
+
+- Previous change status: the approved regular BTC execution and on-demand audit
+  redesign was validated in private preview and merged in PR #37. Full 60-second execution retains 129,599
   intervals: +43.7336% at zero costs versus +32.8014% direct holding; an illustrative
   1 bp fee per side changes the strategy result to −39.8437%. The original silver
   strategy and all three BTC presets are preserved in `strategies/`.
   The full worker path measures 3,186.3 MiB RAM and 63.54 MiB initial JSON under
   the unchanged 4 GiB / 256 MiB limits. Complete ledgers are stored as immutable
   audit chunks. See [the findings and implementation](BTC_EXECUTION_FIX_PROPOSAL.md)
-  and [validation/caveats](BTC_MINUTE_VALIDATION.md). The exact feature revision
-  must pass the authenticated deployment workflow before preview approval.
+  and [validation/caveats](BTC_MINUTE_VALIDATION.md).
   The user approved merging this change into master, with the follow-up
   visualization, progress/cancellation and order-book research tasks in `TODO.md`.
-- Active branch: `agent/btc-binance-minute-data`
-- Active review and exact-revision deployment evidence: [draft PR #37](https://github.com/leviitzhak/keep_and_lease/pull/37).
+- Previous branch: `agent/btc-binance-minute-data`
+- Completed review and deployment evidence: [merged PR #37](https://github.com/leviitzhak/keep_and_lease/pull/37).
 - Previous generalized application review: [PR #22 — Complete generalized multi-commodity implementation](https://github.com/leviitzhak/keep_and_lease/pull/22)
 - Render services' configured source branch: [`agent/fixed-render-preview-deploys`](https://github.com/leviitzhak/keep_and_lease/tree/agent/fixed-render-preview-deploys). Deploy hooks override this default with the exact commit pushed to the current implementation branch.
 - Application version: `1.3`

@@ -57,6 +57,7 @@ class StrategyEngine:
         self, parameters: dict[str, Any], progress: ProgressCallback | None = None,
         *, audit_collection=None,
     ) -> dict[str, Any]:
+        gui.backtest_bounds(parameters)
         notify = progress or (lambda _stage, _detail: None)
         self.load(notify)
         notify("running", "Running the requested backtest")

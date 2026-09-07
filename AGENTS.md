@@ -95,12 +95,13 @@ Do not leave obsolete behavior documented or completed work listed as pending.
 
 ## Preview deployment after changes
 
-Every push to a non-`master` branch automatically deploys that exact commit to
-the shared preview target. Every push to `master` automatically deploys that exact
-commit to stable. Documentation-only pushes also redeploy their corresponding
-target. The only exception is a push that changes only
-`.cloud-agent/requests/**`; those bounded diagnostic requests must not replace or
-race the preview revision they are intended to inspect.
+Every push containing application, deployment, infrastructure, or data changes
+to a non-`master` branch automatically deploys that exact commit to the shared
+preview target. The corresponding pushes to `master` deploy to stable. A push
+changing only `docs/**`, Markdown files, or `.cloud-agent/requests/**` is ignored
+by the deployment workflow. A mixed commit still deploys. The diagnostic request
+exception prevents an operator check from replacing or racing the preview
+revision it is intended to inspect.
 
 The authoritative preview path is the GitHub Actions workflow **Deploy Google
 Cloud workloads** (`.github/workflows/deploy-google-cloud.yml`). Push any

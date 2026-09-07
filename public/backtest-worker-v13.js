@@ -12,27 +12,55 @@ function report(message, detail = "", progress = null) {
 function apiUrl(base, path) {
   return new URL(path, base.endsWith("/") ? base : `${base}/`).href;
 }
-async function jsonRequest(url, options = {}) {
-  const response = await fetch(url, {
-    ...options,
-    headers: {"content-type": "application/json", ...(options.headers || {})},
-    cache: "no-store",
-  });
-  const raw = await response.text();
-  let body = null, parseError = null;
-  if (raw) {
-    try { body = JSON.parse(raw); } catch (error) { parseError = error; }
+async function jsonRequest(url, options = {}, timeoutMs = 30000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, {
+      ...options, signal: controller.signal,
+      headers: {"content-type": "application/json", ...(options.headers || {})},
+      cache: "no-store",
+    });
+    if (response.status === 401 || response.status === 403 || response.redirected) {
+      throw new Error("Preview sign-in is required or access was denied. Open the preview again to sign in.");
+    }
+    if (!response.ok) {
+      const raw = await response.text();
+      let detail;
+      try { const body = JSON.parse(raw); detail = body.detail || body.error; } catch { /* HTTP fallback */ }
+      const error = new Error(detail
+        ? (typeof detail === "string" ? detail : JSON.stringify(detail))
+        : `HTTP ${response.status} from ${new URL(url).pathname}`);
+      error.retryable = [408, 429, 500, 502, 503, 504].includes(response.status);
+      throw error;
+    }
+    const raw = await response.text();
+    if (!raw) throw new Error(`Empty response from ${new URL(url).pathname}`);
+    try { return JSON.parse(raw); } catch (error) {
+      const type = response.headers.get("content-type") || "unknown content type";
+      throw new Error(`Invalid JSON from ${new URL(url).pathname} (${type}). Check preview sign-in. ${error.message}`);
+    }
+  } catch (error) {
+    if (controller.signal.aborted) {
+      const timeout = new Error(`Request timed out after ${timeoutMs / 1000}s: ${new URL(url).pathname}`);
+      timeout.retryable = true;
+      throw timeout;
+    }
+    if (error instanceof TypeError) error.retryable = true;
+    throw error;
+  } finally {
+    clearTimeout(timer);
   }
-  if (!response.ok) {
-    const detail = body?.detail || body?.error || `HTTP ${response.status}`;
-    throw new Error(typeof detail === "string" ? detail : JSON.stringify(detail));
+}
+async function readJobJson(url, jobId, {timeoutMs = 30000, attempts = 5} = {}) {
+  for (let attempt = 1; ; attempt++) {
+    try { return await jsonRequest(url, {}, timeoutMs); } catch (error) {
+      if (!error.retryable || attempt >= attempts) throw error;
+      report("Reconnecting to server calculation",
+        `Job ${jobId} · ${error.message} · retry ${attempt}/${attempts - 1}`);
+      await delay(Math.min(1000 * 2 ** (attempt - 1), 8000));
+    }
   }
-  if (!raw) throw new Error(`Empty response from ${new URL(url).pathname}`);
-  if (parseError) {
-    const type = response.headers.get("content-type") || "unknown content type";
-    throw new Error(`Invalid JSON from ${new URL(url).pathname} (${type}): ${parseError.message}`);
-  }
-  return body;
 }
 async function readConfiguration() {
   const ownUrl = new URL(self.location.href);
@@ -58,6 +86,10 @@ function usePyodide(reason) {
 async function initialize() {
   const config = await readConfiguration();
   if (config.requestedEngine === "pyodide") {
+    if (config.browserFallback === false) {
+      self.postMessage({type: "error", error: "Browser calculation is unavailable on this deployment. Select the server engine."});
+      return;
+    }
     usePyodide("selected explicitly");
     return;
   }
@@ -68,62 +100,63 @@ async function initialize() {
     if (health.schema_version !== 1) throw new Error("Unsupported server schema");
     report("Server calculation ready", health.loaded ? "market cache is warm" : "market data will load on the first run", 1);
     self.postMessage({type: "ready", engine: "server", capabilities: health});
-    self.onmessage = event => handleServerMessage(
-      base, event.data, config.requestedEngine === "auto"
-    );
+    self.onmessage = event => handleServerMessage(base, event.data);
   } catch (error) {
-    if (config.requestedEngine === "server") {
+    if (config.requestedEngine === "server" || config.browserFallback === false) {
       self.postMessage({type: "error", error: `Calculation server unavailable: ${error.message || error}`});
       return;
     }
     usePyodide(`calculation server unavailable: ${error.message || error}`);
   }
 }
+// Retain a disconnected job for a same-parameter retry in this page's worker.
+// The server also deduplicates submissions by owner, parameters and provenance.
+let pendingBacktest = null;
 async function runServerBacktest(base, data) {
-  const created = await jsonRequest(apiUrl(base, "/api/v1/backtests"), {
-    method: "POST",
-    body: JSON.stringify({schema_version: 1, parameters: data.payload || {}}),
-  });
+  const parameters = JSON.stringify({schema_version: 1, parameters: data.payload || {}});
+  let created = pendingBacktest?.base === base && pendingBacktest.parameters === parameters
+    ? pendingBacktest.created : null;
+  if (!created) {
+    // Never automatically repeat a POST: a lost response may hide a successful submission.
+    try {
+      created = await jsonRequest(apiUrl(base, "/api/v1/backtests"), {
+        method: "POST", body: parameters,
+      }, 60000);
+    } catch (error) {
+      throw new Error(`Could not confirm job submission: ${error.message}. The server may have accepted it; retry with unchanged parameters to recover it.`);
+    }
+    pendingBacktest = {base, parameters, created};
+  }
   const statusUrl = apiUrl(base, created.status_url);
-  let state = created;
-  while (!['completed', 'failed', 'cancelled'].includes(state.status)) {
-    report("Server calculation", state.detail || state.stage, null);
-    await delay(500);
-    state = await jsonRequest(statusUrl);
+  const jobId = created.job_id;
+  try {
+    let state = created;
+    report("Server calculation job", jobId);
+    while (!['completed', 'failed', 'cancelled'].includes(state.status)) {
+      report("Server calculation", state.detail || state.stage, null);
+      await delay(500);
+      state = await readJobJson(statusUrl, jobId);
+    }
+    if (state.status !== "completed") {
+      pendingBacktest = null;
+      throw new Error(state.error || state.detail || `Backtest ${state.status}`);
+    }
+    report("Downloading calculation result", `${Number(state.elapsed_seconds || 0).toFixed(1)} seconds · job ${jobId}`, 1);
+    const result = await readJobJson(apiUrl(base, created.result_url), jobId,
+      {timeoutMs: 240000, attempts: 2});
+    if (!result || typeof result !== "object" || !result.summary) {
+      throw new Error("Calculation server returned a result without a summary");
+    }
+    pendingBacktest = null;
+    return result;
+  } catch (error) {
+    const recovery = pendingBacktest?.created === created
+      ? " The job has not been cancelled. Retry with unchanged parameters to reconnect."
+      : "";
+    throw new Error(`Job ${jobId}: ${error.message}.${recovery}`);
   }
-  if (state.status !== "completed") throw new Error(state.error || state.detail || `Backtest ${state.status}`);
-  report("Downloading calculation result", `${state.elapsed_seconds.toFixed(1)} seconds`, 1);
-  const result = await jsonRequest(apiUrl(base, created.result_url));
-  if (!result || typeof result !== "object" || !result.summary) {
-    throw new Error("Calculation server returned a result without a summary");
-  }
-  return result;
 }
-function runBrowserRequest(data, reason) {
-  report("Retrying with browser calculation", reason);
-  return new Promise((resolve, reject) => {
-    const fallback = new Worker("/backtest-worker-v12.js?v=18");
-    let submitted = false;
-    fallback.onmessage = event => {
-      const message = event.data || {};
-      if (message.type === "progress") { self.postMessage(message); return; }
-      if (message.type === "ready" && !submitted) {
-        submitted = true;
-        fallback.postMessage(data);
-        return;
-      }
-      if (message.type === "error" && message.id == null) {
-        fallback.terminate(); reject(new Error(message.error || "Browser calculation initialization failed")); return;
-      }
-      if (message.id === data.id) {
-        fallback.terminate();
-        message.error ? reject(new Error(message.error)) : resolve(message.result);
-      }
-    };
-    fallback.onerror = event => { fallback.terminate(); reject(new Error(event.message || "Browser calculation worker failed")); };
-  });
-}
-async function handleServerMessage(base, data, allowBrowserFallback) {
+async function handleServerMessage(base, data) {
   if (!data || !["run", "inspect"].includes(data.type)) return;
   try {
     const result = data.type === "inspect"
@@ -134,17 +167,8 @@ async function handleServerMessage(base, data, allowBrowserFallback) {
       : await runServerBacktest(base, data);
     self.postMessage({id: data.id, result});
   } catch (error) {
-    if (allowBrowserFallback && data.type === "run") {
-      try {
-        const result = await runBrowserRequest(data, error.message || String(error));
-        if (!result || typeof result !== "object" || !result.summary) throw new Error("Browser calculation returned an invalid result");
-        self.postMessage({id: data.id, result});
-        return;
-      } catch (fallbackError) {
-        self.postMessage({id: data.id, error: `Server calculation failed (${error.message || error}); browser retry failed (${fallbackError.message || fallbackError})`});
-        return;
-      }
-    }
+    // Once server execution is selected, preserve its result/error. A browser
+    // retry would launch a second calculation and hide the original job status.
     self.postMessage({id: data.id, error: error.message || String(error)});
   }
 }

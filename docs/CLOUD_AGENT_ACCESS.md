@@ -32,14 +32,16 @@ in the repository, a GitHub secret, an artifact, or the Codex agent filesystem.
 - `roles/run.invoker` on `keep-and-lease-web` and
   `keep-and-lease-preview-web`;
 - `roles/iam.workloadIdentityUser` for the exact GitHub ref
-  `refs/heads/agent/cloud-autonomous-access`.
+  `refs/heads/agent/cloud-autonomous-access`;
+- the owner-granted `roles/storage.objectCreator` and `roles/storage.objectViewer`
+  on `keep-and-lease-market-data` for the fixed pilot ingestion workflow.
 
 The foundation owns the stable invoker binding. The isolated preview workload
 state adds the same service account as an invoker only on
 `keep-and-lease-preview-web`, so each normal preview deployment ensures the
 machine-access binding exists without broadening the operator's project roles.
 
-It has no direct Firestore, Cloud Storage, Cloud Run Job execution, deployment,
+It has no direct Firestore, Cloud Run Job execution, deployment,
 Artifact Registry, Terraform-state, or service-account administration access. A
 billable calculation can only be requested through the same guarded web API used
 by a normal application caller.
@@ -171,3 +173,16 @@ Delete the permanent operator branch or change `codex_operator_branch` and reapp
 Terraform to revoke GitHub impersonation. To remove the integration completely,
 remove `infra/gcp/codex_operator.tf` and apply the reviewed destruction plan. This
 does not delete application data or either Terraform state bucket.
+
+
+## Market-data publication access
+
+The BTC storage pilot documents optional bucket-scoped create/read grants in
+[BTC_TRADE_STORAGE.md](BTC_TRADE_STORAGE.md#giving-automation-access-to-the-bucket).
+The owner has granted the two market-bucket roles. The existing diagnostic
+request remains unchanged. The separate `btc-trade-storage.yml` workflow accepts
+only the fixed June 25 upload/verify action and a full implementation commit,
+using the existing branch-restricted OIDC identity. It validates source events
+before publication and reproduces both GCS-backed replay audits. The grants are
+represented in foundation Terraform. No credentials are exported. See the linked
+storage runbook for request shape, immutable object paths and live evidence.
