@@ -543,6 +543,11 @@ commodities, and columns. Raw source archives remain available for audit. This
 migration must create a manifest and numerical equivalence fixtures before the
 bundled inputs are removed.
 
+The BTC raw-trade pilot now implements local Parquet conversion, bounded replay,
+and create-only GCS publication tooling, with raw/normalized equivalence checks.
+See `BTC_TRADE_STORAGE.md`. It has not replaced the production provider; actual
+GCS publication/read access and multi-day checkpoint integration remain gates.
+
 The synchronous `POST /api/v1/inspections` endpoint also remains local/Render-only;
 the scale-to-zero web service returns `503` because it must not load full market
 histories. Cloud inspection should be derived from a completed result or submitted

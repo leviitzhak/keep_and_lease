@@ -55,17 +55,27 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data", type=Path, default=ROOT / "work/btc-trade-pilot/2026-06-25")
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--parquet", help="Immutable Parquet directory or gs:// prefix instead of raw archives")
     parser.add_argument("--capital", type=float, default=1)
     parser.add_argument("--participation", type=float, default=1, help="Fraction of eligible print volume, (0,1]")
     parser.add_argument("--delay-ms", type=int, default=0)
     parser.add_argument("--fee-bps", type=float, default=0)
     args = parser.parse_args()
     started = time.monotonic()
-    manifest = json.loads((args.data / "manifest.json").read_text())
+    code_names = ["trade_replay.py", "scripts/check-btc-trade-pilot.py",
+                  "backtest_silver_lease_strategy.py", "silver_strategy_gui.py"]
+    if args.parquet:
+        code_names.append("trade_data_store.py")
+    code_hashes = {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest() for name in code_names}
+    store = None
+    if args.parquet:
+        from trade_data_store import ParquetTradeStore
+        store = ParquetTradeStore(args.parquet)
+    manifest = store.source_manifest if store else json.loads((args.data / "manifest.json").read_text())
     if args.output.exists():
         raise ValueError("Use a new audit output directory; completed evidence is immutable")
     args.output.mkdir(parents=True)
-    for info in [manifest["spot"], *manifest["futures"].values()]:
+    for info in ([] if store else [manifest["spot"], *manifest["futures"].values()]):
         with (args.data / info["path"]).open("rb") as stream:
             if hashlib.file_digest(stream, "sha256").hexdigest() != info["sha256"]:
                 raise ValueError("Input checksum mismatch")
@@ -85,7 +95,7 @@ def main():
         account = TapeAccount(args.capital, args.participation, args.delay_ms * 1000, args.fee_bps, emit)
         streams = [spot_trades(args.data / manifest["spot"]["path"])]
         streams += [future_trades(s, args.data / info["path"]) for s, info in sorted(manifest["futures"].items())]
-        tape = iter(heapq.merge(*streams, key=lambda t: (t.us, t.symbol)))
+        tape = iter(store.trades() if store else heapq.merge(*streams, key=lambda t: (t.us, t.symbol)))
         event = next(tape, None)
         warmup_events = 0
         while event and event.symbol != "SPOT":
@@ -181,10 +191,10 @@ def main():
                   peak_rss_mib=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024,
                   wall_seconds=time.monotonic() - started,
                   preset_sha256=hashlib.sha256(preset_path.read_bytes()).hexdigest(),
-                  input_manifest_sha256=hashlib.sha256((args.data / "manifest.json").read_bytes()).hexdigest(),
-                  code_sha256={name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest()
-                               for name in ("trade_replay.py", "scripts/check-btc-trade-pilot.py",
-                                            "backtest_silver_lease_strategy.py", "silver_strategy_gui.py")},
+                  input_manifest_sha256=(store.manifest["source_manifest_sha256"] if store else
+                                         hashlib.sha256((args.data / "manifest.json").read_bytes()).hexdigest()),
+                  parquet_manifest_sha256=hashlib.sha256(store.manifest_bytes).hexdigest() if store else None,
+                  code_sha256=code_hashes,
                   assumptions=manifest["assumptions"] + [
                       "First observed spot price initializes an already-owned BTC endowment; not an entry fill",
                       "Same-side aggressor prints; strict later timestamp; cancel/replace each second",

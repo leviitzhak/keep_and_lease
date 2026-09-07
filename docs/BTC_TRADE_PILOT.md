@@ -1,5 +1,9 @@
 # BTC raw-trade pilot
 
+The matched day now also has a lossless Parquet conversion and bounded replay
+reader. See [BTC_TRADE_STORAGE.md](BTC_TRADE_STORAGE.md) for measurements,
+reproduction, immutable GCS publication tooling and remaining cloud-access gates.
+
 ## Scope and reproduction
 
 The research pilot downloads **2026-06-25 UTC**: Binance BTC/USDT individual

@@ -12,6 +12,10 @@ branch._
   raw-trade research replay and storage measurements; see
   [BTC_TRADE_PILOT.md](BTC_TRADE_PILOT.md). The GUI still uses minute data.
   The new pilot has not been approved for merge into master.
+  [PR #38](https://github.com/leviitzhak/keep_and_lease/pull/38) now also contains
+  the Parquet storage follow-up: [BTC_TRADE_STORAGE.md](BTC_TRADE_STORAGE.md).
+  The pilot conversion/replay is local; authenticated GCS transfer and multi-day
+  worker integration remain outstanding.
 
 - Previous change status: the approved regular BTC execution and on-demand audit
   redesign was validated in private preview and merged in PR #37. Full 60-second execution retains 129,599

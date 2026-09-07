@@ -4,6 +4,11 @@ This checklist reflects the application synchronized from the deployed Sites che
 
 ## Higher priority
 
+- [ ] Complete authenticated GCS publication/read validation for the tested
+  Parquet trade pilot, then multi-day ingestion and account checkpoint/restore.
+  Conversion, bounded readers and create-only upload tooling are implemented;
+  see `BTC_TRADE_STORAGE.md`. Do not reset holdings at daily partition boundaries.
+
 - [ ] Review and integrate the one-day raw-trade research pilot with the GUI and
   worker before activating second/subsecond execution. See `BTC_TRADE_PILOT.md`:
   subsequent-trade VWAP is a participation proxy, not book depth. Preserve
