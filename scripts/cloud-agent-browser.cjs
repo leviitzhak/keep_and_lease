@@ -10,6 +10,7 @@ async function main() {
   const outputDir = process.env.KEEP_AND_LEASE_OUTPUT_DIR;
   const expectedCommit = process.env.KEEP_AND_LEASE_EXPECTED_COMMIT || "";
   const runSmokeStrategy = process.env.KEEP_AND_LEASE_RUN_SMOKE_STRATEGY === "true";
+  const runSubsecond = process.env.KEEP_AND_LEASE_RUN_SUBSECOND === "true";
   const runBtcAudit = process.env.KEEP_AND_LEASE_RUN_BTC_AUDIT === "true";
   if (!webUri || !token || !outputDir) {
     throw new Error("KEEP_AND_LEASE_WEB_URI, KEEP_AND_LEASE_ID_TOKEN, and KEEP_AND_LEASE_OUTPUT_DIR are required");
@@ -93,6 +94,7 @@ async function main() {
     }
 
     if (runSmokeStrategy || runBtcAudit) {
+      await page.selectOption('[name="btc_data_source"]', "minute");
       let submittedJobId = null;
       const observedResultResponses = new Map();
       let settleResultResponse;
@@ -312,6 +314,47 @@ async function main() {
         strategy.btcShortPeriod=shortEvidence;
         console.log('BTC selected-period acceptance: '+JSON.stringify(shortEvidence));
       }
+    }
+
+    if (runSubsecond) {
+      await page.selectOption('[name="btc_data_source"]', 'trade_tape');
+      await page.click('#loadTradeExample');
+      const resultResponse = page.waitForResponse(r => /\/api\/v1\/backtests\/[0-9a-f]{32}\/result$/.test(new URL(r.url()).pathname), {timeout: 15*60*1000});
+      await page.click('#run');
+      const response = await resultResponse;
+      if (!response.ok()) throw Error('Trade replay result HTTP '+response.status());
+      const result = await response.json();
+      if (result.result_kind !== 'btc_trade_replay' || result.trade_replay.interval_seconds !== .5 || result.trade_replay.market_events !== 12006 || result.summary.observations !== 600) throw Error('Unexpected 500 ms trade replay coverage');
+      if (Math.abs(result.summary.compounded_return - 0.023825048740855337) > 1e-8) throw Error('GCS trade replay differs from local financial result');
+      if (result.trade_replay.manifest_sha256 !== '9c05efc03118699303e7a55e14205bed29783683a85c165f99319dd3fabc055d') throw Error('Wrong immutable trade dataset');
+      await page.waitForSelector('#tradeReplayResults', {state:'visible'});
+      await page.waitForFunction(()=>!document.querySelector('#run').disabled);
+      const csvDownload = page.waitForEvent('download');
+      await page.click('#tradeReplayCsv');
+      const download = await csvDownload;
+      const csvPath = path.join(outputDir,'btc-trade-valuations.csv');
+      await download.saveAs(csvPath);
+      if (fs.readFileSync(csvPath,'utf8').trim().split('\n').length !== 601) throw Error('Valuation CSV lost rows');
+      const entry=result.audit.datasets.btc_trade_events.chunks[0];
+      const auditResponse=await page.evaluate(async url=>{const r=await fetch(url);return {status:r.status,body:await r.json()};},result.audit.base_url+'/btc_trade_events/'+entry.index);
+      if(auditResponse.status!==200||auditResponse.body.rows.length!==entry.rows)throw Error('Trade audit chunk failed');
+      await page.locator('#tradeReplayNav').hover({position:{x:120,y:100}});
+      if(!(await page.locator('#tooltip').isVisible()))throw Error('Trade chart hover failed');
+      fs.writeFileSync(path.join(outputDir,'subsecond.json'),JSON.stringify({summary:result.summary,trade_replay:result.trade_replay,csv_rows:600,audit_chunk_rows:entry.rows},null,2));
+      // Exercise a true millisecond decision clock with fractional UTC bounds.
+      await page.fill('[name="execution_interval_seconds"]','0.001');
+      await page.fill('[name="backtest_start"]','2026-06-25T00:00:00.200');
+      await page.fill('[name="backtest_end"]','2026-06-25T00:00:01.200');
+      const fineResponse=page.waitForResponse(r=>/\/api\/v1\/backtests\/[0-9a-f]{32}\/result$/.test(new URL(r.url()).pathname),{timeout:10*60*1000});
+      await page.click('#run');
+      const fine=await (await fineResponse).json();
+      if(fine.trade_replay?.interval_seconds!==.001||fine.backtest_period.requested_start!=='2026-06-25T00:00:00.200000'||fine.backtest_period.actual_end!=='2026-06-25T00:00:01.200000'||fine.summary.observations<1)throw Error('Millisecond replay or fractional date preservation failed');
+      await page.waitForFunction(()=>!document.querySelector('#run').disabled);
+      fs.writeFileSync(path.join(outputDir,'millisecond.json'),JSON.stringify({summary:fine.summary,trade_replay:fine.trade_replay},null,2));
+      // Invalid coverage is rejected synchronously, before launching a worker.
+      const invalid=await page.evaluate(async p=>{p.backtest_end='2026-06-27';const r=await fetch('/api/v1/backtests',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({parameters:p})});return r.status;},result.parameters);
+      if(invalid!==400)throw Error('Unsupported trade dates were accepted');
+      console.log('Subsecond GUI acceptance passed: 500 ms/GCS equivalence, CSV, audit, hover, and 1 ms fractional window.');
     }
 
     const sameOriginFailures = failedRequests.filter((request) => {

@@ -1,0 +1,28 @@
+{
+  "one_second_full_day": {
+    "baseline": "btc-trade-pilot/run-one-dollar.json",
+    "exactly_matching_metrics": {
+      "strategy_return_pct": -0.10525469949151933,
+      "direct_return_pct": -2.102229935492317,
+      "decisions": 86399,
+      "market_events": 5739608,
+      "no_fresh_curve_decisions": 12526,
+      "fills": 47454,
+      "orders": 295213,
+      "cancelled_remainders": 270663,
+      "fees_usd": 0.0,
+      "treasury_interest_usd": 3.825715725364417e-05,
+      "max_nav_reconstruction_error_usd": 5.10702591327572e-14
+    },
+    "wall_seconds": 67.32
+  },
+  "five_minute_500ms": {
+    "observations": 600,
+    "market_events": 12006,
+    "fills": 2616,
+    "capital_usd": 100000,
+    "participation": 0.1,
+    "strategy_return_pct": 0.023825048740855337
+  },
+  "source": "local lossless Parquet replay; deployed GCS GUI acceptance is a separate gate"
+}
