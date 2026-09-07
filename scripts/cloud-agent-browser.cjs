@@ -42,6 +42,7 @@ async function main() {
   const consoleMessages = [];
   const pageErrors = [];
   const failedRequests = [];
+  const verifiedDownloadPaths = new Set();
   let responseStatus = null;
   let documentState = null;
   let strategy = null;
@@ -335,6 +336,7 @@ async function main() {
       const csvPath = path.join(outputDir,'btc-trade-valuations.csv');
       await download.saveAs(csvPath);
       if (fs.readFileSync(csvPath,'utf8').trim().split('\n').length !== 601) throw Error('Valuation CSV lost rows');
+      verifiedDownloadPaths.add(new URL(download.url()).pathname);
       const entry=result.audit.datasets.btc_trade_events.chunks[0];
       const auditResponse=await page.evaluate(async url=>{const r=await fetch(url);return {status:r.status,body:await r.json()};},result.audit.base_url+'/btc_trade_events/'+entry.index);
       if(auditResponse.status!==200||auditResponse.body.rows.length!==entry.rows)throw Error('Trade audit chunk failed');
@@ -343,8 +345,8 @@ async function main() {
       fs.writeFileSync(path.join(outputDir,'subsecond.json'),JSON.stringify({summary:result.summary,trade_replay:result.trade_replay,csv_rows:600,audit_chunk_rows:entry.rows},null,2));
       // Exercise a true millisecond decision clock with fractional UTC bounds.
       await page.fill('[name="execution_interval_seconds"]','0.001');
-      await page.fill('[name="backtest_start"]','2026-06-25T00:00:00.200');
-      await page.fill('[name="backtest_end"]','2026-06-25T00:00:01.200');
+      await page.fill('[name="backtest_start"]','2026-06-25T00:00:00.2');
+      await page.fill('[name="backtest_end"]','2026-06-25T00:00:01.2');
       const fineResponse=page.waitForResponse(r=>/\/api\/v1\/backtests\/[0-9a-f]{32}\/result$/.test(new URL(r.url()).pathname),{timeout:10*60*1000});
       await page.click('#run');
       const fine=await (await fineResponse).json();
@@ -363,7 +365,9 @@ async function main() {
         const optionalRestoreWasAborted = request.method === "GET"
           && target.pathname === "/api/v1/backtests/latest"
           && request.error === "net::ERR_ABORTED";
-        return target.origin === origin && !optionalRestoreWasAborted;
+        const verifiedDownload = request.method === "GET"
+          && verifiedDownloadPaths.has(target.pathname) && request.error === "net::ERR_ABORTED";
+        return target.origin === origin && !optionalRestoreWasAborted && !verifiedDownload;
       } catch {
         return false;
       }

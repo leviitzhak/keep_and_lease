@@ -106,3 +106,12 @@ and a 1 ms clock with fractional UTC bounds. Deployment status is recorded in
 
 Local checks: 50 focused Python tests and 36 JavaScript/HTML tests passed; the
 production build and artifact validation passed. No local Sites preview ran.
+
+The first deployed acceptance passed the 500 ms GCS financial comparison,
+complete CSV, audit access and hover. The 1 ms test initially supplied a
+noncanonical `.200` datetime fraction which Chromium normalizes to `.2`;
+Playwright rejected that redundant trailing-zero representation before running
+the strategy. The fixture now uses the canonical form. Its request diagnostics
+also distinguish a successfully downloaded CSV from a failed navigation: only
+a CSV whose saved content passed row-count verification may ignore the browser
+`net::ERR_ABORTED` download-navigation event.
