@@ -12,6 +12,8 @@ This checklist reflects the application synchronized from the deployed Sites che
   deployment workflow ignores `docs/**` and Markdown-only changes while mixed
   application/documentation commits continue to deploy.
 
+- [ ] manual preview of the one-second execution strategy
+
 - [ ] Prepare one-second backtests of at least 90 days using the ordered
   implementation plan in `BTC_TRADE_STORAGE.md`: resumable daily ingestion and
   range manifests; selected-partition reads; phase timing; continuous account
@@ -27,6 +29,7 @@ This checklist reflects the application synchronized from the deployed Sites che
 
 - [ ] Add a plot of the volume traded by the strategy, based on actual simulated
   fills (not market-wide volume).
+- [ ]  have a control to cancel the run of the strategy + a progress bar 
 - [ ] display hover information on futures on the plot of the spot price + futures prices (including the implied lease rate)
 - [ ] Add a progress bar and cancellation option to spreadsheet generation and
   download.
