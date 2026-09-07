@@ -247,7 +247,7 @@ jobs:
           node run.cjs
 
       - name: Mint identity token for BTC acceptance
-        if: github.ref_name == 'agent/btc-binance-minute-data'
+        if: github.ref_name == 'agent/btc-binance-minute-data' || github.ref_name == 'agent/btc-trade-pilot'
         id: btc_auth
         uses: google-github-actions/auth@v2
         with:
@@ -258,7 +258,7 @@ jobs:
           id_token_include_email: true
 
       - name: Verify full BTC minute result and on-demand GUI exports
-        if: github.ref_name == 'agent/btc-binance-minute-data'
+        if: github.ref_name == 'agent/btc-binance-minute-data' || github.ref_name == 'agent/btc-trade-pilot'
         env:
           KEEP_AND_LEASE_WEB_URI: ${{ steps.verify.outputs.web_uri }}
           KEEP_AND_LEASE_ID_TOKEN: ${{ steps.btc_auth.outputs.id_token }}

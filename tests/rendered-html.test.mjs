@@ -424,7 +424,7 @@ test("loads authenticated market assets sequentially with retries", async () => 
   assert.doesNotMatch(worker, /Promise\.all\(DATA_FILES/);
 });
 
-test("uses the server adapter while preserving the Pyodide worker fallback", async () => {
+test("uses the server adapter with deployment-aware browser initialization", async () => {
   const html = await readFile(
     new URL("../public/silver_strategy_gui.html", import.meta.url),
     "utf8",
@@ -442,8 +442,8 @@ test("uses the server adapter while preserving the Pyodide worker fallback", asy
   assert.match(adapter, /Empty response from/);
   assert.match(adapter, /Invalid JSON from/);
   assert.match(adapter, /result without a summary/);
-  assert.match(adapter, /function runBrowserRequest/);
-  assert.match(adapter, /config\.requestedEngine === "auto"/);
+  assert.doesNotMatch(adapter, /function runBrowserRequest/);
+  assert.match(adapter, /config\.browserFallback === false/);
   assert.match(html, /if\(data\.result==null\)/);
   assert.match(html, /!data\.summary/);
 });

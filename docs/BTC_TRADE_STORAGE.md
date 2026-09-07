@@ -134,3 +134,41 @@ accepts one UTC day; 90-day raw-trade ingestion, production worker integration,
 and GUI activation have not been performed. These must preserve positions,
 pending fills and Treasury accrual across days, rather than restarting the
 strategy independently each day.
+
+## Giving automation access to the bucket
+
+IAP protects the web preview. Cloud Storage uses separate bucket IAM bindings.
+The existing keyless operator identity is
+`keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com`. To authorize
+create-only publication and verification using that identity, an administrator
+can grant these two roles **on the market-data bucket only**:
+
+```sh
+gcloud storage buckets add-iam-policy-binding gs://keep-and-lease-market-data --member=serviceAccount:keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com --role=roles/storage.objectCreator
+gcloud storage buckets add-iam-policy-binding gs://keep-and-lease-market-data --member=serviceAccount:keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com --role=roles/storage.objectViewer
+```
+
+These commands are proposed administrator actions, not actions performed by this
+change. They grant creation and read/list access without object deletion or
+overwrite permission. They do not change IAP or make the bucket public. Equivalent
+console steps are Cloud Storage → `keep-and-lease-market-data` → Permissions →
+Grant access, using the identity and the two roles above.
+
+**A grant alone is not an upload connection.** The current operator workflow
+accepts diagnostics only. Using this route also requires an explicitly reviewed,
+bounded ingestion workflow on its OIDC-authorized branch, running the existing
+archive downloader/converter/uploader inside GitHub Actions. It must check source
+and manifest hashes and publish the manifest last. No credential needs to be
+copied into chat or the working-agent filesystem. The IAM bindings should then
+be represented in the foundation Terraform so configuration matches deployed
+access. A dedicated uploader service account with its own branch-restricted OIDC
+binding is preferable if keeping the diagnostic identity read-only is desired;
+that identity/workflow has not yet been created.
+
+The calculation worker's market-bucket `roles/storage.objectViewer` binding
+already exists in `infra/gcp/main.tf`; its authority is separate from the agent's.
+This input bucket grant is unrelated to the current minute GUI transport failure;
+see [BTC_CONNECTION_RECOVERY.md](BTC_CONNECTION_RECOVERY.md).
+
+References: [Cloud Storage roles](https://cloud.google.com/storage/docs/access-control/iam-roles)
+and [GitHub/OIDC federation](https://cloud.google.com/iam/docs/workload-identity-federation-with-deployment-pipelines).

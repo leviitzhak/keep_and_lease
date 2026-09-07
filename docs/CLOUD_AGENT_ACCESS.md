@@ -171,3 +171,13 @@ Delete the permanent operator branch or change `codex_operator_branch` and reapp
 Terraform to revoke GitHub impersonation. To remove the integration completely,
 remove `infra/gcp/codex_operator.tf` and apply the reviewed destruction plan. This
 does not delete application data or either Terraform state bucket.
+
+
+## Proposed market-data access (not activated)
+
+The BTC storage pilot documents optional bucket-scoped create/read grants in
+[BTC_TRADE_STORAGE.md](BTC_TRADE_STORAGE.md#giving-automation-access-to-the-bucket).
+They have not been applied. The current operator request schema/workflow remains
+diagnostics-only; bucket IAM alone does not turn it into an ingestion endpoint.
+Any dedicated uploader identity or bounded ingestion workflow must be implemented
+and reviewed explicitly before cloud publication. No credentials are exported.

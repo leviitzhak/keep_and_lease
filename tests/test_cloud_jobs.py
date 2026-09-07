@@ -396,7 +396,8 @@ class CloudJobTests(unittest.TestCase):
             "installKeepLeaseWorkbook",
             client.get("/backtest-workbook-v1.js").text,
         )
-        self.assertEqual(client.get("/compute-config.json").json(), {"apiBaseUrl": ""})
+        self.assertEqual(client.get("/compute-config.json").json(),
+                         {"apiBaseUrl": "", "browserFallback": False})
         latest = client.get("/api/v1/backtests/latest")
         self.assertEqual(latest.status_code, 200)
         self.assertEqual(latest.json()["job_id"], "d" * 32)

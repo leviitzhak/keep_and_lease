@@ -121,7 +121,7 @@ Completed-job audit routes use the same authenticated owner check as the result:
   one complete dataset. Object names are validated against the stored manifest;
   arbitrary bucket paths are not accepted.
 
-Only the active `agent/btc-binance-minute-data` feature branch additionally runs
+The `agent/btc-binance-minute-data` and `agent/btc-trade-pilot` feature branches additionally run
 full BTC acceptance after the normal multi-commodity deployment smoke. A fresh
 short-lived machine token is minted; the browser loads the saved regular preset,
 checks the exact result/resource bounds, reads first/last chunks, loads one day
@@ -594,3 +594,14 @@ Do not make deletion of canonical data or Terraform state an implicit applicatio
 teardown step. Cloud Run workloads can be destroyed independently from
 `infra/gcp/workloads/`. Raw data, manifests, required results, audit metadata, and
 both Terraform state buckets require an explicit retention decision.
+
+
+### Browser transport recovery
+
+The Cloud Run config disables the unavailable Pyodide fallback. The server adapter
+uses bounded request deadlines and retries status/result reads against the same
+job, retaining its ID for an unchanged-parameter reconnect. It does not retry
+ambiguous creation requests automatically. See
+[BTC_CONNECTION_RECOVERY.md](BTC_CONNECTION_RECOVERY.md) for timings, diagnostics
+and limitations, and [BTC_TRADE_STORAGE.md](BTC_TRADE_STORAGE.md#giving-automation-access-to-the-bucket)
+for the separate, proposed market-bucket IAM setup.

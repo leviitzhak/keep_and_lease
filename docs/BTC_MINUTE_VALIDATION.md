@@ -233,3 +233,14 @@ fee sensitivity and verifies that both the fee and observed execution mode
 survive import. Previously, the legacy fallback replaced the BTC profile with
 top-level defaults when no silver profile was present. CLI financial results
 were unaffected because the harness reads the saved BTC profile directly.
+
+
+### Interrupted connection recovery
+
+The trade-storage follow-up branch now runs the same full BTC minute preview
+acceptance gate, including a one-day GUI workbook, after changes to the server
+adapter. Previously that gate was restricted to the original minute branch.
+[BTC_CONNECTION_RECOVERY.md](BTC_CONNECTION_RECOVERY.md) explains the reported
+failure, confirmed adapter defects, bounded retries, and remaining uncertainty.
+The new adapter tests simulate transport/authentication problems; exact deployed
+acceptance results are recorded in PR #38.

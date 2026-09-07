@@ -16,6 +16,10 @@ branch._
   the Parquet storage follow-up: [BTC_TRADE_STORAGE.md](BTC_TRADE_STORAGE.md).
   The pilot conversion/replay is local; authenticated GCS transfer and multi-day
   worker integration remain outstanding.
+  The latest follow-up fixes interrupted server-job polling and disables the
+  unavailable Cloud Run browser fallback; see [BTC_CONNECTION_RECOVERY.md](BTC_CONNECTION_RECOVERY.md).
+  The original user connection failure has no job ID/HTTP status, so its
+  underlying cause remains unconfirmed.
 
 - Previous change status: the approved regular BTC execution and on-demand audit
   redesign was validated in private preview and merged in PR #37. Full 60-second execution retains 129,599
