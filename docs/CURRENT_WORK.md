@@ -6,14 +6,13 @@ branch._
 
 ## Active change set
 
-- Current follow-up branch: `agent/btc-trade-pilot`, based on GitHub master
-  `5c79530c690a957c9b9677d228fbaeba1bd2cb0d`. PR #37 was merged with user approval;
-  the minute work below is completed history. This follow-up adds a one-day
-  raw-trade research replay and storage measurements; see
-  [BTC_TRADE_PILOT.md](BTC_TRADE_PILOT.md). The GUI still uses minute data.
-  The new pilot has not been approved for merge into master.
-  [PR #38](https://github.com/leviitzhak/keep_and_lease/pull/38) now also contains
-  the Parquet storage follow-up: [BTC_TRADE_STORAGE.md](BTC_TRADE_STORAGE.md).
+- Current status: the one-day raw-trade research replay, Parquet/GCS storage
+  pilot, selectable UTC backtest periods and connection-recovery changes were
+  preview-verified and merged into `master` in
+  [PR #38](https://github.com/leviitzhak/keep_and_lease/pull/38), merge commit
+  `608aa6027e77474445c69ad221f33e3f98e953b6`. See
+  [BTC_TRADE_PILOT.md](BTC_TRADE_PILOT.md) and
+  [BTC_TRADE_STORAGE.md](BTC_TRADE_STORAGE.md). The GUI still uses minute data.
   The owner granted the operator bucket create/read access. The bounded GCS
   upload/replay passed for all 5,739,608 events and both complete audit hashes,
   with an 8 MiB remote-read cache per open partition. The measured capacity
@@ -26,6 +25,9 @@ branch._
   unavailable Cloud Run browser fallback; see [BTC_CONNECTION_RECOVERY.md](BTC_CONNECTION_RECOVERY.md).
   The original user connection failure has no job ID/HTTP status, so its
   underlying cause remains unconfirmed.
+  The merge intentionally used `[skip ci]` at the user's request, so no stable
+  deployment ran. Documentation-only pushes are now excluded from the deployment
+  workflow; mixed application/documentation changes continue to deploy.
 
 - Previous change status: the approved regular BTC execution and on-demand audit
   redesign was validated in private preview and merged in PR #37. Full 60-second execution retains 129,599
