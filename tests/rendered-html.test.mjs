@@ -619,3 +619,19 @@ test("backtest UTC boundaries persist and older presets clear a previous range",
   const period={actual_start:'2026-06-25',actual_end:'2026-06-26'};
   assert.equal(ctx.normalizePortfolioResult({commodity_sleeves:{btc:{}},backtest_period:period}).backtest_period,period);
 });
+
+
+test("backtest boundaries are portfolio settings rather than commodity profiles", async()=>{
+  const html=await readFile(new URL('../public/silver_strategy_gui.html',import.meta.url),'utf8');
+  const globalLine=html.split('\n').find(line=>line.startsWith('const GLOBAL_FIELDS='));
+  const legLine=html.split('\n').find(line=>line.startsWith('const LEG_FIELDS='));
+  const capture=html.split('\n').find(line=>line.startsWith('function captureCommodity('));
+  const fields=[{name:'backtest_start',value:'2026-06-25T00:00'},
+    {name:'backtest_end',value:'2026-06-26T00:00'},{name:'min_days',value:'10'}];
+  fields.namedItem=name=>fields.find(f=>f.name===name);
+  const ctx={form:{elements:fields},commodityProfiles:{},activeCommodity:'btc'};
+  vm.runInNewContext(globalLine+'\n'+legLine+'\n'+capture+'\ncaptureCommodity();',ctx);
+  assert.equal(ctx.commodityProfiles.btc.min_days,'10');
+  assert.equal(Object.hasOwn(ctx.commodityProfiles.btc,'backtest_start'),false);
+  assert.equal(Object.hasOwn(ctx.commodityProfiles.btc,'backtest_end'),false);
+});

@@ -45,7 +45,7 @@ is still the distinct one-second research runner described in
 [BTC_TRADE_STORAGE.md](BTC_TRADE_STORAGE.md); the GUI uses minute candles.
 
 
-Local validation: 34 focused Python tests and 35 JavaScript/HTML checks passed,
+Local validation: 34 focused Python tests and 36 JavaScript/HTML checks passed,
 plus the production build/artifact check. The selected one-day BTC run completed
 in 38.59 seconds including 33.9 seconds of cold BTC market loading, retained all
 1,440 intervals and no missing returns, and used 1,190.5 MiB peak RSS. This local
@@ -55,3 +55,6 @@ minute-candle proxy results, distinct from the one-second trade replay.
 
 The browser acceptance compares selected boundaries as UTC instants, since native
 datetime fields can omit zero seconds when serializing their values.
+
+Period boundaries are portfolio-wide settings. Switching the commodity parameter
+editor does not replace the range or save it inside a commodity profile.
