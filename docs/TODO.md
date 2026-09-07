@@ -6,6 +6,7 @@ This checklist reflects the application synchronized from the deployed Sites che
 
 - [ ] Add a plot of the volume traded by the strategy, based on actual simulated
   fills (not market-wide volume).
+- [ ] Change deployment automatic workflow to not trigger a deployment for changes on the documentation only.
 - [ ] Add a progress bar and cancellation option to spreadsheet generation and
   download.
 - [ ] Add a progress bar when loading detailed plots.
