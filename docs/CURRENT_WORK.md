@@ -14,8 +14,11 @@ branch._
   The new pilot has not been approved for merge into master.
   [PR #38](https://github.com/leviitzhak/keep_and_lease/pull/38) now also contains
   the Parquet storage follow-up: [BTC_TRADE_STORAGE.md](BTC_TRADE_STORAGE.md).
-  The pilot conversion/replay is local; authenticated GCS transfer and multi-day
-  worker integration remain outstanding.
+  The owner granted the operator bucket create/read access. The bounded GCS
+  upload/replay workflow is implemented; live outcomes are recorded in PR #38.
+  Multi-day trade-worker/GUI integration remains outstanding.
+  Explicit UTC backtest start/end controls now restrict strategy computation;
+  see [BACKTEST_PERIOD.md](BACKTEST_PERIOD.md).
   The latest follow-up fixes interrupted server-job polling and disables the
   unavailable Cloud Run browser fallback; see [BTC_CONNECTION_RECOVERY.md](BTC_CONNECTION_RECOVERY.md).
   The original user connection failure has no job ID/HTTP status, so its

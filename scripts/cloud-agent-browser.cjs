@@ -288,6 +288,29 @@ async function main() {
           auditRows:evidence.auditRows,workbookBytes:evidence.workbookBytes,
           browserHeapMiB:evidence.browserHeapMiB,
         }));
+        // A fresh, short computation uses the new period controls, not plot cropping.
+        const shortStarted=Date.now();
+        await page.locator('[name="backtest_start"]').fill('2026-06-25T00:00:00');
+        await page.locator('[name="backtest_end"]').fill('2026-06-26T00:00:00');
+        const shortSubmitted=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/v1/backtests'&&r.request().method()==='POST');
+        await page.locator('#run').click();
+        const shortResponse=await shortSubmitted;
+        if (![200,202].includes(shortResponse.status())) throw Error('Short-period submission failed');
+        const shortJob=await shortResponse.json();
+        if (shortJob.parameters.backtest_start!=='2026-06-25T00:00:00') throw Error('GUI omitted selected period');
+        await page.waitForFunction(()=>!document.querySelector('#run').disabled &&
+          plotRangeSource?.result?.backtest_period?.requested_start==='2026-06-25T00:00:00',null,{timeout:300000});
+        const shortEvidence=await page.evaluate(()=>{
+          const r=plotRangeSource.result,fields=r.portfolio_fields;
+          return {summary:r.summary,period:r.backtest_period,initialNav:r.portfolio_series[0][fields.indexOf('start_nav')],
+            auditRows:r.audit.datasets.btc.rows};
+        });
+        if(shortEvidence.summary.observations!==1440||shortEvidence.auditRows!==1440||shortEvidence.initialNav!==1||
+          shortEvidence.period.actual_start!=='2026-06-25T00:00:00'||shortEvidence.period.actual_end!=='2026-06-26T00:00:00')
+          throw Error('Short-period boundaries, initial NAV or audit coverage failed');
+        shortEvidence.wallSeconds=(Date.now()-shortStarted)/1000;
+        strategy.btcShortPeriod=shortEvidence;
+        console.log('BTC selected-period acceptance: '+JSON.stringify(shortEvidence));
       }
     }
 

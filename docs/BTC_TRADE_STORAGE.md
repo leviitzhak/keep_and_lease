@@ -81,12 +81,13 @@ authorized to create and read objects in `keep-and-lease-market-data`.
   that might contain a partially uploaded dataset.
 
 The local upload plan covers 17 objects, approximately 65.59 MB including both
-representations and manifests. **Cloud upload and live GCS reading have not been
-verified.** This workspace has no configured ADC credentials, and metadata-based
-credential discovery could not complete. The repository's existing cloud-agent
-operator has no market-bucket write authority; its bounded diagnostic path is
-not an upload route. No IAM grants, credentials or cloud resource sizes were
-changed. The create-only uploader is covered by mocked client tests, which are
+representations and manifests. The owner has now granted the operator bucket create/read roles. The new
+`btc-trade-storage.yml` workflow runs on its existing OIDC-authorized branch.
+It re-downloads and validates the fixed June 25 pilot, publishes immutable raw
+and Parquet inputs, then verifies all GCS events and both complete replay audits
+against the saved baselines. Full audits are retained under `btc/validation/`;
+compact workflow artifacts and PR #38 record the actual URI and live outcome.
+No credential is copied into this workspace. Cloud resource sizes are unchanged. The create-only uploader is covered by mocked client tests, which are
 not evidence of real GCS access.
 
 ## Measurements and remaining gates
@@ -127,9 +128,9 @@ The optional storage tests explicitly skip if their optional dependencies are
 absent. `npm run prepare:assets` was run before fresh-process tests; the prior
 full API/workbook acceptance was not repeated for this isolated storage change.
 
-The next gates are an authenticated immutable upload/read check, a multi-day
-source manifest and ingestion driver, and continuous-account checkpoint/restore
-tests across partition boundaries. The current research runner still explicitly
+The cloud workflow enforces authenticated immutable upload/read validation.
+The remaining integration gates are a multi-day source manifest and ingestion
+driver, and continuous-account checkpoint/restore tests across partition boundaries. The current research runner still explicitly
 accepts one UTC day; 90-day raw-trade ingestion, production worker integration,
 and GUI activation have not been performed. These must preserve positions,
 pending fills and Treasury accrual across days, rather than restarting the
@@ -148,20 +149,18 @@ gcloud storage buckets add-iam-policy-binding gs://keep-and-lease-market-data --
 gcloud storage buckets add-iam-policy-binding gs://keep-and-lease-market-data --member=serviceAccount:keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com --role=roles/storage.objectViewer
 ```
 
-These commands are proposed administrator actions, not actions performed by this
-change. They grant creation and read/list access without object deletion or
+The owner applied these bucket roles before this follow-up. These commands
+document that setup; the agent did not execute them. They grant creation and read/list access without object deletion or
 overwrite permission. They do not change IAP or make the bucket public. Equivalent
 console steps are Cloud Storage → `keep-and-lease-market-data` → Permissions →
 Grant access, using the identity and the two roles above.
 
-**A grant alone is not an upload connection.** The current operator workflow
-accepts diagnostics only. Using this route also requires an explicitly reviewed,
-bounded ingestion workflow on its OIDC-authorized branch, running the existing
-archive downloader/converter/uploader inside GitHub Actions. It must check source
+**A grant alone is not an upload connection.** The diagnostic request remains diagnostics-only. The separate bounded
+`btc-trade-storage.yml` workflow now runs the existing archive
+downloader/converter/uploader inside GitHub Actions on the authorized branch. It must check source
 and manifest hashes and publish the manifest last. No credential needs to be
-copied into chat or the working-agent filesystem. The IAM bindings should then
-be represented in the foundation Terraform so configuration matches deployed
-access. A dedicated uploader service account with its own branch-restricted OIDC
+copied into chat or the working-agent filesystem. The grants are represented in `infra/gcp/codex_operator.tf`; the foundation
+can reconcile them during its next normal apply. A dedicated uploader service account with its own branch-restricted OIDC
 binding is preferable if keeping the diagnostic identity read-only is desired;
 that identity/workflow has not yet been created.
 
@@ -172,3 +171,32 @@ see [BTC_CONNECTION_RECOVERY.md](BTC_CONNECTION_RECOVERY.md).
 
 References: [Cloud Storage roles](https://cloud.google.com/storage/docs/access-control/iam-roles)
 and [GitHub/OIDC federation](https://cloud.google.com/iam/docs/workload-identity-federation-with-deployment-pipelines).
+
+
+## Running the bounded cloud pilot
+
+The operator branch hosts `.github/workflows/btc-trade-storage.yml`. Its only
+push trigger is `.cloud-agent/requests/btc-storage.json` with the exact shape:
+
+```json
+{"schema_version":1,"action":"upload-and-verify-2026-06-25","source_commit":"<full reviewed implementation SHA>"}
+```
+
+The implementation checkout is pinned to that commit in this repository. The
+workflow accepts no arbitrary bucket, date range, URL or shell command. Download
+and event-baseline validation precede cloud authentication. Uploads are create-only;
+the manifest is last. GCS reads are checked against all 5,739,608 baseline events;
+both saved one-second scenarios must reproduce financial summaries and complete
+uncompressed audit SHA-256 values. Raw archive gzip headers and conversion timing
+can differ on re-download, so a fresh immutable manifest URI is expected even
+when the event stream is identical. Exact published URIs appear in the workflow
+log and PR evidence; do not infer them from an older local conversion.
+
+The initial operator workflow installation is an infrastructure-only `[skip ci]`
+commit to preserve the current app preview. A separate request-only push starts
+storage validation without deployment; the application feature commit follows
+its normal GCP preview acceptance. The existing health/GUI operator is unchanged.
+
+Use the GUI's [period controls](BACKTEST_PERIOD.md) for shorter minute-engine
+runs. The uploaded raw-trade period is tested directly from GCS by the research
+runner; this does not activate a one-second GUI provider or download 90 days.

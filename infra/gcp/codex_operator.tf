@@ -7,7 +7,7 @@ variable "codex_operator_branch" {
 resource "google_service_account" "codex_operator" {
   account_id   = "keep-lease-codex-operator"
   display_name = "Keep & Lease Codex cloud operator"
-  description  = "Bounded keyless identity for private health, GUI, and API checks."
+  description  = "Bounded keyless identity for private diagnostics and verified market-data publication."
 }
 
 resource "google_service_account_iam_member" "codex_operator_github_wif" {
@@ -26,4 +26,12 @@ resource "google_cloud_run_v2_service_iam_member" "codex_operator_web_invoker" {
 
 output "codex_operator_service_account" {
   value = google_service_account.codex_operator.email
+}
+
+# Matches the bucket grants explicitly enabled by the owner for BTC ingestion.
+resource "google_storage_bucket_iam_member" "codex_market_publisher" {
+  for_each = toset(["roles/storage.objectCreator", "roles/storage.objectViewer"])
+  bucket   = google_storage_bucket.market_data.name
+  role     = each.value
+  member   = "serviceAccount:${google_service_account.codex_operator.email}"
 }

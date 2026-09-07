@@ -18,7 +18,7 @@ from trade_data_store import ParquetTradeStore
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data", type=Path, default=ROOT / "work/btc-trade-pilot/2026-06-25")
-    parser.add_argument("--parquet", type=Path, required=True)
+    parser.add_argument("--parquet", required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     raw = runpy.run_path(str(ROOT / "scripts/check-btc-trade-pilot.py"))

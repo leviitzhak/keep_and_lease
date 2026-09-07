@@ -599,3 +599,23 @@ test("embedded GUI script is syntactically valid", async () => {
   assert.ok(match);
   assert.doesNotThrow(() => new Function(match[1]));
 });
+
+test("backtest UTC boundaries persist and older presets clear a previous range", async()=>{
+  const html=await readFile(new URL('../public/silver_strategy_gui.html',import.meta.url),'utf8');
+  for(const name of ['backtest_start','backtest_end'])assert.match(html,new RegExp('name="'+name+'" type="datetime-local"'));
+  const source=html.split('\n').find(line=>line.startsWith('function applyParameters('));
+  const fields=new Map(['backtest_start','backtest_end'].map(name=>[name,{value:''}]));
+  const context={commodityProfiles:{},COMMODITIES:['silver','btc'],LEG_FIELDS:[],
+    form:{elements:{namedItem:name=>fields.get(name)}},loadCommodity:()=>{}};
+  vm.runInNewContext(source,context);
+  context.applyParameters({backtest_start:'2026-06-25T03:00:00+03:00',backtest_end:'2026-06-26'});
+  assert.equal(fields.get('backtest_start').value,'2026-06-25T00:00:00');
+  assert.equal(fields.get('backtest_end').value,'2026-06-26T00:00:00');
+  context.applyParameters({});
+  assert.equal(fields.get('backtest_start').value,'');
+  assert.equal(fields.get('backtest_end').value,'');
+  const normalize=html.split('\n').find(line=>line.startsWith('function normalizePortfolioResult('));
+  const ctx={};vm.runInNewContext(normalize,ctx);
+  const period={actual_start:'2026-06-25',actual_end:'2026-06-26'};
+  assert.equal(ctx.normalizePortfolioResult({commodity_sleeves:{btc:{}},backtest_period:period}).backtest_period,period);
+});

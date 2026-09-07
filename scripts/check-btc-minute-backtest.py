@@ -145,6 +145,8 @@ def main():
     parser.add_argument("--fee-bps", type=float, default=0, help="Execution fee per side on actual futures and direct BTC changes")
     parser.add_argument("--half-spread-bps", type=float, default=0)
     parser.add_argument("--slippage-bps", type=float, default=0)
+    parser.add_argument("--start", help="UTC start observation boundary")
+    parser.add_argument("--end", help="UTC final valuation boundary")
     parser.add_argument("--days", type=int, help="explicit research window measured from first mark")
     parser.add_argument("--stale-mark-control", action="store_true",
                         help="NON-EXECUTABLE sensitivity: carry F/S on zero-volume candles")
@@ -159,6 +161,8 @@ def main():
     payload = btc_payload(args.interval, args.contract_type, args.reactivity, args.execution_model)
     payload["commodity_parameters"]["btc"].update(trading_fee_bps=args.fee_bps,
         half_spread_bps=args.half_spread_bps, slippage_bps=args.slippage_bps)
+    payload.update(backtest_start=args.start or "", backtest_end=args.end or "")
+    bounds = gui.backtest_bounds(payload)
     started = time.monotonic()
     if args.server_engine:
         from server.engine import StrategyEngine
@@ -166,7 +170,8 @@ def main():
         engine.load()
     else:
         gui.MARKETS = gui.build_markets(ROOT, {"btc"})
-    market = gui.MARKETS["btc"]
+    market = gui.period_market(gui.MARKETS["btc"], *bounds)
+    gui.MARKETS["btc"] = market
     if args.days:
         stop = min(market[0]) + timedelta(days=args.days)
         market = ({d:v for d,v in market[0].items() if d < stop}, market[1], market[2],

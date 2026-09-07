@@ -4,6 +4,7 @@
 import json
 import math
 import os
+from datetime import datetime, timezone
 from statistics import median
 from dataclasses import replace
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -693,6 +694,38 @@ SPREADSHEET_FIELDS = ['date', 'exit_date', 'mode', 'interval_return_pct', 'start
 
 HOLDING_FIELDS = ['name', 'holding_type', 'book', 'side', 'contract_type', 'price', 'exit_price', 'quantity', 'end_quantity', 'units_expensed', 'position_pct', 'notional_value', 'start_value', 'end_value', 'gross_pnl_value', 'expense_rate', 'expense_value', 'pnl_value', 'internal_transfer_value', 'spot_price', 'exit_spot_price', 'premium_pct', 'matched_usd_rate_pct', 'lease_pct', 'maturity_days']
 
+def backtest_bounds(payload):
+    """Inclusive UTC observation boundaries; blank retains available history."""
+    bounds = []
+    for key in ("backtest_start", "backtest_end"):
+        value = payload.get(key)
+        if value is None or value == "":
+            bounds.append(None)
+            continue
+        try:
+            parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+            if parsed.tzinfo is not None:
+                parsed = parsed.astimezone(timezone.utc).replace(tzinfo=None)
+        except (ValueError, TypeError):
+            raise ValueError(f"{key} must be an ISO date or UTC date/time") from None
+        bounds.append(parsed)
+    start, end = bounds
+    if start is not None and end is not None and start >= end:
+        raise ValueError("Backtest start must be earlier than backtest end")
+    return start, end
+
+
+def period_market(market, start, end):
+    if start is None and end is None:
+        return market
+    lo = observation_seconds(start) if start is not None else -math.inf
+    hi = observation_seconds(end) if end is not None else math.inf
+    # Keep prior rate observations and original contract prices for causal
+    # lookups. Restrict the execution calendar before any strategy is computed.
+    return (*market[:3], {day: curve for day, curve in market[3].items()
+                         if lo <= observation_seconds(day) <= hi})
+
+
 def sleeve_result(payload, market=None, product="silver", audit_collection=None):
     p = parameters(product_payload(payload, product))
     market = market or MARKET
@@ -700,6 +733,10 @@ def sleeve_result(payload, market=None, product="silver", audit_collection=None)
         observation for observation in market[3] if observation in market[0]
     ]
     source_resolution_seconds = market_resolution_seconds(common_observations)
+    start, end = backtest_bounds(payload)
+    market = period_market(market, start, end)
+    if len([day for day in market[3] if day in market[0]]) < 2:
+        raise ValueError(f"{product}: the selected backtest period needs at least two usable observations")
     writer = (audit_collection.writer(product) if audit_collection is not None
               and source_resolution_seconds and source_resolution_seconds < 86400 else None)
     execution_stats = {"model": "legacy_close", "fills": 0, "pending_order_intervals": 0,
@@ -1141,6 +1178,13 @@ def result(payload, audit_collection=None):
     fields, series, attribution = aggregate_portfolio(
         aggregation_sleeves, weights, rebalance, attribution_sink)
     def finish(answer):
+        answer["backtest_period"] = {
+            "requested_start": payload.get("backtest_start") or None,
+            "requested_end": payload.get("backtest_end") or None,
+            "actual_start": series[0][fields.index("start_date")],
+            "actual_end": series[-1][fields.index("date")],
+            "initialization": "fresh_portfolio",
+        }
         if audit_collection is not None and audit_collection.writers:
             answer["audit"] = audit_collection.finish()
         return answer

@@ -605,3 +605,14 @@ ambiguous creation requests automatically. See
 [BTC_CONNECTION_RECOVERY.md](BTC_CONNECTION_RECOVERY.md) for timings, diagnostics
 and limitations, and [BTC_TRADE_STORAGE.md](BTC_TRADE_STORAGE.md#giving-automation-access-to-the-bucket)
 for the separate, proposed market-bucket IAM setup.
+
+
+### Selected-period backtests and trade ingestion
+
+`backtest_start` / `backtest_end` restrict the actual simulation and comparison
+runs; see [BACKTEST_PERIOD.md](BACKTEST_PERIOD.md). The preview BTC gate now also
+fills a one-day range in the GUI and checks fresh NAV and complete 1,440-interval
+audit coverage. Cold market initialization still loads the packaged history.
+The separate [bounded GCS pilot](BTC_TRADE_STORAGE.md#running-the-bounded-cloud-pilot)
+uses the owner's newly granted market-bucket roles and the existing operator OIDC
+identity; it does not change the GUI market provider or cloud resource limits.
