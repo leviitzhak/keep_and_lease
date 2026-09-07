@@ -290,8 +290,8 @@ async function main() {
         }));
         // A fresh, short computation uses the new period controls, not plot cropping.
         const shortStarted=Date.now();
-        await page.locator('[name="backtest_start"]').fill('2026-06-25T00:00:00');
-        await page.locator('[name="backtest_end"]').fill('2026-06-26T00:00:00');
+        await page.locator('[name="backtest_start"]').fill('2026-06-25T00:00');
+        await page.locator('[name="backtest_end"]').fill('2026-06-26T00:00');
         const shortSubmitted=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/v1/backtests'&&r.request().method()==='POST');
         await page.locator('#run').click();
         const shortResponse=await shortSubmitted;

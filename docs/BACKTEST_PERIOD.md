@@ -58,3 +58,7 @@ datetime fields can omit zero seconds when serializing their values.
 
 Period boundaries are portfolio-wide settings. Switching the commodity parameter
 editor does not replace the range or save it inside a commodity profile.
+
+The initial cloud period check reached the completed full-BTC result and export,
+but Playwright rejected a datetime fill containing redundant zero seconds. The
+fixture now fills the accepted `YYYY-MM-DDTHH:MM` form and compares UTC instants.
