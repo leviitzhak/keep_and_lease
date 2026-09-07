@@ -52,3 +52,6 @@ in 38.59 seconds including 33.9 seconds of cold BTC market loading, retained all
 measurement used inline ledgers; the production worker uses audit chunks.
 Strategy return was −1.92409125%, versus −2.10221391% direct holding. These are
 minute-candle proxy results, distinct from the one-second trade replay.
+
+The browser acceptance compares selected boundaries as UTC instants, since native
+datetime fields can omit zero seconds when serializing their values.

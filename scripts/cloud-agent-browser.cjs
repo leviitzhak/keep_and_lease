@@ -297,9 +297,9 @@ async function main() {
         const shortResponse=await shortSubmitted;
         if (![200,202].includes(shortResponse.status())) throw Error('Short-period submission failed');
         const shortJob=await shortResponse.json();
-        if (shortJob.parameters.backtest_start!=='2026-06-25T00:00:00') throw Error('GUI omitted selected period');
+        if (Date.parse(shortJob.parameters.backtest_start+'Z')!==Date.UTC(2026,5,25)) throw Error('GUI omitted selected period');
         await page.waitForFunction(()=>!document.querySelector('#run').disabled &&
-          plotRangeSource?.result?.backtest_period?.requested_start==='2026-06-25T00:00:00',null,{timeout:300000});
+          Date.parse(plotRangeSource?.result?.backtest_period?.requested_start+'Z')===Date.UTC(2026,5,25),null,{timeout:300000});
         const shortEvidence=await page.evaluate(()=>{
           const r=plotRangeSource.result,fields=r.portfolio_fields;
           return {summary:r.summary,period:r.backtest_period,initialNav:r.portfolio_series[0][fields.indexOf('start_nav')],
