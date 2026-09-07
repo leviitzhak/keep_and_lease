@@ -4,10 +4,17 @@ This checklist reflects the application synchronized from the deployed Sites che
 
 ## Higher priority
 
-- [ ] Complete authenticated GCS publication/read validation for the tested
-  Parquet trade pilot, then multi-day ingestion and account checkpoint/restore.
-  Conversion, bounded readers and create-only upload tooling are implemented;
-  see `BTC_TRADE_STORAGE.md`. Do not reset holdings at daily partition boundaries.
+- [x] Complete authenticated GCS publication/read validation for the tested
+  Parquet trade pilot. All 5,739,608 events, both financial summaries and both
+  complete audit hashes matched from GCS; see `BTC_TRADE_STORAGE.md`.
+
+- [ ] Prepare one-second backtests of at least 90 days using the ordered
+  implementation plan in `BTC_TRADE_STORAGE.md`: resumable daily ingestion and
+  range manifests; selected-partition reads; phase timing; continuous account
+  checkpoints; direct-to-GCS audit chunks; durable progress/cancel/resume;
+  shared verified inputs for main/comparison calculations; on-demand exports;
+  and multi-day equivalence, recovery and resource acceptance. Do not reset
+  holdings, pending fills, smoothing or Treasury accrual at day boundaries.
 
 - [ ] Review and integrate the one-day raw-trade research pilot with the GUI and
   worker before activating second/subsecond execution. See `BTC_TRADE_PILOT.md`:

@@ -15,9 +15,11 @@ branch._
   [PR #38](https://github.com/leviitzhak/keep_and_lease/pull/38) now also contains
   the Parquet storage follow-up: [BTC_TRADE_STORAGE.md](BTC_TRADE_STORAGE.md).
   The owner granted the operator bucket create/read access. The bounded GCS
-  upload/replay workflow is implemented, with a bounded 8 MiB remote-read cache
-  per open partition; live outcomes are recorded in PR #38.
-  Multi-day trade-worker/GUI integration remains outstanding.
+  upload/replay passed for all 5,739,608 events and both complete audit hashes,
+  with an 8 MiB remote-read cache per open partition. The measured capacity
+  replay took 145.35 seconds from GCS versus 87.34 seconds locally. The ordered
+  preparation plan for 90-day execution is in `BTC_TRADE_STORAGE.md`;
+  multi-day trade-worker/GUI integration remains outstanding.
   Explicit UTC backtest start/end controls now restrict strategy computation;
   see [BACKTEST_PERIOD.md](BACKTEST_PERIOD.md).
   The latest follow-up fixes interrupted server-job polling and disables the

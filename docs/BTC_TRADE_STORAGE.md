@@ -48,6 +48,16 @@ may be fetched in the same block.
 The Cloud Run writable filesystem consumes RAM, so large caches there must not
 be treated as free disk.
 
+### What a participation replay means
+
+The participation replay is the capacity-constrained pilot scenario. For every
+eligible subsequent market trade, the simulated order may use at most the
+configured fraction of that trade's quantity. The `$100,000 / 10%` run may
+therefore consume no more than 10% of each eligible print. Unfilled quantity
+remains pending until the next one-second decision, when the strategy cancels
+and replaces the remainder from its new target. This is a sensitivity to
+observed traded volume; it is not an order-book or queue-position simulation.
+
 ## Reproduction
 
 ```sh
@@ -125,6 +135,25 @@ batches use more RAM than the 39.79 MiB raw-only prototype, while remaining well
 within the current worker limit for this pilot. No cloud resource increase was
 made or established as necessary for longer histories.
 
+The cached live GCS validation measured 113.87 seconds for the independent full
+event scan, 124.58 seconds for the $1 replay and 145.35 seconds for the
+$100,000 / 10% participation replay. The comparable local capacity replay took
+87.34 seconds, so remote access added about 58.01 seconds, or 39.9% of the GCS
+replay's wall time. This difference is the best current estimate of remote-I/O
+overhead, not a direct phase measurement: both replay timers also include the
+full SHA-256 scan, Parquet decoding, event merging, strategy calculations and
+audit compression. Add separate checksum-read, decode/merge, strategy and audit
+timers before sizing a long-window production service.
+
+Linear extrapolation of the capacity scenario gives about 3.6 hours for a
+90-day replay. Allow roughly 3.5--5 hours because event density and fill/audit
+volume vary by day. Running a separate complete event-equivalence scan before
+the replay would add about 2.8 hours at the measured one-day rate. The current
+30-minute calculation Job timeout cannot run this workload unchanged. The
+capacity audit alone extrapolates to about 3.4 GiB compressed for 90 days, so it
+must be written directly in chunks rather than assembled on the worker or
+returned to the browser.
+
 All 26 focused Python tests passed, including seven storage/publication tests.
 The publication tests use a mock cloud client: they check create-only writes,
 manifest-last ordering, retry verification and refusal of conflicting objects.
@@ -132,13 +161,48 @@ The optional storage tests explicitly skip if their optional dependencies are
 absent. `npm run prepare:assets` was run before fresh-process tests; the prior
 full API/workbook acceptance was not repeated for this isolated storage change.
 
-The cloud workflow enforces authenticated immutable upload/read validation.
-The remaining integration gates are a multi-day source manifest and ingestion
-driver, and continuous-account checkpoint/restore tests across partition boundaries. The current research runner still explicitly
-accepts one UTC day; 90-day raw-trade ingestion, production worker integration,
-and GUI activation have not been performed. These must preserve positions,
-pending fills and Treasury accrual across days, rather than restarting the
-strategy independently each day.
+The cloud workflow enforces authenticated immutable upload/read validation. The
+one-day upload and both GCS replays now pass. Preparing production backtests of
+at least 90 days requires the following changes:
+
+1. Build a resumable multi-day ingestion command. Download and validate each
+   venue/day independently, write daily Parquet partitions, and publish a
+   versioned range manifest only after every expected day and contract passes
+   checksum, sequence, coverage and timestamp checks.
+2. Add a range resolver to `ParquetTradeStore`. Select only daily partitions
+   intersecting `[backtest_start, backtest_end)`, verify each object once per
+   job, and expose the dataset manifest/object generations in result provenance.
+3. Instrument four phases independently: checksum/network reads, Parquet
+   decode/chronological merge, strategy accounting, and audit compression/write.
+   Benchmark one, seven, thirty and ninety days before choosing worker CPU,
+   memory and timeout settings.
+4. Keep account state continuous across partitions. Add restartable checkpoints
+   containing cash, collateral, spot/futures positions, marks, pending orders,
+   smoothing state, Treasury accrual, cumulative summaries and source cursors.
+   A day boundary may create a checkpoint but must not reset the portfolio.
+5. Stream audit chunks directly to immutable GCS objects while the replay runs.
+   Maintain an incremental manifest and finalize it atomically; compute summary,
+   plot aggregates and validation hashes online without retaining the ledger.
+6. Make the long replay a durable asynchronous job with progress by phase/day,
+   cancellation at safe checkpoints, heartbeat/recovery, and resume from the
+   last completed partition. Increase the current 1,800-second Job timeout only
+   after the staged benchmark establishes the required bound.
+7. Avoid repeated remote reads inside one job. Share the verified decoded event
+   stream or derived causal decision input among the main calculation and
+   comparisons. Do not copy the projected 3.31 GB input set into Cloud Run's
+   memory-backed writable filesystem; retain the bounded range-read cache unless
+   a separately provisioned disk-backed cache is measured and configured.
+8. Serve summaries first and load detailed plots, audit ranges and spreadsheets
+   from stored chunks on demand. Spreadsheet generation must stream selected
+   dates into numbered parts with progress and cancellation rather than rebuild
+   or download the complete audit first.
+9. Add multi-day equivalence and recovery acceptance: raw versus Parquet event
+   identity, uninterrupted versus checkpoint-resumed financial/audit hashes,
+   exact selected-period boundaries, cancellation/resume, and a measured
+   90-day preview run within the configured resource and output limits.
+
+The current research runner still explicitly accepts one UTC day. Production
+worker and GUI activation remain after these gates.
 
 ## Giving automation access to the bucket
 
