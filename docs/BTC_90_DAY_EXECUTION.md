@@ -100,8 +100,8 @@ Local checks: 23 focused Python tests and 28 HTML/JavaScript tests pass; the
 production build and artifact validation also pass. Local synthetic tests pass for midnight recovery with pending orders, exact
 financial and complete audit identity, incompatible checkpoints, account JSON
 roundtrip and expiry between decision ticks. Existing pure replay tests and GUI
-HTML/JavaScript checks also pass. Arrow and FastAPI were unavailable locally;
-the package installation was blocked. A required pre-deployment CI job installs
+HTML/JavaScript checks also pass. Arrow and FastAPI were initially unavailable locally;
+the dependencies were subsequently installed and the expanded suites pass locally. A required pre-deployment CI job installs
 both and runs the Parquet/API/job/audit/recovery suites, without silently
 skipping Arrow. No real multi-day benchmark or 90-day acceptance has yet passed.
 
@@ -117,7 +117,13 @@ in [PR #40](https://github.com/leviitzhak/keep_and_lease/pull/40).
 [Deployment 34194440773](https://github.com/leviitzhak/keep_and_lease/actions/runs/34194440773)
 passed 56 Python checks with Arrow/API dependencies and private rendered GUI
 acceptance. The approved [90-day ingestion run 34194533429](https://github.com/leviitzhak/keep_and_lease/actions/runs/34194533429)
-is processing daily raw/Parquet/GCS identity gates; June 6 passed first.
+completed with 77 successful daily ingestions and 13 failed daily ingestions.
+The request-validation job also passed; complete-range publication was skipped.
+[Benchmark continuation 34195750155](https://github.com/leviitzhak/keep_and_lease/actions/runs/34195750155)
+stopped at the ingestion-success gate; no staged measurements ran.
+The later [preview deployment 34195659697](https://github.com/leviitzhak/keep_and_lease/actions/runs/34195659697)
+passed 61 Python tests and authenticated GUI acceptance at
+`c9e2e58f46ea55a71b286f7d5b85626346ff8cbe`.
 
 `btc-trade-benchmark.yml` can follow that run with the bounded request
 `{"schema_version":1,"action":"benchmark-90day-btc-500ms","source_commit":"<reviewed SHA>","ingestion_run_id":34194533429}`
@@ -128,3 +134,183 @@ stages run strictly in 1/7/30/90-day order; each uses a stable GCS checkpoint ID
 across workflow retries. The measurements run on GitHub Actions CPU, so final
 Cloud Run acceptance is still required. This continuation does not enable the
 90-day catalog, change worker resource limits or merge into master.
+
+
+## Research policy for discrepant trade records
+
+Status: implemented on the feature branch; production range activation still
+requires ingestion, staged measurements and private Cloud Run acceptance.
+The downloader archives canonical endpoint responses and a hashed anomaly ledger,
+permits documented reversals and endpoint extras, and rejects gaps/conflicting
+versions inside its inspected sequence envelope. This does not resolve the
+historical cause or recover live arrival order.
+
+### Evidence observed on 2026-09-08
+
+Twelve failed days reported decreasing timestamps in instrument sequence order:
+July 21 and 26; August 21-26, 28 and 30; September 2 and 3. June 26 reported
+unequal downloaded/checker final sequences for BTC-26JUN26. Its original error
+did not include the actual and expected values; "Missing end of trade window"
+does not establish which retrieval contained more records.
+
+Fresh public queries returned maximum sequence 2308892 at
+2026-06-26 07:58:41.591 UTC in the descending day-filtered response, while a
+sequence-range response also contained 2308893 at 08:00:00.048 UTC. These are
+observations from later queries, not preserved responses from the failed job.
+Archive repeat responses before treating the discrepancy as reproducible.
+The extra record is 48 ms after the contract's scheduled 08:00 UTC expiry:
+retain it as evidence, but never allow it to fill an expired futures order.
+
+Deribit defines an instrument-local trade sequence, millisecond trade timestamp,
+and an optional Starbase causal timestamp. The
+[API schema](https://docs.deribit.com/api-reference/market-data/public-get_last_trades_by_instrument_and_time)
+does not resolve precedence when they disagree. Clock changes, delayed reporting,
+or processing differences remain hypotheses. Equal timestamp precision alone
+does not explain a backwards timestamp.
+
+### Ingestion and evidence
+
+Preserve original records and fields, including IDs, sequence, timestamps,
+prices, amounts and block/combo/Starbase fields. Reconcile the union of records
+returned by time and sequence queries, deduplicating only identical records
+with the same instrument/trade ID. Preserve conflicting versions for diagnosis;
+do not arbitrarily choose a price or volume. Keep checksum, identity, bounded
+pagination and coverage checks. Replace the single tail equality assertion
+with a recorded comparison of both sets and explicit discrepancy classification.
+
+Do not stop pagination at the first out-of-window timestamp. Establish and
+validate sequence coverage independently, inspect adjacent boundary records,
+then assign raw records to UTC days by their original timestamp. Reordering
+must be bounded in memory, using disk/Parquet batches if necessary. Preserve
+all day-boundary dependencies; a fixed overlap alone is not proof of completeness.
+A missing sequence remains an unresolved coverage question, not a trade to
+invent. Permit documented ordering/endpoint discrepancies in research data;
+do not call unresolved coverage gaps a complete lossless 90-day dataset.
+
+Maintain a versioned anomaly ledger with: stable anomaly ID; instrument and UTC
+day; all conflicting/neighboring trade IDs and sequences; original timestamp
+differences; exact endpoint parameters and retrieval times; pagination flags;
+immutable raw-response paths and hashes; classification; chosen treatment;
+resolution status and later exchange explanation. Record the smallest failing
+reproduction. Where source data are unavailable, record the evidence limitation.
+
+### Two explicit replay scenarios
+
+The default reference scenario preserves sequence order within each instrument.
+For each successive sequence, set an additional effective replay timestamp to
+the maximum of its original timestamp and the previous effective timestamp.
+This delays a backwards timestamp to the last reached time without changing its
+raw value. Process equal effective timestamps in sequence order, retaining every
+eligible print and its original volume. This is an assumed timeline, not a
+reconstructed historical receive timestamp or a guaranteed conservative bound.
+
+The selectable comparison scenario sorts by original trade timestamp, with sequence as a
+deterministic instrument-local tie breaker. It assumes the reported event times
+are authoritative and that records were observable at those times. That
+observability assumption can be false for late reports and must be stated.
+
+Merge instruments by the selected scenario's effective time. Use a documented
+deterministic cross-instrument tie rule; instrument-local sequences establish no
+global exchange order. Apply the same data-treatment policy to the strategy and
+direct-holding comparison. Include the policy version in dataset/result identity,
+cache keys, checkpoints and export metadata so scenarios cannot mix on resume.
+Carry ordering state through midnight and initialize it before the selected
+window; never reset a delayed record backwards at a new day boundary. Select
+and audit executions by effective time while retaining raw day membership.
+
+In each scenario, a trade can affect signals, prices or fills only once reached
+on that scenario's timeline. Preserve the existing strict order-submission and
+execution-delay eligibility rule, participation limits, fees and exclusions.
+Do not reuse a same-timestamp print to fill an order generated from that print.
+Expiry settlement follows the contract schedule and verified delivery price;
+prints at/after expiry, or delayed to expiry, cannot execute that future.
+Treasury observations retain their own availability timestamps. No interpolation,
+fabricated trades or rewritten original timestamps is introduced.
+
+### Results and acceptance
+
+Run both scenarios over the same continuous period with the same parameters,
+decision schedule and eligible trade universe; expiry eligibility differences
+caused by delayed effective time must be counted. Compare final NAV/return,
+drawdown, fees, turnover, fill quantities and counts, missed executions and
+order-level differences. Report anomaly counts by type/instrument/day, affected
+volume, largest raw reversal, largest effective delay and delayed/excluded fills.
+Attribute differences by linking ledger IDs to affected signals/orders/valuations.
+If rolling holding marks or Treasury accrual differs, keep that in the financial
+comparison rather than comparing only fills.
+
+Every result and export must identify its ordering assumption and link the
+hashed anomaly ledger. A small difference supports robustness only to these
+tested scenarios; it does not prove true chronology or bound all reporting
+delays. Materiality must be assessed against the strategy's claimed advantage
+and execution interval, not selected afterwards to obtain a pass.
+Keep the historical cause open for later investigation. Corrected data/policies
+produce new immutable versions and new results, preserving prior evidence.
+
+Targeted tests cover reversals across pages and UTC days, equal-time fill
+eligibility, endpoint-only records, gaps/conflicting duplicates, Parquet value
+and sequence preservation, receipt restoration, and checkpoint/audit identity
+with a reversed timestamp. Full real-range acceptance is still pending.
+
+### Implementation details, recovery and remaining limitations
+
+- The time-anchored sequence envelope extends backwards/forwards through a full
+  900-sequence neighboring page and validates every sequence within the span.
+  It does not stop at the first out-of-window timestamp. Out-of-day records are
+  retained in endpoint evidence; selected raw trades remain in sequence order.
+  This explicit bounded-envelope assumption is not proof that arbitrarily
+  backdated records outside that span do not exist. A day without any anchor
+  fails for investigation rather than being declared empty.
+- Conversion sorts only futures on disk, retaining the original schema's raw
+  timestamp and sequence. The independent raw/Parquet check sorts raw records
+  separately. Existing immutable daily Parquet data remain readable.
+- `trade_ordering=sequence` (default) builds a temporary SQLite futures index
+  over the whole pinned range, seeded with captured pre-range time anchors.
+  Its per-instrument prefix maximum crosses midnight and selected-window bounds.
+  `trade_ordering=timestamp` streams the original timestamp-sorted partitions.
+  Spot streams without a full-range cache in both modes. SQLite page cache is
+  8 MiB and its database limit is 512 MiB. Benchmark headroom includes twice
+  the ordering database size because Cloud Run temporary files consume memory.
+- The GUI exposes both assumptions and delayed-trade counts/max delay. Result
+  and audit provenance include policy version, discrepancy summaries and GCS
+  evidence references. Fill rows retain reported timestamps and source sequences;
+  valuations retain original mark timestamps. Post-expiry prints are excluded
+  from execution, with raw/ordering-induced exclusion and delayed-fill counts.
+- Each benchmark stage runs both policies with separate immutable audit and
+  checkpoint IDs, then emits `comparison.json` with aggregate financial/fill
+  differences and evidence links. Automated per-order difference attribution
+  remains future work; complete orders/fills are available in each audit.
+- The original run retained 77 successful `btc-day-*` artifacts, all unexpired
+  when inspected. No failed-day raw artifacts were retained. Restore these
+  receipts instead of redownloading successful market data. The new recovery
+  workflow computes missing days from restored receipts; its publication job
+  combines them with new receipts and verifies all referenced manifest hashes.
+  Future failures retain raw/evidence artifacts (`btc-failed-*`) for diagnosis.
+  Successful raw and response files upload to immutable content-hashed GCS keys.
+- Retained days passed the earlier strict downloader, not the new envelope
+  reconciliation. Their per-day source/converter versions remain visible;
+  absence of an anomaly ledger for an old day is not a new endpoint-equivalence
+  claim. A stricter uniform re-audit can be done later without losing these data.
+- Fresh targeted June 26 retrieval passed with 8,280 BTC-26JUN26 records, ending
+  at sequence 2308893, and recorded a tail disagreement plus an endpoint-only
+  record. Both the extra print and the underlying responses are retained.
+
+The bounded request in `.cloud-agent/requests/btc-recovery.json` is:
+
+```json
+{"schema_version":1,"action":"recover-90day-btc","source_commit":"<reviewed full SHA>","reuse_run_ids":[34194533429]}
+```
+
+The operator must contain `btc-trade-recovery.yml` and the updated benchmark
+workflows before submitting the request. A plain retry of the old run uses its
+old pinned source and cannot apply these fixes. Additional completed bounded
+recovery run IDs may be included (at most five source runs total) to reuse newly
+successful days after a later failed attempt. Neither recovery nor benchmarking
+changes the active server catalog or worker timeout automatically.
+
+
+Local validation of this correction: 71 Python checks (including Arrow/API),
+42 JavaScript/HTML checks, and the production build/artifact gate passed.
+The targeted July 21 BTC-25DEC26 retrieval retained 3,641 trades, recording one
+2 ms timestamp reversal and one sequence-endpoint-only record. These targeted
+public-history checks are not the complete 90-day acceptance benchmark.
