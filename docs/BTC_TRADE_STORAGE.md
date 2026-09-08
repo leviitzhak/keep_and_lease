@@ -285,3 +285,16 @@ strategy clock and accounting. Cache tests check exact decoded events, eviction,
 EOF, seeks and the retained-byte bound; the full pilot comparison verifies all
 5,739,608 events against the original local reader. Live timings are recorded
 with the cloud validation outcome in PR #38.
+
+
+### Discrepancy-aware range recovery
+
+The feature branch retains the existing Parquet schema and immutable daily data.
+New raw futures ingestion archives endpoint-response and anomaly evidence;
+conversion validates sequence identity before sorting by reported timestamp.
+Sequence-mode replay builds a bounded disk index of futures for the whole pinned
+range; spot remains streamed. This is additional preparation beyond selected-day
+reads, measured by the staged benchmark. Recovery can reuse the 77 previously
+successful daily receipts instead of downloading their spot/futures again.
+See [BTC_90_DAY_EXECUTION.md](BTC_90_DAY_EXECUTION.md) for exact assumptions and
+for the distinction between original-day validation and new envelope checks.

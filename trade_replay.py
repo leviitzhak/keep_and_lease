@@ -3,7 +3,7 @@
 Trade prints are a volume proxy, not displayed depth or evidence of queue access.
 Integer microseconds preserve native event ordering. No candle interpolation.
 """
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 import math
 
 YEAR_US = 365 * 86400 * 1_000_000
@@ -18,6 +18,8 @@ class Trade:
     side: str  # aggressor side: buys consume ask-side prints
     identifier: str
     executable: bool = True
+    reported_us: int | None = field(default=None, compare=False)
+    sequence: int | None = field(default=None, compare=False)
 
 
 @dataclass
@@ -54,6 +56,7 @@ class TapeAccount:
         self.order_id, self.last_us, self.rate = 0, None, 0.0
         self.interest = self.fees = self.market_pnl = self.turnover = 0.0
         self.fill_count = self.order_count = self.cancellation_count = 0
+        self.delayed_fill_count = 0
 
     def snapshot(self):
         """JSON-roundtrippable state, including partially filled pending orders."""
@@ -169,8 +172,11 @@ class TapeAccount:
         order.filled_value += quantity * trade.price
         self.turnover += quantity * trade.price
         self.fill_count += 1
+        self.delayed_fill_count += int(trade.reported_us is not None and trade.us > trade.reported_us)
         self.sink(dict(kind="fill", us=trade.us, symbol=trade.symbol,
                        order_id=order.identifier, trade_id=trade.identifier, side=trade.side,
+                       reported_us=trade.reported_us if trade.reported_us is not None else trade.us,
+                       source_sequence=trade.sequence,
                        signed_btc=signed, price=trade.price, observed_btc=trade.btc,
                        fee_usd=fee, cash_usd=self.cash, nav_usd=self.nav))
         if self.cash < -1e-8 * self.initial:

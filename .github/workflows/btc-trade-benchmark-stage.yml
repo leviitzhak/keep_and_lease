@@ -42,18 +42,23 @@ jobs:
           manifest=os.environ['RANGE_MANIFEST']; days=int(os.environ['RANGE_DAYS'])
           assert re.fullmatch('[0-9a-f]{64}',manifest)
           assert days in (1,7,30,90)
-          identifier=hashlib.sha256((os.environ['GITHUB_RUN_ID']+':'+str(days)).encode()).hexdigest()[:32]
-          subprocess.run([sys.executable,'scripts/benchmark-btc-trade-range.py',
-            '--dataset','gs://keep-and-lease-market-data/btc/trades/ranges/'+manifest,
-            '--expected-manifest-sha',manifest,'--days',str(days),'--interval','0.5',
-            '--output','work/benchmark-'+str(days),'--gcs-audit','--checkpoint-id',identifier],check=True)
+          for ordering in ('sequence','timestamp'):
+              identifier=hashlib.sha256((os.environ['GITHUB_RUN_ID']+':'+str(days)+':'+ordering).encode()).hexdigest()[:32]
+              subprocess.run([sys.executable,'scripts/benchmark-btc-trade-range.py',
+                '--dataset','gs://keep-and-lease-market-data/btc/trades/ranges/'+manifest,
+                '--expected-manifest-sha',manifest,'--days',str(days),'--interval','0.5',
+                '--ordering',ordering,'--output','work/benchmark-'+str(days)+'/'+ordering,
+                '--gcs-audit','--checkpoint-id',identifier],check=True)
+          subprocess.run([sys.executable,'scripts/compare-btc-ordering.py',
+            '--directory','work/benchmark-'+str(days)],check=True)
           PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: btc-benchmark-${{ inputs.days }}-days
           path: |
-            work/benchmark-${{ inputs.days }}/report.json
-            work/benchmark-${{ inputs.days }}/validation-job-id.txt
+            work/benchmark-${{ inputs.days }}/**/report.json
+            work/benchmark-${{ inputs.days }}/**/validation-job-id.txt
+            work/benchmark-${{ inputs.days }}/comparison.json
           retention-days: 30
           if-no-files-found: warn

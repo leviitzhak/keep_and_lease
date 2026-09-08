@@ -29,7 +29,7 @@ def resolve(run_id):
     while True:
         run = json.loads(api(f'actions/runs/{run_id}'))
         if (run['head_branch'] != 'agent/cloud-autonomous-access' or
-                run['path'] != '.github/workflows/btc-trade-range.yml'):
+                run['path'] not in ('.github/workflows/btc-trade-range.yml', '.github/workflows/btc-trade-recovery.yml')):
             raise ValueError('Unexpected ingestion workflow or branch')
         if run['status'] == 'completed':
             if run['conclusion'] != 'success':

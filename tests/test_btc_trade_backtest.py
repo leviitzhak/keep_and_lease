@@ -32,8 +32,10 @@ class FakeStore:
                            (503000, "F", 100, "buy"), (1100000, "F", 101, "buy"),
                            (1500000, "SPOT", 102, "buy"), (2000000, "SPOT", 999, "buy")]]
 
-    def trades(self, start_us=None, end_us=None, symbols=None):
-        return iter(t for t in self.events if (start_us is None or t.us >= start_us)
+    def trades(self, start_us=None, end_us=None, symbols=None, batch_rows=8192):
+        from dataclasses import replace
+        events = [replace(t, reported_us=t.us, sequence=i+1) for i,t in enumerate(self.events)]
+        return iter(t for t in sorted(events,key=lambda t:(t.us,t.symbol,t.sequence)) if (start_us is None or t.us >= start_us)
                     and (end_us is None or t.us < end_us) and (symbols is None or t.symbol in symbols))
 
 

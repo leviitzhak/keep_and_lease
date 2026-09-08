@@ -26,10 +26,14 @@ def range_manifest(days):
     if not days:
         raise ValueError("No completed days")
     futures = {}
+    discrepancy_evidence = []
     for day, store in days:
         for symbol, info in store.source_manifest["futures"].items():
+            if 'discrepancy' in info:
+                discrepancy_evidence.append(dict(day=day,instrument=symbol,**info['discrepancy'],
+                    evidence_files=[{**entry,'uri':'gs://keep-and-lease-market-data/btc/raw/sha256/'+entry['sha256']+'/'+Path(entry['path']).name} for entry in info.get('evidence_files',[])]))
             if symbol not in futures:
-                futures[symbol] = {"expiry": info["expiry"]}
+                futures[symbol] = {"expiry": info["expiry"], "ordering_prefix_max_ms": info.get("discrepancy",{}).get("prefix_max_timestamp_ms")}
                 seed = info.get("seed")
                 if seed and seed["timestamp"] < int(datetime.fromisoformat(days[0][0]).replace(tzinfo=timezone.utc).timestamp()) * 1000:
                     futures[symbol]["seed"] = seed
@@ -38,7 +42,7 @@ def range_manifest(days):
             if "settlement" in info:
                 futures[symbol]["settlement"] = info["settlement"]
     return dict(schema_version=1, source_manifest=dict(start=days[0][1].source_manifest["start"],
-                end=days[-1][1].source_manifest["end"], futures=futures), partitions=[],
+                end=days[-1][1].source_manifest["end"], futures=futures, discrepancy_evidence=discrepancy_evidence), partitions=[],
                 daily_datasets=[dict(start=store.source_manifest["start"], end=store.source_manifest["end"],
                                      manifest_sha256=hashlib.sha256(store.manifest_bytes).hexdigest(),
                                      local_path="days/"+day) for day, store in days])

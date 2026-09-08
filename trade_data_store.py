@@ -18,7 +18,7 @@ from trade_replay import Trade
 
 VERSION = 1
 ENGINE_COLUMNS = ["timestamp_us", "symbol", "price", "native_quantity",
-                  "quantity_currency", "side", "trade_id", "flags"]
+                  "quantity_currency", "side", "trade_id", "flags", "source_sequence"]
 
 
 def sha256(path):
@@ -53,24 +53,23 @@ def spot_records(path):
                            source_sequence=int(row[0]), flags=0, source_file=Path(path).name)
 
 
-def future_records(symbol, path):
-    with gzip.open(path, "rt") as stream:
-        for line in stream:
-            row = json.loads(line, parse_float=Decimal)
-            flags = sum(1 << i for i, key in enumerate(("block_trade_id", "block_rfq_id", "combo_id"))
-                        if row.get(key))
-            yield dict(timestamp_us=row["timestamp"] * 1000, precision_us=1000,
-                       symbol=symbol, source_symbol=symbol, price=Decimal(row["price"]),
-                       native_quantity=Decimal(row["amount"]), quantity_currency="USD", quote_currency="USD",
-                       side=row["direction"], trade_id=row["trade_id"], source_sequence=row["trade_seq"],
-                       flags=flags, source_file=Path(path).name)
-
+def future_records(symbol, path, *, contiguous=True):
+    from trade_ordering import sorted_raw_futures
+    for line in sorted_raw_futures(path, contiguous=contiguous):
+        row = json.loads(line, parse_float=Decimal)
+        flags = sum(1 << i for i, key in enumerate(("block_trade_id", "block_rfq_id", "combo_id"))
+                    if row.get(key))
+        yield dict(timestamp_us=row["timestamp"] * 1000, precision_us=1000,
+                   symbol=symbol, source_symbol=symbol, price=Decimal(row["price"]),
+                   native_quantity=Decimal(row["amount"]), quantity_currency="USD", quote_currency="USD",
+                   side=row["direction"], trade_id=row["trade_id"], source_sequence=row["trade_seq"],
+                   flags=flags, source_file=Path(path).name)
 
 def record_key(row):
     return row["timestamp_us"], row["symbol"], row["source_sequence"]
 
 
-def write_partition(records, destination, *, expected_rows, batch_rows=16384):
+def write_partition(records, destination, *, expected_rows, batch_rows=16384, contiguous=True):
     import pyarrow as pa
     import pyarrow.parquet as pq
     if not 1 <= batch_rows <= 65536:
@@ -88,7 +87,7 @@ def write_partition(records, destination, *, expected_rows, batch_rows=16384):
             if previous is not None and key <= previous:
                 raise ValueError("Duplicate or unordered source event")
             prior_seq = sequences.get(row["symbol"])
-            if prior_seq is not None and row["source_sequence"] != prior_seq + 1:
+            if contiguous and prior_seq is not None and row["source_sequence"] != prior_seq + 1:
                 raise ValueError("Source trade sequence gap")
             if row["price"] <= 0 or row["native_quantity"] <= 0 or row["side"] not in ("buy", "sell"):
                 raise ValueError("Invalid source trade")
@@ -126,11 +125,11 @@ def convert(raw_directory, destination, *, batch_rows=16384):
     partitions = []
     for path, rows, expected in [
         (spot_path, spot_records(raw / source["spot"]["path"]), source["spot"]["rows"]),
-        (futures_path, heapq.merge(*[future_records(s, raw / info["path"])
+        (futures_path, heapq.merge(*[future_records(s, raw / info["path"], contiguous=not bool(info.get("discrepancy")))
                                     for s, info in sorted(source["futures"].items())], key=record_key),
          sum(info["rows"] for info in source["futures"].values())),
     ]:
-        result = write_partition(rows, out / path, expected_rows=expected, batch_rows=batch_rows)
+        result = write_partition(rows, out / path, expected_rows=expected, batch_rows=batch_rows, contiguous="/market=spot/" in path)
         partitions.append(dict(path=path, **result))
     result = dict(schema_version=VERSION, source_manifest=source,
                   source_manifest_sha256=hashlib.sha256(source_bytes).hexdigest(),
@@ -233,7 +232,7 @@ def partition_trades(path, *, batch_rows=8192, start_us=None, end_us=None, symbo
         for batch in file.iter_batches(batch_size=batch_rows, row_groups=groups,
                                        columns=ENGINE_COLUMNS, use_threads=False):
             columns = [column.to_pylist() for column in batch.columns]
-            for ts, symbol, price, quantity, currency, side, identifier, flags in zip(*columns):
+            for ts, symbol, price, quantity, currency, side, identifier, flags, sequence in zip(*columns):
                 key = (ts, symbol)
                 if previous is not None and key < previous:
                     raise ValueError("Unordered Parquet events")
@@ -245,7 +244,7 @@ def partition_trades(path, *, batch_rows=8192, start_us=None, end_us=None, symbo
                 if currency not in ("BTC", "USD"):
                     raise ValueError("Unknown quantity currency")
                 btc = float(quantity) if currency == "BTC" else float(quantity) / price
-                yield Trade(ts, symbol, price, btc, side, identifier, flags == 0)
+                yield Trade(ts, symbol, price, btc, side, identifier, flags == 0, ts, sequence)
 
 
 class ParquetTradeStore:

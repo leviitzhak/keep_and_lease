@@ -20,6 +20,8 @@
 <div id="tradeReplayControls" hidden>
 <p class="statistics-note" id="tradeCoverage">Available: 25 June 2026 UTC. Checking server coverage…</p>
 <label>Initial capital (USD)<input name="trade_initial_capital_usd" type="number" value="1" min="0.000001" step="any"></label>
+<label>Trade ordering assumption<select name="trade_ordering"><option value="sequence">Preserve instrument sequence (delay backward timestamps)</option><option value="timestamp">Trust reported timestamps (comparison)</option></select></label>
+<p class="statistics-note">These are research assumptions about discrepant records, not verified historical arrival times. Run both with identical parameters to compare sensitivity.</p>
 <progress id="tradeRunProgress" max="1" hidden></progress>
 <button id="cancelTradeRun" type="button" style="position:static" hidden>Cancel replay</button>
 <button id="resumeTradeRun" type="button" style="position:static" hidden>Resume stopped replay</button>
@@ -703,7 +705,7 @@ function drawTradeReplay(){
  $('tradeReplayResults').hidden=false;
  const t=last.trade_replay;
  $('tradeReplaySummary').textContent=t.interval_seconds+' s decision interval · '+fmt(t.decisions,0)+' decisions · '+fmt(t.market_events,0)+' observed trades · '+fmt(t.fills,0)+' partial fills · '+fmt(t.no_fresh_curve_decisions,0)+' decisions without a fresh curve · fees $'+fmt(t.fees_usd,6)+'. Charts sample every '+t.plot_sample_every+' valuations; downloads retain every valuation and order/fill event.';
- $('tradeReplayAssumptions').textContent=t.assumptions.join('. ')+'.';
+ $('tradeReplayAssumptions').textContent=t.assumptions.join('. ')+'. '+(t.ordering?'Delayed futures trades in this window: '+t.ordering.delayed_trades+'; largest imposed delay: '+(t.ordering.max_delay_us/1000)+' ms.':'');
  $('missingSummary').textContent=last.summary.start+' to '+last.summary.end+' UTC · Maximum NAV reconciliation error: $'+t.max_nav_reconstruction_error_usd;
  $('missingEvents').textContent='Ending mark ages (seconds): '+JSON.stringify(t.end_mark_age_seconds,null,2);
  const base=last.audit?.base_url;

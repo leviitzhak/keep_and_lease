@@ -22,7 +22,8 @@ This checklist reflects the application synchronized from the deployed Sites che
   and multi-day equivalence, recovery and resource acceptance. Do not reset
   holdings, pending fills, smoothing or Treasury accrual at day boundaries.
   Implementation now includes ingestion/range reads, hourly checkpoints,
-  durable resume and benchmark commands; real data publication, staged
+  durable resume, discrepancy evidence, sequence/timestamp ordering scenarios,
+  failed-day recovery and paired benchmark commands; real data publication, staged
   performance, full preview acceptance and asynchronous XLSX exports remain.
   See `BTC_90_DAY_EXECUTION.md`.
 

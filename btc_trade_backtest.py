@@ -72,6 +72,9 @@ def validate(payload, *, coverage=None):
         raise ValueError("Unknown BTC data source")
     if source != "trade_tape":
         return None
+    from trade_ordering import POLICIES
+    if payload.get('trade_ordering', 'sequence') not in POLICIES:
+        raise ValueError('Unknown trade ordering policy')
     if gui.portfolio_allocations(payload) != {"btc": 1.0}:
         raise ValueError("Trade replay requires 100% Bitcoin and no other commodity or Treasury sleeve")
     merged = gui.product_payload(payload, "btc")
@@ -118,6 +121,8 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
         if hashlib.sha256(store.manifest_bytes).hexdigest() != catalog()["manifest_sha256"]:
             raise ValueError("Trade dataset manifest checksum mismatch")
     store.check_cancelled = audit_collection.check_cancelled
+    from trade_ordering import OrderedTradeStore, POLICY_VERSION
+    store = OrderedTradeStore(store, payload.get('trade_ordering', 'sequence'), notify)
     manifest = store.source_manifest
     if start < us_time(manifest["start"]) or end > us_time(manifest["end"]):
         raise ValueError("Requested window is outside trade manifest coverage")
@@ -146,6 +151,7 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
             store.accessed_partitions = restored.get("partitions", [])
         initial_us, initial_price = state["initial_us"], state["initial_price"]
         count, decisions, no_fresh = state["count"], state["decisions"], state["no_fresh"]
+        excluded_expiry_prints, delayed_expiry_prints = state["excluded_expiry_prints"], state["delayed_expiry_prints"]
         previous_nav, previous_tick = state["previous_nav"], state["previous_tick"]
         previous_allocation = state["previous_allocation"]
         max_error, simple = state["max_error"], state["simple"]
@@ -175,6 +181,7 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
         tape = iter(store.trades(start_us=start, end_us=end))
         event = next(tape, None)
         count = 0
+        excluded_expiry_prints = delayed_expiry_prints = 0
         while event and event.symbol != "SPOT":
             account.marks[event.symbol] = event
             count += 1
@@ -239,7 +246,11 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
         audit_collection.check_cancelled()
         while event and event.us <= tick and event.us < end:
             settle_through(event.us)
-            account.on_trade(event)
+            if event.symbol == 'SPOT' or event.us < expiries[event.symbol]:
+                account.on_trade(event)
+            else:
+                excluded_expiry_prints += 1
+                delayed_expiry_prints += int(event.reported_us is not None and event.reported_us < expiries[event.symbol])
             count += 1
             if count % 8192 == 0:
                 audit_collection.check_cancelled()
@@ -298,7 +309,8 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
                    cash_usd=account.cash, units=dict(account.units), targets=targets,
                    return_fraction=account.nav/previous_nav-1,
                    mark_ids={s: m.identifier for s, m in account.marks.items()},
-                   mark_us={s: m.us for s, m in account.marks.items()}, reconstruction_error_usd=error,
+                   mark_us={s: m.us for s, m in account.marks.items()},
+                   reported_mark_us={s: m.reported_us if m.reported_us is not None else m.us for s,m in account.marks.items()}, reconstruction_error_usd=error,
                    starting_nav=previous_nav/capital, ending_nav=account.nav/capital,
                    direct_nav=direct, futures_notional_usd=account.collateral, fees_usd=account.fees)
         valuations.emit(row)
@@ -311,6 +323,7 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
         if journal and tick < end and tick // 3_600_000_000 > checkpoint_hour:
             audit_state = audit_collection.snapshot()
             state = dict(initial_us=initial_us, initial_price=initial_price, count=count,
+                         excluded_expiry_prints=excluded_expiry_prints, delayed_expiry_prints=delayed_expiry_prints,
                          decisions=decisions, no_fresh=no_fresh, previous_nav=previous_nav,
                          previous_tick=previous_tick, previous_allocation=previous_allocation,
                          max_error=max_error, simple=simple, max_drawdown=max_drawdown,
@@ -326,9 +339,16 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
         tick = min(tick + interval, end)
     provenance = {"dataset_id": (coverage or catalog())["id"], "manifest_sha256": hashlib.sha256(store.manifest_bytes).hexdigest(),
                   "dataset_uri": dataset_uri, "partitions": getattr(store, "accessed_partitions", store.manifest["partitions"])}
-    audit_collection.provenance["trade_data"] = provenance
+    ordering = store.window_report(start,end)
+    ordering.update(excluded_expiry_prints=excluded_expiry_prints, delayed_past_expiry_prints=delayed_expiry_prints, delayed_fills=account.delayed_fill_count)
+    provenance['ordering'] = ordering
+    provenance['anomaly_evidence'] = manifest.get('discrepancy_evidence', [
+        dict(instrument=symbol, **info['discrepancy'], evidence_files=info.get('evidence_files', []))
+        for symbol,info in manifest['futures'].items() if 'discrepancy' in info])
+    audit_collection.provenance['trade_data'] = provenance
     audit = audit_collection.finish()
     measured = {**getattr(store, "timings", {}), **audit_collection.timings}
+    measured["ordering_preparation"] = store.preparation_seconds
     measured["replay_wall"] = time.monotonic()-started
     measured["strategy_and_checkpoint"] = max(0.0, measured["replay_wall"] -
         measured.get("decode_and_merge", 0) - measured["audit_compression"] - measured["audit_write"])
@@ -345,13 +365,14 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
                                   decisions=decisions, market_events=count, fills=account.fill_count,
                                   orders=account.order_count, cancelled_remainders=account.cancellation_count,
                                   no_fresh_curve_decisions=no_fresh, warmup_us=initial_us-start,
-                                  fees_usd=account.fees, treasury_interest_usd=account.interest,
+                                  fees_usd=account.fees, turnover_usd=account.turnover, treasury_interest_usd=account.interest,
                                   max_nav_reconstruction_error_usd=max_error,
                                   plot_sample_every=sample_every,
                                   resumed_after_us=restored["source_cursor_exclusive_us"] if restored else None,
                                   timings_seconds=measured,
                                   end_mark_age_seconds={s: (end-m.us)/1e6 for s,m in account.marks.items()},
-                                  assumptions=["Deribit inverse quotes as regular USD futures proxy; Binance USDT/USD assumed 1",
+                                  assumptions=["Research ordering: "+store.policy+" ("+POLICY_VERSION+"); historical arrival times are unknown",
+                                               "Deribit inverse quotes as regular USD futures proxy; Binance USDT/USD assumed 1",
                                                "Same-side subsequent prints; strict later timestamp after delay; cancel/replace each decision",
                                                "Long only; 100% USD collateral; fractional lots; causal Treasury accrual",
                                                "Stale marks value holdings but cannot create fresh signals; no order-book or synchronized latency model",

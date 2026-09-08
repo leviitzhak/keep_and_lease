@@ -128,3 +128,15 @@ The multi-commodity baseline also passed. The branch is ready for review in
 The GUI now takes dates and the decision ceiling from the server catalog and
 offers cancel/resume controls for durable trade jobs. Checkpoints are hourly;
 runs stopped before the first checkpoint must restart.
+
+## Discrepant trade ordering
+
+The feature branch adds `trade_ordering`, a global saved/API parameter with
+`sequence` (default) and `timestamp` values. The GUI selector explains both.
+Sequence mode delays backwards timestamps using an instrument-local running
+maximum over the pinned futures range; timestamp mode retains reported-time
+order. Raw times and IDs are preserved in immutable data and audit provenance.
+Neither mode reconstructs historical arrival times. Results show delayed trade
+counts and maximum imposed delay; the benchmark workflow compares both modes.
+See [BTC_90_DAY_EXECUTION.md](BTC_90_DAY_EXECUTION.md) for anomaly evidence,
+coverage assumptions, recovery, memory bounds and remaining acceptance gates.

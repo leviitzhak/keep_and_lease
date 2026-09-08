@@ -28,6 +28,7 @@ def main():
     parser.add_argument("--dataset", required=True)
     parser.add_argument("--days", type=int, choices=[1, 7, 30, 90], required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--ordering", choices=["sequence", "timestamp"], default="sequence")
     parser.add_argument("--interval", type=float, default=.5)
     parser.add_argument("--gcs-audit", action="store_true")
     parser.add_argument("--checkpoint-id", help="Stable 32-hex validation ID for a workflow retry")
@@ -45,6 +46,7 @@ def main():
     if end > replay.us_time(source["end"]):
         raise ValueError("Dataset does not cover the benchmark window")
     parameters = json.loads((ROOT / "strategies/research-btc-long-gradual-500ms.json").read_text())["parameters"]
+    parameters["trade_ordering"] = args.ordering
     parameters.update(backtest_start=replay.iso_time(start), backtest_end=replay.iso_time(end),
                       execution_interval_seconds=args.interval)
     if args.gcs_audit:
@@ -71,14 +73,15 @@ def main():
     result = replay.run(parameters, ROOT, audit, lambda stage, detail: print(stage+": "+detail, flush=True),
                         store=store, coverage=coverage)
     datasets = result["audit"]["datasets"]
-    report = dict(days=args.days, interval_seconds=args.interval, wall_seconds=time.monotonic()-began,
+    report = dict(strategy_parameters_sha256=hashlib.sha256(json.dumps({k:v for k,v in parameters.items() if k != "trade_ordering"},sort_keys=True).encode()).hexdigest(),
+                  days=args.days, ordering=args.ordering, interval_seconds=args.interval, wall_seconds=time.monotonic()-began,
                   peak_rss_mib=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1024,
                   summary=result["summary"], replay=result["trade_replay"], audit_destination=destination,
                   audit_compressed_bytes=sum(e["compressed_bytes"] for v in datasets.values() for e in v["chunks"]),
                   audit_manifest_bytes=len(json.dumps(result["audit"], separators=(",", ":")).encode()),
                   audit_rows={p: v["rows"] for p, v in datasets.items()},
                   audit_chunk_hashes={p: [e["sha256"] for e in v["chunks"]] for p,v in datasets.items()})
-    if report["peak_rss_mib"] > 3584 or len(result["series"]) > 2002:
+    if report["peak_rss_mib"] + 2*report["replay"]["ordering"].get("ordering_database_bytes",0)/1024**2 > 3584 or len(result["series"]) > 2002:
         raise ValueError("Staged benchmark exceeded worker/plot headroom")
     (args.output / "report.json").write_text(json.dumps(report, indent=2)+"\n")
     print(json.dumps({k:report[k] for k in ("days","wall_seconds","peak_rss_mib","audit_compressed_bytes","audit_destination")}))

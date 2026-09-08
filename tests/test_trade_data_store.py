@@ -122,6 +122,29 @@ class TradeDataStoreTests(unittest.TestCase):
         list(selected.trades(start_us=1782432000000000, symbols={"SPOT"}))
         self.assertEqual(len(selected.accessed_partitions), 1)
 
+    def test_reversed_raw_timestamps_roundtrip_without_losing_sequence_or_values(self):
+        from trade_ordering import OrderedTradeStore
+        path=self.raw/'future.jsonl.gz'
+        rows=[dict(timestamp=1782345600002,trade_seq=1,trade_id='1',price=100.125,amount=10,direction='buy'),
+              dict(timestamp=1782345600001,trade_seq=2,trade_id='2',price=101.25,amount=20,direction='sell')]
+        with gzip.open(path,'wt') as stream:
+            for row in rows:stream.write(json.dumps(row)+'\n')
+        source=json.loads((self.raw/'manifest.json').read_text())
+        source['futures']['BTC-test'].update(sha256=sha256(path),expiry='2026-09-25T08:00:00')
+        (self.raw/'manifest.json').write_text(json.dumps(source))
+        _,store=self.converted()
+        timestamp=list(store.trades(symbols={'BTC-test'}))
+        self.assertEqual([e.sequence for e in timestamp],[2,1])
+        ordered=OrderedTradeStore(store,'sequence')
+        try:
+            sequence=list(ordered.trades(symbols={'BTC-test'}))
+            self.assertEqual([e.sequence for e in sequence],[1,2])
+            self.assertEqual([e.us for e in sequence],[1782345600002000]*2)
+            self.assertEqual(sequence[1].reported_us,1782345600001000)
+            self.assertEqual(sequence[1].price,101.25)
+            self.assertEqual(sequence[1].btc,20/101.25)
+        finally:ordered.close()
+
 
 if __name__ == "__main__":
     unittest.main()

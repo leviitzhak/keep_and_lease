@@ -27,7 +27,7 @@ def fingerprint(payload, manifest_bytes, data_root=None):
     digest = hashlib.sha256(json.dumps(payload, sort_keys=True, allow_nan=False).encode())
     digest.update(manifest_bytes)
     for name in ("btc_trade_backtest.py", "trade_replay.py", "backtest_audit.py",
-                 "trade_data_store.py", "backtest_silver_lease_strategy.py", "maturity_scoring.py",
+                 "trade_data_store.py", "trade_ordering.py", "backtest_silver_lease_strategy.py", "maturity_scoring.py",
                  "silver_strategy_gui.py"):
         digest.update((Path(__file__).parent / name).read_bytes())
     if data_root is not None:

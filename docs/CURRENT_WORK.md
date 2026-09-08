@@ -19,8 +19,11 @@ branch._
   Published in [PR #40](https://github.com/leviitzhak/keep_and_lease/pull/40).
   Deployment `34194440773` passed 56 Python tests and private rendered GUI
   acceptance on `5712b75f953810115844ad332adfc56dd427faa2`. The 90-day ingestion
-  workflow `34194533429` is running; staged benchmarks follow its completed
-  manifest. Full-range activation remains pending these measurements.
+  workflow `34194533429` completed with 77 successful days and 13 failed days;
+  its full-range publication and benchmark continuation stopped. The feature
+  branch now implements discrepancy evidence, two ordering assumptions, bounded
+  sorting and recovery from retained receipts. Recovery publication and paired
+  benchmarks remain required before full-range activation.
 
 
 - Preview-verified on `agent/gui-subsecond-execution` in [PR #39](https://github.com/leviitzhak/keep_and_lease/pull/39): integrated the uploaded June 25
