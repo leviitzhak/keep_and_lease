@@ -19,7 +19,7 @@ from trade_data_store import ParquetTradeStore, convert, sha256
 
 
 def invoke(script, *args):
-    subprocess.run([sys.executable, str(ROOT / "scripts" / script), *map(str, args)], check=True)
+    subprocess.run([sys.executable, str(ROOT / "scripts/retry-cloud-command.py"), str(ROOT / "scripts" / script), *map(str, args)], check=True)
 
 
 def range_manifest(days):
@@ -55,6 +55,7 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--upload", action="store_true")
     parser.add_argument("--assemble-only", action="store_true", help="Require verified daily upload receipts; no downloads")
+    parser.add_argument("--daily-only", action="store_true", help="Write daily receipts without a redundant range manifest")
     args = parser.parse_args()
     if not 1 <= (args.end-args.start).days <= 90:
         raise ValueError("Select between one and ninety whole UTC days")
@@ -97,6 +98,8 @@ def main():
         days.append((label, store))
         print(json.dumps(dict(completed_day=label, days_completed=len(days), total_days=(args.end-args.start).days)), flush=True)
         day += timedelta(days=1)
+    if args.daily_only:
+        return
     value = range_manifest(days)
     if (value["source_manifest"]["start"][:10] != args.start.isoformat() or
             value["source_manifest"]["end"][:10] != args.end.isoformat()):

@@ -139,3 +139,10 @@ branch._
   Render-native health-check paths remain to be entered in the current services.
 - Versioned Parquet/DuckDB/Arrow cloud inputs and cloud day inspection remain after
   the durable execution proof; the first worker image keeps the current input set.
+
+BTC 90-day recovery: two remaining failures in run 34242246481 were transient
+OIDC token-fetch timeouts after upload. Recovery now reuses their immutable GCS
+raw/Parquet data, verifies before creating receipts, retains completed receipts
+on later failures, and retries transient credential transport failures. The live
+GUI still selects the pilot; full-range publication, staged paired benchmarks,
+and catalog/worker activation remain required. See BTC_90_DAY_EXECUTION.md.

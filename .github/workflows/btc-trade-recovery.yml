@@ -74,7 +74,13 @@ jobs:
         env:
           RANGE_DAY_START: ${{ matrix.day.start }}
           RANGE_DAY_END: ${{ matrix.day.end }}
-        run: python scripts/ingest-btc-trade-range.py --start "$RANGE_DAY_START" --end "$RANGE_DAY_END" --output work/btc-range --upload
+        run: |
+          case "$RANGE_DAY_START" in
+            2026-08-26|2026-08-28)
+              python scripts/retry-cloud-command.py scripts/recover-btc-uploaded-days.py --day "$RANGE_DAY_START" --output work/btc-range ;;
+            *)
+              python scripts/retry-cloud-command.py scripts/ingest-btc-trade-range.py --start "$RANGE_DAY_START" --end "$RANGE_DAY_END" --output work/btc-range --upload --daily-only ;;
+          esac
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
@@ -84,6 +90,7 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
       - uses: actions/upload-artifact@v4
+        if: ${{ always() && hashFiles('work/btc-range/receipts/*.json') != '' }}
         with:
           name: btc-day-${{ matrix.day.start }}
           path: |
@@ -120,7 +127,7 @@ jobs:
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com
       - name: Publish complete immutable range after all 90 daily gates
-        run: python scripts/ingest-btc-trade-range.py --start 2026-06-06 --end 2026-09-04 --output work/btc-range --upload --assemble-only
+        run: python scripts/retry-cloud-command.py scripts/ingest-btc-trade-range.py --start 2026-06-06 --end 2026-09-04 --output work/btc-range --upload --assemble-only
       - uses: actions/upload-artifact@v4
         with:
           name: btc-90day-manifest

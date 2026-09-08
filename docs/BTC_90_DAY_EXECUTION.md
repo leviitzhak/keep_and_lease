@@ -314,3 +314,30 @@ Local validation of this correction: 71 Python checks (including Arrow/API),
 The targeted July 21 BTC-25DEC26 retrieval retained 3,641 trades, recording one
 2 ms timestamp reversal and one sequence-endpoint-only record. These targeted
 public-history checks are not the complete 90-day acceptance benchmark.
+
+### Recovery of cloud authentication failures (September 8)
+
+Recovery run 34242246481 completed 11 of the 13 outstanding daily jobs.
+August 26 passed raw-to-GCS verification, then failed obtaining an OIDC subject
+token while publishing a redundant one-day range manifest. August 28 uploaded
+its immutable dataset but failed fetching a token before cloud verification.
+Both errors were connection timeouts, not market-data discrepancy failures.
+There are 88 preserved completed-day receipts and 89 days with logged passing
+cloud verification; August 28 still requires verification.
+
+`recover-btc-uploaded-days.py` pins both daily manifest hashes from those logs,
+restores content-addressed raw files from GCS, verifies their hashes and source
+identity, and repeats full raw/cloud event comparison before writing receipts.
+It never contacts the exchange. The recovery request reuses runs 34194533429
+and 34242246481; only the two absent receipts enter the daily matrix.
+
+Daily jobs use `--daily-only`, avoiding redundant range publication. Completed
+receipts and evidence are retained even if a subsequent step fails. Cloud
+commands retry only recognized transient credential transport failures, at most
+three times with 2/4/8-second backoff; integrity and permission failures remain
+fatal. Immutable uploads remain create-only and verify existing objects.
+
+The live GUI remains on the pilot until the complete range is published,
+paired 1/7/30/90-day benchmarks pass, and the preview catalog and worker limits
+are configured and accepted. Engine support does not yet mean a validated live
+90-day GUI run. The planned 500 ms interval produces 15,552,000 decisions.
