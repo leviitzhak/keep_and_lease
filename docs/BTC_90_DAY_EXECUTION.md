@@ -117,7 +117,13 @@ in [PR #40](https://github.com/leviitzhak/keep_and_lease/pull/40).
 [Deployment 34194440773](https://github.com/leviitzhak/keep_and_lease/actions/runs/34194440773)
 passed 56 Python checks with Arrow/API dependencies and private rendered GUI
 acceptance. The approved [90-day ingestion run 34194533429](https://github.com/leviitzhak/keep_and_lease/actions/runs/34194533429)
-is processing daily raw/Parquet/GCS identity gates; June 6 passed first.
+completed with 77 successful daily ingestions and 13 failed daily ingestions.
+The request-validation job also passed; complete-range publication was skipped.
+[Benchmark continuation 34195750155](https://github.com/leviitzhak/keep_and_lease/actions/runs/34195750155)
+stopped at the ingestion-success gate; no staged measurements ran.
+The later [preview deployment 34195659697](https://github.com/leviitzhak/keep_and_lease/actions/runs/34195659697)
+passed 61 Python tests and authenticated GUI acceptance at
+`c9e2e58f46ea55a71b286f7d5b85626346ff8cbe`.
 
 `btc-trade-benchmark.yml` can follow that run with the bounded request
 `{"schema_version":1,"action":"benchmark-90day-btc-500ms","source_commit":"<reviewed SHA>","ingestion_run_id":34194533429}`
@@ -128,3 +134,118 @@ stages run strictly in 1/7/30/90-day order; each uses a stable GCS checkpoint ID
 across workflow retries. The measurements run on GitHub Actions CPU, so final
 Cloud Run acceptance is still required. This continuation does not enable the
 90-day catalog, change worker resource limits or merge into master.
+
+
+## Proposed research policy for discrepant trade records
+
+Status: documented design, not implemented or activated. The current downloader
+still rejects timestamp reversals and unequal tail sequences. Do not describe
+this proposal as resolving the historical cause or recovering live arrival order.
+
+### Evidence observed on 2026-09-08
+
+Twelve failed days reported decreasing timestamps in instrument sequence order:
+July 21 and 26; August 21-26, 28 and 30; September 2 and 3. June 26 reported
+unequal downloaded/checker final sequences for BTC-26JUN26. Its original error
+did not include the actual and expected values; "Missing end of trade window"
+does not establish which retrieval contained more records.
+
+Fresh public queries returned maximum sequence 2308892 at
+2026-06-26 07:58:41.591 UTC in the descending day-filtered response, while a
+sequence-range response also contained 2308893 at 08:00:00.048 UTC. These are
+observations from later queries, not preserved responses from the failed job.
+Archive repeat responses before treating the discrepancy as reproducible.
+The extra record is 48 ms after the contract's scheduled 08:00 UTC expiry:
+retain it as evidence, but never allow it to fill an expired futures order.
+
+Deribit defines an instrument-local trade sequence, millisecond trade timestamp,
+and an optional Starbase causal timestamp. The
+[API schema](https://docs.deribit.com/api-reference/market-data/public-get_last_trades_by_instrument_and_time)
+does not resolve precedence when they disagree. Clock changes, delayed reporting,
+or processing differences remain hypotheses. Equal timestamp precision alone
+does not explain a backwards timestamp.
+
+### Ingestion and evidence
+
+Preserve original records and fields, including IDs, sequence, timestamps,
+prices, amounts and block/combo/Starbase fields. Reconcile the union of records
+returned by time and sequence queries, deduplicating only identical records
+with the same instrument/trade ID. Preserve conflicting versions for diagnosis;
+do not arbitrarily choose a price or volume. Keep checksum, identity, bounded
+pagination and coverage checks. Replace the single tail equality assertion
+with a recorded comparison of both sets and explicit discrepancy classification.
+
+Do not stop pagination at the first out-of-window timestamp. Establish and
+validate sequence coverage independently, inspect adjacent boundary records,
+then assign raw records to UTC days by their original timestamp. Reordering
+must be bounded in memory, using disk/Parquet batches if necessary. Preserve
+all day-boundary dependencies; a fixed overlap alone is not proof of completeness.
+A missing sequence remains an unresolved coverage question, not a trade to
+invent. Permit documented ordering/endpoint discrepancies in research data;
+do not call unresolved coverage gaps a complete lossless 90-day dataset.
+
+Maintain a versioned anomaly ledger with: stable anomaly ID; instrument and UTC
+day; all conflicting/neighboring trade IDs and sequences; original timestamp
+differences; exact endpoint parameters and retrieval times; pagination flags;
+immutable raw-response paths and hashes; classification; chosen treatment;
+resolution status and later exchange explanation. Record the smallest failing
+reproduction. Where source data are unavailable, record the evidence limitation.
+
+### Two explicit replay scenarios
+
+The proposed reference scenario preserves sequence order within each instrument.
+For each successive sequence, set an additional effective replay timestamp to
+the maximum of its original timestamp and the previous effective timestamp.
+This delays a backwards timestamp to the last reached time without changing its
+raw value. Process equal effective timestamps in sequence order, retaining every
+eligible print and its original volume. This is an assumed timeline, not a
+reconstructed historical receive timestamp or a guaranteed conservative bound.
+
+The comparison scenario sorts by original trade timestamp, with sequence as a
+deterministic instrument-local tie breaker. It assumes the reported event times
+are authoritative and that records were observable at those times. That
+observability assumption can be false for late reports and must be stated.
+
+Merge instruments by the selected scenario's effective time. Use a documented
+deterministic cross-instrument tie rule; instrument-local sequences establish no
+global exchange order. Apply the same data-treatment policy to the strategy and
+direct-holding comparison. Include the policy version in dataset/result identity,
+cache keys, checkpoints and export metadata so scenarios cannot mix on resume.
+Carry ordering state through midnight and initialize it before the selected
+window; never reset a delayed record backwards at a new day boundary. Select
+and audit executions by effective time while retaining raw day membership.
+
+In each scenario, a trade can affect signals, prices or fills only once reached
+on that scenario's timeline. Preserve the existing strict order-submission and
+execution-delay eligibility rule, participation limits, fees and exclusions.
+Do not reuse a same-timestamp print to fill an order generated from that print.
+Expiry settlement follows the contract schedule and verified delivery price;
+prints at/after expiry, or delayed to expiry, cannot execute that future.
+Treasury observations retain their own availability timestamps. No interpolation,
+fabricated trades or rewritten original timestamps is introduced.
+
+### Results and acceptance
+
+Run both scenarios over the same continuous period with the same parameters,
+decision schedule and eligible trade universe; expiry eligibility differences
+caused by delayed effective time must be counted. Compare final NAV/return,
+drawdown, fees, turnover, fill quantities and counts, missed executions and
+order-level differences. Report anomaly counts by type/instrument/day, affected
+volume, largest raw reversal, largest effective delay and delayed/excluded fills.
+Attribute differences by linking ledger IDs to affected signals/orders/valuations.
+If rolling holding marks or Treasury accrual differs, keep that in the financial
+comparison rather than comparing only fills.
+
+Every result and export must identify its ordering assumption and link the
+hashed anomaly ledger. A small difference supports robustness only to these
+tested scenarios; it does not prove true chronology or bound all reporting
+delays. Materiality must be assessed against the strategy's claimed advantage
+and execution interval, not selected afterwards to obtain a pass.
+Keep the historical cause open for later investigation. Corrected data/policies
+produce new immutable versions and new results, preserving prior evidence.
+
+Before rollout, add targeted tests for reversals within/across pages and UTC
+days, equal-time execution eligibility, endpoint-only records, conflicting
+duplicates, expiry-crossing delays, bounded sorting, and interruption/resume
+identity under both scenarios. Retain the 77 successful daily artifacts and
+explicitly version/revalidate any reused data against the revised reader policy.
