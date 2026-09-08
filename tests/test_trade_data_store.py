@@ -85,6 +85,43 @@ class TradeDataStoreTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Duplicate"):
             write_partition([rows[0], rows[0]], self.root / "duplicate.parquet", expected_rows=2)
 
+    def test_two_day_range_prunes_partitions_and_preserves_equal_time_order(self):
+        import hashlib
+        from datetime import datetime, timedelta
+        root = self.root / "range"
+        first = root / "days/2026-06-25"
+        convert(self.raw, first, batch_rows=1)
+        with zipfile.ZipFile(self.raw / "spot.zip", "w") as archive:
+            archive.writestr("spot.csv", "4,103,0.1,10.3,1782432000000001,false,true\n")
+        future = dict(timestamp=1782432000001, trade_seq=3, trade_id="3", price=104,
+                      amount=10, direction="buy")
+        with gzip.open(self.raw / "future.jsonl.gz", "wt") as stream:
+            stream.write(json.dumps(future)+"\n")
+        source = json.loads((self.raw / "manifest.json").read_text())
+        source.update(start="2026-06-26T00:00:00+00:00", end="2026-06-27T00:00:00+00:00")
+        source["spot"].update(rows=1, sha256=sha256(self.raw / "spot.zip"))
+        source["futures"]["BTC-test"].update(rows=1, sha256=sha256(self.raw / "future.jsonl.gz"))
+        (self.raw / "manifest.json").write_text(json.dumps(source))
+        second = root / "days/2026-06-26"
+        convert(self.raw, second, batch_rows=1)
+        children = [ParquetTradeStore(first), ParquetTradeStore(second)]
+        manifest = dict(schema_version=1, partitions=[], source_manifest=dict(
+            start=children[0].source_manifest["start"], end=children[1].source_manifest["end"], futures={}),
+            daily_datasets=[dict(start=c.source_manifest["start"], end=c.source_manifest["end"],
+                                manifest_sha256=hashlib.sha256(c.manifest_bytes).hexdigest(),
+                                local_path="days/"+c.source_manifest["start"][:10]) for c in children])
+        (root / "manifest.json").write_text(json.dumps(manifest))
+        store = ParquetTradeStore(root)
+        self.assertEqual(list(store.trades()), [t for c in children for t in c.trades()])
+        selected = ParquetTradeStore(root)
+        self.assertEqual(list(selected.trades(start_us=1782432000000000, symbols={"SPOT"})),
+                         list(children[1].trades(symbols={"SPOT"})))
+        self.assertEqual(len(selected.accessed_partitions), 1)
+        self.assertIn("market=spot", selected.accessed_partitions[0]["path"])
+        # Re-reading warmup uses the same verified partition, not a second checksum scan.
+        list(selected.trades(start_us=1782432000000000, symbols={"SPOT"}))
+        self.assertEqual(len(selected.accessed_partitions), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -552,8 +552,13 @@ bundled inputs are removed.
 
 The BTC raw-trade pilot now implements local Parquet conversion, bounded replay,
 and create-only GCS publication tooling, with raw/normalized equivalence checks.
-See `BTC_TRADE_STORAGE.md`. It has not replaced the production provider; actual
-GCS publication/read access and multi-day checkpoint integration remain gates.
+See `BTC_TRADE_STORAGE.md`. GCS publication/read validation has passed. The
+optional bounded GUI trade source now reads the pinned immutable manifest and
+streams audit chunks directly to the existing result bucket; the worker adds
+Arrow 25.0.0. No CPU, RAM, timeout or IAM changes are required for the bounded
+examples. The deployment smoke test covers 500 ms and 1 ms GUI runs from GCS.
+See `BTC_SUBSECOND_GUI.md`; hourly checkpoints and durable resume are implemented; 90-day activation
+remains gated on `BTC_90_DAY_EXECUTION.md`.
 
 The synchronous `POST /api/v1/inspections` endpoint also remains local/Render-only;
 the scale-to-zero web service returns `503` because it must not load full market

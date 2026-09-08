@@ -135,6 +135,11 @@ def create_app(
         encoded_size = len(json.dumps(request.parameters).encode("utf-8"))
         if encoded_size > 100_000:
             raise HTTPException(413, "Parameter document is too large")
+        from btc_trade_backtest import validate
+        try:
+            validate(request.parameters)
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from None
         job, cached = job_service.submit(
             request.parameters, requester_id(http_request)
         )
@@ -146,6 +151,11 @@ def create_app(
             "status_url": f"/api/v1/backtests/{job.id}",
             "result_url": f"/api/v1/backtests/{job.id}/result",
         }
+
+    @app.get("/api/v1/trade-data")
+    def trade_data():
+        from btc_trade_backtest import catalog
+        return {"datasets": [catalog()]}
 
     @app.get("/api/v1/backtests/latest")
     def latest_backtest(request: Request) -> Any:
@@ -163,6 +173,18 @@ def create_app(
     def backtest_status(job_id: str, request: Request) -> dict[str, Any]:
         job = owned_job(job_id, request)
         return job.public()
+
+    @app.post("/api/v1/backtests/{job_id}/resume")
+    def resume_backtest(job_id: str, request: Request):
+        job = owned_job(job_id, request)
+        if not hasattr(job_service, "resume"):
+            raise HTTPException(409, "Resume requires the durable GCP worker")
+        try:
+            job = job_service.resume(job)
+        except ValueError as exc:
+            raise HTTPException(409, str(exc)) from None
+        return {**job.public(), "status_url": f"/api/v1/backtests/{job_id}",
+                "result_url": f"/api/v1/backtests/{job_id}/result"}
 
     @app.get("/api/v1/backtests/{job_id}/result")
     def backtest_result(job_id: str, request: Request) -> Any:
@@ -246,6 +268,33 @@ def create_app(
         return StreamingResponse(chunks(), media_type="application/gzip", headers={
             "Cache-Control": "private, no-store",
             "Content-Disposition": f'attachment; filename="{product}-full-audit.jsonl.gz"'})
+
+    @app.get("/api/v1/backtests/{job_id}/trade-valuations.csv")
+    def trade_valuations_csv(job_id: str, request: Request):
+        import csv
+        import io
+        from backtest_audit import read_chunk
+        store, manifest = completed_audit(job_id, request)
+        dataset = manifest["datasets"].get("btc_trade_valuations")
+        if dataset is None:
+            raise HTTPException(404, "No trade replay valuations for this run")
+        fields = ["date", "us", "nav_usd", "cash_usd", "direct_nav", "futures_notional_usd",
+                  "fees_usd", "return_fraction", "reconstruction_error_usd", "units", "targets", "mark_us", "mark_ids"]
+        def output():
+            buffer = io.StringIO()
+            writer = csv.writer(buffer)
+            writer.writerow(fields)
+            yield buffer.getvalue()
+            for entry in dataset["chunks"]:
+                for row in read_chunk(store, entry):
+                    buffer.seek(0)
+                    buffer.truncate(0)
+                    writer.writerow([json.dumps(row.get(f), separators=(",", ":"))
+                                     if isinstance(row.get(f), dict) else row.get(f) for f in fields])
+                    yield buffer.getvalue()
+        return StreamingResponse(output(), media_type="text/csv", headers={
+            "Content-Disposition": 'attachment; filename="btc-trade-valuations.csv"',
+            "Cache-Control": "private, no-store"})
 
     @app.get("/api/v1/backtests/{job_id}/audit-download")
     def audit_archive(job_id: str, request: Request):

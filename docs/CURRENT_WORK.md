@@ -6,13 +6,39 @@ branch._
 
 ## Active change set
 
-- Current status: the one-day raw-trade research replay, Parquet/GCS storage
+- Active implementation: `agent/btc-90day-subsecond`, based on current GitHub
+  master with PR #39's tested subsecond changes carried forward. Added daily
+  ingestion/range manifests, bounded generation-pinned reads, hourly complete
+  account/audit checkpoints, durable resume, expiry settlement and staged
+  benchmark tooling. See [BTC_90_DAY_EXECUTION.md](BTC_90_DAY_EXECUTION.md).
+  Local pure recovery/financial and GUI checks pass. Pre-deployment CI is the
+  required Arrow/API gate. No 90-day dataset or full-range preview acceptance
+  has yet been completed; the active catalog and timeout remain unchanged.
+  After the initial automatic push-review rejection, the owner explicitly
+  approved the feature push, private preview and bounded ingestion workflow.
+  Cloud publication/validation is in progress.
+
+
+- Preview-verified on `agent/gui-subsecond-execution` in [PR #39](https://github.com/leviitzhak/keep_and_lease/pull/39): integrated the uploaded June 25
+  trade dataset with the GUI and durable worker. Supports positive millisecond
+  clocks, bounded UTC periods, actual capital/participation, streamed audit and
+  CSV exports. See [BTC_SUBSECOND_GUI.md](BTC_SUBSECOND_GUI.md). Local execution
+  and regression checks pass (50 Python, 36 JavaScript/HTML, production build);
+  GCP preview deployment and rendered GUI acceptance passed at
+  `ef0000cb294c622d8e8d40973b8c2cb1ca065042` in
+  [workflow 34149398811](https://github.com/leviitzhak/keep_and_lease/actions/runs/34149398811).
+  Both 500 ms and 1 ms clocks, GCS/local financial equivalence, full CSV,
+  audit access, hover and the multi-commodity baseline passed.
+  No merge into master has been performed.
+
+
+- Previously merged: the one-day raw-trade research replay, Parquet/GCS storage
   pilot, selectable UTC backtest periods and connection-recovery changes were
   preview-verified and merged into `master` in
   [PR #38](https://github.com/leviitzhak/keep_and_lease/pull/38), merge commit
   `608aa6027e77474445c69ad221f33e3f98e953b6`. See
   [BTC_TRADE_PILOT.md](BTC_TRADE_PILOT.md) and
-  [BTC_TRADE_STORAGE.md](BTC_TRADE_STORAGE.md). The GUI still uses minute data.
+  [BTC_TRADE_STORAGE.md](BTC_TRADE_STORAGE.md). That merged revision used minute data in the GUI.
   The owner granted the operator bucket create/read access. The bounded GCS
   upload/replay passed for all 5,739,608 events and both complete audit hashes,
   with an 8 MiB remote-read cache per open partition. The measured capacity

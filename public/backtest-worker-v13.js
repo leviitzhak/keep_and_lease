@@ -116,6 +116,11 @@ async function runServerBacktest(base, data) {
   const parameters = JSON.stringify({schema_version: 1, parameters: data.payload || {}});
   let created = pendingBacktest?.base === base && pendingBacktest.parameters === parameters
     ? pendingBacktest.created : null;
+  if (data.resumeJobId) {
+    if (!/^[a-f0-9]{32}$/.test(data.resumeJobId)) throw new Error("Invalid replay job ID");
+    created = await jsonRequest(apiUrl(base, `/api/v1/backtests/${data.resumeJobId}/resume`), {method: "POST"});
+    pendingBacktest = {base, parameters, created};
+  }
   if (!created) {
     // Never automatically repeat a POST: a lost response may hide a successful submission.
     try {
@@ -131,11 +136,13 @@ async function runServerBacktest(base, data) {
   const jobId = created.job_id;
   try {
     let state = created;
+    self.postMessage({type:"jobstate", state});
     report("Server calculation job", jobId);
     while (!['completed', 'failed', 'cancelled'].includes(state.status)) {
       report("Server calculation", state.detail || state.stage, null);
-      await delay(500);
+      await delay(Number(state.elapsed_seconds || 0) > 60 ? 5000 : 500);
       state = await readJobJson(statusUrl, jobId);
+      self.postMessage({type:"jobstate", state});
     }
     if (state.status !== "completed") {
       pendingBacktest = null;

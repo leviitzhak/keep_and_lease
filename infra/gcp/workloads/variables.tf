@@ -69,3 +69,19 @@ variable "allowed_origin_regex" {
   type    = string
   default = ""
 }
+
+variable "trade_catalog_json" {
+  description = "Pinned trade range catalog, set only after staged data/replay acceptance. Empty retains the one-day pilot."
+  type        = string
+  default     = ""
+}
+
+variable "worker_timeout_seconds" {
+  description = "Worker duration; increase only after staged replay measurements."
+  type        = number
+  default     = 1800
+  validation {
+    condition     = var.worker_timeout_seconds >= 1800 && var.worker_timeout_seconds <= 86400 && floor(var.worker_timeout_seconds) == var.worker_timeout_seconds
+    error_message = "Worker timeout must be an integer between 1800 and 86400 seconds."
+  }
+}

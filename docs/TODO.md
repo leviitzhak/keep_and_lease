@@ -21,11 +21,15 @@ This checklist reflects the application synchronized from the deployed Sites che
   shared verified inputs for main/comparison calculations; on-demand exports;
   and multi-day equivalence, recovery and resource acceptance. Do not reset
   holdings, pending fills, smoothing or Treasury accrual at day boundaries.
+  Implementation now includes ingestion/range reads, hourly checkpoints,
+  durable resume and benchmark commands; real data publication, staged
+  performance, full preview acceptance and asynchronous XLSX exports remain.
+  See `BTC_90_DAY_EXECUTION.md`.
 
-- [ ] Review and integrate the one-day raw-trade research pilot with the GUI and
-  worker before activating second/subsecond execution. See `BTC_TRADE_PILOT.md`:
-  subsequent-trade VWAP is a participation proxy, not book depth. Preserve
-  partial fills, causal timestamps and auditability when scaling beyond one day.
+- [x] Integrate the uploaded one-day trade research pilot with the GUI and
+  worker for second/subsecond execution, bounded at 200,000 decisions per run.
+  See `BTC_SUBSECOND_GUI.md` for supported settings, dates and research limits.
+  Multi-day activation and resource acceptance remain above.
 
 - [ ] Add a plot of the volume traded by the strategy, based on actual simulated
   fills (not market-wide volume).

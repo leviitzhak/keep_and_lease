@@ -40,7 +40,7 @@ resource "google_cloud_run_v2_job" "calculation" {
 
     template {
       service_account = local.worker_service_account
-      timeout         = "1800s"
+      timeout         = "${var.worker_timeout_seconds}s"
       max_retries     = 0
 
       containers {
@@ -54,6 +54,10 @@ resource "google_cloud_run_v2_job" "calculation" {
           }
         }
 
+        env {
+          name  = "KEEP_AND_LEASE_TRADE_CATALOG"
+          value = var.trade_catalog_json
+        }
         env {
           name  = "GOOGLE_CLOUD_PROJECT"
           value = var.project_id
@@ -137,6 +141,10 @@ resource "google_cloud_run_v2_service" "web" {
         startup_cpu_boost = true
       }
 
+      env {
+        name  = "KEEP_AND_LEASE_TRADE_CATALOG"
+        value = var.trade_catalog_json
+      }
       env {
         name  = "GOOGLE_CLOUD_PROJECT"
         value = var.project_id

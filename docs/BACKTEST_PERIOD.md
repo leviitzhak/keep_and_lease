@@ -1,5 +1,10 @@
 # Selecting a backtest period
 
+For **Trade replay**, bounds must be inside the uploaded June 25 UTC day.
+Fractional seconds are preserved; prints use `[start, end)` and the end is a
+final valuation boundary. See [BTC_SUBSECOND_GUI.md](BTC_SUBSECOND_GUI.md).
+The observation-boundary description below applies to candle runs.
+
 The strategy form has **Backtest period → Start (UTC) / End (UTC)** above the
 commodity weights. The API/saved JSON names are `backtest_start` and
 `backtest_end`. Both are optional ISO dates or timestamps; blank uses the
@@ -41,8 +46,8 @@ python scripts/check-btc-minute-backtest.py --start 2026-06-25T00:00:00 --end 20
 The GCP preview workflow checks both the full BTC preset and a fresh one-day
 GUI-selected run with 1,440 intervals, matching audit coverage and initial NAV 1.
 Exact-revision evidence and timing are recorded in PR #38. The GCS trade pilot
-is still the distinct one-second research runner described in
-[BTC_TRADE_STORAGE.md](BTC_TRADE_STORAGE.md); the GUI uses minute candles.
+was tested separately by the one-second research runner. The new optional GUI
+trade source is described in [BTC_SUBSECOND_GUI.md](BTC_SUBSECOND_GUI.md).
 
 
 Local validation: 34 focused Python tests and 36 JavaScript/HTML checks passed,

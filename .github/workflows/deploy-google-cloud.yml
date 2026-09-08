@@ -33,7 +33,22 @@ permissions:
   id-token: write
 
 jobs:
+  replay-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install replay validation dependencies
+        run: python -m pip install -r requirements-cloud.txt -r requirements-trade-data.txt httpx
+      - name: Check multi-day accounting, recovery, Parquet and job APIs
+        run: |
+          python -c 'import pyarrow, fastapi'
+          python -m unittest tests.test_trade_range_recovery tests.test_trade_resume_service tests.test_btc_trade_backtest tests.test_trade_data_store tests.test_trade_replay tests.test_backtest_audit tests.test_cloud_jobs tests.test_trade_data_upload -v
   deploy:
+    needs: replay-checks
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
@@ -240,6 +255,7 @@ jobs:
           KEEP_AND_LEASE_ID_TOKEN: ${{ steps.health_auth.outputs.id_token }}
           KEEP_AND_LEASE_EXPECTED_COMMIT: ${{ github.sha }}
           KEEP_AND_LEASE_RUN_SMOKE_STRATEGY: "true"
+          KEEP_AND_LEASE_RUN_SUBSECOND: "true"
           KEEP_AND_LEASE_OUTPUT_DIR: ${{ runner.temp }}/deployment-smoke
         run: |
           set -euo pipefail

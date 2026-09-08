@@ -1137,6 +1137,8 @@ def aggregate_portfolio(sleeves, target_weights, rebalance, attribution_sink=Non
 
 
 def result(payload, audit_collection=None):
+    if payload.get("btc_data_source", "minute") != "minute":
+        raise ValueError("Trade replay requires the server engine; minute candles cannot provide subsecond execution")
     global MARKETS
     if MARKETS is None:
         MARKETS = {"silver": MARKET}

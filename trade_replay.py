@@ -3,7 +3,7 @@
 Trade prints are a volume proxy, not displayed depth or evidence of queue access.
 Integer microseconds preserve native event ordering. No candle interpolation.
 """
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 import math
 
 YEAR_US = 365 * 86400 * 1_000_000
@@ -55,6 +55,25 @@ class TapeAccount:
         self.interest = self.fees = self.market_pnl = self.turnover = 0.0
         self.fill_count = self.order_count = self.cancellation_count = 0
 
+    def snapshot(self):
+        """JSON-roundtrippable state, including partially filled pending orders."""
+        return {k: ({s: asdict(v) for s, v in value.items()} if k in ("marks", "orders")
+                    else dict(value) if isinstance(value, dict) else value)
+                for k, value in vars(self).items() if k != "sink"}
+
+    @classmethod
+    def restore(cls, state, sink=None):
+        account = cls(state["initial"], state["participation"], state["delay_us"],
+                      state["fee"] * 10000, sink)
+        if set(state) != set(vars(account)) - {"sink"}:
+            raise ValueError("Unsupported account checkpoint")
+        for key, value in state.items():
+            if key in ("marks", "orders"):
+                constructor = Trade if key == "marks" else Order
+                value = {s: constructor(**v) for s, v in value.items()}
+            setattr(account, key, value)
+        return account
+
     def accrue(self, us):
         if self.last_us is not None:
             if us < self.last_us:
@@ -83,8 +102,10 @@ class TapeAccount:
         self.sink(dict(kind="initial_holding", us=trade.us, btc=self.units["SPOT"],
                        price=trade.price, trade_id=trade.identifier))
 
-    def cancel(self, us, reason="replace"):
-        for order in self.orders.values():
+    def cancel(self, us, reason="replace", symbols=None):
+        for symbol, order in list(self.orders.items()):
+            if symbols is not None and symbol not in symbols:
+                continue
             self.sink(dict(kind="order_end", us=us, reason=reason, order_id=order.identifier,
                            symbol=order.symbol, requested_btc=abs(order.signed_btc),
                            filled_btc=order.filled_btc,
@@ -92,7 +113,7 @@ class TapeAccount:
                            remainder_btc=max(0, abs(order.signed_btc) - order.filled_btc)))
             if abs(order.signed_btc) - order.filled_btc > 1e-14:
                 self.cancellation_count += 1
-        self.orders.clear()
+            del self.orders[symbol]
 
     def submit_targets(self, us, targets):
         self.accrue(us)
@@ -154,6 +175,21 @@ class TapeAccount:
                        fee_usd=fee, cash_usd=self.cash, nav_usd=self.nav))
         if self.cash < -1e-8 * self.initial:
             raise ValueError("Unfunded cash balance")
+
+    def settle(self, symbol, us, price, source):
+        if not math.isfinite(price) or price <= 0:
+            raise ValueError("Invalid verified delivery price")
+        self.accrue(us)
+        self.cancel(us, "expiry", {symbol})
+        quantity = self.units.get(symbol, 0.0)
+        if quantity:
+            pnl = quantity * (price-self.marks[symbol].price)
+            self.cash += pnl
+            self.market_pnl += pnl
+            self.units[symbol] = 0.0
+            self.marks[symbol] = Trade(us, symbol, price, 0.0, "buy", "settlement:"+symbol, False)
+            self.sink(dict(kind="settlement", us=us, symbol=symbol, price=price,
+                           quantity_btc=quantity, pnl_usd=pnl, source=source, nav_usd=self.nav))
 
     def reconstruction_error(self):
         return self.nav - (self.initial + self.market_pnl + self.interest - self.fees)

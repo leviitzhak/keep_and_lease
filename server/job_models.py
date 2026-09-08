@@ -20,6 +20,7 @@ class Job:
     stage: str = "queued"
     detail: str = "Waiting for the calculation worker"
     created_at: float = field(default_factory=time.time)
+    queued_at: float | None = None
     started_at: float | None = None
     completed_at: float | None = None
     result: dict[str, Any] | None = None

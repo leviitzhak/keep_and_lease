@@ -1,0 +1,104 @@
+name: Ingest and validate 90-day BTC trade range
+on:
+  push:
+    branches: [agent/cloud-autonomous-access]
+    paths: [.cloud-agent/requests/btc-range.json]
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: btc-trade-range
+  cancel-in-progress: false
+jobs:
+  request:
+    runs-on: ubuntu-latest
+    outputs:
+      source: ${{ steps.request.outputs.source }}
+      days: ${{ steps.request.outputs.days }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: request
+        name: Validate fixed 90-day ingestion request
+        run: |
+          python - <<'PY'
+          import json, os, re
+          from datetime import date, timedelta
+          from pathlib import Path
+          value=json.loads(Path('.cloud-agent/requests/btc-range.json').read_text())
+          assert set(value)=={'schema_version','action','source_commit'}
+          assert value['schema_version']==1
+          assert value['action']=='ingest-2026-06-06-through-2026-09-03'
+          assert re.fullmatch('[0-9a-f]{40}',value['source_commit'])
+          days=[{'start':(date(2026,6,6)+timedelta(days=i)).isoformat(),
+                 'end':(date(2026,6,6)+timedelta(days=i+1)).isoformat()} for i in range(90)]
+          with open(os.environ['GITHUB_OUTPUT'],'a') as stream:
+              stream.write('source='+value['source_commit']+'\n')
+              stream.write('days='+json.dumps(days)+'\n')
+          PY
+  daily:
+    needs: request
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        day: ${{ fromJSON(needs.request.outputs.days) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.request.outputs.source }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements-trade-data.txt
+      - uses: google-github-actions/auth@v2
+        with:
+          project_id: keep-and-lease
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com
+      - name: Download, validate, upload and verify one UTC day
+        env:
+          RANGE_DAY_START: ${{ matrix.day.start }}
+          RANGE_DAY_END: ${{ matrix.day.end }}
+        run: python scripts/ingest-btc-trade-range.py --start "$RANGE_DAY_START" --end "$RANGE_DAY_END" --output work/btc-range --upload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: btc-day-${{ matrix.day.start }}
+          path: |
+            work/btc-range/receipts
+            work/btc-range/evidence
+          retention-days: 30
+          if-no-files-found: error
+  publish:
+    needs: [request, daily]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.request.outputs.source }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements-trade-data.txt
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: btc-day-*
+          path: work/btc-range
+          merge-multiple: true
+      - uses: google-github-actions/auth@v2
+        with:
+          project_id: keep-and-lease
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com
+      - name: Publish complete immutable range after all 90 daily gates
+        run: python scripts/ingest-btc-trade-range.py --start 2026-06-06 --end 2026-09-04 --output work/btc-range --upload --assemble-only
+      - uses: actions/upload-artifact@v4
+        with:
+          name: btc-90day-manifest
+          path: work/btc-range/manifest.json
+          if-no-files-found: error
+          retention-days: 30

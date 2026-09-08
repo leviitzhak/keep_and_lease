@@ -176,11 +176,27 @@ def main():
         for future in as_completed(pending):
             futures[pending[future]] = future.result()
     futures = dict(sorted(futures.items()))
+    # Published BTC/USD delivery prices are used only at the exact contract expiry.
+    expiring = {s: info for s, info in futures.items() if lo <= stamp(info["expiry"]) < hi}
+    if expiring:
+        delivery_url = "https://www.deribit.com/api/v2/public/get_delivery_prices?index_name=btc_usd&count=1000&offset=0"
+        response = fetch(delivery_url)
+        delivery = json.loads(response)["result"]["data"]
+        prices = {row["date"]: row["delivery_price"] for row in delivery}
+        for symbol, info in expiring.items():
+            price = prices.get(info["expiry"][:10])
+            if price is None or not price > 0:
+                raise ValueError(f"Missing verified delivery price: {symbol}")
+            info["settlement"] = dict(time=info["expiry"], price=price, source=delivery_url,
+                                      response_sha256=hashlib.sha256(response).hexdigest(),
+                                      record={"date": info["expiry"][:10], "delivery_price": price})
     manifest = dict(schema_version=1, start=start.isoformat(), end=end.isoformat(),
                     spot=spot, futures=futures, futures_source=HISTORY,
                     assumptions=["USDT/USD=1, unmeasured", "Inverse quotes proxy regular futures prices",
                                  "Inverse trade amount is USD face; BTC volume = amount / price",
                                  "Trade history is not historical order-book depth"])
+    if expiring:
+        manifest["delivery_price_response"] = response.decode()
     (out / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     print(str(out / "manifest.json"))
 

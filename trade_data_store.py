@@ -6,6 +6,7 @@ import heapq
 import io
 import json
 import resource
+import re
 import time
 import zipfile
 from itertools import chain
@@ -253,9 +254,15 @@ class ParquetTradeStore:
         if str(directory).startswith("gs://"):
             from pyarrow.fs import GcsFileSystem
             self.filesystem = GcsFileSystem()
+            from google.cloud import storage
+            bucket_name, _, object_prefix = str(directory)[5:].partition("/")
+            self.gcs_bucket = storage.Client().bucket(bucket_name)
+            manifest_blob = self.gcs_bucket.blob(object_prefix.rstrip("/") + "/manifest.json")
+            manifest_blob.reload()
+            self.manifest_generation = int(manifest_blob.generation)
             self.root = str(directory)[5:].rstrip("/")
-            with self.filesystem.open_input_file(self.root + "/manifest.json") as stream:
-                self.manifest_bytes = stream.read()
+            self.manifest_bytes = manifest_blob.download_as_bytes(
+                if_generation_match=self.manifest_generation, checksum="crc32c")
         else:
             self.root = Path(directory)
             self.manifest_bytes = (self.root / "manifest.json").read_bytes()
@@ -263,6 +270,15 @@ class ParquetTradeStore:
         if self.manifest.get("schema_version") != VERSION:
             raise ValueError("Unknown dataset schema version")
         self.source_manifest = self.manifest["source_manifest"]
+        self.verified = set()
+        self.generations = {}
+        self.accessed_partitions = []
+        self.timings = {"checksum_reads": 0.0, "decode_and_merge": 0.0}
+        self.daily_cache = OrderedDict()
+        self.check_cancelled = lambda: None
+        if self.manifest.get("daily_datasets"):
+            self._validate_range()
+            return
         paths = set()
         for item in self.manifest["partitions"]:
             relative = Path(item["path"])
@@ -275,26 +291,102 @@ class ParquetTradeStore:
 
     def _partition(self, item, **kwargs):
         path = self.root + "/" + item["path"] if self.filesystem else self.root / item["path"]
-        digest = hashlib.sha256()
-        stream = self.filesystem.open_input_stream(path) if self.filesystem else path.open("rb")
-        with stream:
-            while block := stream.read(1024 * 1024):
-                digest.update(block)
-        if digest.hexdigest() != item["sha256"]:
-            raise ValueError("Parquet checksum mismatch")
+        blob = None
         if self.filesystem:
-            with self.filesystem.open_input_file(path) as remote:
-                with BlockCachedReader(remote) as cached:
+            blob = self.gcs_bucket.blob(path.split("/", 1)[1], generation=self.generations.get(item["path"]))
+            if item["path"] not in self.generations:
+                blob.reload()
+                self.generations[item["path"]] = int(blob.generation)
+            item = {**item, "generation": self.generations[item["path"]]}
+        # Repeated warm-up/comparison reads within the same job reuse verified immutable inputs.
+        if item["path"] not in self.verified:
+            started = time.monotonic()
+            digest = hashlib.sha256()
+            stream = blob.open("rb", chunk_size=4 * 1024 * 1024) if blob else path.open("rb")
+            with stream:
+                while block := stream.read(1024 * 1024):
+                    self.check_cancelled()
+                    digest.update(block)
+            if digest.hexdigest() != item["sha256"]:
+                raise ValueError("Parquet checksum mismatch")
+            self.timings["checksum_reads"] += time.monotonic() - started
+            self.verified.add(item["path"])
+            self.accessed_partitions.append(dict(item))
+        if self.filesystem:
+            # BlobReader pins every ranged read to the verified object generation.
+            with blob.open("rb", chunk_size=4 * 1024 * 1024) as remote:
+                class PinnedReader:
+                    def size(self): return item["bytes"]
+                    def read(self, n): return remote.read(n)
+                    def seek(self, offset): return remote.seek(offset)
+                with BlockCachedReader(PinnedReader()) as cached:
                     yield from partition_trades(cached, **kwargs)
         else:
             yield from partition_trades(path, **kwargs)
 
+    def _validate_range(self):
+        from btc_trade_backtest import us_time
+        expected = us_time(self.source_manifest["start"])
+        days = self.manifest["daily_datasets"]
+        if not 1 <= len(days) <= 90:
+            raise ValueError("Range dataset requires 1 to 90 UTC days")
+        for day in days:
+            lo, hi = us_time(day["start"]), us_time(day["end"])
+            if lo != expected or hi-lo != 86400_000_000 or lo % 86400_000_000:
+                raise ValueError("Missing, overlapping or non-UTC daily coverage")
+            if not re.fullmatch("[0-9a-f]{64}", day["manifest_sha256"]):
+                raise ValueError("Invalid daily manifest checksum")
+            expected = hi
+        if expected != us_time(self.source_manifest["end"]):
+            raise ValueError("Range coverage does not match its days")
+
+    def _range_trades(self, **kwargs):
+        from btc_trade_backtest import us_time
+        lo, hi = kwargs.get("start_us"), kwargs.get("end_us")
+        for day in self.manifest["daily_datasets"]:
+            if (lo is not None and us_time(day["end"]) <= lo) or (hi is not None and us_time(day["start"]) >= hi):
+                continue
+            key = day["manifest_sha256"]
+            if key not in self.daily_cache:
+                if self.filesystem:
+                    # Range manifests may only reference immutable objects in this bucket.
+                    uri = "gs://" + self.root.split("/", 1)[0] + "/btc/trades/v1/" + key
+                else:
+                    relative = Path(day["local_path"])
+                    if relative.is_absolute() or ".." in relative.parts:
+                        raise ValueError("Unsafe daily dataset path")
+                    uri = self.root / relative
+                child = ParquetTradeStore(uri)
+                if hashlib.sha256(child.manifest_bytes).hexdigest() != key:
+                    raise ValueError("Daily manifest checksum mismatch")
+                if (us_time(child.source_manifest["start"]) != us_time(day["start"]) or
+                        us_time(child.source_manifest["end"]) != us_time(day["end"])):
+                    raise ValueError("Daily manifest coverage mismatch")
+                # Retain metadata/checksum identities only; decoded batches are not cached.
+                self.daily_cache[key] = child
+            child = self.daily_cache[key]
+            child.check_cancelled = self.check_cancelled
+            before = dict(child.timings)
+            yield from child.trades(**kwargs)
+            for phase in self.timings:
+                self.timings[phase] += child.timings[phase] - before[phase]
+            for part in child.accessed_partitions:
+                value = {**part, "daily_manifest_sha256": key}
+                if value not in self.accessed_partitions:
+                    self.accessed_partitions.append(value)
+
     def trades(self, *, batch_rows=8192, start_us=None, end_us=None, symbols=None):
+        if self.manifest.get("daily_datasets"):
+            return self._range_trades(batch_rows=batch_rows, start_us=start_us, end_us=end_us, symbols=symbols)
         # Open one partition at a time per venue/market, not one per historical day.
         markets = {}
         for item in self.manifest["partitions"]:
             if (not item["rows"] or (start_us is not None and item["last_us"] < start_us)
                     or (end_us is not None and item["first_us"] >= end_us)):
+                continue
+            if symbols is not None and "SPOT" not in symbols and "/market=spot/" in item["path"]:
+                continue
+            if symbols == {"SPOT"} and "/market=dated-futures/" in item["path"]:
                 continue
             markets.setdefault(str(Path(item["path"]).parent.parent), []).append(item)
         streams = []
@@ -305,4 +397,15 @@ class ParquetTradeStore:
                     raise ValueError("Overlapping partition times")
             streams.append(chain.from_iterable(self._partition(item, batch_rows=batch_rows,
                 start_us=start_us, end_us=end_us, symbols=symbols) for item in parts))
-        return heapq.merge(*streams, key=lambda event: (event.us, event.symbol))
+        def measured():
+            merged = iter(heapq.merge(*streams, key=lambda event: (event.us, event.symbol)))
+            while True:
+                started = time.monotonic()
+                try:
+                    event = next(merged)
+                except StopIteration:
+                    return
+                finally:
+                    self.timings["decode_and_merge"] += time.monotonic() - started
+                yield event
+        return measured()
