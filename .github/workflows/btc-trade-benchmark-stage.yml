@@ -1,0 +1,59 @@
+name: BTC trade benchmark stage
+on:
+  workflow_call:
+    inputs:
+      source:
+        required: true
+        type: string
+      manifest:
+        required: true
+        type: string
+      days:
+        required: true
+        type: number
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements-trade-data.txt
+      - uses: google-github-actions/auth@v2
+        with:
+          project_id: keep-and-lease
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com
+      - name: Measure continuous 500 ms replay with resumable GCS audit
+        env:
+          RANGE_MANIFEST: ${{ inputs.manifest }}
+          RANGE_DAYS: ${{ inputs.days }}
+        run: |
+          python - <<'PY'
+          import hashlib, os, re, subprocess, sys
+          manifest=os.environ['RANGE_MANIFEST']; days=int(os.environ['RANGE_DAYS'])
+          assert re.fullmatch('[0-9a-f]{64}',manifest)
+          assert days in (1,7,30,90)
+          identifier=hashlib.sha256((os.environ['GITHUB_RUN_ID']+':'+str(days)).encode()).hexdigest()[:32]
+          subprocess.run([sys.executable,'scripts/benchmark-btc-trade-range.py',
+            '--dataset','gs://keep-and-lease-market-data/btc/trades/ranges/'+manifest,
+            '--expected-manifest-sha',manifest,'--days',str(days),'--interval','0.5',
+            '--output','work/benchmark-'+str(days),'--gcs-audit','--checkpoint-id',identifier],check=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: btc-benchmark-${{ inputs.days }}-days
+          path: |
+            work/benchmark-${{ inputs.days }}/report.json
+            work/benchmark-${{ inputs.days }}/validation-job-id.txt
+          retention-days: 30
+          if-no-files-found: warn

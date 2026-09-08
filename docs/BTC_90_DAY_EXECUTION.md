@@ -109,3 +109,22 @@ The initial GitHub push was rejected by automatic approval review. The owner
 subsequently explicitly approved the feature push, private GCP preview and
 bounded 90-day ingestion workflow. Publication and cloud validation are now
 in progress; completed evidence must be recorded before activation.
+
+## Cloud run evidence and staged continuation
+
+The first published implementation is `5712b75f953810115844ad332adfc56dd427faa2`
+in [PR #40](https://github.com/leviitzhak/keep_and_lease/pull/40).
+[Deployment 34194440773](https://github.com/leviitzhak/keep_and_lease/actions/runs/34194440773)
+passed 56 Python checks with Arrow/API dependencies and private rendered GUI
+acceptance. The approved [90-day ingestion run 34194533429](https://github.com/leviitzhak/keep_and_lease/actions/runs/34194533429)
+is processing daily raw/Parquet/GCS identity gates; June 6 passed first.
+
+`btc-trade-benchmark.yml` can follow that run with the bounded request
+`{"schema_version":1,"action":"benchmark-90day-btc-500ms","source_commit":"<reviewed SHA>","ingestion_run_id":34194533429}`
+in `.cloud-agent/requests/btc-benchmark.json`. Its initial read-only job waits
+up to four hours for that exact operator ingestion workflow to succeed, then
+validates and hashes the final 90-day manifest artifact. The four benchmark
+stages run strictly in 1/7/30/90-day order; each uses a stable GCS checkpoint ID
+across workflow retries. The measurements run on GitHub Actions CPU, so final
+Cloud Run acceptance is still required. This continuation does not enable the
+90-day catalog, change worker resource limits or merge into master.
