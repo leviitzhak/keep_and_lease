@@ -16,7 +16,11 @@ branch._
   has yet been completed; the active catalog and timeout remain unchanged.
   After the initial automatic push-review rejection, the owner explicitly
   approved the feature push, private preview and bounded ingestion workflow.
-  Cloud publication/validation is in progress.
+  Published in [PR #40](https://github.com/leviitzhak/keep_and_lease/pull/40).
+  Deployment `34194440773` passed 56 Python tests and private rendered GUI
+  acceptance on `5712b75f953810115844ad332adfc56dd427faa2`. The 90-day ingestion
+  workflow `34194533429` is running; staged benchmarks follow its completed
+  manifest. Full-range activation remains pending these measurements.
 
 
 - Preview-verified on `agent/gui-subsecond-execution` in [PR #39](https://github.com/leviitzhak/keep_and_lease/pull/39): integrated the uploaded June 25

@@ -47,7 +47,10 @@ def catalog():
             raise ValueError("Trade catalog requires a manifest SHA-256")
         if not isinstance(value["maximum_decisions"], int) or not 1 <= value["maximum_decisions"] <= 16_000_000:
             raise ValueError("Trade catalog exceeds the implementation decision ceiling")
-        return {**value, "minimum_interval_seconds": .001}
+        start, end = us_time(value["start"]), us_time(value["end"])
+        if not 0 < end-start <= 90*86400_000_000:
+            raise ValueError("Trade catalog must cover at most 90 days")
+        return {**value, "start": iso_time(start), "end": iso_time(end), "minimum_interval_seconds": .001}
     return {"id": DATASET_ID, "start": START, "end": END,
             "minimum_interval_seconds": .001, "maximum_decisions": MAX_DECISIONS,
             "manifest_sha256": MANIFEST_SHA}

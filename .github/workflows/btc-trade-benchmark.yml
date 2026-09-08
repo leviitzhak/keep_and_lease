@@ -1,0 +1,77 @@
+name: Measure staged BTC subsecond range
+on:
+  push:
+    branches: [agent/cloud-autonomous-access]
+    paths: [.cloud-agent/requests/btc-benchmark.json]
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+concurrency:
+  group: btc-trade-range-benchmark
+  cancel-in-progress: false
+jobs:
+  request:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      source: ${{ steps.request.outputs.source }}
+      manifest: ${{ steps.range.outputs.manifest }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: request
+        run: |
+          python - <<'PY'
+          import json, os, re
+          from pathlib import Path
+          request=json.loads(Path('.cloud-agent/requests/btc-benchmark.json').read_text())
+          assert set(request)=={'schema_version','action','source_commit','ingestion_run_id'}
+          assert request['schema_version']==1
+          assert request['action']=='benchmark-90day-btc-500ms'
+          assert re.fullmatch('[0-9a-f]{40}',request['source_commit'])
+          assert isinstance(request['ingestion_run_id'],int) and request['ingestion_run_id'] > 0
+          with open(os.environ['GITHUB_OUTPUT'],'a') as stream:
+              stream.write('source='+request['source_commit']+'\n')
+              stream.write('ingestion_run_id='+str(request['ingestion_run_id'])+'\n')
+          PY
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.request.outputs.source }}
+          persist-credentials: false
+      - id: range
+        name: Wait for all 90 daily gates and resolve the complete manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INGESTION_RUN_ID: ${{ steps.request.outputs.ingestion_run_id }}
+        run: python scripts/await-btc-trade-range.py --run-id "$INGESTION_RUN_ID"
+  one:
+    needs: request
+    uses: ./.github/workflows/btc-trade-benchmark-stage.yml
+    with:
+      source: ${{ needs.request.outputs.source }}
+      manifest: ${{ needs.request.outputs.manifest }}
+      days: 1
+  seven:
+    needs: [request, one]
+    uses: ./.github/workflows/btc-trade-benchmark-stage.yml
+    with:
+      source: ${{ needs.request.outputs.source }}
+      manifest: ${{ needs.request.outputs.manifest }}
+      days: 7
+  thirty:
+    needs: [request, seven]
+    uses: ./.github/workflows/btc-trade-benchmark-stage.yml
+    with:
+      source: ${{ needs.request.outputs.source }}
+      manifest: ${{ needs.request.outputs.manifest }}
+      days: 30
+  ninety:
+    needs: [request, thirty]
+    uses: ./.github/workflows/btc-trade-benchmark-stage.yml
+    with:
+      source: ${{ needs.request.outputs.source }}
+      manifest: ${{ needs.request.outputs.manifest }}
+      days: 90

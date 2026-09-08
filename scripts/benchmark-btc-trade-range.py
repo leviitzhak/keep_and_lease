@@ -10,6 +10,7 @@ import hashlib
 import json
 from pathlib import Path
 import resource
+import re
 import sys
 import time
 import uuid
@@ -29,9 +30,15 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--interval", type=float, default=.5)
     parser.add_argument("--gcs-audit", action="store_true")
+    parser.add_argument("--checkpoint-id", help="Stable 32-hex validation ID for a workflow retry")
+    parser.add_argument("--expected-manifest-sha", help="Require the reviewed range manifest hash")
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     store = ParquetTradeStore(args.dataset)
+    if args.expected_manifest_sha and hashlib.sha256(store.manifest_bytes).hexdigest() != args.expected_manifest_sha:
+        raise ValueError("Benchmark manifest differs from the reviewed range")
+    if args.checkpoint_id and not re.fullmatch("[0-9a-f]{32}", args.checkpoint_id):
+        raise ValueError("Invalid validation checkpoint ID")
     source = store.source_manifest
     start = replay.us_time(source["start"])
     end = start + args.days * 86400_000_000
@@ -46,8 +53,10 @@ def main():
         results = GcsResultStore(storage.Client(), "keep-and-lease-market-data")
         identifier_path = args.output / "validation-job-id.txt"
         if not identifier_path.exists():
-            identifier_path.write_text(uuid.uuid4().hex)
+            identifier_path.write_text(args.checkpoint_id or uuid.uuid4().hex)
         identifier = identifier_path.read_text().strip()
+        if args.checkpoint_id and identifier != args.checkpoint_id:
+            raise ValueError("Output folder belongs to a different validation")
         audit_store = results.audit_store(identifier)
         checkpoints = results.checkpoint_store(identifier)
         destination = f"gs://keep-and-lease-market-data/jobs/{identifier}/audit"
