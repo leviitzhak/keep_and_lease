@@ -146,3 +146,8 @@ raw/Parquet data, verifies before creating receipts, retains completed receipts
 on later failures, and retries transient credential transport failures. The live
 GUI still selects the pilot; full-range publication, staged paired benchmarks,
 and catalog/worker activation remain required. See BTC_90_DAY_EXECUTION.md.
+
+BTC recovery update: run 34267650300 succeeded; all 90 days are verified and the
+immutable range is published. Preview 34267612174 passed pilot GUI acceptance
+at 5746ecca502ecee22a96d3edc90d20e1f87f9d90. Paired staged benchmarks run
+34267691181 follows publication; full-range GUI activation remains pending.

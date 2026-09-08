@@ -272,7 +272,7 @@ This checklist reflects the application synchronized from the deployed Sites che
 
 - [x] Add the separate pure-maturity multiplier favoring shorter long positions and longer short positions, with a zero-strength backward-compatible default.
 
-- BTC 90-day activation: finish GCS-only recovery of August 26/28 after the
-  token-fetch failures, publish the range, pass paired 1/7/30/90-day benchmarks,
+- BTC 90-day activation: GCS-only recovery and range publication passed in
+  run 34267650300. Next pass paired 1/7/30/90-day benchmarks,
   then configure and accept the preview GUI catalog and worker limits. Recovery
   tooling now retains receipts on later failures and retries transient auth transport.

@@ -2,8 +2,8 @@
 
 The `agent/btc-90day-subsecond` branch extends the previously verified one-day
 GUI implementation onto current GitHub master. The live catalog still selects
-the June 25 pilot. The 90-day range is **not yet published or activated**: real
-1/7/30/90-day performance and deployed acceptance remain required.
+the June 25 pilot. The 90-day range is **published and verified, but not yet activated in the GUI**.
+Real 1/7/30/90-day performance and full-range deployed acceptance remain required.
 
 ## Implemented path
 
@@ -341,3 +341,21 @@ The live GUI remains on the pilot until the complete range is published,
 paired 1/7/30/90-day benchmarks pass, and the preview catalog and worker limits
 are configured and accepted. Engine support does not yet mean a validated live
 90-day GUI run. The planned 500 ms interval produces 15,552,000 decisions.
+
+### Completed cloud recovery and publication
+
+[Recovery 34267650300](https://github.com/leviitzhak/keep_and_lease/actions/runs/34267650300)
+succeeded on September 8 at 19:19 UTC. August 26 reverified 4,323,107 events;
+August 28 reverified 4,862,726 events. All 90 daily receipts are now available.
+The published range is:
+
+`gs://keep-and-lease-market-data/btc/trades/ranges/52ef7ab51def1e37fc774f96bd94697ed90ad286d6885c72f69de84c285c9912`
+
+Its manifest SHA-256 is the final URI component.
+[Preview 34267612174](https://github.com/leviitzhak/keep_and_lease/actions/runs/34267612174)
+succeeded at source `5746ecca502ecee22a96d3edc90d20e1f87f9d90`, including
+rendered 500 ms/GCS equivalence, CSV, audit, hover and 1 ms fractional-window
+acceptance on the pilot. The latest local suite passed 74 tests.
+[Paired staged benchmarks 34267691181](https://github.com/leviitzhak/keep_and_lease/actions/runs/34267691181)
+follow the successful publication. Full-range benchmark results and GUI catalog/
+worker activation remain pending; pilot acceptance is not 90-day acceptance.
