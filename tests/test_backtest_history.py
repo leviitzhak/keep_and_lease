@@ -1,4 +1,6 @@
 import unittest
+import re
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock
 
@@ -12,6 +14,19 @@ from tests.test_cloud_jobs import FakeLauncher
 
 
 class BacktestHistoryTests(unittest.TestCase):
+    def test_web_image_contains_referenced_gui_scripts(self):
+        root = Path(__file__).resolve().parents[1]
+        html = (root / 'public/silver_strategy_gui.html').read_bytes()
+        self.assertEqual(html, (root / 'silver_strategy_gui.html').read_bytes())
+        docker = (root / 'Dockerfile.web').read_text()
+        exceptions = (root / '.dockerignore').read_text().splitlines()
+        for asset in re.findall(r'<script src="/([^"?]+)', html.decode()):
+            path = 'public/' + asset
+            self.assertTrue((root / path).is_file(), path)
+            self.assertIn(path, docker, path)
+            self.assertIn('!' + path, exceptions, path)
+
+
     def test_owner_scoped_pages_include_all_states_and_no_result_bodies(self):
         service = JobStore(FakeEngine())
         for index, state in enumerate(('queued', 'running', 'completed', 'failed', 'cancelled')):

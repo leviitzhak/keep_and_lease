@@ -12,7 +12,8 @@ its rendered GUI checks. Continuation `34342399295` reached the end of sequence
 replay but exceeded the 4 MiB audit-index limit. New work raises the operational
 budget to 32 MiB while preserving checkpoints, and adds durable GUI history,
 background submissions, concurrent cloud jobs, progress and result selection.
-The web image explicitly includes the new history runtime, and the source HTML
+The web image and Docker build-context allowlist explicitly include the new
+history runtime, and the source HTML
 and generated public HTML are kept identical. The final paired 90-day benchmark
 remains pending. The older milestones below
 record their state at the time; the current inventory is
