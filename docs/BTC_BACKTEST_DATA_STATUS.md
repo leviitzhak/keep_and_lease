@@ -12,7 +12,7 @@ September 4 includes all of September 3.
 | Deribit futures candles | Same 90-day requested window; 1 minute | Repository `public/data/btc/intraday/deribit_1m/futures/` and manifest | 93 contracts, 1,202,419 rows, including 840,526 zero-volume synthetic rows. Synthetic marks may support valuation but are not observed executions. Each contract has its own lifetime and coverage. |
 | Kraken BTC/USD midpoint candles | July 1, August 1, September 1, 2026 only; 1 minute | Repository `public/data/btc/intraday/kraken_1m/spot.csv.gz` and manifest | Three free Tardis sample sessions, 4,320 bars with no within-session missing minutes. Not a continuous three-month dataset. |
 | Trade replay pilot | June 25, 2026; event timestamps | GCS `btc/trades/v1/9c05efc03118699303e7a55e14205bed29783683a85c165f99319dd3fabc055d` | Verified raw/Parquet/cloud equivalence and deployed GUI examples at 500 ms and 1 ms clocks. |
-| Full trade replay range | June 6–September 3, 2026; Binance spot aggregate trades and Deribit futures trades | GCS immutable daily datasets and range below | All 90 daily raw/cloud comparisons passed. Full 90-day strategy result is not yet complete. |
+| Full trade replay range | June 6–September 3, 2026; Binance spot aggregate trades and Deribit futures trades | GCS immutable daily datasets and range below | All 90 daily raw/cloud comparisons passed. The 90-day sequence result is complete; timestamp result and paired comparison remain pending. |
 | Treasury yields | Shared daily rate CSVs `DTB3`, `DTB6`, `DGS1`, `DGS2`, `DGS3`, `DGS5` | Repository root and deployed engine data | Replay carries the latest observable yield and accrues between observations; no future interpolation. Rate bytes participate in checkpoint identity. |
 
 The trade range is:
@@ -64,7 +64,7 @@ preparation and apply to GitHub runners, not measured Cloud Run performance.
 | 1 | 17m 27s | 7m 22s | 616.8 / 204.4 MiB | 90,675,546 bytes |
 | 7 | 48m 08s | 43m 32s | 627.2 / 231.3 MiB | 562,323,989 bytes |
 | 30 | 2h 55m 01s | 2h 55m 24s | 644.0 / 344.2 MiB | 2,368,272,316 bytes |
-| 90 | Reached end, audit-index finalization failed | Continued through July 12 before yielding | No completed paired report | Sequence checkpoint September 3, 23:00; timestamp July 12, 00:00 |
+| 90 | Complete: final recovery attempt 11m 9s (not total runtime) | Running from July 12 checkpoint | Sequence 653.8 MiB; timestamp pending | Sequence 7,445,502,103 bytes; paired comparison pending |
 
 All three completed paired stages passed resource gates. Reported aggregate
 financial/fill comparisons had zero differences; this does not establish that
@@ -147,3 +147,30 @@ and without result bodies. Actual full-period resource/financial acceptance stil
 requires the resumed paired benchmark to finish. The previous source
 `d38df75c337ea05f0b9adc835cd09a40cac6e070` passed private GUI deployment
 `34342363638`; the changes described here require their own deployment checks.
+
+
+At 14:39 UTC, the sequence continuation in
+[run 34363722260](https://github.com/leviitzhak/keep_and_lease/actions/runs/34363722260)
+completed successfully. It explicitly resumed after September 3, 23:00 UTC and
+published its report at `jobs/d7afa21dd9da7d3b1b4ab15efe639ed4/benchmark-report.json`
+in the market-data bucket. The final attempt took 669.038 seconds, including
+reopening/preparing the pinned market data; peak process RSS was 653.836 MiB.
+The full compressed audit is 7,445,502,103 bytes. This validates finalization and
+resource gates for sequence ordering on the actual 90-day input. It does not
+supply total runtime across all attempts, timestamp-policy completion, or the
+paired financial comparison. Timestamp continuation remains running.
+
+
+GUI-owned result/audit/checkpoint objects in `gs://keep-and-lease-results`
+currently have a 90-day deletion lifecycle (`infra/gcp/main.tf`,
+`result_retention_days`). Firestore run metadata can remain after object expiry.
+The new history UI does not alter that storage policy. Research benchmark
+validation objects above use the separate market-data bucket.
+
+The background-run GUI was preview-verified at
+`d06eec62bf18b3e10e54733cae11d6978ffb6f19` in
+[deployment 34364647546](https://github.com/leviitzhak/keep_and_lease/actions/runs/34364647546).
+All 93 cloud CI tests passed. Rendered acceptance included reopening the GUI and
+selecting an older completed 500 ms result, plus the existing multi-commodity,
+CSV/audit, hover and 1 ms checks. Earlier packaging failures were corrected in
+the web image and Docker build-context allowlist, now covered by CI.

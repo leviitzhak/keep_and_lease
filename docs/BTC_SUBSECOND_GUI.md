@@ -179,3 +179,20 @@ Benchmark CLI runs use separate validation objects and are not GUI-owned jobs.
 Cloud history is separate between preview and stable; local browser computation
 is not saved into cloud history. Period extension remains a separate CLI feature,
 not an alias for Resume.
+
+
+Saved-run metadata and result retention are separate: the current result bucket
+has a 90-day object-deletion lifecycle. Results, audit chunks and checkpoints in
+that bucket are not permanent archives; Firestore history may outlive their
+objects. Selecting an expired result reports a download failure. Benchmark
+validation outputs live in the separate market-data bucket. Changing retention
+or adding per-run archival/pinning is not part of this GUI history change.
+
+Private preview acceptance passed for `d06eec62bf18b3e10e54733cae11d6978ffb6f19`
+in [workflow 34364647546](https://github.com/leviitzhak/keep_and_lease/actions/runs/34364647546).
+Cloud CI passed 93 tests, and 47 JavaScript tests passed locally. Rendered GUI
+checks passed the multi-commodity baseline, 500 ms/GCS equivalence, CSV/audit
+access, chart hover, a 1 ms fractional window, and reopening the page to select
+the earlier completed 500 ms run. The same check verified Run became available
+after submission acknowledgement. Full 90-day sequence benchmark recovery has
+also passed; timestamp continuation and the paired comparison are still pending.

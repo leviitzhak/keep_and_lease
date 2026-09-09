@@ -148,7 +148,10 @@ endpoints remain available for individual jobs. The current Firestore adapter
 uses the existing owner equality index and sorts that owner's metadata in memory,
 avoiding cross-owner scans and new composite-index requirements. Read cost grows
 with the owner's history; large installations should migrate this to an indexed
-owner/creation-time cursor query. No saved jobs are silently deleted by pagination.
+owner/creation-time cursor query. No saved jobs are silently deleted by pagination. The existing 90-day result
+bucket lifecycle is unchanged: Firestore metadata can outlive result/audit objects,
+and expired results are no longer downloadable. Permanent archival/pinning would
+require a separate retention-policy change.
 
 The GUI submits independently of result polling, so multiple distinct cloud jobs
 can run concurrently. Cloud Run task count/parallelism apply within each execution,

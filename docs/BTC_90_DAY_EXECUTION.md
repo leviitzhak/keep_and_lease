@@ -399,3 +399,11 @@ cancelling and resuming checkpointed trade jobs. Different requests launch
 independent Cloud Run executions and continue after browser closure. Identical
 active/completed requests with the same owner and provenance are reused.
 See `BTC_SUBSECOND_GUI.md` for history and resume limitations.
+
+
+The corrected sequence continuation subsequently **passed** at 14:39 UTC in
+`34363722260`, resuming after September 3 at 23:00 UTC and publishing the full
+90-day report. Final-attempt runtime: 669.038 seconds including data preparation;
+peak process RSS: 653.836 MiB; compressed audit: 7,445,502,103 bytes. The timestamp
+policy is still running, so the paired financial/resource gate remains pending.
+See `BTC_BACKTEST_DATA_STATUS.md` for the durable report location.

@@ -6,6 +6,17 @@ branch._
 
 ## Active change set
 
+Preview acceptance **passed** for the background-run interface on
+`d06eec62bf18b3e10e54733cae11d6978ffb6f19` in
+[deployment 34364647546](https://github.com/leviitzhak/keep_and_lease/actions/runs/34364647546).
+93 cloud CI tests and 47 local JavaScript tests passed. Rendered checks include
+reopening the GUI and selecting an older completed result, the multi-commodity
+baseline, 500 ms/GCS equivalence, CSV/audit, hover and a 1 ms fractional window.
+The 90-day sequence benchmark has completed in recovery `34363722260`; timestamp
+ordering and paired comparison are still running. Existing GUI result retention
+is 90 days; benchmark validation objects use the separate market-data bucket.
+
+
 Latest September 9 update: all 90 daily inputs are published; preview source
 `d38df75c337ea05f0b9adc835cd09a40cac6e070` passed deployment `34342363638` and
 its rendered GUI checks. Continuation `34342399295` reached the end of sequence
@@ -15,7 +26,10 @@ background submissions, concurrent cloud jobs, progress and result selection.
 The web image and Docker build-context allowlist explicitly include the new
 history runtime, and the source HTML
 and generated public HTML are kept identical. The final paired 90-day benchmark
-remains pending. The older milestones below
+remains pending. Sequence recovery then passed in `34363722260` at 14:39 UTC:
+669.038 seconds for the final attempt, 653.836 MiB peak process RSS and
+7,445,502,103 compressed audit bytes. Timestamp continuation is running.
+The older milestones below
 record their state at the time; the current inventory is
 [BTC_BACKTEST_DATA_STATUS.md](BTC_BACKTEST_DATA_STATUS.md).
 
