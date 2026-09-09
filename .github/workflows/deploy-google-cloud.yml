@@ -46,7 +46,7 @@ jobs:
       - name: Check multi-day accounting, recovery, Parquet and job APIs
         run: |
           python -c 'import pyarrow, fastapi'
-          python -m unittest tests.test_trade_discrepancies tests.test_benchmark_chain tests.test_trade_range_recovery tests.test_trade_resume_service tests.test_btc_trade_backtest tests.test_trade_data_store tests.test_trade_replay tests.test_backtest_audit tests.test_cloud_jobs tests.test_trade_data_upload -v
+          python -m unittest tests.test_benchmark_segments tests.test_replay_extension tests.test_cloud_credential_retry tests.test_trade_discrepancies tests.test_benchmark_chain tests.test_trade_range_recovery tests.test_trade_resume_service tests.test_btc_trade_backtest tests.test_trade_data_store tests.test_trade_replay tests.test_backtest_audit tests.test_cloud_jobs tests.test_trade_data_upload -v
   deploy:
     needs: replay-checks
     runs-on: ubuntu-latest
@@ -177,7 +177,7 @@ jobs:
           terraform init -input=false -reconfigure -backend-config="prefix=${state_prefix}"
           terraform fmt -check
           terraform validate
-          terraform plan -input=false -out=tfplan
+          terraform plan -input=false -var-file="profiles/${DEPLOYMENT_TARGET}.tfvars.json" -out=tfplan
 
       - name: Apply Cloud Run workload update
         working-directory: infra/gcp/workloads

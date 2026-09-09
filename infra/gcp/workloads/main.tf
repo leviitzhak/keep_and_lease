@@ -49,8 +49,8 @@ resource "google_cloud_run_v2_job" "calculation" {
 
         resources {
           limits = {
-            cpu    = "1"
-            memory = "4Gi"
+            cpu    = var.worker_cpu
+            memory = var.worker_memory
           }
         }
 

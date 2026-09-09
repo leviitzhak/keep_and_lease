@@ -628,3 +628,14 @@ audit coverage. Cold market initialization still loads the packaged history.
 The separate [bounded GCS pilot](BTC_TRADE_STORAGE.md#running-the-bounded-cloud-pilot)
 uses the owner's newly granted market-bucket roles and the existing operator OIDC
 identity; it does not change the GUI market provider or cloud resource limits.
+
+## Long BTC preview profiles
+
+Deployment plans explicitly load `infra/gcp/workloads/profiles/<target>.tfvars.json`.
+Preview pins the verified 90-day trade range and permits 16 million decisions,
+with 1 vCPU, 4 GiB and a 24-hour task timeout. Stable retains the pilot profile.
+CPU, memory and task timeout are independently configurable; validation allows
+a maximum seven-day task, but higher budgets require measured evidence. The
+web request timeout is unrelated to asynchronous worker duration. Automatic
+worker retries remain off; stopped executions use owner-scoped checkpoint resume.
+See BTC_BACKTEST_DATA_STATUS.md for benchmark limits and extension semantics.

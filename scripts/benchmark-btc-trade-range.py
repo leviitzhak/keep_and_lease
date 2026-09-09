@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from backtest_audit import AuditCollection, DirectoryAuditStore
 import btc_trade_backtest as replay
-from replay_checkpoints import DirectoryCheckpoints
+from replay_checkpoints import DirectoryCheckpoints, fingerprint
 from trade_data_store import ParquetTradeStore
 
 
@@ -33,6 +33,7 @@ def main():
     parser.add_argument("--gcs-audit", action="store_true")
     parser.add_argument("--checkpoint-id", help="Stable 32-hex validation ID for a workflow retry")
     parser.add_argument("--expected-manifest-sha", help="Require the reviewed range manifest hash")
+    parser.add_argument("--max-wall-seconds", type=float, default=0, help="Yield successfully at a durable checkpoint after this budget")
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     store = ParquetTradeStore(args.dataset)
@@ -66,14 +67,38 @@ def main():
         audit_store = DirectoryAuditStore(args.output / "audit")
         checkpoints = DirectoryCheckpoints(args.output / "checkpoints")
         destination = str(args.output / "audit")
+    parameters_path = args.output / 'parameters.json'
+    parameters_path.write_text(json.dumps(parameters, indent=2)+'\n')
+    report_blob = None
+    if args.gcs_audit:
+        report_blob = storage.Client().bucket('keep-and-lease-market-data').blob('jobs/'+identifier+'/benchmark-report.json')
+        if report_blob.exists():
+            encoded = report_blob.download_as_bytes(checksum='crc32c')
+            saved = json.loads(encoded)
+            if (saved['days'] != args.days or saved['ordering'] != args.ordering or
+                    saved.get('fingerprint') != fingerprint(parameters, store.manifest_bytes, ROOT)):
+                raise ValueError('Completed report identity differs')
+            (args.output/'report.json').write_bytes(encoded)
+            print('Reused completed benchmark report', flush=True)
+            return
     audit = AuditCollection(audit_store)
     audit.checkpoints = checkpoints
     coverage = dict(id="staged-benchmark", start=source["start"], end=source["end"], maximum_decisions=16_000_000)
     began = time.monotonic()
-    result = replay.run(parameters, ROOT, audit, lambda stage, detail: print(stage+": "+detail, flush=True),
-                        store=store, coverage=coverage)
+    class CheckpointYield(Exception):
+        pass
+    def progress(stage, detail):
+        print(stage+': '+detail, flush=True)
+        if stage == 'trade_checkpoint' and args.max_wall_seconds and time.monotonic()-began >= args.max_wall_seconds:
+            raise CheckpointYield()
+    try:
+        result = replay.run(parameters, ROOT, audit, progress, store=store, coverage=coverage)
+    except CheckpointYield:
+        (args.output/'continuation.json').write_text(json.dumps(dict(status='checkpointed',
+            wall_seconds=time.monotonic()-began, checkpoint_id=args.checkpoint_id))+'\n')
+        return
     datasets = result["audit"]["datasets"]
-    report = dict(strategy_parameters_sha256=hashlib.sha256(json.dumps({k:v for k,v in parameters.items() if k != "trade_ordering"},sort_keys=True).encode()).hexdigest(),
+    report = dict(fingerprint=fingerprint(parameters, store.manifest_bytes, ROOT), manifest_sha256=hashlib.sha256(store.manifest_bytes).hexdigest(), strategy_parameters_sha256=hashlib.sha256(json.dumps({k:v for k,v in parameters.items() if k != "trade_ordering"},sort_keys=True).encode()).hexdigest(),
                   days=args.days, ordering=args.ordering, interval_seconds=args.interval, wall_seconds=time.monotonic()-began,
                   peak_rss_mib=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1024,
                   summary=result["summary"], replay=result["trade_replay"], audit_destination=destination,
@@ -84,6 +109,9 @@ def main():
     if report["peak_rss_mib"] + 2*report["replay"]["ordering"].get("ordering_database_bytes",0)/1024**2 > 3584 or len(result["series"]) > 2002:
         raise ValueError("Staged benchmark exceeded worker/plot headroom")
     (args.output / "report.json").write_text(json.dumps(report, indent=2)+"\n")
+    if report_blob is not None:
+        report_blob.upload_from_string((args.output/'report.json').read_bytes(), if_generation_match=0,
+                                       checksum='crc32c', content_type='application/json')
     print(json.dumps({k:report[k] for k in ("days","wall_seconds","peak_rss_mib","audit_compressed_bytes","audit_destination")}))
 
 

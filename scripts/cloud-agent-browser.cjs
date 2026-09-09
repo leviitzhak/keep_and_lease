@@ -327,7 +327,7 @@ async function main() {
       const result = await response.json();
       if (result.result_kind !== 'btc_trade_replay' || result.trade_replay.interval_seconds !== .5 || result.trade_replay.market_events !== 12006 || result.summary.observations !== 600) throw Error('Unexpected 500 ms trade replay coverage');
       if (Math.abs(result.summary.compounded_return - 0.023825048740855337) > 1e-8) throw Error('GCS trade replay differs from local financial result');
-      if (result.trade_replay.manifest_sha256 !== '9c05efc03118699303e7a55e14205bed29783683a85c165f99319dd3fabc055d') throw Error('Wrong immutable trade dataset');
+      if (!['9c05efc03118699303e7a55e14205bed29783683a85c165f99319dd3fabc055d', '52ef7ab51def1e37fc774f96bd94697ed90ad286d6885c72f69de84c285c9912'].includes(result.trade_replay.manifest_sha256)) throw Error('Wrong immutable trade dataset');
       await page.waitForSelector('#tradeReplayResults', {state:'visible'});
       await page.waitForFunction(()=>!document.querySelector('#run').disabled);
       const csvDownload = page.waitForEvent('download');
@@ -354,7 +354,7 @@ async function main() {
       await page.waitForFunction(()=>!document.querySelector('#run').disabled);
       fs.writeFileSync(path.join(outputDir,'millisecond.json'),JSON.stringify({summary:fine.summary,trade_replay:fine.trade_replay},null,2));
       // Invalid coverage is rejected synchronously, before launching a worker.
-      const invalid=await page.evaluate(async p=>{p.backtest_end='2026-06-27';const r=await fetch('/api/v1/backtests',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({parameters:p})});return r.status;},result.parameters);
+      const invalid=await page.evaluate(async p=>{p.backtest_end='2099-01-01';const r=await fetch('/api/v1/backtests',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({parameters:p})});return r.status;},result.parameters);
       if(invalid!==400)throw Error('Unsupported trade dates were accepted');
       console.log('Subsecond GUI acceptance passed: 500 ms/GCS equivalence, CSV, audit, hover, and 1 ms fractional window.');
     }

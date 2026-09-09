@@ -151,3 +151,20 @@ BTC recovery update: run 34267650300 succeeded; all 90 days are verified and the
 immutable range is published. Preview 34267612174 passed pilot GUI acceptance
 at 5746ecca502ecee22a96d3edc90d20e1f87f9d90. Paired staged benchmarks run
 34267691181 follows publication; full-range GUI activation remains pending.
+
+## September 9: long-run infrastructure and evidence
+
+See [BTC_BACKTEST_DATA_STATUS.md](BTC_BACKTEST_DATA_STATUS.md) for the data
+inventory and measured 1/7/30-day results. Both policies passed those stages.
+The 90-day job hit six hours after saving its sequence checkpoint through
+August 21 13:00 UTC; the timestamp policy had not started.
+
+Implemented: explicit preview/stable Terraform profiles, a 24-hour preview
+worker with the verified 90-day catalog, configurable CPU/memory and bounded
+three-hour benchmark continuation segments. The recovery workflow reuses old
+checkpoint IDs with the unchanged replay engine. A CLI extension forks the
+checkpoint and verified audit prefix into a new result with a later end date.
+It requires the same immutable dataset/engine/rates and preserves the parent.
+Pending: complete 90-day measured results and Cloud Run acceptance, GUI/API
+extension, append-only validation for newly ingested history, and lifting
+reader/catalog bounds beyond 90 days after resource checks.

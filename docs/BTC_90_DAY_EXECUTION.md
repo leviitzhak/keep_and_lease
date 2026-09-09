@@ -359,3 +359,20 @@ acceptance on the pilot. The latest local suite passed 74 tests.
 [Paired staged benchmarks 34267691181](https://github.com/leviitzhak/keep_and_lease/actions/runs/34267691181)
 follow the successful publication. Full-range benchmark results and GUI catalog/
 worker activation remain pending; pilot acceptance is not 90-day acceptance.
+
+## September 9: long-run infrastructure and evidence
+
+See [BTC_BACKTEST_DATA_STATUS.md](BTC_BACKTEST_DATA_STATUS.md) for the data
+inventory and measured 1/7/30-day results. Both policies passed those stages.
+The 90-day job hit six hours after saving its sequence checkpoint through
+August 21 13:00 UTC; the timestamp policy had not started.
+
+Implemented: explicit preview/stable Terraform profiles, a 24-hour preview
+worker with the verified 90-day catalog, configurable CPU/memory and bounded
+three-hour benchmark continuation segments. The recovery workflow reuses old
+checkpoint IDs with the unchanged replay engine. A CLI extension forks the
+checkpoint and verified audit prefix into a new result with a later end date.
+It requires the same immutable dataset/engine/rates and preserves the parent.
+Pending: complete 90-day measured results and Cloud Run acceptance, GUI/API
+extension, append-only validation for newly ingested history, and lifting
+reader/catalog bounds beyond 90 days after resource checks.

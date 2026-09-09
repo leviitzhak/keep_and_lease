@@ -276,3 +276,20 @@ This checklist reflects the application synchronized from the deployed Sites che
   run 34267650300. Next pass paired 1/7/30/90-day benchmarks,
   then configure and accept the preview GUI catalog and worker limits. Recovery
   tooling now retains receipts on later failures and retries transient auth transport.
+
+## September 9: long-run infrastructure and evidence
+
+See [BTC_BACKTEST_DATA_STATUS.md](BTC_BACKTEST_DATA_STATUS.md) for the data
+inventory and measured 1/7/30-day results. Both policies passed those stages.
+The 90-day job hit six hours after saving its sequence checkpoint through
+August 21 13:00 UTC; the timestamp policy had not started.
+
+Implemented: explicit preview/stable Terraform profiles, a 24-hour preview
+worker with the verified 90-day catalog, configurable CPU/memory and bounded
+three-hour benchmark continuation segments. The recovery workflow reuses old
+checkpoint IDs with the unchanged replay engine. A CLI extension forks the
+checkpoint and verified audit prefix into a new result with a later end date.
+It requires the same immutable dataset/engine/rates and preserves the parent.
+Pending: complete 90-day measured results and Cloud Run acceptance, GUI/API
+extension, append-only validation for newly ingested history, and lifting
+reader/catalog bounds beyond 90 days after resource checks.
