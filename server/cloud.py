@@ -15,7 +15,10 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Self
 
+from .audit_limits import configure_audit_limits
 from .job_models import FINAL_STATES, Job, ResultStream, StoredResult
+
+configure_audit_limits()
 
 JOB_ID_PATTERN = re.compile(r"^[0-9a-f]{32}$")
 MAX_LOG_ENTRIES = 100
@@ -202,6 +205,16 @@ class FirestoreJobRepository:
         if not snapshot.exists:
             return None
         return _job_from_document(job_id, snapshot.to_dict())
+
+    def list_jobs(self, owner_id=None, limit=50, before=None):
+        from .job_models import history_page
+        # Owner equality uses Firestore's existing single-field index. Do not
+        # scan other users' histories or require a new deployment-time index.
+        snapshots = self.jobs.where("owner_id", "==", owner_id).stream()
+        return history_page(
+            (_job_from_document(item.id, item.to_dict()) for item in snapshots),
+            owner_id, limit, before,
+        )
 
     def latest_completed(self, owner_id: str | None = None) -> Job | None:
         """Find the newest durable result without requiring a composite index."""
@@ -748,6 +761,10 @@ class CloudJobService:
     def get(self, job_id: str) -> Job | None:
         job = self.repository.get(job_id)
         return self._reconcile(job) if job else None
+
+    def list_jobs(self, owner_id=None, limit=50, before=None):
+        jobs = self.repository.list_jobs(owner_id, limit, before)
+        return [self._reconcile(job) or job for job in jobs]
 
     def latest_completed(self, owner_id: str | None = None) -> Job | None:
         return self.repository.latest_completed(owner_id)

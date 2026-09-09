@@ -24,6 +24,8 @@ from trade_data_store import ParquetTradeStore
 
 
 def main():
+    from server.audit_limits import configure_audit_limits
+    configure_audit_limits()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset", required=True)
     parser.add_argument("--days", type=int, choices=[1, 7, 30, 90], required=True)

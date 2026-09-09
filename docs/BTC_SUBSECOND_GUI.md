@@ -6,14 +6,16 @@ with $100,000 initial capital, 10% participation, and the full-long-gradual rule
 Click **Run strategy**. The example is also saved as
 `strategies/research-btc-long-gradual-500ms.json`.
 
-The uploaded coverage is **[2026-06-25 00:00, 2026-06-26 00:00) UTC**. Both
-bounds must stay inside it; empty bounds select its edges. The server rejects
-unsupported dates before launching a calculation. It does not interpolate
-minute candles or silently substitute a different period/provider.
+The private preview catalog covers **[2026-06-06 00:00, 2026-09-04 00:00)
+UTC**, with a ceiling of 16 million scheduled decisions. Both bounds must stay
+inside the server-advertised catalog; empty bounds select its edges. At 500 ms,
+the 90 days require 15,552,000 decisions. At 1 ms the same ceiling allows about
+4.44 hours, not the whole range. The stable profile keeps the one-day pilot and
+200,000 decisions. Unsupported dates/settings fail before worker launch.
 
-The interval is a positive whole millisecond multiple: `0.001`, `0.1`, `0.5`,
-`1`, etc. There is a limit of 200,000 scheduled decisions per requested window.
-At 500 ms the full uploaded day fits; at 1 ms choose at most 200 seconds.
+The interval must be a positive whole millisecond multiple: `0.001`, `0.1`,
+`0.5`, `1`, etc. The GUI displays the current deployment's actual coverage and
+ceiling. Full 90-day paired benchmark acceptance is still pending.
 The end is always a final valuation boundary, even when it falls between clock
 ticks. Prints exactly at the end are excluded. Date inputs and execution delay
 preserve milliseconds in saved/imported parameters. Zero interval remains
@@ -55,8 +57,8 @@ realistic latency, or one fresh futures price per decision.
 The ordinary asynchronous job, owner access, heartbeat, cancellation and result
 restoration lifecycle is reused. `btc_trade_backtest.py` streams trades from
 the immutable GCS dataset whose manifest SHA-256 is
-`9c05efc03118699303e7a55e14205bed29783683a85c165f99319dd3fabc055d`.
-Its publication was verified in workflow run `34113031935`. The deployment-owned
+`52ef7ab51def1e37fc774f96bd94697ed90ad286d6885c72f69de84c285c9912`
+in preview. The earlier one-day pilot remains archived. The deployment-owned
 catalog is returned by `GET /api/v1/trade-data`; requests cannot choose arbitrary
 file paths or cloud URLs. The manifest and selected partition hashes are
 verified, and result/audit provenance records the dataset and partitions.
@@ -66,7 +68,8 @@ read the existing causal Treasury files and bounded Parquet batches. A later
 start also reads prior futures prints to establish causal marks; current
 checksum verification can therefore read the futures partition twice. Hourly checkpointing, multi-day manifest reads and stopped-job resumption are
 implemented in [BTC_90_DAY_EXECUTION.md](BTC_90_DAY_EXECUTION.md); the active
-catalog remains the one-day pilot pending range acceptance.
+preview catalog now selects the verified 90-day range; full-period performance
+acceptance remains pending.
 
 The result has `result_kind=btc_trade_replay`. Its dedicated GUI view shows NAV
 versus direct BTC, actual cash/spot/futures exposure, and held-mark ages. Charts
@@ -140,3 +143,39 @@ Neither mode reconstructs historical arrival times. Results show delayed trade
 counts and maximum imposed delay; the benchmark workflow compares both modes.
 See [BTC_90_DAY_EXECUTION.md](BTC_90_DAY_EXECUTION.md) for anomaly evidence,
 coverage assumptions, recovery, memory bounds and remaining acceptance gates.
+
+
+## Background execution and run history
+
+Click **Run strategy** to save a request and launch its cloud worker. The button
+becomes available again after acknowledgement; changing parameters and submitting
+another request starts an independent execution. Closing the GUI, disconnecting,
+or selecting a different result does not cancel jobs. Cloud quotas still limit
+available concurrent resources. The local development backend queues work on one
+in-process worker and does not provide cloud durability or parallel execution.
+
+The **Backtests** panel lists this signed-in owner's queued, running, completed,
+failed and cancelled jobs, newest first. It refreshes every five seconds and
+loads older pages on demand. It shows dates, interval, source, ordering, status,
+last progress message, elapsed attempt time and heartbeat age. Percentages are
+shown only when the replay reports one; ingestion/preparation stages may be
+indeterminate. **Follow progress** selects a running job and loads its result
+when complete. **View results** switches charts and exports to a completed job;
+**Use parameters** explicitly copies its configuration into the form. Editing
+the form does not change saved results. The displayed-result label identifies
+which run the charts belong to while another run is selected or in progress.
+
+History lives in the deployment's Firestore collection, with results and audits
+in GCS. Opening the GUI on another device under the same identity retrieves the
+same history automatically. Transient polling failures leave the list intact
+and retry; a lost submission response is not blindly posted again. The existing
+latest-result startup restoration remains available.
+
+**Cancel** requests worker cancellation. **Resume checkpoint** is offered for
+failed/cancelled trade jobs; the server verifies a checkpoint exists, the prior
+execution has stopped and the current deployed provenance still matches. If no
+checkpoint exists or the engine/image changed, resume is rejected with a reason.
+Benchmark CLI runs use separate validation objects and are not GUI-owned jobs.
+Cloud history is separate between preview and stable; local browser computation
+is not saved into cloud history. Period extension remains a separate CLI feature,
+not an alias for Resume.

@@ -45,7 +45,7 @@ const repositoryAssets = [
   "maturity_scoring.py", "rate_change_attribution.py", "market_data_store.py",
   "observed_execution.py",
   "backtest_audit.py",
-  "silver_strategy_gui.html",
+  "silver_strategy_gui.html", "backtest-runs.js",
 ];
 
 for (const name of repositoryAssets) {

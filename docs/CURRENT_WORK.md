@@ -6,6 +6,17 @@ branch._
 
 ## Active change set
 
+Latest September 9 update: all 90 daily inputs are published; preview source
+`d38df75c337ea05f0b9adc835cd09a40cac6e070` passed deployment `34342363638` and
+its rendered GUI checks. Continuation `34342399295` reached the end of sequence
+replay but exceeded the 4 MiB audit-index limit. New work raises the operational
+budget to 32 MiB while preserving checkpoints, and adds durable GUI history,
+background submissions, concurrent cloud jobs, progress and result selection.
+The final paired 90-day benchmark remains pending. The older milestones below
+record their state at the time; the current inventory is
+[BTC_BACKTEST_DATA_STATUS.md](BTC_BACKTEST_DATA_STATUS.md).
+
+
 - Active implementation: `agent/btc-90day-subsecond`, based on current GitHub
   master with PR #39's tested subsecond changes carried forward. Added daily
   ingestion/range manifests, bounded generation-pinned reads, hourly complete

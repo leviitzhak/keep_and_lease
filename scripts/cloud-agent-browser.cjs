@@ -160,6 +160,8 @@ async function main() {
       if (!/^[0-9a-f]{32}$/.test(submission.job_id || "")) {
         throw new Error("Backtest submission did not return a valid job ID");
       }
+      await page.waitForFunction(() => !document.querySelector('#run').disabled, null, {timeout:30000});
+      await page.locator('#backtestRuns [data-job-id="'+submission.job_id+'"]').waitFor();
       submittedJobId = submission.job_id;
       if (observedResultResponses.has(submittedJobId)) {
         settleResultResponse(observedResultResponses.get(submittedJobId));
@@ -353,6 +355,19 @@ async function main() {
       if(fine.trade_replay?.interval_seconds!==.001||fine.backtest_period.requested_start!=='2026-06-25T00:00:00.200000'||fine.backtest_period.actual_end!=='2026-06-25T00:00:01.200000'||fine.summary.observations<1)throw Error('Millisecond replay or fractional date preservation failed');
       await page.waitForFunction(()=>!document.querySelector('#run').disabled);
       fs.writeFileSync(path.join(outputDir,'millisecond.json'),JSON.stringify({summary:fine.summary,trade_replay:fine.trade_replay},null,2));
+      // Reopening the GUI must restore the server history and permit choosing
+      // an older completed result without starting another calculation.
+      const reopened = await context.newPage();
+      try {
+        await reopened.goto(origin, {waitUntil:'domcontentloaded'});
+        await reopened.waitForFunction(()=>!document.querySelector('#run').disabled, null, {timeout:180000});
+        const priorId = new URL(response.url()).pathname.split('/')[4];
+        const savedRow = reopened.locator('#backtestRuns [data-job-id="'+priorId+'"]');
+        await savedRow.waitFor({timeout:30000});
+        await savedRow.getByRole('button', {name:'View results', exact:true}).click();
+        await reopened.waitForFunction(()=>last?.result_kind==='btc_trade_replay' && last.summary.observations===600, null, {timeout:120000});
+        console.log('Durable run history acceptance passed: reopened page selected prior 500 ms results.');
+      } finally { await reopened.close(); }
       // Invalid coverage is rejected synchronously, before launching a worker.
       const invalid=await page.evaluate(async p=>{p.backtest_end='2099-01-01';const r=await fetch('/api/v1/backtests',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({parameters:p})});return r.status;},result.parameters);
       if(invalid!==400)throw Error('Unsupported trade dates were accepted');

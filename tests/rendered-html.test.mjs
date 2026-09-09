@@ -25,7 +25,7 @@ test("Run waits for saved-result restoration as well as server readiness", async
   const handler=html.split('\n').find(line=>line.startsWith('worker.onmessage='));
   let finishRestore;
   const context={worker:{},workerReady:false,button:{disabled:true},status:{},
-    parametersReady:Promise.resolve(),resultsReady:new Promise(resolve=>{finishRestore=resolve}),
+    backtestRuns:{start:()=>{}},parametersReady:Promise.resolve(),resultsReady:new Promise(resolve=>{finishRestore=resolve}),
     $:()=>({}),pending:new Map()};
   vm.runInNewContext(handler,context);
   const ready=context.worker.onmessage({data:{type:'ready',engine:'server'}});

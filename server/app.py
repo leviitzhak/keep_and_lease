@@ -6,7 +6,7 @@ import json
 import os
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Request, Response, status
+from fastapi import FastAPI, HTTPException, Query, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
@@ -88,6 +88,10 @@ def create_app(
     def browser_worker() -> FileResponse:
         return static_file("backtest-worker-v13.js", "text/javascript")
 
+    @app.get("/backtest-runs.js", include_in_schema=False)
+    def backtest_runs_runtime() -> FileResponse:
+        return static_file("backtest-runs.js", "text/javascript")
+
     @app.get("/fflate.js", include_in_schema=False)
     def spreadsheet_runtime() -> FileResponse:
         return static_file("fflate.js", "text/javascript")
@@ -156,6 +160,22 @@ def create_app(
     def trade_data():
         from btc_trade_backtest import catalog
         return {"datasets": [catalog()]}
+
+    @app.get("/api/v1/backtests")
+    def backtest_history(request: Request, response: Response, limit: int = Query(50, ge=1, le=100),
+                         before: str | None = Query(None, pattern="^[0-9a-f]{32}$")):
+        response.headers["Cache-Control"] = "private, no-store"
+        cursor = owned_job(before, request) if before else None
+        jobs = job_service.list_jobs(requester_id(request), limit + 1, cursor)
+        items = []
+        for job in jobs[:limit]:
+            item = job.public()
+            # Full logs/provenance remain available on the selected job endpoint.
+            for key in ("logs", "provenance", "result_uri", "execution_name"):
+                item.pop(key, None)
+            items.append(item)
+        return {"jobs": items,
+                "next_cursor": jobs[limit - 1].id if len(jobs) > limit else None}
 
     @app.get("/api/v1/backtests/latest")
     def latest_backtest(request: Request) -> Any:

@@ -34,7 +34,9 @@ This checklist reflects the application synchronized from the deployed Sites che
 
 - [ ] Add a plot of the volume traded by the strategy, based on actual simulated
   fills (not market-wide volume).
-- [ ]  have a control to cancel the run of the strategy + a progress bar 
+- [x] Show saved server backtests with progress, cancellation, checkpoint resume,
+  selectable results and background/parallel cloud submission. Full 90-day paired
+  acceptance remains pending; see `BTC_SUBSECOND_GUI.md`.
 - [ ] display hover information on futures on the plot of the spot price + futures prices (including the implied lease rate)
 - [ ] Add a progress bar and cancellation option to spreadsheet generation and
   download.

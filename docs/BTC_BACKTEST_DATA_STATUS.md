@@ -64,7 +64,7 @@ preparation and apply to GitHub runners, not measured Cloud Run performance.
 | 1 | 17m 27s | 7m 22s | 616.8 / 204.4 MiB | 90,675,546 bytes |
 | 7 | 48m 08s | 43m 32s | 627.2 / 231.3 MiB | 562,323,989 bytes |
 | 30 | 2h 55m 01s | 2h 55m 24s | 644.0 / 344.2 MiB | 2,368,272,316 bytes |
-| 90 | Incomplete | Not started in original job | No completed report | Partial durable audit/checkpoints retained |
+| 90 | Reached end, audit-index finalization failed | Continued through July 12 before yielding | No completed paired report | Sequence checkpoint September 3, 23:00; timestamp July 12, 00:00 |
 
 All three completed paired stages passed resource gates. Reported aggregate
 financial/fill comparisons had zero differences; this does not establish that
@@ -124,3 +124,26 @@ future work. The current reader/catalog still cap data ranges at 90 days and
 16 million decisions: configurable worker duration alone does not remove those
 engine bounds. Longer history requires extending these bounded manifests and
 validating audit-index/ordering-cache limits, not merely increasing a timeout.
+
+
+## Follow-up checked September 9: finalization and GUI lifecycle
+
+[Continuation run 34342399295](https://github.com/leviitzhak/keep_and_lease/actions/runs/34342399295)
+failed at 12:27 UTC in sequence audit finalization: `Audit manifest exceeds the
+limit`. The replay had reached the requested end. Its checkpoint at September 3,
+23:00 UTC preserves all but the last hour. Timestamp ordering yielded after its
+three-hour segment at July 12, 00:00 UTC; later segments were skipped because
+sequence failed. This is additional evidence after the original six-hour timeout,
+not a missing-data failure. Both IDs and retained objects remain reusable.
+
+The fix sets a shared 32 MiB manifest budget for benchmark/API/worker readers and
+writers, bounded to at most 64 MiB. The eight replay-semantic source files and
+Treasury inputs are unchanged, preserving the old checkpoint fingerprint.
+
+The GUI now offers durable run history with background/parallel cloud submission,
+progress, results, parameter copying, cancellation and checkpoint resume. The
+history endpoint lists only the requesting owner's jobs, with paginated responses
+and without result bodies. Actual full-period resource/financial acceptance still
+requires the resumed paired benchmark to finish. The previous source
+`d38df75c337ea05f0b9adc835cd09a40cac6e070` passed private GUI deployment
+`34342363638`; the changes described here require their own deployment checks.

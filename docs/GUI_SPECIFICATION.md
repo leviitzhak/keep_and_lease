@@ -61,6 +61,18 @@ run. Another allowlisted identity cannot list, poll, download, or cancel it. Bro
 storage remains responsible only for lightweight unsaved parameter edits, named
 presets, plot range, and chart order.
 
+## Saved backtests and background execution
+
+The Backtests panel retrieves `GET /api/v1/backtests` for the signed-in owner and
+refreshes every five seconds. It includes all job states and exposes older pages,
+reported progress, elapsed time, heartbeat, cancellation and checkpoint resume.
+Submission releases Run after the server acknowledgement, allowing distinct
+strategies to execute concurrently on independent Cloud Run workers. Browser
+closure has no effect on a submitted worker. Selecting completed results updates
+charts/exports without recalculation; copying their parameters is a separate
+explicit action. A late result must never overwrite a newer selected result.
+See `BTC_SUBSECOND_GUI.md` for cloud/local distinctions and resume requirements.
+
 ## Portfolio spreadsheet export
 
 The period selector controls both plots and spreadsheet export. After a result is

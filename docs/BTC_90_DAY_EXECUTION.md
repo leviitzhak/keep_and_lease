@@ -35,7 +35,9 @@ Real 1/7/30/90-day performance and full-range deployed acceptance remain require
 - Orders/fills and all decision valuations stream directly to the durable audit
   store. Trade chunks use up to 65,536 rows while retaining the 8 MiB byte and
   UTC-day boundaries. This keeps index growth below the former 1,024-row layout.
-  Completed audit manifests retain the existing 4 MiB limit. Repeated uploads
+  API, cloud worker and benchmark audit manifests default to a 32 MiB limit
+  (`KEEP_AND_LEASE_AUDIT_MANIFEST_MIB`, allowed 4–64). This resource budget is
+  outside the replay semantic fingerprint so existing checkpoints remain usable. Repeated uploads
   after a crash can reuse only byte-identical immutable objects.
 - The direct BTC comparison uses the same causal stream as the strategy. Charts
   remain sampled to approximately 2,000 points; financial summaries use every
@@ -376,3 +378,24 @@ It requires the same immutable dataset/engine/rates and preserves the parent.
 Pending: complete 90-day measured results and Cloud Run acceptance, GUI/API
 extension, append-only validation for newly ingested history, and lifting
 reader/catalog bounds beyond 90 days after resource checks.
+
+
+## September 9 finalization failure and saved GUI runs
+
+Continuation run `34342399295` reached the end of the sequence replay, then
+failed in `AuditCollection.finish`: the index exceeded the former 4 MiB budget.
+The last sequence checkpoint is September 3 at 23:00 UTC; retry replays only the
+final hour. The timestamp segment yielded normally at July 12 at 00:00 UTC;
+subsequent paired segments were skipped after the sequence failure. The 32 MiB
+runtime budget fixes both publication and subsequent API/GCS reads without
+altering replay code, data or fingerprints. The full paired 90-day result still
+requires a successful continuation and comparison; a successful yield alone
+is not a completed benchmark.
+
+The GUI now submits and returns as soon as the durable server acknowledges a
+job. Its Backtests panel polls saved owner-scoped history, exposes stage/detail,
+elapsed time and heartbeat, and supports selecting results, copying parameters,
+cancelling and resuming checkpointed trade jobs. Different requests launch
+independent Cloud Run executions and continue after browser closure. Identical
+active/completed requests with the same owner and provenance are reused.
+See `BTC_SUBSECOND_GUI.md` for history and resume limitations.

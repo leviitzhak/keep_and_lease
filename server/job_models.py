@@ -87,3 +87,13 @@ class StoredResult:
     compressed_size_bytes: int
     result_checksum_sha256: str
     compressed_checksum_sha256: str
+
+
+def history_page(jobs, owner_id, limit=50, before=None):
+    """Stable newest-first pages, including tied creation times and all states."""
+    boundary = (before.created_at, before.id) if before else None
+    return sorted(
+        (job for job in jobs if job.owner_id == owner_id
+         and (boundary is None or (job.created_at, job.id) < boundary)),
+        key=lambda job: (job.created_at, job.id), reverse=True,
+    )[:limit]

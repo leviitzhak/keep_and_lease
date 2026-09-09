@@ -10,6 +10,9 @@ from pathlib import Path
 from typing import Any
 
 import silver_strategy_gui as gui
+from .audit_limits import configure_audit_limits
+
+configure_audit_limits()
 
 ProgressCallback = Callable[[str, str], None]
 

@@ -138,6 +138,29 @@ Cloud Run has no automatic worker retry initially. Result creation is immutable,
 but a complete retry/reconciliation policy must be proven before enabling platform
 retries.
 
+## Durable run history
+
+`GET /api/v1/backtests?limit=50&before=<job_id>` returns owner-scoped newest-first
+history (maximum 100 entries per response, stable creation-time/ID cursor).
+`next_cursor` is null at the end. Cursor access is owner-checked. Result bodies,
+full logs and provenance are excluded from list responses; status and result
+endpoints remain available for individual jobs. The current Firestore adapter
+uses the existing owner equality index and sorts that owner's metadata in memory,
+avoiding cross-owner scans and new composite-index requirements. Read cost grows
+with the owner's history; large installations should migrate this to an indexed
+owner/creation-time cursor query. No saved jobs are silently deleted by pagination.
+
+The GUI submits independently of result polling, so multiple distinct cloud jobs
+can run concurrently. Cloud Run task count/parallelism apply within each execution,
+not across all GUI requests. Workers run with the browser closed; Firestore/GCS
+retain progress/results across web instance changes. See `BTC_SUBSECOND_GUI.md`.
+
+Audit manifest readers/writers default to 32 MiB. Set
+`KEEP_AND_LEASE_AUDIT_MANIFEST_MIB` consistently on web/API, worker and standalone
+benchmark processes if changing it (allowed 4–64). Individual chunks remain
+bounded at 8 MiB. This operational budget is outside replay fingerprints, allowing
+existing checkpoints to recover from an index-size finalization failure.
+
 ## Identity boundaries
 
 - The web identity can read/update job metadata, read result objects, and execute or
