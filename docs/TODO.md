@@ -24,7 +24,7 @@ This checklist reflects the application synchronized from the deployed Sites che
 
 - [ ] extend a ran backtest on a longer period (is starting earlier possible only if it is in a rebalanced state ?) from the gui
 
-- what does the branch agent/cloud-autonomous-access contains ?
+- what does the branch agent/cloud-autonomous-access contains ? what created it ?
 
 - push the branch agent/btc-90day-subsecond when ready and verified
 
