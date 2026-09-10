@@ -43,6 +43,10 @@ class Job:
 
     def public(self) -> dict[str, Any]:
         now = self.completed_at or time.time()
+        public_parameters = {
+            key: value for key, value in self.parameters.items()
+            if not key.startswith("__keep_and_lease_")
+        }
         return {
             "job_id": self.id,
             "status": self.status,
@@ -64,7 +68,7 @@ class Job:
             "attempt": self.attempt,
             "peak_rss_mb": self.peak_rss_mb,
             "stage_timings_seconds": dict(self.stage_timings_seconds),
-            "parameters": self.parameters,
+            "parameters": public_parameters,
             "provenance": self.provenance,
             "logs": list(self.logs),
         }
