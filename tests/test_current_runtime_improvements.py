@@ -113,7 +113,8 @@ class CurrentRuntimeImprovementsTests(unittest.TestCase):
         engine = SimpleNamespace(data_root='root')
         progress = Mock()
         trade_store = SimpleNamespace(manifest_bytes=b'manifest')
-        with patch('trade_data_store.ParquetTradeStore', return_value=trade_store), \
+        with patch('btc_trade_backtest.catalog', return_value={'uri': 'fixture'}), \
+             patch('trade_data_store.ParquetTradeStore', return_value=trade_store), \
              patch('replay_extension.extend_checkpoint') as extend:
             calculated = seed_extension(child, repository, results, engine, audit, progress)
         self.assertEqual(calculated, new)
