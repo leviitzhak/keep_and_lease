@@ -170,6 +170,7 @@ This checklist reflects the application synchronized from the deployed Sites che
 ## Small fixes
 
 - [ ] the backtest list should be modulable and show only selected runs (saved list accross sessions), with only the option to show all if asked
+- [ ] the trade replay controls for the period to show and the spreadsheet generation should be shared with the same controls for the legacy runs, if it makes sense.
 - [ ] Fix the maturity-allocation heatmap preview not rendering on the
   persistent Sites deployment.
 - [ ] Use thinner bins in the displayed return-distribution histograms.
