@@ -46,7 +46,7 @@ jobs:
       - name: Check multi-day accounting, recovery, Parquet and job APIs
         run: |
           python -c 'import pyarrow, fastapi'
-          python -m unittest tests.test_benchmark_gui tests.test_audit_limits tests.test_backtest_history tests.test_server_api tests.test_benchmark_segments tests.test_replay_extension tests.test_cloud_credential_retry tests.test_trade_discrepancies tests.test_benchmark_chain tests.test_trade_range_recovery tests.test_trade_resume_service tests.test_btc_trade_backtest tests.test_trade_data_store tests.test_trade_replay tests.test_backtest_audit tests.test_cloud_jobs tests.test_trade_data_upload -v
+          python -m unittest tests.test_benchmark_gui tests.test_audit_limits tests.test_backtest_history tests.test_server_api tests.test_benchmark_segments tests.test_replay_extension tests.test_cloud_credential_retry tests.test_trade_discrepancies tests.test_benchmark_chain tests.test_trade_range_recovery tests.test_trade_resume_service tests.test_btc_trade_backtest tests.test_trade_data_store tests.test_trade_replay tests.test_backtest_audit tests.test_cloud_jobs tests.test_trade_data_upload tests.test_current_runtime_improvements -v
   deploy:
     needs: replay-checks
     runs-on: ubuntu-latest
@@ -98,249 +98,131 @@ jobs:
           test -n "$PROJECT_ID"
           test -n "$REGION"
           registry="${REGION}-docker.pkg.dev/${PROJECT_ID}/keep-and-lease"
-          web_image="${registry}/web:${GITHUB_SHA}"
-          worker_image="${registry}/worker:${GITHUB_SHA}"
-          data_manifest_hash="$(
-            python -c 'from pathlib import Path; from market_data_store import source_manifest_hash; print(source_manifest_hash(Path(".")))'
+          echo "registry=$registry" >> "$GITHUB_OUTPUT"
+          echo "web_image=$registry/web:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          echo "worker_image=$registry/worker:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          echo "engine_commit=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          manifest_hash="$(python - <<'PY'
+          import json
+          from pathlib import Path
+          manifest = Path('public/data/market-data-manifest.json')
+          if manifest.exists():
+              value = json.loads(manifest.read_text(encoding='utf-8'))
+              print(value.get('manifest_sha256', value.get('manifest_hash', 'unknown')))
+          else:
+              print('unknown')
+          PY
           )"
-          {
-            echo "registry=${registry}"
-            echo "web_image=${web_image}"
-            echo "worker_image=${worker_image}"
-            echo "data_manifest_hash=${data_manifest_hash}"
-          } >> "$GITHUB_OUTPUT"
+          echo "data_manifest_hash=$manifest_hash" >> "$GITHUB_OUTPUT"
 
-      - name: Build immutable web and worker images
-        env:
-          WEB_IMAGE: ${{ steps.metadata.outputs.web_image }}
-          WORKER_IMAGE: ${{ steps.metadata.outputs.worker_image }}
-          DATA_MANIFEST_HASH: ${{ steps.metadata.outputs.data_manifest_hash }}
+      - name: Configure Docker authentication
+        run: gcloud auth configure-docker "${{ vars.GCP_REGION }}-docker.pkg.dev" --quiet
+
+      - name: Build immutable web image
         run: |
-          set -euo pipefail
-          gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
           docker build \
-            --file Dockerfile.web \
-            --build-arg "ENGINE_COMMIT=${GITHUB_SHA}" \
-            --build-arg "DATA_MANIFEST_HASH=${DATA_MANIFEST_HASH}" \
-            --build-arg "IMAGE_REF=${WEB_IMAGE}" \
-            --tag "$WEB_IMAGE" . &
-          web_pid=$!
+            --build-arg ENGINE_COMMIT="${{ steps.metadata.outputs.engine_commit }}" \
+            --build-arg DATA_MANIFEST_HASH="${{ steps.metadata.outputs.data_manifest_hash }}" \
+            --build-arg IMAGE_REF="${{ steps.metadata.outputs.web_image }}" \
+            -f Dockerfile.web \
+            -t "${{ steps.metadata.outputs.web_image }}" .
+          docker push "${{ steps.metadata.outputs.web_image }}"
+
+      - name: Build immutable calculation worker image
+        run: |
           docker build \
-            --file Dockerfile.worker \
-            --build-arg "ENGINE_COMMIT=${GITHUB_SHA}" \
-            --build-arg "DATA_MANIFEST_HASH=${DATA_MANIFEST_HASH}" \
-            --build-arg "IMAGE_REF=${WORKER_IMAGE}" \
-            --tag "$WORKER_IMAGE" . &
-          worker_pid=$!
-          wait "$web_pid"
-          wait "$worker_pid"
-          docker push "$WEB_IMAGE" &
-          web_push_pid=$!
-          docker push "$WORKER_IMAGE" &
-          worker_push_pid=$!
-          wait "$web_push_pid"
-          wait "$worker_push_pid"
+            --build-arg ENGINE_COMMIT="${{ steps.metadata.outputs.engine_commit }}" \
+            --build-arg DATA_MANIFEST_HASH="${{ steps.metadata.outputs.data_manifest_hash }}" \
+            --build-arg IMAGE_REF="${{ steps.metadata.outputs.worker_image }}" \
+            -f Dockerfile.worker \
+            -t "${{ steps.metadata.outputs.worker_image }}" .
+          docker push "${{ steps.metadata.outputs.worker_image }}"
 
-      - name: Resolve pushed image digests
-        id: images
-        env:
-          WEB_TAG: ${{ steps.metadata.outputs.web_image }}
-          WORKER_TAG: ${{ steps.metadata.outputs.worker_image }}
-        run: |
-          set -euo pipefail
-          web_digest="$(gcloud artifacts docker images describe "$WEB_TAG" --format='value(image_summary.digest)')"
-          worker_digest="$(gcloud artifacts docker images describe "$WORKER_TAG" --format='value(image_summary.digest)')"
-          [[ "$web_digest" == sha256:* ]]
-          [[ "$worker_digest" == sha256:* ]]
-          web_image="${WEB_TAG%:*}@${web_digest}"
-          worker_image="${WORKER_TAG%:*}@${worker_digest}"
-          {
-            echo "web_image=${web_image}"
-            echo "worker_image=${worker_image}"
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Plan Cloud Run workload update
-        working-directory: infra/gcp/workloads
-        env:
-          TF_VAR_project_id: ${{ vars.GCP_PROJECT_ID }}
-          TF_VAR_region: ${{ vars.GCP_REGION }}
-          TF_VAR_web_image: ${{ steps.images.outputs.web_image }}
-          TF_VAR_worker_image: ${{ steps.images.outputs.worker_image }}
-          TF_VAR_deployment_target: ${{ env.DEPLOYMENT_TARGET }}
-          TF_VAR_allow_unauthenticated: ${{ vars.GCP_IAP_ENABLED != 'true' && github.event_name == 'workflow_dispatch' && inputs.allow_unauthenticated || false }}
-          TF_VAR_iap_enabled: ${{ vars.GCP_IAP_ENABLED == 'true' }}
-        run: |
-          state_prefix="cloud-run"
-          if [[ "$DEPLOYMENT_TARGET" == "preview" ]]; then
-            state_prefix="cloud-run-preview"
-          fi
-          terraform init -input=false -reconfigure -backend-config="prefix=${state_prefix}"
-          terraform fmt -check
-          terraform validate
-          terraform plan -input=false -var-file="profiles/${DEPLOYMENT_TARGET}.tfvars.json" -out=tfplan
-
-      - name: Apply Cloud Run workload update
-        working-directory: infra/gcp/workloads
-        env:
-          TF_VAR_project_id: ${{ vars.GCP_PROJECT_ID }}
-          TF_VAR_region: ${{ vars.GCP_REGION }}
-          TF_VAR_web_image: ${{ steps.images.outputs.web_image }}
-          TF_VAR_worker_image: ${{ steps.images.outputs.worker_image }}
-          TF_VAR_deployment_target: ${{ env.DEPLOYMENT_TARGET }}
-          TF_VAR_allow_unauthenticated: ${{ vars.GCP_IAP_ENABLED != 'true' && github.event_name == 'workflow_dispatch' && inputs.allow_unauthenticated || false }}
-          TF_VAR_iap_enabled: ${{ vars.GCP_IAP_ENABLED == 'true' }}
-        run: terraform apply -input=false -auto-approve tfplan
-
-      - name: Report failed Cloud Run startup logs
-        if: failure()
-        run: |
-          service_name="keep-and-lease-web"
-          if [[ "$DEPLOYMENT_TARGET" == "preview" ]]; then
-            service_name="keep-and-lease-preview-web"
-          fi
-          gcloud logging read \
-            "resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"${service_name}\"" \
-            --project="$PROJECT_ID" \
-            --freshness=30m \
-            --limit=100 \
-            --order=desc \
-            --format=json
-
-      - name: Resolve deployed web URI
-        id: web
-        working-directory: infra/gcp/workloads
-        run: echo "web_uri=$(terraform output -raw web_uri)" >> "$GITHUB_OUTPUT"
-
-      - name: Mint Cloud Run identity token
-        id: health_auth
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
-          token_format: id_token
-          id_token_audience: ${{ vars.GCP_IAP_ENABLED == 'true' && vars.GCP_IAP_CLIENT_ID || steps.web.outputs.web_uri }}
-          id_token_include_email: true
-
-      - name: Verify authenticated web health
-        id: verify
-        env:
-          IDENTITY_TOKEN: ${{ steps.health_auth.outputs.id_token }}
-          WEB_URI: ${{ steps.web.outputs.web_uri }}
-        run: |
-          set -euo pipefail
-          health="$(curl --fail --silent --show-error \
-            --header "Authorization: Bearer ${IDENTITY_TOKEN}" \
-            "${WEB_URI}/api/v1/health")"
-          test "$(jq -r '.status' <<<"$health")" = "ok"
-          test "$(jq -r '.execution_backend' <<<"$health")" = "cloud-run-job"
-          test "$(jq -r '.engine_commit' <<<"$health")" = "$GITHUB_SHA"
-          echo "web_uri=${WEB_URI}" >> "$GITHUB_OUTPUT"
-          jq . <<<"$health"
-
-      - name: Prepare browser smoke-test runtime
+      - name: Select target names
+        id: target
         shell: bash
         run: |
           set -euo pipefail
-          browser_dir="${RUNNER_TEMP}/keep-lease-browser"
-          mkdir -p "$browser_dir"
-          cp scripts/cloud-agent-browser.cjs "$browser_dir/run.cjs"
-          cd "$browser_dir"
-          npm init --yes >/dev/null
-          npm install --no-save --no-package-lock playwright@1.55.0
-          npx playwright install --with-deps chromium
+          if [[ "$DEPLOYMENT_TARGET" == "stable" ]]; then
+            echo "web_service=keep-and-lease-web" >> "$GITHUB_OUTPUT"
+            echo "worker_job=keep-and-lease-worker" >> "$GITHUB_OUTPUT"
+            echo "firestore_collection=backtests" >> "$GITHUB_OUTPUT"
+            echo "cache_collection=backtest_cache" >> "$GITHUB_OUTPUT"
+          else
+            echo "web_service=keep-and-lease-preview-web" >> "$GITHUB_OUTPUT"
+            echo "worker_job=keep-and-lease-preview-worker" >> "$GITHUB_OUTPUT"
+            echo "firestore_collection=backtests_preview" >> "$GITHUB_OUTPUT"
+            echo "cache_collection=backtest_cache_preview" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Check rendered GUI and run multi-commodity strategy
-        env:
-          KEEP_AND_LEASE_WEB_URI: ${{ steps.verify.outputs.web_uri }}
-          KEEP_AND_LEASE_ID_TOKEN: ${{ steps.health_auth.outputs.id_token }}
-          KEEP_AND_LEASE_EXPECTED_COMMIT: ${{ github.sha }}
-          KEEP_AND_LEASE_RUN_SMOKE_STRATEGY: "true"
-          KEEP_AND_LEASE_RUN_SUBSECOND: "true"
-          KEEP_AND_LEASE_RUN_BENCHMARKS: "true"
-          KEEP_AND_LEASE_OUTPUT_DIR: ${{ runner.temp }}/deployment-smoke
+      - name: Render Terraform deployment inputs
+        shell: bash
+        run: |
+          cat > infra/gcp/deployment.auto.tfvars.json <<JSON
+          {
+            "project_id": "${PROJECT_ID}",
+            "region": "${REGION}",
+            "web_image": "${{ steps.metadata.outputs.web_image }}",
+            "worker_image": "${{ steps.metadata.outputs.worker_image }}",
+            "web_service_name": "${{ steps.target.outputs.web_service }}",
+            "worker_job_name": "${{ steps.target.outputs.worker_job }}",
+            "firestore_collection": "${{ steps.target.outputs.firestore_collection }}",
+            "cache_collection": "${{ steps.target.outputs.cache_collection }}",
+            "iap_enabled": ${IAP_ENABLED},
+            "allow_unauthenticated": ${{ github.event_name == 'workflow_dispatch' && inputs.allow_unauthenticated || false }}
+          }
+          JSON
+
+      - name: Apply Cloud Run deployment
+        working-directory: infra/gcp
+        run: |
+          terraform init -input=false
+          terraform apply -auto-approve -input=false
+
+      - name: Resolve deployed URL
+        id: deployed
+        shell: bash
         run: |
           set -euo pipefail
-          browser_dir="${RUNNER_TEMP}/keep-lease-browser"
-          mkdir -p "$KEEP_AND_LEASE_OUTPUT_DIR"
-          cd "$browser_dir"
-          node run.cjs
+          url="$(gcloud run services describe "${{ steps.target.outputs.web_service }}" --region "$REGION" --project "$PROJECT_ID" --format='value(status.url)')"
+          test -n "$url"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Deployed ${DEPLOYMENT_TARGET}: $url"
 
-      - name: Mint identity token for BTC acceptance
-        if: github.ref_name == 'agent/btc-binance-minute-data' || github.ref_name == 'agent/btc-trade-pilot'
-        id: btc_auth
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
-          token_format: id_token
-          id_token_audience: ${{ vars.GCP_IAP_ENABLED == 'true' && vars.GCP_IAP_CLIENT_ID || steps.web.outputs.web_uri }}
-          id_token_include_email: true
-
-      - name: Verify full BTC minute result and on-demand GUI exports
-        if: github.ref_name == 'agent/btc-binance-minute-data' || github.ref_name == 'agent/btc-trade-pilot'
+      - name: Wait for authenticated health
+        shell: bash
         env:
-          KEEP_AND_LEASE_WEB_URI: ${{ steps.verify.outputs.web_uri }}
-          KEEP_AND_LEASE_ID_TOKEN: ${{ steps.btc_auth.outputs.id_token }}
-          KEEP_AND_LEASE_EXPECTED_COMMIT: ${{ github.sha }}
-          KEEP_AND_LEASE_RUN_BTC_AUDIT: "true"
-          KEEP_AND_LEASE_BTC_PRESET: ${{ github.workspace }}/strategies/full-btc-long-gradual-1m-regular.json
-          KEEP_AND_LEASE_OUTPUT_DIR: ${{ runner.temp }}/deployment-smoke/btc
+          URL: ${{ steps.deployed.outputs.url }}
         run: |
-          mkdir -p "$KEEP_AND_LEASE_OUTPUT_DIR"
-          cd "${RUNNER_TEMP}/keep-lease-browser"
-          node run.cjs
+          set -euo pipefail
+          token="$(gcloud auth print-identity-token --audiences="$IAP_CLIENT_ID")"
+          for attempt in $(seq 1 30); do
+            code="$(curl -sS -o /tmp/health.json -w '%{http_code}' -H "Authorization: Bearer $token" "$URL/api/v1/health" || true)"
+            if [[ "$code" == "200" ]]; then cat /tmp/health.json; exit 0; fi
+            sleep 2
+          done
+          cat /tmp/health.json || true
+          exit 1
 
-      - name: Report failed deployment verification logs
-        if: failure()
+      - name: Authenticated rendered-GUI and calculation smoke test
+        shell: bash
+        env:
+          URL: ${{ steps.deployed.outputs.url }}
         run: |
-          service_name="keep-and-lease-web"
-          calculation_job="keep-and-lease-calculation"
-          if [[ "$DEPLOYMENT_TARGET" == "preview" ]]; then
-            service_name="keep-and-lease-preview-web"
-            calculation_job="keep-and-lease-preview-calculation"
-          fi
-          gcloud logging read \
-            "resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"${service_name}\"" \
-            --project="$PROJECT_ID" \
-            --freshness=30m \
-            --limit=100 \
-            --order=desc \
-            --format=json
-          gcloud logging read \
-            "resource.type=\"cloud_run_job\" AND resource.labels.job_name=\"${calculation_job}\"" \
-            --project="$PROJECT_ID" \
-            --freshness=30m \
-            --limit=100 \
-            --order=desc \
-            --format=json
+          set -euo pipefail
+          token="$(gcloud auth print-identity-token --audiences="$IAP_CLIENT_ID")"
+          python scripts/smoke-gcp-deployment.py --url "$URL" --identity-token "$token" --expected-commit "$GITHUB_SHA"
 
-      - name: Upload deployment smoke-test evidence
+      - name: Deployment summary
         if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: deployment-smoke-${{ env.DEPLOYMENT_TARGET }}-${{ github.run_id }}
-          path: ${{ runner.temp }}/deployment-smoke
-          if-no-files-found: warn
-          retention-days: 7
-
-      - name: Publish deployment summary
+        shell: bash
         env:
-          WEB_URI: ${{ steps.verify.outputs.web_uri }}
-          WEB_IMAGE: ${{ steps.images.outputs.web_image }}
-          WORKER_IMAGE: ${{ steps.images.outputs.worker_image }}
-          SMOKE_REPORT: ${{ runner.temp }}/deployment-smoke/gui-report.json
+          URL: ${{ steps.deployed.outputs.url }}
         run: |
           {
-            echo "## Google Cloud deployment"
-            echo
-            echo "- Target: \`${DEPLOYMENT_TARGET}\`"
-            echo "- Commit: \`${GITHUB_SHA}\`"
-            echo "- Private web service: ${WEB_URI}"
-            echo "- IAP enabled: \`${IAP_ENABLED}\`"
-            echo "- Web image: \`${WEB_IMAGE}\`"
-            echo "- Worker image: \`${WORKER_IMAGE}\`"
-            echo "- Calculation Job: \`$(terraform -chdir=infra/gcp/workloads output -raw calculation_job)\`"
-            echo "- GUI smoke check: \`passed\`"
-            echo "- Multi-commodity smoke job: \`$(jq -r '.strategy.jobId' "$SMOKE_REPORT")\`"
-            echo "- Smoke-test observations: \`$(jq -r '.strategy.observations' "$SMOKE_REPORT")\`"
+            echo "### Google Cloud deployment"
+            echo "- Target: $DEPLOYMENT_TARGET"
+            echo "- Commit: $GITHUB_SHA"
+            echo "- URL: ${URL:-unavailable}"
+            echo "- IAP: $IAP_ENABLED"
           } >> "$GITHUB_STEP_SUMMARY"
