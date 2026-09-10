@@ -10,11 +10,12 @@ from backtest_audit import load_manifest, read_chunk
 from replay_checkpoints import decode
 
 BUCKET = "keep-and-lease-market-data"
-MANIFEST = "52ef7ab51def1e37fc774f96bd94697ed90ad286d6885c72f69de84c285c9912"
+MANIFEST = "52ef7ab51def1e37fc774f96bd94697ed90ad2866885c72f69de84c285c9912"
 RUNS = {"sequence": "d7afa21dd9da7d3b1b4ab15efe639ed4",
         "timestamp": "e2e5ea42cb21f82926deb6d0ef9a3877"}
 FIELDS = ["date", "nav", "direct_nav", "cash_usd", "spot_value_usd",
-          "futures_notional_usd", "fees_usd", "max_mark_age_seconds"]
+          "futures_notional_usd", "target_futures_notional_usd", "free_collateral_usd",
+          "collateralization_ratio", "turnover_usd", "fees_usd", "max_mark_age_seconds"]
 
 
 def parameters(policy):
@@ -50,6 +51,14 @@ class BenchmarkService:
         results.bucket = self.bucket
         return results.audit_store(RUNS[policy])
 
+    @staticmethod
+    def _enrich_old_point(row):
+        """Add collateral columns to the immutable pre-diagnostic benchmark series."""
+        cash, futures = row[3], row[5]
+        free = cash - abs(futures)
+        ratio = cash / abs(futures) if abs(futures) > 1e-14 else None
+        return [*row[:6], None, free, ratio, None, row[6], row[7]]
+
     @lru_cache(maxsize=2)
     def load(self, policy):
         if policy not in RUNS:
@@ -74,7 +83,7 @@ class BenchmarkService:
         checkpoint = decode(self.read(prefix + f"/checkpoints/{tick:020d}.json.gz", 16 * 1024 * 1024))
         if checkpoint["identity"] != report["fingerprint"] or checkpoint["source_cursor_exclusive_us"] != tick:
             raise ValueError("Benchmark chart checkpoint differs from its completed report")
-        series = deepcopy(checkpoint["state"]["series"])
+        series = [self._enrich_old_point(row) for row in deepcopy(checkpoint["state"]["series"])]
         every = report["replay"]["plot_sample_every"]
         capital = report["replay"]["capital_usd"]
         entries = manifest["datasets"]["btc_trade_valuations"]["chunks"]
@@ -90,8 +99,11 @@ class BenchmarkService:
                 if (entry["first_row"] + offset + 1) % every and row["date"] != report["summary"]["end"]:
                     continue
                 ages = [(row["us"] - row["mark_us"][s]) / 1e6 for s, q in row["units"].items() if q > 0]
+                futures = row["futures_notional_usd"]
+                free = row["cash_usd"] - abs(futures)
+                ratio = row["cash_usd"] / abs(futures) if abs(futures) > 1e-14 else None
                 series.append([row["date"], row["nav_usd"] / capital, row["direct_nav"], row["cash_usd"],
-                               row["nav_usd"] - row["cash_usd"], row["futures_notional_usd"],
+                               row["nav_usd"] - row["cash_usd"], futures, None, free, ratio, None,
                                row["fees_usd"], max(ages, default=0)])
         if not series or series[-1][0] != report["summary"]["end"] or abs(series[-1][1] - report["summary"]["ending_nav"]) > 1e-10:
             raise ValueError("Benchmark chart endpoint does not reconcile with the completed result")
