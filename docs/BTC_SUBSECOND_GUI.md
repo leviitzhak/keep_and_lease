@@ -159,8 +159,13 @@ failed and cancelled jobs, newest first. It refreshes every five seconds and
 loads older pages on demand. It shows dates, interval, source, ordering, status,
 last progress message, elapsed attempt time and heartbeat age. Percentages are
 shown only when the replay reports one; ingestion/preparation stages may be
-indeterminate. **Follow progress** selects a running job and loads its result
-when complete. **View results** switches charts and exports to a completed job;
+indeterminate. **Follow progress** selects a queued/running job, reveals its
+details in the selected row, and loads its result when complete. Failed and
+cancelled jobs instead offer **View details**, which reveals the stopped status,
+full run ID, last progress, stage and error where available. The selected details
+update on every refresh, including when a followed run fails or is cancelled.
+Opening details does not restart a failed job; use **Resume checkpoint** to
+request continuation when offered. **View results** switches charts and exports to a completed job;
 **Use parameters** explicitly copies its configuration into the form. Editing
 the form does not change saved results. The displayed-result label identifies
 which run the charts belong to while another run is selected or in progress.

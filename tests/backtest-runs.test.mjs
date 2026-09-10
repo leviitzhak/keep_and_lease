@@ -9,10 +9,13 @@ class Element {
   append(...nodes) { this.children.push(...nodes); }
   replaceChildren(...nodes) { this.children = nodes; }
   setAttribute(key, value) { this.attributes[key] = value; }
+  scrollIntoView() { this.scrolled = true; }
 }
+const descendants = el => [el, ...el.children.flatMap(descendants)];
 function harness(fetch, options = {}) {
   const doc = {createElement: tag => new Element(tag, doc)};
   const root = new Element('section', doc), results = [], parameters = [];
+  doc.getElementById = id => descendants(root).find(el => el.id === id);
   const context = {fetch, setTimeout, clearTimeout, AbortController, structuredClone, console};
   vm.runInNewContext(source, context);
   const controller = context.createBacktestRuns({root, apiUrl: async path => path,
@@ -93,4 +96,50 @@ test('an ambiguous submission is never automatically posted twice', async () => 
   await assert.rejects(h.controller.submit({}), /Check the run list/);
   await flush();
   assert.equal(posts, 1);
+});
+
+test('failed run action reveals the error and checkpoint guidance without restarting or loading results', async () => {
+  const failed = {...job('9', 'failed'), error: 'Audit manifest exceeds the limit', stage: 'finalizing'};
+  const calls = [];
+  const h = harness(async (url, options) => {
+    calls.push([url, options.method]);
+    return response({jobs: [failed], next_cursor: null});
+  });
+  await h.controller.refresh();
+  assert.equal(descendants(h.root).some(el => el.textContent === 'Follow progress'), false);
+  await descendants(h.root).find(el => el.textContent === 'View details').onclick();
+  const details = descendants(h.root).find(el => el.id === 'selectedBacktestDetails');
+  const text = details.children.map(el => el.textContent).join('\n');
+  assert.match(text, /Selected backtest · failed/);
+  assert.match(text, /Error: Audit manifest exceeds the limit/);
+  assert.match(text, /Stage: finalizing/);
+  assert.match(text, /Use Resume checkpoint/);
+  assert.equal(details.scrolled, true);
+  assert.equal(calls.length, 1);
+  assert.equal(h.results.length, 0);
+  assert.match(h.root.children[3].textContent, /Selected failed backtest/);
+});
+
+test('followed run shows its terminal error after polling and refresh does not scroll', async () => {
+  let current = job('a');
+  const h = harness(async () => response({jobs: [current], next_cursor: null}));
+  await h.controller.refresh();
+  current = {...current, status: 'failed', error: 'Worker stopped'};
+  await h.controller.refresh();
+  const details = descendants(h.root).find(el => el.id === 'selectedBacktestDetails');
+  assert.match(details.children.map(el => el.textContent).join('\n'), /Error: Worker stopped/);
+  assert.equal(details.scrolled, undefined);
+  assert.match(h.root.children[3].textContent, /Selected failed backtest/);
+  assert.equal(h.results.length, 0);
+});
+
+test('cancelled daily run has details without checkpoint guidance or resume action', async () => {
+  const cancelled = {...job('c', 'cancelled'), parameters: {weight_silver: 100}};
+  const h = harness(async () => response({jobs: [cancelled], next_cursor: null}));
+  await h.controller.refresh();
+  await descendants(h.root).find(el => el.textContent === 'View details').onclick();
+  const text = descendants(h.root).map(el => el.textContent || '').join('\n');
+  assert.match(text, /Selected backtest · cancelled/);
+  assert.match(text, /This run has stopped/);
+  assert.doesNotMatch(text, /Resume checkpoint/);
 });

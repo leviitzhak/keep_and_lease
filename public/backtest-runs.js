@@ -7,6 +7,7 @@
     let selected = null, generation = 0, loaded = null, loading = null;
     let nextCursor = null, refreshing = false, timer = null, stopped = false;
     const active = job => ['queued', 'running'].includes(job.status);
+    const resumable = job => ['failed', 'cancelled'].includes(job.status) && job.parameters?.btc_data_source === 'trade_tape';
     const node = (tag, text) => { const el = document.createElement(tag); if (text !== undefined) el.textContent = text; return el; };
     const message = node('p'); message.setAttribute('role', 'status');
     const list = node('div'); list.className = 'backtest-run-list';
@@ -19,6 +20,7 @@
     const more = button('Older backtests', () => refresh(true)); more.hidden = true;
     controls.append(button('Refresh runs', () => refresh()), more);
     const viewing = node('p', 'Select a completed run to display its results.'); viewing.id = 'viewingBacktest';
+    viewing.setAttribute('role', 'status');
     root.append(controls, message, list, viewing);
     async function request(path, options = {}) {
       const controller = new AbortController();
@@ -54,12 +56,28 @@
           if (match) progress.value = Math.min(100, Math.max(0, Number(match[1])));
           row.append(progress);
         }
-        const selectButton = button(job.status === 'completed' ? 'View results' : 'Follow progress', () => select(job.job_id));
+        const selectButton = button(job.status === 'completed' ? 'View results' : active(job) ? 'Follow progress' : 'View details', () => select(job.job_id));
         selectButton.setAttribute('aria-pressed', String(selected === job.job_id));
         row.append(selectButton, button('Use parameters', () => onParameters(structuredClone(p))));
         if (active(job)) row.append(button(job.cancellation_requested ? 'Cancellation requested' : 'Cancel', () => mutate(job.job_id, 'DELETE')));
-        if (['failed', 'cancelled'].includes(job.status) && p.btc_data_source === 'trade_tape') {
+        if (resumable(job)) {
           row.append(button('Resume checkpoint', () => resume(job.job_id)));
+        }
+        if (selected === job.job_id) {
+          const details = node('div'); details.id = 'selectedBacktestDetails';
+          details.setAttribute('role', 'status');
+          details.append(node('strong', 'Selected backtest · ' + job.status));
+          details.append(node('p', 'Run ID: ' + job.job_id));
+          if (job.stage) details.append(node('p', 'Stage: ' + job.stage));
+          if (job.detail) details.append(node('p', 'Last progress: ' + job.detail));
+          if (job.error) details.append(node('p', 'Error: ' + job.error));
+          if (!active(job) && job.status !== 'completed') {
+            details.append(node('p', 'This run has stopped. No completed result is available.'));
+            if (resumable(job)) details.append(node('p', 'Use Resume checkpoint to request continuation. The server checks whether a compatible checkpoint is available.'));
+          }
+          row.append(details);
+          if (job.status !== 'completed') viewing.textContent = (active(job) ? 'Following ' : 'Selected ' + job.status + ' backtest ') +
+            job.job_id.slice(0, 8) + '. Existing charts remain from the last displayed completed result.';
         }
         list.append(row);
       }
@@ -81,9 +99,9 @@
         if (revision === generation) { viewing.textContent = 'Result could not be loaded. Select View results to retry.'; message.textContent = error.message; }
       } finally { if (loading === id) loading = null; }
     }
-    async function select(id) {
+    async function select(id, reveal = true) {
       selected = id; generation++; onSelect(jobs.get(id)); render();
-      if (jobs.get(id)?.status !== 'completed') viewing.textContent = 'Following ' + id.slice(0, 8) + '. Existing charts remain from the last displayed completed result.';
+      if (reveal) document.getElementById?.('selectedBacktestDetails')?.scrollIntoView({block: 'nearest'});
       await loadSelected();
     }
     async function refresh(older = false) {
@@ -119,7 +137,7 @@
       }
       jobs.set(job.job_id, job);
       // Return after acknowledgement, including cached results; no worker wait.
-      void select(job.job_id);
+      void select(job.job_id, false);
       message.textContent = 'Backtest ' + job.job_id.slice(0, 8) + ' saved. You may close this page or submit another strategy.';
       return job;
     }
