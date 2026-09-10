@@ -54,6 +54,8 @@ This checklist reflects the application synchronized from the deployed Sites che
 - [ ] Later, if suitable data becomes available, investigate how historical
   bid/ask quotes and additional order-book depth can improve backtesting,
   including executable prices, available size, partial fills and slippage.
+- [ ] print statistics of the minimum collateralized proportion of the futures positions (expected to be at least 100%)
+
 
 
 - [x] Keep full 90-day BTC minute computation within existing worker limits using
