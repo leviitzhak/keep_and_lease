@@ -149,7 +149,8 @@ This checklist reflects the current Google Cloud / GCS implementation and the re
 
 ## Wanted additions
 
-- [ ] Investigate and explain the performance of the full-silver long strategy.
+- [ ] make sure fees can be applied to the legacy runs (with daily executions)
+- [ ] Investigate and explain the performance of the full-silver long gradual strategy (appears in the strategies folderm, with daily execution frequency), adding fees for the transactions.
 - [ ] Support separate minimum-days-before-expiry parameters for long and short
   futures positions.
 - [ ] Define the extended book independently from the lease book:
@@ -166,6 +167,8 @@ This checklist reflects the current Google Cloud / GCS implementation and the re
 
 ## Small fixes / usability
 
+- [ ] improve readability of parameters settings by either merging common legacy and trade replay parameters, or by displaying simulatanesouly all the parametrs of only one of them
+- [ ] parameters settings specific to a commodity (for example btc) should appear in the specific commidities parameters section, when the parameters of the commodity is selected.
 - [ ] Make the saved-backtest list configurable: keep only user-selected runs in
   the default saved view across sessions, with an explicit option to show all.
 - [ ] Where sensible, unify trade-replay period/export controls with the
@@ -179,8 +182,6 @@ This checklist reflects the current Google Cloud / GCS implementation and the re
   values within each commodity sleeve.
 - [ ] In each commodity strategy-versus-direct-hold plot, compare against a
   direct holding of the same initial commodity quantity.
-- [ ] Rename labels referring to "held" short futures where the diagnostic short
-  selection can appear even when the short book is disabled.
 - [ ] Update the **Maturity-line allocation formulas** section with the current
   signed-score and SoftMax allocation formula.
 - [ ] Keep the displayed name of the currently loaded/saved parameter set
@@ -191,6 +192,8 @@ This checklist reflects the current Google Cloud / GCS implementation and the re
 - [ ] Obtain modern individual-contract histories for gold, silver, and S&P 500.
   Current cross-maturity archives stop in 2002; continuous benchmarks through
   2026 cannot replace a maturity curve.
+- [ ] start downloading one or two years of history of full btc raw data, instead of currently 90days.
+- [ ] check where full subsecond raw data for other commodities can be found.
 - [ ] Add automated data refresh and structural quality checks to CI.
 - [ ] Migrate remaining large calculation-ready historical inputs to durable
   versioned object storage where appropriate while preserving reproducible
