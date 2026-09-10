@@ -100,6 +100,7 @@
     let benchmarksLoaded = false;
     const active = job => ['queued', 'running'].includes(job.status);
     const resumable = job => ['failed', 'cancelled'].includes(job.status) && job.parameters?.btc_data_source === 'trade_tape';
+    const extendable = job => job.status === 'completed' && !job.is_benchmark && job.parameters?.btc_data_source === 'trade_tape';
     const node = (tag, text) => { const el = document.createElement(tag); if (text !== undefined) el.textContent = text; return el; };
     const message = node('p'); message.setAttribute('role', 'status');
     const list = node('div'); list.className = 'backtest-run-list';
@@ -168,6 +169,7 @@
         if (!job.is_benchmark) row.append(button(kept.has(job.job_id) ? 'Remove from saved view' : 'Keep in saved view', () => keep(job.job_id, !kept.has(job.job_id))));
         if (active(job)) row.append(button(job.cancellation_requested ? 'Cancellation requested' : 'Cancel', () => mutate(job.job_id, 'DELETE')));
         if (resumable(job)) row.append(button('Resume checkpoint', () => resume(job.job_id)));
+        if (extendable(job)) row.append(button('Extend to form end', () => extend(job.job_id)));
         if (selected === job.job_id) {
           const details = node('div'); details.id = 'selectedBacktestDetails';
           details.setAttribute('role', 'status');
@@ -176,6 +178,7 @@
           if (job.stage) details.append(node('p', 'Stage: ' + job.stage));
           if (job.detail) details.append(node('p', 'Last progress: ' + job.detail));
           if (job.error) details.append(node('p', 'Error: ' + job.error));
+          if (extendable(job)) details.append(node('p', 'To continue this run, set a later Backtest period End above and choose Extend to form end. The parent result stays immutable. Moving the start earlier requires a fresh run unless an earlier compatible checkpoint is separately available.'));
           if (!active(job) && job.status !== 'completed') {
             details.append(node('p', 'This run has stopped. No completed result is available.'));
             if (resumable(job)) details.append(node('p', 'Use Resume checkpoint to request continuation. The server checks whether a compatible checkpoint is available.'));
@@ -261,13 +264,29 @@
       const job = await mutate(id, 'POST', '/resume');
       loaded = null; void select(id); return job;
     }
+    async function extend(id) {
+      const parent = jobs.get(id);
+      if (!extendable(parent)) throw Error('Only a completed BTC trade replay can be extended.');
+      const form = document.getElementById?.('form');
+      const end = form?.elements?.namedItem?.('backtest_end')?.value;
+      if (!end) throw Error('Set Backtest period End to a later time before extending this run.');
+      const prior = parent.parameters?.backtest_end;
+      if (prior && Date.parse(end) <= Date.parse(prior)) throw Error('Backtest period End must be later than the completed run end.');
+      const child = await request('/api/v1/backtests/' + id + '/extend', {
+        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({backtest_end:end}),
+      });
+      jobs.set(child.job_id, child); kept.add(child.job_id); writeKeptRuns(kept); showAll = false;
+      loaded = null; void select(child.job_id, false);
+      message.textContent = 'Extension ' + child.job_id.slice(0,8) + ' saved from ' + id.slice(0,8) + '. The parent result remains unchanged.';
+      return child;
+    }
     async function tick() {
       await refresh();
       if (!stopped) timer = setTimeout(tick, 5000);
     }
     function start() { stopped = false; void tick(); }
     function stop() { stopped = true; generation++; clearTimeout(timer); }
-    return {start, stop, submit, resume, select, refresh};
+    return {start, stop, submit, resume, extend, select, refresh};
   };
 
   function setupRuntimeUsability() {
