@@ -12,7 +12,7 @@ This checklist reflects the application synchronized from the deployed Sites che
   deployment workflow ignores `docs/**` and Markdown-only changes while mixed
   application/documentation commits continue to deploy.
 
-- [ ] manual preview of the one-second execution strategy
+- [ ] synchronize plots to move together
 
 - [ ] Prepare one-second backtests of at least 90 days using the ordered
   implementation plan in `BTC_TRADE_STORAGE.md`: resumable daily ingestion and
@@ -33,6 +33,9 @@ This checklist reflects the application synchronized from the deployed Sites che
   subsequent-trade VWAP is a participation proxy, not book depth. Preserve
   partial fills, causal timestamps and auditability when scaling beyond one day.
 
+- [ ] all the pols that existed, with statistics on legs, and instruments held, as well as reconstructions, that existed for daily execution strategies on silver, should be shared accross all runs of all strategies, and so appear as well for the subsecond btc-only runs.
+- [ ] have the option to set finer resolution of plots
+- [ ] when running or generating spreadsheets - we should have an estimation of the total size to be generated and expected time, and show a progress relative to total.
 - [ ] Add a plot of the volume traded by the strategy, based on actual simulated
   fills (not market-wide volume).
 - [ ]  have a control to cancel the run of the strategy + a progress bar 
