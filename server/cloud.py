@@ -15,7 +15,10 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Self
 
+from .audit_limits import configure_audit_limits
 from .job_models import FINAL_STATES, Job, ResultStream, StoredResult
+
+configure_audit_limits()
 
 JOB_ID_PATTERN = re.compile(r"^[0-9a-f]{32}$")
 MAX_LOG_ENTRIES = 100
@@ -30,7 +33,9 @@ def _require_job_id(job_id: str) -> str:
 def runtime_provenance() -> dict[str, Any]:
     version_file = Path(__file__).resolve().parents[1] / "VERSION"
     version = version_file.read_text(encoding="utf-8").strip()
+    from btc_trade_backtest import catalog
     return {
+        "trade_manifest_sha256": catalog()["manifest_sha256"],
         "application_version": version,
         "engine_commit": os.getenv(
             "KEEP_AND_LEASE_ENGINE_COMMIT", os.getenv("GITHUB_SHA", "unknown")
@@ -201,6 +206,16 @@ class FirestoreJobRepository:
             return None
         return _job_from_document(job_id, snapshot.to_dict())
 
+    def list_jobs(self, owner_id=None, limit=50, before=None):
+        from .job_models import history_page
+        # Owner equality uses Firestore's existing single-field index. Do not
+        # scan other users' histories or require a new deployment-time index.
+        snapshots = self.jobs.where("owner_id", "==", owner_id).stream()
+        return history_page(
+            (_job_from_document(item.id, item.to_dict()) for item in snapshots),
+            owner_id, limit, before,
+        )
+
     def latest_completed(self, owner_id: str | None = None) -> Job | None:
         """Find the newest durable result without requiring a composite index."""
         latest = None
@@ -285,6 +300,22 @@ class FirestoreJobRepository:
             self._append_log(job, now)
             return True
 
+        return self._transition(job_id, mutate)
+
+    def requeue_trade(self, job_id, expected_attempt):
+        def mutate(job):
+            if (job.status not in {"failed", "cancelled"} or job.attempt != expected_attempt
+                    or job.parameters.get("btc_data_source") != "trade_tape"):
+                raise ValueError("Only a stopped trade replay can be resumed")
+            job.status = job.stage = "queued"
+            job.detail = "Resuming from the latest completed trade checkpoint"
+            job.error = None
+            job.cancellation_requested = False
+            job.completed_at = job.started_at = job.heartbeat_at = None
+            job.queued_at = time.time()
+            job.lease_owner = job.execution_name = job.launch_operation_name = None
+            self._append_log(job)
+            return True
         return self._transition(job_id, mutate)
 
     def progress(
@@ -439,7 +470,7 @@ class FirestoreJobRepository:
         def mutate(job: Job) -> bool:
             queued_stale = (
                 job.status == "queued"
-                and now - job.created_at > queued_timeout_seconds
+                and now - (job.queued_at or job.created_at) > queued_timeout_seconds
             )
             running_stale = (
                 job.status == "running"
@@ -498,6 +529,12 @@ class CloudRunJobLauncher:
         raw_operation = getattr(operation, "operation", None)
         return getattr(raw_operation, "name", None)
 
+    def is_finished(self, execution_name):
+        if not execution_name:
+            return True
+        execution = self.executions_client.get_execution(request={"name": execution_name})
+        return bool(execution.completion_time)
+
     def cancel(self, execution_name: str | None) -> None:
         if execution_name:
             self.executions_client.cancel_execution(request={"name": execution_name})
@@ -528,6 +565,7 @@ class GcsResultStore:
         blob.metadata = {
             **metadata,
             "original_content_type": "application/json",
+            "result_size_bytes": str(len(encoded_result)),
             "result_sha256": result_sha,
             "compressed_sha256": compressed_sha,
         }
@@ -569,17 +607,45 @@ class GcsResultStore:
             headers["X-Content-SHA256"] = job.result_checksum_sha256
         return ResultStream(chunks(), blob.size, headers)
 
+    def recover_result(self, job_id, metadata):
+        """Recover a completed immutable upload if interruption preceded Firestore commit."""
+        from google.api_core.exceptions import NotFound
+        name = f"jobs/{_require_job_id(job_id)}/result.json.gz"
+        blob = self.bucket.blob(name)
+        try:
+            blob.reload()
+        except NotFound:
+            return None
+        saved = blob.metadata or {}
+        if any(saved.get(k) != v for k, v in metadata.items()):
+            raise ValueError("Stored result provenance differs from resumed job")
+        return StoredResult(f"gs://{self.bucket_name}/{name}", int(saved["result_size_bytes"]),
+                            blob.size, saved["result_sha256"], saved["compressed_sha256"])
+
+    def checkpoint_store(self, job_id):
+        from replay_checkpoints import GcsCheckpoints
+        return GcsCheckpoints(self.bucket, f"jobs/{_require_job_id(job_id)}/checkpoints/")
+
     def audit_store(self, job_id, metadata=None):
         from backtest_audit import MAX_CHUNK_BYTES, MAX_MANIFEST_BYTES, validate_name
         prefix = f"jobs/{_require_job_id(job_id)}/audit/"
         bucket = self.bucket
         class Store:
+            replay_safe = True
+
             def put(self, name, data):
                 blob = bucket.blob(prefix + validate_name(name))
                 blob.cache_control = "private, no-store"
                 blob.metadata = dict(metadata or {})
-                blob.upload_from_string(data, content_type=("application/json" if name == "manifest.json" else "application/gzip"),
-                                        if_generation_match=0, checksum="crc32c")
+                from google.api_core.exceptions import PreconditionFailed
+                try:
+                    blob.upload_from_string(data, content_type=("application/json" if name == "manifest.json" else "application/gzip"),
+                                            if_generation_match=0, checksum="crc32c")
+                except PreconditionFailed:
+                    # Restart may replay an already uploaded, post-checkpoint chunk.
+                    # Never overwrite it; accept only identical deterministic bytes.
+                    if blob.download_as_bytes(checksum="crc32c") != data:
+                        raise ValueError("Replay audit conflicts with an immutable object") from None
             def get(self, name):
                 from google.api_core.exceptions import NotFound
                 blob = bucket.blob(prefix + validate_name(name))
@@ -625,6 +691,7 @@ class GcsResultStore:
         blob = self.bucket.blob(name)
         blob.cache_control = "private, no-store"
         blob.metadata = {**metadata, "original_content_type": "application/json",
+                         "result_size_bytes": str(size),
                          "result_sha256": sha, "compressed_sha256": compressed_sha}
         blob.upload_from_string(data, content_type="application/gzip", if_generation_match=0, checksum="crc32c")
         return StoredResult(f"gs://{self.bucket_name}/{name}", size, len(data), sha, compressed_sha)
@@ -675,9 +742,29 @@ class CloudJobService:
                 ) or job
         return job, cached
 
+    def resume(self, job):
+        if job.status not in {"failed", "cancelled"} or job.parameters.get("btc_data_source") != "trade_tape":
+            raise ValueError("Only a stopped BTC trade replay can be resumed")
+        if job.provenance != self.provenance:
+            raise ValueError("Resume requires the original deployed engine and data revision")
+        if not self.launcher.is_finished(job.execution_name):
+            raise ValueError("The previous execution is still stopping; retry after it finishes")
+        if self.results.checkpoint_store(job.id).latest() is None:
+            raise ValueError("No completed checkpoint exists; start a fresh run")
+        job = self.repository.requeue_trade(job.id, job.attempt)
+        try:
+            operation = self.launcher.launch(job.id)
+            return self.repository.record_launch(job.id, operation) or job
+        except Exception as exc:
+            return self.repository.fail(job.id, f"Unable to resume calculation: {exc}", stage="launch_failed")
+
     def get(self, job_id: str) -> Job | None:
         job = self.repository.get(job_id)
         return self._reconcile(job) if job else None
+
+    def list_jobs(self, owner_id=None, limit=50, before=None):
+        jobs = self.repository.list_jobs(owner_id, limit, before)
+        return [self._reconcile(job) or job for job in jobs]
 
     def latest_completed(self, owner_id: str | None = None) -> Job | None:
         return self.repository.latest_completed(owner_id)

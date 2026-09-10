@@ -21,24 +21,31 @@ This checklist reflects the application synchronized from the deployed Sites che
   shared verified inputs for main/comparison calculations; on-demand exports;
   and multi-day equivalence, recovery and resource acceptance. Do not reset
   holdings, pending fills, smoothing or Treasury accrual at day boundaries.
+  Implementation now includes ingestion/range reads, hourly checkpoints,
+  durable resume, discrepancy evidence, sequence/timestamp ordering scenarios,
+  failed-day recovery, completed paired 90-day benchmarks, saved GUI results and
+  asynchronous period XLSX exports. Full-period Cloud Run acceptance remains.
+  See `BTC_90_DAY_EXECUTION.md`.
 
-- [ ] extend a ran backtest on a longer period (is starting earlier possible only if it is in a rebalanced state ?) from the gui
+- [ ] Extend a completed backtest to a longer period from the GUI; clarify
+  whether moving its start earlier requires a fresh initial state.
 
-- what does the branch agent/cloud-autonomous-access contains ? what created it ?
+- [x] Explain the purpose and origin of `agent/cloud-autonomous-access`.
+- [x] Push and verify `agent/btc-90day-subsecond` in the GCP preview.
 
-- push the branch agent/btc-90day-subsecond when ready and verified
+- [x] Integrate the uploaded trade research pilot with the GUI and worker for
+  second/subsecond execution. See `BTC_SUBSECOND_GUI.md` for supported settings,
+  dates and research limits. Full-period Cloud Run resource acceptance remains.
 
-- [ ] Review and integrate the one-day raw-trade research pilot with the GUI and
-  worker before activating second/subsecond execution. See `BTC_TRADE_PILOT.md`:
-  subsequent-trade VWAP is a participation proxy, not book depth. Preserve
-  partial fills, causal timestamps and auditability when scaling beyond one day.
 
 - [ ] all the pols that existed, with statistics on legs, and instruments held, as well as reconstructions, that existed for daily execution strategies on silver, should be shared accross all runs of all strategies, and so appear as well for the subsecond btc-only runs.
 - [ ] have the option to set finer resolution of plots
 - [ ] when running or generating spreadsheets - we should have an estimation of the total size to be generated and expected time, and show a progress relative to total.
 - [ ] Add a plot of the volume traded by the strategy, based on actual simulated
   fills (not market-wide volume).
-- [ ]  have a control to cancel the run of the strategy + a progress bar 
+- [x] Show saved server backtests with progress, cancellation, checkpoint resume,
+  selectable results and background/parallel cloud submission. Full-period Cloud Run
+  acceptance remains pending; see `BTC_SUBSECOND_GUI.md`.
 - [ ] display hover information on futures on the plot of the spot price + futures prices (including the implied lease rate)
 - [ ] Add a progress bar and cancellation option to spreadsheet generation and
   download.
@@ -276,3 +283,26 @@ This checklist reflects the application synchronized from the deployed Sites che
 ## Deferred scoring work
 
 - [x] Add the separate pure-maturity multiplier favoring shorter long positions and longer short positions, with a zero-strength backward-compatible default.
+
+- BTC 90-day activation: GCS-only recovery and range publication passed in
+  run 34267650300. Next pass paired 1/7/30/90-day benchmarks,
+  then configure and accept the preview GUI catalog and worker limits. Recovery
+  tooling now retains receipts on later failures and retries transient auth transport.
+
+## September 9: long-run infrastructure and evidence
+
+See [BTC_BACKTEST_DATA_STATUS.md](BTC_BACKTEST_DATA_STATUS.md) for the data
+inventory and measured 1/7/30-day results. Both policies passed those stages.
+The 90-day job hit six hours after saving its sequence checkpoint through
+August 21 13:00 UTC; the timestamp policy had not started.
+
+Implemented: explicit preview/stable Terraform profiles, a 24-hour preview
+worker with the verified 90-day catalog, configurable CPU/memory and bounded
+three-hour benchmark continuation segments. The recovery workflow reuses old
+checkpoint IDs with the unchanged replay engine. A CLI extension forks the
+checkpoint and verified audit prefix into a new result with a later end date.
+It requires the same immutable dataset/engine/rates and preserves the parent.
+Completed: paired 90-day measured reports, saved benchmark GUI integration,
+and selected-period trade-replay XLSX exports with progress and cancellation.
+Pending: full-period Cloud Run execution acceptance, GUI/API extension, append-only validation for newly ingested history, and lifting
+reader/catalog bounds beyond 90 days after resource checks.

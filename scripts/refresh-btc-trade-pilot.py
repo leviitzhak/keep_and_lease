@@ -10,6 +10,7 @@ import gzip
 import hashlib
 import io
 import json
+import sys
 import time
 import urllib.parse
 import urllib.request
@@ -18,6 +19,9 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from deribit_trade_ingest import download_future as reconcile_future
+
 HISTORY = "https://history.deribit.com/api/v2/public/"
 
 
@@ -97,78 +101,7 @@ def main():
         entries = {x["instrument_name"]: x for x in entries}
     futures = {}
     def download_future(symbol, info):
-        if stamp(info["creation_timestamp"]) >= hi or stamp(info["expiration_timestamp"]) <= lo:
-            return None
-        path, meta_path = out / (symbol + ".jsonl.gz"), out / (symbol + ".meta.json")
-        if path.exists() and meta_path.exists():
-            meta = json.loads(meta_path.read_text())
-            if meta["sha256"] != digest(path) or meta["start_ms"] != lo or meta["end_ms"] != hi:
-                raise ValueError("Cached futures file mismatch")
-            if "verified_last_seq" not in meta:
-                tail = api("get_last_trades_by_instrument_and_time", instrument_name=symbol,
-                           start_timestamp=lo, end_timestamp=hi - 1, count=1000, sorting="desc")["trades"]
-                expected_last = max((x["trade_seq"] for x in tail), default=None)
-                if meta["last_seq"] != expected_last:
-                    raise ValueError(f"Cached trade tail incomplete: {symbol}")
-                meta["verified_last_seq"] = expected_last
-                meta_path.write_text(json.dumps(meta, indent=2) + "\n")
-            return meta
-        seed = api("get_last_trades_by_instrument_and_time", instrument_name=symbol,
-                   end_timestamp=lo - 1, count=1000, sorting="desc")["trades"]
-        seed.sort(key=lambda x: x["trade_seq"], reverse=True)
-        result = api("get_last_trades_by_instrument_and_time", instrument_name=symbol,
-                     start_timestamp=lo, end_timestamp=hi - 1, count=1000, sorting="asc")
-        # Timestamp sorting does not order equal-millisecond trades by sequence.
-        # Bound subsequent pages by sequence, including the first page, so a
-        # timestamp tie split across pages cannot silently discard a print.
-        first_seq = min((x["trade_seq"] for x in result["trades"]), default=None)
-        if seed:
-            first_seq = seed[0]["trade_seq"] + 1
-        if first_seq is not None:
-            page_lo, page_hi = first_seq, first_seq + 899
-            result = api("get_last_trades_by_instrument", instrument_name=symbol,
-                         start_seq=page_lo, end_seq=page_hi, count=1000, sorting="asc")
-        count, raw_bytes, previous_seq, previous_ts = 0, 0, None, None
-        temporary = path.with_suffix(".part")
-        with gzip.open(temporary, "wt", encoding="utf-8") as stream:
-            while True:
-                # The history server may include neighboring trades sharing the
-                # endpoint timestamp. Over-fetch, then enforce exact seq bounds.
-                trades = sorted((x for x in result["trades"]
-                                 if page_lo <= x["trade_seq"] <= page_hi),
-                                key=lambda x: x["trade_seq"]) if first_seq is not None else []
-                for trade in trades:
-                    ts, seq = trade["timestamp"], trade["trade_seq"]
-                    if ts >= hi:
-                        break
-                    if ts < lo or seq != (previous_seq + 1 if previous_seq is not None else first_seq):
-                        raise ValueError(f"Trade sequence/window gap: {symbol}: {previous_seq} -> {seq}")
-                    if previous_ts is not None and ts < previous_ts:
-                        raise ValueError(f"Unsorted trade timestamps: {symbol}")
-                    row = json.dumps(trade, separators=(",", ":")) + "\n"
-                    stream.write(row)
-                    raw_bytes += len(row.encode())
-                    count += 1
-                    previous_seq, previous_ts = seq, ts
-                if not trades or trades[-1]["timestamp"] >= hi:
-                    break
-                page_lo, page_hi = previous_seq + 1, previous_seq + 900
-                result = api("get_last_trades_by_instrument", instrument_name=symbol,
-                             start_seq=page_lo, end_seq=page_hi,
-                             count=1000, sorting="asc")
-        temporary.replace(path)
-        tail = api("get_last_trades_by_instrument_and_time", instrument_name=symbol,
-                   start_timestamp=lo, end_timestamp=hi - 1, count=1000, sorting="desc")["trades"]
-        expected_last = max((x["trade_seq"] for x in tail), default=None)
-        if previous_seq != expected_last:
-            raise ValueError(f"Missing end of trade window: {symbol}")
-        meta = dict(path=path.name, sha256=digest(path), rows=count, jsonl_bytes=raw_bytes,
-                    gzip_bytes=path.stat().st_size, seed=seed[0] if seed else None,
-                    start_ms=lo, end_ms=hi, expiry=info["expiration_timestamp"],
-                    last_seq=previous_seq, verified_last_seq=expected_last, last_ms=previous_ts)
-        meta_path.write_text(json.dumps(meta, indent=2) + "\n")
-        print(json.dumps({symbol: {k: meta[k] for k in ("rows", "gzip_bytes")}}), flush=True)
-        return meta
+        return reconcile_future(api, symbol, info, lo, hi, out)
 
     with ThreadPoolExecutor(max_workers=3) as executor:
         pending = {executor.submit(download_future, symbol, info): symbol for symbol, info in sorted(entries.items())
@@ -176,11 +109,28 @@ def main():
         for future in as_completed(pending):
             futures[pending[future]] = future.result()
     futures = dict(sorted(futures.items()))
-    manifest = dict(schema_version=1, start=start.isoformat(), end=end.isoformat(),
+    # Published BTC/USD delivery prices are used only at the exact contract expiry.
+    expiring = {s: info for s, info in futures.items() if lo <= stamp(info["expiry"]) < hi}
+    if expiring:
+        delivery_url = "https://www.deribit.com/api/v2/public/get_delivery_prices?index_name=btc_usd&count=1000&offset=0"
+        response = fetch(delivery_url)
+        delivery = json.loads(response)["result"]["data"]
+        prices = {row["date"]: row["delivery_price"] for row in delivery}
+        for symbol, info in expiring.items():
+            price = prices.get(info["expiry"][:10])
+            if price is None or not price > 0:
+                raise ValueError(f"Missing verified delivery price: {symbol}")
+            info["settlement"] = dict(time=info["expiry"], price=price, source=delivery_url,
+                                      response_sha256=hashlib.sha256(response).hexdigest(),
+                                      record={"date": info["expiry"][:10], "delivery_price": price})
+    evidence_files = [entry for item in futures.values() for entry in item.get('evidence_files', [])]
+    manifest = dict(evidence_files=evidence_files, schema_version=1, start=start.isoformat(), end=end.isoformat(),
                     spot=spot, futures=futures, futures_source=HISTORY,
                     assumptions=["USDT/USD=1, unmeasured", "Inverse quotes proxy regular futures prices",
                                  "Inverse trade amount is USD face; BTC volume = amount / price",
                                  "Trade history is not historical order-book depth"])
+    if expiring:
+        manifest["delivery_price_response"] = response.decode()
     (out / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     print(str(out / "manifest.json"))
 

@@ -4,6 +4,7 @@ import hashlib
 import io
 import json
 import re
+import time
 from pathlib import Path
 
 MAX_CHUNK_BYTES = 8 * 1024 * 1024
@@ -29,6 +30,24 @@ class MemoryAuditStore:
 
     def get(self, name):
         return self.objects[validate_name(name)]
+
+
+class ReplayAuditStore:
+    """Allow restart retries only when previously published bytes are identical."""
+    def __init__(self, store):
+        self.store = store
+
+    def get(self, name):
+        return self.store.get(name)
+
+    def put(self, name, data):
+        try:
+            existing = self.store.get(name)
+        except (KeyError, FileNotFoundError):
+            self.store.put(name, data)
+            return
+        if existing != data:
+            raise ValueError("Replay audit conflicts with an immutable object")
 
 
 class DirectoryAuditStore:
@@ -74,6 +93,7 @@ class ChunkWriter:
         self.entries = []
         self.count = 0
         self.metadata = {}
+        self.row_limit = 1024
         self._reset()
 
     def _reset(self):
@@ -85,6 +105,8 @@ class ChunkWriter:
         self.opening_nav = self.closing_nav = None
 
     def emit(self, row):
+        began = time.monotonic()
+        old_writes = self.collection.timings["audit_write"]
         self.collection.check_cancelled()
         start = row.get("date") or row.get("start_date")
         end = row.get("exit_date", row.get("date"))
@@ -92,7 +114,7 @@ class ChunkWriter:
         encoded = (json.dumps(row, allow_nan=False, separators=(",", ":")) + "\n").encode()
         if len(encoded) > MAX_CHUNK_BYTES:
             raise ValueError("A single audit row exceeds the chunk limit")
-        if self.rows and (self.rows >= 1024 or self.size + len(encoded) > MAX_CHUNK_BYTES
+        if self.rows and (self.rows >= self.row_limit or self.size + len(encoded) > MAX_CHUNK_BYTES
                           or partition != self.day):
             self.flush()
         if not self.rows:
@@ -106,6 +128,7 @@ class ChunkWriter:
         self.size += len(encoded)
         self.rows += 1
         self.count += 1
+        self.collection.timings["audit_compression"] += time.monotonic()-began-(self.collection.timings["audit_write"]-old_writes)
 
     def flush(self):
         if not self.rows:
@@ -115,7 +138,9 @@ class ChunkWriter:
         encoded = self.buffer.getvalue()
         index = len(self.entries)
         name = f"{self.product}/{index:06d}.jsonl.gz"
+        began = time.monotonic()
         self.collection.store.put(name, encoded)
+        self.collection.timings["audit_write"] += time.monotonic()-began
         self.entries.append({"index": index, "object": name,
                              "first_row": self.count - self.rows, "rows": self.rows,
                              "start": self.start, "end": self.end,
@@ -144,6 +169,27 @@ class AuditCollection:
         self.provenance = provenance or {}
         self.check_cancelled = check_cancelled or (lambda: None)
         self.writers = {}
+        self.checkpoints = None
+        self.timings = {"audit_compression": 0.0, "audit_write": 0.0}
+
+    def snapshot(self):
+        """Publish all data before the restart cursor; incomplete uploads are ignored."""
+        result = {}
+        for product, writer in self.writers.items():
+            writer.flush()
+            result[product] = dict(entries=list(writer.entries), count=writer.count,
+                                   metadata=dict(writer.metadata), row_limit=writer.row_limit)
+        return result
+
+    def restore(self, state):
+        for product, saved in state.items():
+            writer = self.writer(product)
+            if writer.count:
+                raise ValueError("Cannot restore over an active audit")
+            writer.entries = saved["entries"]
+            writer.count = saved["count"]
+            writer.metadata = saved["metadata"]
+            writer.row_limit = saved["row_limit"]
 
     def writer(self, product):
         if not re.fullmatch(r"[a-z][a-z0-9_]*", product):

@@ -1,0 +1,232 @@
+name: BTC trade benchmark stage
+on:
+  workflow_call:
+    inputs:
+      source:
+        required: true
+        type: string
+      manifest:
+        required: true
+        type: string
+      days:
+        required: true
+        type: number
+      checkpoint_run_id:
+        required: false
+        default: ''
+        type: string
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  segment1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 210
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        ordering: [sequence, timestamp]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements-trade-data.txt
+      - uses: google-github-actions/auth@v2
+        with:
+          project_id: keep-and-lease
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com
+      - name: Continue one policy from its durable checkpoint
+        env:
+          RANGE_MANIFEST: ${{ inputs.manifest }}
+          RANGE_DAYS: ${{ inputs.days }}
+          ORDERING: ${{ matrix.ordering }}
+          CHECKPOINT_RUN: ${{ inputs.checkpoint_run_id || github.run_id }}
+        run: |
+          python - <<'PYCODE'
+          import hashlib,os,re,subprocess,sys
+          m=os.environ['RANGE_MANIFEST']; d=int(os.environ['RANGE_DAYS']); order=os.environ['ORDERING']
+          assert re.fullmatch('[0-9a-f]{64}',m) and d in (1,7,30,90)
+          identifier=hashlib.sha256((os.environ['CHECKPOINT_RUN']+':'+str(d)+':'+order).encode()).hexdigest()[:32]
+          subprocess.run([sys.executable,'scripts/benchmark-btc-trade-range.py',
+            '--dataset','gs://keep-and-lease-market-data/btc/trades/ranges/'+m,
+            '--expected-manifest-sha',m,'--days',str(d),'--interval','0.5',
+            '--ordering',order,'--output','work/benchmark/'+order,
+            '--gcs-audit','--checkpoint-id',identifier,'--max-wall-seconds','10800'],check=True)
+          PYCODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: btc-benchmark-${{ inputs.days }}-segment1-${{ matrix.ordering }}
+          path: work/benchmark/**/*.json
+          retention-days: 30
+          if-no-files-found: warn
+  segment2:
+    needs: segment1
+    runs-on: ubuntu-latest
+    timeout-minutes: 210
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        ordering: [sequence, timestamp]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements-trade-data.txt
+      - uses: google-github-actions/auth@v2
+        with:
+          project_id: keep-and-lease
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com
+      - name: Continue one policy from its durable checkpoint
+        env:
+          RANGE_MANIFEST: ${{ inputs.manifest }}
+          RANGE_DAYS: ${{ inputs.days }}
+          ORDERING: ${{ matrix.ordering }}
+          CHECKPOINT_RUN: ${{ inputs.checkpoint_run_id || github.run_id }}
+        run: |
+          python - <<'PYCODE'
+          import hashlib,os,re,subprocess,sys
+          m=os.environ['RANGE_MANIFEST']; d=int(os.environ['RANGE_DAYS']); order=os.environ['ORDERING']
+          assert re.fullmatch('[0-9a-f]{64}',m) and d in (1,7,30,90)
+          identifier=hashlib.sha256((os.environ['CHECKPOINT_RUN']+':'+str(d)+':'+order).encode()).hexdigest()[:32]
+          subprocess.run([sys.executable,'scripts/benchmark-btc-trade-range.py',
+            '--dataset','gs://keep-and-lease-market-data/btc/trades/ranges/'+m,
+            '--expected-manifest-sha',m,'--days',str(d),'--interval','0.5',
+            '--ordering',order,'--output','work/benchmark/'+order,
+            '--gcs-audit','--checkpoint-id',identifier,'--max-wall-seconds','10800'],check=True)
+          PYCODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: btc-benchmark-${{ inputs.days }}-segment2-${{ matrix.ordering }}
+          path: work/benchmark/**/*.json
+          retention-days: 30
+          if-no-files-found: warn
+  segment3:
+    needs: segment2
+    runs-on: ubuntu-latest
+    timeout-minutes: 210
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        ordering: [sequence, timestamp]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements-trade-data.txt
+      - uses: google-github-actions/auth@v2
+        with:
+          project_id: keep-and-lease
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com
+      - name: Continue one policy from its durable checkpoint
+        env:
+          RANGE_MANIFEST: ${{ inputs.manifest }}
+          RANGE_DAYS: ${{ inputs.days }}
+          ORDERING: ${{ matrix.ordering }}
+          CHECKPOINT_RUN: ${{ inputs.checkpoint_run_id || github.run_id }}
+        run: |
+          python - <<'PYCODE'
+          import hashlib,os,re,subprocess,sys
+          m=os.environ['RANGE_MANIFEST']; d=int(os.environ['RANGE_DAYS']); order=os.environ['ORDERING']
+          assert re.fullmatch('[0-9a-f]{64}',m) and d in (1,7,30,90)
+          identifier=hashlib.sha256((os.environ['CHECKPOINT_RUN']+':'+str(d)+':'+order).encode()).hexdigest()[:32]
+          subprocess.run([sys.executable,'scripts/benchmark-btc-trade-range.py',
+            '--dataset','gs://keep-and-lease-market-data/btc/trades/ranges/'+m,
+            '--expected-manifest-sha',m,'--days',str(d),'--interval','0.5',
+            '--ordering',order,'--output','work/benchmark/'+order,
+            '--gcs-audit','--checkpoint-id',identifier,'--max-wall-seconds','10800'],check=True)
+          PYCODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: btc-benchmark-${{ inputs.days }}-segment3-${{ matrix.ordering }}
+          path: work/benchmark/**/*.json
+          retention-days: 30
+          if-no-files-found: warn
+  segment4:
+    needs: segment3
+    runs-on: ubuntu-latest
+    timeout-minutes: 210
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        ordering: [sequence, timestamp]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements-trade-data.txt
+      - uses: google-github-actions/auth@v2
+        with:
+          project_id: keep-and-lease
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com
+      - name: Continue one policy from its durable checkpoint
+        env:
+          RANGE_MANIFEST: ${{ inputs.manifest }}
+          RANGE_DAYS: ${{ inputs.days }}
+          ORDERING: ${{ matrix.ordering }}
+          CHECKPOINT_RUN: ${{ inputs.checkpoint_run_id || github.run_id }}
+        run: |
+          python - <<'PYCODE'
+          import hashlib,os,re,subprocess,sys
+          m=os.environ['RANGE_MANIFEST']; d=int(os.environ['RANGE_DAYS']); order=os.environ['ORDERING']
+          assert re.fullmatch('[0-9a-f]{64}',m) and d in (1,7,30,90)
+          identifier=hashlib.sha256((os.environ['CHECKPOINT_RUN']+':'+str(d)+':'+order).encode()).hexdigest()[:32]
+          subprocess.run([sys.executable,'scripts/benchmark-btc-trade-range.py',
+            '--dataset','gs://keep-and-lease-market-data/btc/trades/ranges/'+m,
+            '--expected-manifest-sha',m,'--days',str(d),'--interval','0.5',
+            '--ordering',order,'--output','work/benchmark/'+order,
+            '--gcs-audit','--checkpoint-id',identifier,'--max-wall-seconds','10800'],check=True)
+          from pathlib import Path
+          assert Path('work/benchmark/'+order+'/report.json').exists(), 'More continuation segments required; checkpoints retained'
+          PYCODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: btc-benchmark-${{ inputs.days }}-segment4-${{ matrix.ordering }}
+          path: work/benchmark/**/*.json
+          retention-days: 30
+          if-no-files-found: warn
+  compare:
+    needs: segment4
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source }}
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: btc-benchmark-${{ inputs.days }}-segment4-*
+          merge-multiple: true
+          path: work/benchmark
+      - run: python scripts/compare-btc-ordering.py --directory work/benchmark
+      - uses: actions/upload-artifact@v4
+        with:
+          name: btc-benchmark-${{ inputs.days }}-comparison
+          path: work/benchmark/comparison.json

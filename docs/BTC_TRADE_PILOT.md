@@ -1,5 +1,9 @@
 # BTC raw-trade pilot
 
+The bounded GUI/worker integration is now implemented separately in
+[BTC_SUBSECOND_GUI.md](BTC_SUBSECOND_GUI.md), including millisecond clocks and
+full audits. This document records the original one-second research runner.
+
 The matched day now also has a lossless Parquet conversion and bounded replay
 reader. See [BTC_TRADE_STORAGE.md](BTC_TRADE_STORAGE.md) for measurements,
 reproduction, immutable GCS publication tooling and remaining cloud-access gates.
@@ -166,12 +170,13 @@ valuation references. This research-only addition was not a repeat of the full
 90-day API/XLSX acceptance. The earlier roll-test/FastAPI/generated-copy caveats
 and their resolution remain in `BTC_MINUTE_VALIDATION.md`.
 
-## Before GUI or long-window activation
+## Original activation gates and remaining long-window work
 
 - Review participation, cancel/replace, capital, fees and latency assumptions
   before introducing this model as a GUI option.
-- Integrate events with the production worker/audit/export lifecycle. Changing
-  the interval field cannot turn the active minute data into one-second data.
+- GUI/worker integration now uses an explicit trade data source with bounded
+  windows, audit chunks and CSV export. Changing only the candle interval still
+  cannot turn minute data into second/subsecond data.
 - Measure more matched days before extrapolating futures activity or scaling
   audits to years. A 90-day one-second clock has 7,776,000 decisions, about 60
   times the minute count.

@@ -25,7 +25,7 @@ test("Run waits for saved-result restoration as well as server readiness", async
   const handler=html.split('\n').find(line=>line.startsWith('worker.onmessage='));
   let finishRestore;
   const context={worker:{},workerReady:false,button:{disabled:true},status:{},
-    parametersReady:Promise.resolve(),resultsReady:new Promise(resolve=>{finishRestore=resolve}),
+    backtestRuns:{start:()=>{}},parametersReady:Promise.resolve(),resultsReady:new Promise(resolve=>{finishRestore=resolve}),
     $:()=>({}),pending:new Map()};
   vm.runInNewContext(handler,context);
   const ready=context.worker.onmessage({data:{type:'ready',engine:'server'}});
@@ -611,6 +611,8 @@ test("backtest UTC boundaries persist and older presets clear a previous range",
   context.applyParameters({backtest_start:'2026-06-25T03:00:00+03:00',backtest_end:'2026-06-26'});
   assert.equal(fields.get('backtest_start').value,'2026-06-25T00:00:00');
   assert.equal(fields.get('backtest_end').value,'2026-06-26T00:00:00');
+  context.applyParameters({backtest_start:'2026-06-25T03:00:00.123+03:00'});
+  assert.equal(fields.get('backtest_start').value,'2026-06-25T00:00:00.123');
   context.applyParameters({});
   assert.equal(fields.get('backtest_start').value,'');
   assert.equal(fields.get('backtest_end').value,'');

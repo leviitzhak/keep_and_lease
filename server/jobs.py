@@ -76,6 +76,11 @@ class JobStore:
         with self._lock:
             return self._jobs.get(job_id)
 
+    def list_jobs(self, owner_id=None, limit=50, before=None):
+        from .job_models import history_page
+        with self._lock:
+            return history_page(self._jobs.values(), owner_id, limit, before)
+
     def latest_completed(self, owner_id: str | None = None) -> Job | None:
         """Return the most recently completed in-process job, if any."""
         with self._lock:

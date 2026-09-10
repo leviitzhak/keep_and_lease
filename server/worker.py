@@ -93,6 +93,7 @@ class WorkerRunner:
             try:
                 provenance = self.engine.provenance()
                 for key in (
+                    "trade_manifest_sha256",
                     "application_version",
                     "engine_commit",
                     "data_manifest_hash",
@@ -113,12 +114,21 @@ class WorkerRunner:
                 metadata = {"engine_commit": str(provenance.get("engine_commit", "unknown")),
                             "data_manifest_hash": str(provenance.get("data_manifest_hash", "unknown")),
                             "parameter_hash": job.parameter_hash}
+                if job.parameters.get("btc_data_source") == "trade_tape" and hasattr(self.results, "recover_result"):
+                    stored = self.results.recover_result(job_id, metadata)
+                    if stored is not None:
+                        check_cancelled()
+                        self.repository.complete(job_id, lease_owner, stored, peak_rss_mb(),
+                                                 {"recovered_result": time.monotonic()-started}, provenance)
+                        return 0
                 if hasattr(self.engine, "run_backtest_with_audit") and hasattr(self.results, "audit_store"):
                     from backtest_audit import AuditCollection
                     audit = AuditCollection(self.results.audit_store(job_id, metadata),
                         base_url=f"/api/v1/backtests/{job_id}/audit",
                         provenance={**provenance, "parameter_hash": job.parameter_hash,
                                     "parameters": job.parameters}, check_cancelled=check_cancelled)
+                    if job.parameters.get("btc_data_source") == "trade_tape" and hasattr(self.results, "checkpoint_store"):
+                        audit.checkpoints = self.results.checkpoint_store(job_id)
                     result = self.engine.run_backtest_with_audit(job.parameters, audit, progress)
                 else:
                     result = self.engine.run_backtest(job.parameters, progress)

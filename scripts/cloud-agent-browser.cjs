@@ -10,6 +10,7 @@ async function main() {
   const outputDir = process.env.KEEP_AND_LEASE_OUTPUT_DIR;
   const expectedCommit = process.env.KEEP_AND_LEASE_EXPECTED_COMMIT || "";
   const runSmokeStrategy = process.env.KEEP_AND_LEASE_RUN_SMOKE_STRATEGY === "true";
+  const runSubsecond = process.env.KEEP_AND_LEASE_RUN_SUBSECOND === "true";
   const runBtcAudit = process.env.KEEP_AND_LEASE_RUN_BTC_AUDIT === "true";
   if (!webUri || !token || !outputDir) {
     throw new Error("KEEP_AND_LEASE_WEB_URI, KEEP_AND_LEASE_ID_TOKEN, and KEEP_AND_LEASE_OUTPUT_DIR are required");
@@ -41,6 +42,7 @@ async function main() {
   const consoleMessages = [];
   const pageErrors = [];
   const failedRequests = [];
+  const verifiedDownloadPaths = new Set();
   let responseStatus = null;
   let documentState = null;
   let strategy = null;
@@ -93,6 +95,7 @@ async function main() {
     }
 
     if (runSmokeStrategy || runBtcAudit) {
+      await page.selectOption('[name="btc_data_source"]', "minute");
       let submittedJobId = null;
       const observedResultResponses = new Map();
       let settleResultResponse;
@@ -157,6 +160,8 @@ async function main() {
       if (!/^[0-9a-f]{32}$/.test(submission.job_id || "")) {
         throw new Error("Backtest submission did not return a valid job ID");
       }
+      await page.waitForFunction(() => !document.querySelector('#run').disabled, null, {timeout:30000});
+      await page.locator('#backtestRuns [data-job-id="'+submission.job_id+'"]').waitFor();
       submittedJobId = submission.job_id;
       if (observedResultResponses.has(submittedJobId)) {
         settleResultResponse(observedResultResponses.get(submittedJobId));
@@ -314,13 +319,111 @@ async function main() {
       }
     }
 
+    if (runSubsecond) {
+      await page.selectOption('[name="btc_data_source"]', 'trade_tape');
+      await page.click('#loadTradeExample');
+      const resultResponse = page.waitForResponse(r => /\/api\/v1\/backtests\/[0-9a-f]{32}\/result$/.test(new URL(r.url()).pathname), {timeout: 15*60*1000});
+      await page.click('#run');
+      const response = await resultResponse;
+      if (!response.ok()) throw Error('Trade replay result HTTP '+response.status());
+      const result = await response.json();
+      if (result.result_kind !== 'btc_trade_replay' || result.trade_replay.interval_seconds !== .5 || result.trade_replay.market_events !== 12006 || result.summary.observations !== 600) throw Error('Unexpected 500 ms trade replay coverage');
+      if (Math.abs(result.summary.compounded_return - 0.023825048740855337) > 1e-8) throw Error('GCS trade replay differs from local financial result');
+      if (!['9c05efc03118699303e7a55e14205bed29783683a85c165f99319dd3fabc055d', '52ef7ab51def1e37fc774f96bd94697ed90ad286d6885c72f69de84c285c9912'].includes(result.trade_replay.manifest_sha256)) throw Error('Wrong immutable trade dataset');
+      await page.waitForSelector('#tradeReplayResults', {state:'visible'});
+      await page.waitForFunction(()=>!document.querySelector('#run').disabled);
+      const csvDownload = page.waitForEvent('download');
+      await page.click('#tradeReplayCsv');
+      const download = await csvDownload;
+      const csvPath = path.join(outputDir,'btc-trade-valuations.csv');
+      await download.saveAs(csvPath);
+      if (fs.readFileSync(csvPath,'utf8').trim().split('\n').length !== 601) throw Error('Valuation CSV lost rows');
+      verifiedDownloadPaths.add(new URL(download.url()).pathname);
+      const entry=result.audit.datasets.btc_trade_events.chunks[0];
+      const auditResponse=await page.evaluate(async url=>{const r=await fetch(url);return {status:r.status,body:await r.json()};},result.audit.base_url+'/btc_trade_events/'+entry.index);
+      if(auditResponse.status!==200||auditResponse.body.rows.length!==entry.rows)throw Error('Trade audit chunk failed');
+      await page.locator('#tradeReplayNav').hover({position:{x:120,y:100}});
+      if(!(await page.locator('#tooltip').isVisible()))throw Error('Trade chart hover failed');
+      fs.writeFileSync(path.join(outputDir,'subsecond.json'),JSON.stringify({summary:result.summary,trade_replay:result.trade_replay,csv_rows:600,audit_chunk_rows:entry.rows},null,2));
+      // Exercise a true millisecond decision clock with fractional UTC bounds.
+      await page.fill('[name="execution_interval_seconds"]','0.001');
+      await page.fill('[name="backtest_start"]','2026-06-25T00:00:00.2');
+      await page.fill('[name="backtest_end"]','2026-06-25T00:00:01.2');
+      const fineResponse=page.waitForResponse(r=>/\/api\/v1\/backtests\/[0-9a-f]{32}\/result$/.test(new URL(r.url()).pathname),{timeout:10*60*1000});
+      await page.click('#run');
+      const fine=await (await fineResponse).json();
+      if(fine.trade_replay?.interval_seconds!==.001||fine.backtest_period.requested_start!=='2026-06-25T00:00:00.200000'||fine.backtest_period.actual_end!=='2026-06-25T00:00:01.200000'||fine.summary.observations<1)throw Error('Millisecond replay or fractional date preservation failed');
+      await page.waitForFunction(()=>!document.querySelector('#run').disabled);
+      fs.writeFileSync(path.join(outputDir,'millisecond.json'),JSON.stringify({summary:fine.summary,trade_replay:fine.trade_replay},null,2));
+      // Reopening the GUI must restore the server history and permit choosing
+      // an older completed result without starting another calculation.
+      const reopened = await context.newPage();
+      try {
+        await reopened.goto(origin, {waitUntil:'domcontentloaded'});
+        await reopened.waitForFunction(()=>!document.querySelector('#run').disabled, null, {timeout:180000});
+        const priorId = new URL(response.url()).pathname.split('/')[4];
+        const savedRow = reopened.locator('#backtestRuns [data-job-id="'+priorId+'"]');
+        await savedRow.waitFor({timeout:30000});
+        await savedRow.getByRole('button', {name:'View results', exact:true}).click();
+        await reopened.waitForFunction(()=>last?.result_kind==='btc_trade_replay' && last.summary.observations===600, null, {timeout:120000});
+        console.log('Durable run history acceptance passed: reopened page selected prior 500 ms results.');
+      } finally { await reopened.close(); }
+      // Invalid coverage is rejected synchronously, before launching a worker.
+      const invalid=await page.evaluate(async p=>{p.backtest_end='2099-01-01';const r=await fetch('/api/v1/backtests',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({parameters:p})});return r.status;},result.parameters);
+      if(invalid!==400)throw Error('Unsupported trade dates were accepted');
+      console.log('Subsecond GUI acceptance passed: 500 ms/GCS equivalence, CSV, audit, hover, and 1 ms fractional window.');
+    }
+
+    if (process.env.KEEP_AND_LEASE_RUN_BENCHMARKS === 'true') {
+      for (const policy of ['sequence','timestamp']) {
+        const row=page.locator('#backtestRuns [data-job-id="benchmark-'+policy+'"]');
+        await row.waitFor({state:'visible',timeout:30000});
+        await row.getByRole('button',{name:'View results',exact:true}).click();
+        await page.waitForFunction(p=>last?.benchmark?.policy===p,policy,{timeout:120000});
+        const evidence=await page.evaluate(()=>({summary:last.summary,points:last.series.length,end:last.series.at(-1),capital:last.trade_replay.capital_usd}));
+        const expected=policy==='sequence'?2.368865899362444:2.368870223927978;
+        if(Math.abs(evidence.summary.ending_nav-expected)>1e-10||Math.abs(evidence.end[1]-expected)>1e-10||evidence.points<1900||evidence.points>2002||evidence.capital!==100000)throw Error('Published benchmark chart/report mismatch: '+policy);
+        const bounds=await page.evaluate(()=>tradePeriod());
+        if(bounds[0]!==evidence.summary.start||bounds[1]!==evidence.summary.end)throw Error('Default export bounds lost microsecond precision');
+        if(!(await page.locator('#backtestRuns').isVisible()))throw Error('Run history hidden by replay charts');
+        console.log('Published 90-day benchmark GUI verified: '+policy+' · '+evidence.points+' chart points · NAV '+evidence.summary.ending_nav);
+      }
+      await page.fill('#tradeExportStart','2026-06-06T00:00:01');
+      await page.fill('#tradeExportEnd','2026-06-06T00:00:06');
+      const workbookDownload=page.waitForEvent('download',{timeout:120000});
+      await page.click('#tradeSpreadsheet');
+      const downloaded=await workbookDownload;
+      const exportPath=path.join(outputDir,'benchmark-period.xlsx');
+      await downloaded.saveAs(exportPath);
+      // Independent ZIP/XML verification of the actual GUI download.
+      require('child_process').execFileSync('python',['-c',`
+import zipfile,xml.etree.ElementTree as E,sys
+with zipfile.ZipFile(sys.argv[1]) as z:
+ assert z.testzip() is None
+ ns={'m':'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
+ root=E.fromstring(z.read('xl/worksheets/sheet2.xml'))
+ rows=root.findall('m:sheetData/m:row',ns)[1:]
+ assert len(rows)==11, len(rows)
+ dates=[r.find('m:c/m:is/m:t',ns).text for r in rows]
+ assert dates[0]=='2026-06-06T00:00:01.000000' and dates[-1]=='2026-06-06T00:00:06.000000', dates
+ assert root.find(".//m:c[@r='D2']/m:f",ns).text=='B2-C2'
+ for name in z.namelist(): E.fromstring(z.read(name))
+print('Published benchmark period workbook verified: 11 exact valuations, valid XLSX, formulas and events')
+`,exportPath],{stdio:'inherit'});
+      // Only exempt the attachment request after its downloaded workbook passed
+      // independent ZIP, row-count, time-bound and formula verification.
+      verifiedDownloadPaths.add('/api/v1/benchmarks/timestamp/spreadsheet');
+    }
+
     const sameOriginFailures = failedRequests.filter((request) => {
       try {
         const target = new URL(request.url);
         const optionalRestoreWasAborted = request.method === "GET"
           && target.pathname === "/api/v1/backtests/latest"
           && request.error === "net::ERR_ABORTED";
-        return target.origin === origin && !optionalRestoreWasAborted;
+        const verifiedDownload = request.method === "GET"
+          && verifiedDownloadPaths.has(target.pathname) && request.error === "net::ERR_ABORTED";
+        return target.origin === origin && !optionalRestoreWasAborted && !verifiedDownload;
       } catch {
         return false;
       }

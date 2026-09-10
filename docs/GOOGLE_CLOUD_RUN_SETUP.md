@@ -138,6 +138,32 @@ Cloud Run has no automatic worker retry initially. Result creation is immutable,
 but a complete retry/reconciliation policy must be proven before enabling platform
 retries.
 
+## Durable run history
+
+`GET /api/v1/backtests?limit=50&before=<job_id>` returns owner-scoped newest-first
+history (maximum 100 entries per response, stable creation-time/ID cursor).
+`next_cursor` is null at the end. Cursor access is owner-checked. Result bodies,
+full logs and provenance are excluded from list responses; status and result
+endpoints remain available for individual jobs. The current Firestore adapter
+uses the existing owner equality index and sorts that owner's metadata in memory,
+avoiding cross-owner scans and new composite-index requirements. Read cost grows
+with the owner's history; large installations should migrate this to an indexed
+owner/creation-time cursor query. No saved jobs are silently deleted by pagination. The existing 90-day result
+bucket lifecycle is unchanged: Firestore metadata can outlive result/audit objects,
+and expired results are no longer downloadable. Permanent archival/pinning would
+require a separate retention-policy change.
+
+The GUI submits independently of result polling, so multiple distinct cloud jobs
+can run concurrently. Cloud Run task count/parallelism apply within each execution,
+not across all GUI requests. Workers run with the browser closed; Firestore/GCS
+retain progress/results across web instance changes. See `BTC_SUBSECOND_GUI.md`.
+
+Audit manifest readers/writers default to 32 MiB. Set
+`KEEP_AND_LEASE_AUDIT_MANIFEST_MIB` consistently on web/API, worker and standalone
+benchmark processes if changing it (allowed 4–64). Individual chunks remain
+bounded at 8 MiB. This operational budget is outside replay fingerprints, allowing
+existing checkpoints to recover from an index-size finalization failure.
+
 ## Identity boundaries
 
 - The web identity can read/update job metadata, read result objects, and execute or
@@ -552,8 +578,13 @@ bundled inputs are removed.
 
 The BTC raw-trade pilot now implements local Parquet conversion, bounded replay,
 and create-only GCS publication tooling, with raw/normalized equivalence checks.
-See `BTC_TRADE_STORAGE.md`. It has not replaced the production provider; actual
-GCS publication/read access and multi-day checkpoint integration remain gates.
+See `BTC_TRADE_STORAGE.md`. GCS publication/read validation has passed. The
+optional bounded GUI trade source now reads the pinned immutable manifest and
+streams audit chunks directly to the existing result bucket; the worker adds
+Arrow 25.0.0. No CPU, RAM, timeout or IAM changes are required for the bounded
+examples. The deployment smoke test covers 500 ms and 1 ms GUI runs from GCS.
+See `BTC_SUBSECOND_GUI.md`; hourly checkpoints and durable resume are implemented; 90-day activation
+remains gated on `BTC_90_DAY_EXECUTION.md`.
 
 The synchronous `POST /api/v1/inspections` endpoint also remains local/Render-only;
 the scale-to-zero web service returns `503` because it must not load full market
@@ -623,3 +654,14 @@ audit coverage. Cold market initialization still loads the packaged history.
 The separate [bounded GCS pilot](BTC_TRADE_STORAGE.md#running-the-bounded-cloud-pilot)
 uses the owner's newly granted market-bucket roles and the existing operator OIDC
 identity; it does not change the GUI market provider or cloud resource limits.
+
+## Long BTC preview profiles
+
+Deployment plans explicitly load `infra/gcp/workloads/profiles/<target>.tfvars.json`.
+Preview pins the verified 90-day trade range and permits 16 million decisions,
+with 1 vCPU, 4 GiB and a 24-hour task timeout. Stable retains the pilot profile.
+CPU, memory and task timeout are independently configurable; validation allows
+a maximum seven-day task, but higher budgets require measured evidence. The
+web request timeout is unrelated to asynchronous worker duration. Automatic
+worker retries remain off; stopped executions use owner-scoped checkpoint resume.
+See BTC_BACKTEST_DATA_STATUS.md for benchmark limits and extension semantics.

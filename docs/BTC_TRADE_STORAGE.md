@@ -1,8 +1,8 @@
 # Immutable BTC trade storage: pilot implementation
 
 The first storage phase converts the verified 25 June 2026 raw-trade pilot into
-Parquet and reads it through the existing research account. It remains separate
-from the production GUI minute provider. The original silver/BTC strategies and
+Parquet and reads it through the existing research account. The GUI now offers it as an explicit bounded trade-replay source alongside
+the unchanged minute provider; see [BTC_SUBSECOND_GUI.md](BTC_SUBSECOND_GUI.md). The original silver/BTC strategies and
 source archives are preserved. Review: [PR #38](https://github.com/leviitzhak/keep_and_lease/pull/38).
 
 ## Format and identity
@@ -71,8 +71,8 @@ python scripts/check-btc-trade-pilot.py --parquet work/btc-trade-parquet/validat
 Use fresh output paths for reruns. `--data work/no-raw-inputs` demonstrates that
 the Parquet replay does not open the source archives. It still reads the existing
 causal Treasury files and saved strategy. Optional Arrow/storage dependencies are
-isolated in `requirements-trade-data.txt`; production image requirements are not
-changed. The uploader's API-core version matches the cloud stack's documented
+listed in `requirements-trade-data.txt`; the calculation worker now also
+installs Arrow 25.0.0 for GUI trade replay. The uploader's API-core version matches the cloud stack's documented
 Firestore routing fix.
 
 ## Cloud publication
@@ -162,8 +162,9 @@ absent. `npm run prepare:assets` was run before fresh-process tests; the prior
 full API/workbook acceptance was not repeated for this isolated storage change.
 
 The cloud workflow enforces authenticated immutable upload/read validation. The
-one-day upload and both GCS replays now pass. Preparing production backtests of
-at least 90 days requires the following changes:
+one-day upload and both GCS replays now pass. The ordered production plan for
+at least 90 days is below. Implementation progress and remaining activation
+gates are tracked in [BTC_90_DAY_EXECUTION.md](BTC_90_DAY_EXECUTION.md):
 
 1. Build a resumable multi-day ingestion command. Download and validate each
    venue/day independently, write daily Parquet partitions, and publish a
@@ -201,8 +202,10 @@ at least 90 days requires the following changes:
    exact selected-period boundaries, cancellation/resume, and a measured
    90-day preview run within the configured resource and output limits.
 
-The current research runner still explicitly accepts one UTC day. Production
-worker and GUI activation remain after these gates.
+The original pilot runner still accepts one UTC day. The range ingestion and
+continuous checkpoint runner now exist; production range activation remains
+after the staged data/performance gates. The one-day bounded
+GUI path is implemented in `BTC_SUBSECOND_GUI.md`.
 
 ## Giving automation access to the bucket
 
@@ -267,7 +270,8 @@ its normal GCP preview acceptance. The existing health/GUI operator is unchanged
 
 Use the GUI's [period controls](BACKTEST_PERIOD.md) for shorter minute-engine
 runs. The uploaded raw-trade period is tested directly from GCS by the research
-runner; this does not activate a one-second GUI provider or download 90 days.
+runner; the optional one-day GUI provider is now documented in
+`BTC_SUBSECOND_GUI.md`. No 90-day trade dataset is activated.
 
 
 ### Bounded remote read cache
@@ -281,3 +285,16 @@ strategy clock and accounting. Cache tests check exact decoded events, eviction,
 EOF, seeks and the retained-byte bound; the full pilot comparison verifies all
 5,739,608 events against the original local reader. Live timings are recorded
 with the cloud validation outcome in PR #38.
+
+
+### Discrepancy-aware range recovery
+
+The feature branch retains the existing Parquet schema and immutable daily data.
+New raw futures ingestion archives endpoint-response and anomaly evidence;
+conversion validates sequence identity before sorting by reported timestamp.
+Sequence-mode replay builds a bounded disk index of futures for the whole pinned
+range; spot remains streamed. This is additional preparation beyond selected-day
+reads, measured by the staged benchmark. Recovery can reuse the 77 previously
+successful daily receipts instead of downloading their spot/futures again.
+See [BTC_90_DAY_EXECUTION.md](BTC_90_DAY_EXECUTION.md) for exact assumptions and
+for the distinction between original-day validation and new envelope checks.
