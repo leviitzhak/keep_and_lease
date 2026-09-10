@@ -98,7 +98,8 @@ def validate(payload, *, coverage=None):
         raise ValueError("Trade participation must be greater than zero")
     interval = milliseconds(payload.get("execution_interval_seconds", 0), "Execution interval", 1)
     delay = milliseconds(merged.get("execution_delay_seconds", 0), "Execution delay")
-    capital = gui.number(payload, "trade_initial_capital_usd", 1, .000001)
+    capital = gui.number(payload, "trade_initial_capital_usd", 100000, .000001)
+    plot_max_points = int(gui.number(payload, "trade_plot_max_points", 3000, 500, 10000))
     coverage = coverage or catalog()
     lo, hi = gui.backtest_bounds(payload)
     start, end = us_time(lo.isoformat() if lo else coverage["start"]), us_time(hi.isoformat() if hi else coverage["end"])
@@ -107,12 +108,14 @@ def validate(payload, *, coverage=None):
     limit = coverage["maximum_decisions"]
     if math.ceil((end - start) / interval) > limit:
         raise ValueError(f"Trade replay permits at most {limit:,} decisions; shorten the period to at most {limit * interval / 1e6:g} seconds or increase the interval")
-    return p, start, end, interval, delay, capital
+    return p, start, end, interval, delay, capital, plot_max_points
 
 
 def run(payload, data_root, audit_collection, progress=None, *, store=None, coverage=None):
-    p, start, end, interval, delay, capital = validate(payload, coverage=coverage)
+    p, start, end, interval, delay, capital, plot_max_points = validate(payload, coverage=coverage)
     notify = progress or (lambda *_: None)
+    planned_decisions = math.ceil((end - start) / interval)
+    notify("trade_plan", f"Planned {planned_decisions:,} decision ticks · up to {plot_max_points:,} chart samples · {(end-start)/86400e6:.2f} days")
     notify("loading_trade_data", "Verifying selected immutable BTC daily trade partitions")
     dataset_uri = str(getattr(store, "root", "synthetic-fixture")) if store is not None else catalog().get("uri", DATASET_URI)
     if store is None:
@@ -158,6 +161,8 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
         max_drawdown, direct_drawdown = state["max_drawdown"], state["direct_drawdown"]
         peak, direct_peak, series = state["peak"], state["direct_peak"], state["series"]
         sample_every = state["sample_every"]
+        min_collateralization_ratio = state.get("min_collateralization_ratio", math.inf)
+        collateral_breach_count = state.get("collateral_breach_count", 0)
         tape = iter(store.trades(start_us=previous_tick+1, end_us=end))
         event = next(tape, None)
         notify("resuming_trade_replay", f"Resuming after {iso_time(previous_tick)} UTC")
@@ -199,16 +204,24 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
         previous_nav, previous_tick, previous_allocation = capital, initial_us, None
         max_error = simple = max_drawdown = direct_drawdown = 0.0
         peak, direct_peak = capital, 1.0
+        min_collateralization_ratio, collateral_breach_count = math.inf, 0
         series = []
-        sample_every = max(1, math.ceil((end - start) / interval / 2000))
-    fields = ["date", "nav", "direct_nav", "cash_usd", "spot_value_usd", "futures_notional_usd", "fees_usd", "max_mark_age_seconds"]
-    def point(tick):
+        sample_every = max(1, math.ceil((end - start) / interval / plot_max_points))
+    fields = ["date", "nav", "direct_nav", "cash_usd", "spot_value_usd", "futures_notional_usd",
+              "target_futures_notional_usd", "free_collateral_usd", "collateralization_ratio",
+              "turnover_usd", "fees_usd", "max_mark_age_seconds"]
+    def point(tick, target_notional=None):
         held_ages = [(tick - account.marks[s].us) / 1e6 for s, q in account.units.items() if q > 0]
+        futures_notional = account.collateral
+        free_collateral = account.cash - abs(futures_notional)
+        collateral_ratio = account.cash / abs(futures_notional) if abs(futures_notional) > 1e-14 else None
         return [iso_time(tick), account.nav / capital, account.marks["SPOT"].price / initial_price,
                 account.cash, account.units.get("SPOT", 0) * account.marks["SPOT"].price,
-                account.collateral, account.fees, max(held_ages, default=0)]
+                futures_notional, futures_notional if target_notional is None else target_notional,
+                free_collateral, collateral_ratio, account.turnover, account.fees,
+                max(held_ages, default=0)]
     if not restored:
-        series.append(point(initial_us))
+        series.append(point(initial_us, 0.0))
     last_progress = time.monotonic()
     tick = min(previous_tick + interval, end) if restored else min((initial_us // interval + 1) * interval, end)
     checkpoint_hour = previous_tick // 3_600_000_000
@@ -283,10 +296,12 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
             previous["base_treasury"] = previous_allocation
         desired = strategy.positions_for_day(candidates, p, previous, elapsed_days=(tick-previous_tick)/86400e6)
         targets = None
+        target_futures_notional = account.collateral
         if tick < end:
             decisions += 1
             if desired and tick-account.marks["SPOT"].us <= p.max_quote_age_seconds*1e6:
                 previous_allocation = desired["base_treasury"]
+                target_futures_notional = account.nav * sum(desired["base_longs"].values())
                 targets = {s: w*account.nav/account.marks[s].price for s, w in desired["base_longs"].items()}
                 targets["SPOT"] = desired["slv"]*account.nav/spot
                 account.submit_targets(tick, targets)
@@ -305,6 +320,12 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
         direct = spot/initial_price
         direct_peak = max(direct_peak, direct)
         direct_drawdown = min(direct_drawdown, direct/direct_peak-1)
+        futures_notional = account.collateral
+        free_collateral = account.cash - abs(futures_notional)
+        collateral_ratio = account.cash / abs(futures_notional) if abs(futures_notional) > 1e-14 else None
+        if collateral_ratio is not None:
+            min_collateralization_ratio = min(min_collateralization_ratio, collateral_ratio)
+            collateral_breach_count += int(collateral_ratio < 1 - 1e-9)
         row = dict(kind="valuation", us=tick, date=iso_time(tick), nav_usd=account.nav,
                    cash_usd=account.cash, units=dict(account.units), targets=targets,
                    return_fraction=account.nav/previous_nav-1,
@@ -312,13 +333,16 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
                    mark_us={s: m.us for s, m in account.marks.items()},
                    reported_mark_us={s: m.reported_us if m.reported_us is not None else m.us for s,m in account.marks.items()}, reconstruction_error_usd=error,
                    starting_nav=previous_nav/capital, ending_nav=account.nav/capital,
-                   direct_nav=direct, futures_notional_usd=account.collateral, fees_usd=account.fees)
+                   direct_nav=direct, futures_notional_usd=futures_notional,
+                   target_futures_notional_usd=target_futures_notional,
+                   free_collateral_usd=free_collateral, collateralization_ratio=collateral_ratio,
+                   turnover_usd=account.turnover, fees_usd=account.fees)
         valuations.emit(row)
         if decisions % sample_every == 0 or tick == end:
-            series.append(point(tick))
+            series.append(point(tick, target_futures_notional))
         previous_nav, previous_tick = account.nav, tick
         if time.monotonic() - last_progress > 10:
-            notify("trade_replay", f"{iso_time(tick)} UTC · {decisions:,} decisions · {account.fill_count:,} fills ({100*(tick-start)/(end-start):.2f}%)")
+            notify("trade_replay", f"{iso_time(tick)} UTC · {decisions:,}/{planned_decisions:,} decisions · {account.fill_count:,} fills ({100*(tick-start)/(end-start):.2f}%)")
             last_progress = time.monotonic()
         if journal and tick < end and tick // 3_600_000_000 > checkpoint_hour:
             audit_state = audit_collection.snapshot()
@@ -328,7 +352,9 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
                          previous_tick=previous_tick, previous_allocation=previous_allocation,
                          max_error=max_error, simple=simple, max_drawdown=max_drawdown,
                          direct_drawdown=direct_drawdown, peak=peak, direct_peak=direct_peak,
-                         series=series, sample_every=sample_every)
+                         series=series, sample_every=sample_every,
+                         min_collateralization_ratio=min_collateralization_ratio,
+                         collateral_breach_count=collateral_breach_count)
             journal.save(tick, dict(schema_version=1, identity=identity, account=account.snapshot(),
                                     state=state, audit=audit_state, source_cursor_exclusive_us=tick,
                                     partitions=getattr(store, "accessed_partitions", [])))
@@ -352,6 +378,7 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
     measured["replay_wall"] = time.monotonic()-started
     measured["strategy_and_checkpoint"] = max(0.0, measured["replay_wall"] -
         measured.get("decode_and_merge", 0) - measured["audit_compression"] - measured["audit_write"])
+    final_min_ratio = None if math.isinf(min_collateralization_ratio) else min_collateralization_ratio
     return dict(result_kind="btc_trade_replay", parameters=payload, fields=fields, series=series, audit=audit,
                 backtest_period=dict(actual_start=iso_time(initial_us), actual_end=iso_time(end),
                                      requested_start=iso_time(start), requested_end=iso_time(end)),
@@ -362,12 +389,16 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
                              observations=valuations.count, missing_intervals=0),
                 trade_replay=dict(**provenance, interval_seconds=interval/1e6, delay_seconds=delay/1e6,
                                   capital_usd=capital, participation=p.max_volume_participation,
-                                  decisions=decisions, market_events=count, fills=account.fill_count,
+                                  decisions=decisions, planned_decisions=planned_decisions,
+                                  market_events=count, fills=account.fill_count,
                                   orders=account.order_count, cancelled_remainders=account.cancellation_count,
                                   no_fresh_curve_decisions=no_fresh, warmup_us=initial_us-start,
                                   fees_usd=account.fees, turnover_usd=account.turnover, treasury_interest_usd=account.interest,
                                   max_nav_reconstruction_error_usd=max_error,
-                                  plot_sample_every=sample_every,
+                                  plot_sample_every=sample_every, plot_max_points=plot_max_points,
+                                  min_collateralization_ratio=final_min_ratio,
+                                  minimum_required_collateral_ratio=1.0,
+                                  collateral_breach_count=collateral_breach_count,
                                   resumed_after_us=restored["source_cursor_exclusive_us"] if restored else None,
                                   timings_seconds=measured,
                                   end_mark_age_seconds={s: (end-m.us)/1e6 for s,m in account.marks.items()},
@@ -375,5 +406,6 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
                                                "Deribit inverse quotes as regular USD futures proxy; Binance USDT/USD assumed 1",
                                                "Same-side subsequent prints; strict later timestamp after delay; cancel/replace each decision",
                                                "Long only; 100% USD collateral; fractional lots; causal Treasury accrual",
+                                               "Target futures notional records the desired exposure before observed partial-fill constraints; actual futures notional records filled exposure",
                                                "Stale marks value holdings but cannot create fresh signals; no order-book or synchronized latency model",
                                                "First spot print initializes owned BTC; final NAV is marked, without liquidation"]))
