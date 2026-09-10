@@ -1,8 +1,11 @@
+import gzip
+import math
 import unittest
 
 from fastapi.testclient import TestClient
 
 import btc_trade_backtest as replay
+from replay_checkpoints import decode, encode
 from server.app import create_app
 from server.strategy_catalog import install
 from tests.test_btc_trade_backtest import payload
@@ -37,6 +40,18 @@ class CurrentRuntimeImprovementsTests(unittest.TestCase):
             parameters['trade_plot_max_points'] = value
             with self.subTest(value=value), self.assertRaises(ValueError):
                 replay.validate(parameters)
+
+    def test_checkpoint_infinity_sentinel_uses_strict_json_and_roundtrips(self):
+        encoded = encode({'minimum': math.inf, 'negative': -math.inf, 'finite': 1.25})
+        raw = gzip.decompress(encoded)
+        self.assertNotIn(b'Infinity', raw)
+        self.assertNotIn(b'NaN', raw)
+        restored = decode(encoded)
+        self.assertEqual(restored['minimum'], math.inf)
+        self.assertEqual(restored['negative'], -math.inf)
+        self.assertEqual(restored['finite'], 1.25)
+        with self.assertRaisesRegex(ValueError, 'NaN'):
+            encode({'invalid': math.nan})
 
 
 if __name__ == '__main__':
