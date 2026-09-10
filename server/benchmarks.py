@@ -10,7 +10,7 @@ from backtest_audit import load_manifest, read_chunk
 from replay_checkpoints import decode
 
 BUCKET = "keep-and-lease-market-data"
-MANIFEST = "52ef7ab51def1e37fc774f96bd94697ed90ad2866885c72f69de84c285c9912"
+MANIFEST = "52ef7ab51def1e37fc774f96bd94697ed90ad286d6885c72f69de84c285c9912"
 RUNS = {"sequence": "d7afa21dd9da7d3b1b4ab15efe639ed4",
         "timestamp": "e2e5ea42cb21f82926deb6d0ef9a3877"}
 FIELDS = ["date", "nav", "direct_nav", "cash_usd", "spot_value_usd",
@@ -30,6 +30,22 @@ def catalog():
                  status="completed", is_benchmark=True, created_at=1788979260,
                  parameters=parameters(policy), detail="Completed research benchmark · zero-cost baseline",
                  result_url=f"/api/v1/benchmarks/{policy}/result") for policy in RUNS]
+
+
+def report_identity_mismatches(report, policy, digest):
+    """Describe immutable publication mismatches without weakening any gate."""
+    expected = {
+        "manifest_sha256": MANIFEST,
+        "ordering": policy,
+        "days": 90,
+        "interval_seconds": 0.5,
+        "strategy_parameters_sha256": digest,
+    }
+    return {
+        key: {"stored": report.get(key), "expected": value}
+        for key, value in expected.items()
+        if report.get(key) != value
+    }
 
 
 class BenchmarkService:
@@ -67,10 +83,11 @@ class BenchmarkService:
         report = json.loads(self.read(prefix + "/benchmark-report.json"))
         payload = parameters(policy)
         digest = hashlib.sha256(json.dumps({k: v for k, v in payload.items() if k != "trade_ordering"}, sort_keys=True).encode()).hexdigest()
-        if (report["manifest_sha256"] != MANIFEST or report["ordering"] != policy or
-                report["days"] != 90 or report["interval_seconds"] != .5 or
-                report["strategy_parameters_sha256"] != digest):
-            raise ValueError("Benchmark report does not match the published dataset and parameters")
+        mismatches = report_identity_mismatches(report, policy, digest)
+        if mismatches:
+            raise ValueError(
+                "Benchmark report does not match the published dataset and parameters: "
+                + json.dumps(mismatches, sort_keys=True, separators=(",", ":")))
         store = self.audit_store(policy)
         manifest = load_manifest(store)
         if manifest["provenance"]["trade_data"]["manifest_sha256"] != MANIFEST:
