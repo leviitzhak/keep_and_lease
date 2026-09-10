@@ -244,7 +244,11 @@ The API exposes only the two allowlisted fixtures at `/api/v1/benchmarks` and
 XLSX uses `/spreadsheet?start=<UTC>&end=<UTC>`. The same period XLSX endpoint is
 available for owner-authorized `/api/v1/backtests/{id}` trade replay jobs.
 The web identity receives read-only access restricted to the two published GCS
-job prefixes. Preview Terraform owns the shared identity's conditional binding.
+job prefixes. Foundation Terraform owns the shared identity's conditional binding. The normal
+workload deployment account cannot edit market-bucket IAM. An owner must apply
+that foundation delta or run `bash scripts/grant-benchmark-read-access.sh` once
+from an authenticated Cloud Shell. No additional permissions are granted to the
+GitHub deployment account.
 Private user jobs cannot be accessed through the benchmark routes.
 
 Chart recovery validates the report's market manifest and parameter hashes,
@@ -255,3 +259,11 @@ existing audit/checkpoint objects. The two recovered results/manifests are cache
 per web process. Missing/corrupt objects are reported rather than replaced by
 new calculations. Benchmark parameter JSON is packaged with the server and must
 continue to match the original report hash.
+
+
+Deployment status: the first September 10 integration deployment installed the
+code but failed to create its bucket IAM binding, because the deployment account
+lacks `storage.buckets.getIamPolicy`. The binding was moved from workload state
+to foundation state. Live benchmark loading and the real-period export check
+remain blocked until the owner applies the scoped read grant. Local API/UI and
+XLSX verification passed; this is not yet a verified live integration.

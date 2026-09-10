@@ -128,3 +128,9 @@ integration, reconstructed chart samples and selected-UTC-period XLSX exports.
 No strategy rerun is needed to inspect them. Exports include full-resolution
 valuations, quantities, order/fill events, original parameters and assumptions,
 with streaming download progress and cancellation. See `BTC_SUBSECOND_GUI.md`.
+
+
+Live activation requires the owner to grant the web identity read access to the
+two published benchmark prefixes. The deployment account cannot modify bucket
+IAM; use the foundation delta or `scripts/grant-benchmark-read-access.sh`.
+Deployed benchmark/export acceptance is pending that grant.

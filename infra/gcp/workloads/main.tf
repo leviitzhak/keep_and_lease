@@ -29,20 +29,6 @@ locals {
   cache_collection       = local.preview ? "backtest_cache_preview" : "backtest_cache"
 }
 
-# Published, fixed research fixtures only. This grants no access to user results
-# or arbitrary market-bucket jobs. The shared web identity serves both targets;
-# preview owns this one binding so stable/preview states never compete over it.
-resource "google_storage_bucket_iam_member" "web_published_benchmarks" {
-  count  = local.preview ? 1 : 0
-  bucket = local.market_data_bucket
-  role   = "roles/storage.objectViewer"
-  member = "serviceAccount:${local.web_service_account}"
-  condition {
-    title      = "published_btc_90day_benchmarks"
-    expression = "resource.name.startsWith('projects/_/buckets/${local.market_data_bucket}/objects/jobs/d7afa21dd9da7d3b1b4ab15efe639ed4/') || resource.name.startsWith('projects/_/buckets/${local.market_data_bucket}/objects/jobs/e2e5ea42cb21f82926deb6d0ef9a3877/')"
-  }
-}
-
 resource "google_cloud_run_v2_job" "calculation" {
   name                = "${local.prefix}-calculation"
   location            = var.region

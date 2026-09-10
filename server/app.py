@@ -57,10 +57,15 @@ def create_app(
 
     def benchmark_data(policy):
         from .benchmarks import RUNS
+        from google.api_core.exceptions import Forbidden, NotFound
         if policy not in RUNS:
             raise HTTPException(404, "Unknown published benchmark")
         try:
             return benchmarks().load(policy)
+        except Forbidden:
+            raise HTTPException(403, "Published benchmark access is not configured. The owner must grant the web service read access to the two benchmark folders.") from None
+        except NotFound:
+            raise HTTPException(404, "A published benchmark report, checkpoint or audit object is unavailable") from None
         except (KeyError, FileNotFoundError, ValueError) as exc:
             raise HTTPException(409, "Stored benchmark could not be loaded: " + str(exc)) from None
 
