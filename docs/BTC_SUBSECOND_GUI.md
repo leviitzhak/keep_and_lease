@@ -261,9 +261,9 @@ new calculations. Benchmark parameter JSON is packaged with the server and must
 continue to match the original report hash.
 
 
-Deployment status: the first September 10 integration deployment installed the
-code but failed to create its bucket IAM binding, because the deployment account
-lacks `storage.buckets.getIamPolicy`. The binding was moved from workload state
-to foundation state. Live benchmark loading and the real-period export check
-remain blocked until the owner applies the scoped read grant. Local API/UI and
-XLSX verification passed; this is not yet a verified live integration.
+Live checks on September 10 confirmed access to both real benchmarks, 2,001
+chart points per policy, final NAV/report agreement, and a downloaded five-second
+XLSX with exactly 11 valuations. The subsequent patch preserves exact microsecond
+run endpoints while displaying browser-supported millisecond date inputs. It
+also recognizes the attachment request as successful only after independent
+workbook validation; other aborted requests still fail the smoke test.

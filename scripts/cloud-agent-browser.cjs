@@ -383,6 +383,8 @@ async function main() {
         const evidence=await page.evaluate(()=>({summary:last.summary,points:last.series.length,end:last.series.at(-1),capital:last.trade_replay.capital_usd}));
         const expected=policy==='sequence'?2.368865899362444:2.368870223927978;
         if(Math.abs(evidence.summary.ending_nav-expected)>1e-10||Math.abs(evidence.end[1]-expected)>1e-10||evidence.points<1900||evidence.points>2002||evidence.capital!==100000)throw Error('Published benchmark chart/report mismatch: '+policy);
+        const bounds=await page.evaluate(()=>tradePeriod());
+        if(bounds[0]!==evidence.summary.start||bounds[1]!==evidence.summary.end)throw Error('Default export bounds lost microsecond precision');
         if(!(await page.locator('#backtestRuns').isVisible()))throw Error('Run history hidden by replay charts');
         console.log('Published 90-day benchmark GUI verified: '+policy+' · '+evidence.points+' chart points · NAV '+evidence.summary.ending_nav);
       }
@@ -408,6 +410,9 @@ with zipfile.ZipFile(sys.argv[1]) as z:
  for name in z.namelist(): E.fromstring(z.read(name))
 print('Published benchmark period workbook verified: 11 exact valuations, valid XLSX, formulas and events')
 `,exportPath],{stdio:'inherit'});
+      // Only exempt the attachment request after its downloaded workbook passed
+      // independent ZIP, row-count, time-bound and formula verification.
+      verifiedDownloadPaths.add('/api/v1/benchmarks/timestamp/spreadsheet');
     }
 
     const sameOriginFailures = failedRequests.filter((request) => {

@@ -133,4 +133,6 @@ with streaming download progress and cancellation. See `BTC_SUBSECOND_GUI.md`.
 Live activation requires the owner to grant the web identity read access to the
 two published benchmark prefixes. The deployment account cannot modify bucket
 IAM; use the foundation delta or `scripts/grant-benchmark-read-access.sh`.
-Deployed benchmark/export acceptance is pending that grant.
+The owner applied the grant. Live checks confirmed both benchmark NAVs and
+a five-second XLSX with 11 exact valuation rows; final smoke verification also
+covers native date-input precision and the validated attachment request.

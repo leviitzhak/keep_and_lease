@@ -706,9 +706,9 @@ let tradePeriodResult=null,tradeChartBounds=null,tradeExportController=null;
 function initializeTradePeriod(){
  if(tradePeriodResult===last)return;
  tradeExportController?.abort();tradePeriodResult=last;tradeChartBounds=null;
- for(const [id,key] of [['tradeExportStart','start'],['tradeExportEnd','end']]){const input=$(id);input.value=last.summary[key];input.min=last.summary.start;input.max=last.summary.end;}
+ for(const [id,key] of [['tradeExportStart','start'],['tradeExportEnd','end']]){const input=$(id);input.value=last.summary[key].slice(0,23);input.min=last.summary.start.slice(0,23);input.max=last.summary.end.slice(0,23);}
  $('tradeApplyPeriod').onclick=()=>{try{const bounds=tradePeriod();if(last.series.filter(r=>r[0]>=bounds[0]&&r[0]<=bounds[1]).length<2)throw Error('This interval is shorter than the saved chart sampling. Its full-resolution spreadsheet is still available.');tradeChartBounds=bounds;drawTradeReplay();$('tradeExportProgress').textContent='Charts show sampled observations in the selected UTC period.';}catch(e){$('tradeExportProgress').textContent=e.message;}};
- $('tradeFullPeriod').onclick=()=>{tradeChartBounds=null;$('tradeExportStart').value=last.summary.start;$('tradeExportEnd').value=last.summary.end;drawTradeReplay();$('tradeExportProgress').textContent='Full run shown.';};
+ $('tradeFullPeriod').onclick=()=>{tradeChartBounds=null;$('tradeExportStart').value=last.summary.start.slice(0,23);$('tradeExportEnd').value=last.summary.end.slice(0,23);drawTradeReplay();$('tradeExportProgress').textContent='Full run shown.';};
  $('tradeSpreadsheet').onclick=downloadTradeSpreadsheet;
  $('tradeCancelExport').onclick=()=>tradeExportController?.abort();
  $('tradeExportProgress').textContent='For detailed exports, select the period you want to inspect.';
@@ -717,6 +717,8 @@ function tradePeriod(){
  const values=[$('tradeExportStart').value,$('tradeExportEnd').value];
  const normalize=s=>{if(!s)throw Error('Enter both UTC bounds.');const [d,t]=s.split('T');const parts=t.split('.');return d+'T'+parts[0]+(parts[0].length===5?':00':'')+'.'+(parts[1]||'').padEnd(6,'0');};
  const bounds=values.map(normalize);
+ // Native datetime inputs support milliseconds; preserve exact saved endpoints.
+ for(const [i,key] of [[0,'start'],[1,'end']])if(bounds[i]===normalize(last.summary[key].slice(0,23)))bounds[i]=last.summary[key];
  if(!(bounds[0]<bounds[1])||bounds[0]<last.summary.start||bounds[1]>last.summary.end)throw Error('Choose an increasing UTC period inside this completed run.');
  return bounds;
 }
