@@ -121,17 +121,24 @@ class WorkerRunner:
                         self.repository.complete(job_id, lease_owner, stored, peak_rss_mb(),
                                                  {"recovered_result": time.monotonic()-started}, provenance)
                         return 0
+                from .replay_extensions import engine_parameters
+                calculation_parameters = engine_parameters(job.parameters)
                 if hasattr(self.engine, "run_backtest_with_audit") and hasattr(self.results, "audit_store"):
                     from backtest_audit import AuditCollection
                     audit = AuditCollection(self.results.audit_store(job_id, metadata),
                         base_url=f"/api/v1/backtests/{job_id}/audit",
                         provenance={**provenance, "parameter_hash": job.parameter_hash,
-                                    "parameters": job.parameters}, check_cancelled=check_cancelled)
+                                    "parameters": calculation_parameters}, check_cancelled=check_cancelled)
                     if job.parameters.get("btc_data_source") == "trade_tape" and hasattr(self.results, "checkpoint_store"):
                         audit.checkpoints = self.results.checkpoint_store(job_id)
-                    result = self.engine.run_backtest_with_audit(job.parameters, audit, progress)
+                    if job.parameters.get("__keep_and_lease_extension_parent_job_id"):
+                        from .replay_extensions import seed_extension
+                        calculation_parameters = seed_extension(
+                            job, self.repository, self.results, self.engine, audit, progress
+                        )
+                    result = self.engine.run_backtest_with_audit(calculation_parameters, audit, progress)
                 else:
-                    result = self.engine.run_backtest(job.parameters, progress)
+                    result = self.engine.run_backtest(calculation_parameters, progress)
                 close_stage("encoding_result")
                 self.repository.progress(
                     job_id, lease_owner, "encoding_result", "Encoding the result as strict JSON"
