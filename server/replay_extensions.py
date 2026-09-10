@@ -45,6 +45,11 @@ def install(app) -> None:
             raise HTTPException(409, "Only a completed BTC trade replay can be extended")
         if parent.provenance != service.provenance:
             raise HTTPException(409, "Extension requires the original deployed engine and data revision")
+        if not hasattr(service.results, "checkpoint_store") or service.results.checkpoint_store(parent.id).latest() is None:
+            raise HTTPException(
+                409,
+                "This completed replay has no durable checkpoint to extend from; start a fresh run with the later end",
+            )
 
         from btc_trade_backtest import catalog, us_time, validate
         old_parameters = engine_parameters(parent.parameters)
