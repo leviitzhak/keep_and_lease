@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Query, Request, Response, status
@@ -29,6 +30,7 @@ class InspectionRequest(BacktestRequest):
 def create_app(
     engine: StrategyEngine | None = None,
     job_service: Any | None = None,
+    benchmark_service: Any | None = None,
 ) -> FastAPI:
     cloud_mode = os.getenv("KEEP_AND_LEASE_JOB_BACKEND", "local") == "cloud"
     calculation_engine = engine
@@ -42,6 +44,36 @@ def create_app(
     app = FastAPI(title="Keep & Lease computation API", version="1.0.0")
     app.state.engine = calculation_engine
     app.state.jobs = job_service
+    export_slots = threading.BoundedSemaphore(2)
+    def benchmarks():
+        nonlocal benchmark_service
+        if benchmark_service is None:
+            if not cloud_mode:
+                raise HTTPException(404, "Published benchmarks require the GCP server")
+            from google.cloud import storage
+            from .benchmarks import BenchmarkService, BUCKET
+            benchmark_service = BenchmarkService(storage.Client().bucket(BUCKET))
+        return benchmark_service
+
+    def benchmark_data(policy):
+        from .benchmarks import RUNS
+        if policy not in RUNS:
+            raise HTTPException(404, "Unknown published benchmark")
+        try:
+            return benchmarks().load(policy)
+        except (KeyError, FileNotFoundError, ValueError) as exc:
+            raise HTTPException(409, "Stored benchmark could not be loaded: " + str(exc)) from None
+
+    @app.get("/api/v1/benchmarks")
+    def benchmark_history(response: Response):
+        from .benchmarks import catalog
+        response.headers["Cache-Control"] = "private, no-store"
+        return {"jobs": catalog() if cloud_mode or benchmark_service is not None else []}
+
+    @app.get("/api/v1/benchmarks/{policy}/result")
+    def benchmark_result(policy: str, response: Response):
+        response.headers["Cache-Control"] = "private, no-store"
+        return benchmark_data(policy)[0]
     default_web_root = os.path.join(os.path.dirname(os.path.dirname(__file__)), "public")
     web_root = os.getenv("KEEP_AND_LEASE_WEB_ROOT", default_web_root)
 
@@ -242,6 +274,9 @@ def create_app(
 
     def completed_audit(job_id, request):
         from backtest_audit import load_manifest
+        if request.url.path.startswith("/api/v1/benchmarks/"):
+            _, manifest = benchmark_data(job_id)
+            return benchmarks().audit_store(job_id), manifest
         job = owned_job(job_id, request)
         if job.status != "completed":
             raise HTTPException(409, "Backtest audit is not ready")
@@ -252,10 +287,12 @@ def create_app(
             raise HTTPException(404, "No stored audit for this job") from None
 
     @app.get("/api/v1/backtests/{job_id}/audit")
+    @app.get("/api/v1/benchmarks/{job_id}/audit")
     def audit_manifest(job_id: str, request: Request):
         return completed_audit(job_id, request)[1]
 
     @app.get("/api/v1/backtests/{job_id}/audit/{product}/{index}")
+    @app.get("/api/v1/benchmarks/{job_id}/audit/{product}/{index}")
     def audit_chunk(job_id: str, product: str, index: int, request: Request, section: str = "raw"):
         from backtest_audit import read_chunk, project_row
         store, manifest = completed_audit(job_id, request)
@@ -272,6 +309,7 @@ def create_app(
                 "sha256": entries[index]["sha256"]}
 
     @app.get("/api/v1/backtests/{job_id}/audit-download/{product}")
+    @app.get("/api/v1/benchmarks/{job_id}/audit-download/{product}")
     def audit_download(job_id: str, product: str, request: Request):
         import hashlib
         store, manifest = completed_audit(job_id, request)
@@ -290,6 +328,7 @@ def create_app(
             "Content-Disposition": f'attachment; filename="{product}-full-audit.jsonl.gz"'})
 
     @app.get("/api/v1/backtests/{job_id}/trade-valuations.csv")
+    @app.get("/api/v1/benchmarks/{job_id}/trade-valuations.csv")
     def trade_valuations_csv(job_id: str, request: Request):
         import csv
         import io
@@ -317,12 +356,43 @@ def create_app(
             "Cache-Control": "private, no-store"})
 
     @app.get("/api/v1/backtests/{job_id}/audit-download")
+    @app.get("/api/v1/benchmarks/{job_id}/audit-download")
     def audit_archive(job_id: str, request: Request):
         from backtest_audit import archive_chunks
         store, manifest = completed_audit(job_id, request)
         return StreamingResponse(archive_chunks(store, manifest), media_type="application/zip", headers={
             "Cache-Control": "private, no-store",
             "Content-Disposition": 'attachment; filename="keep-and-lease-full-audit.zip"'})
+
+    @app.get("/api/v1/backtests/{job_id}/spreadsheet")
+    @app.get("/api/v1/benchmarks/{job_id}/spreadsheet")
+    def trade_spreadsheet(job_id: str, request: Request, start: str, end: str):
+        from .replay_exports import period, replay_workbook
+        store, manifest = completed_audit(job_id, request)
+        if request.url.path.startswith("/api/v1/benchmarks/"):
+            result = benchmark_data(job_id)[0]
+        else:
+            job = owned_job(job_id, request)
+            entries = manifest["datasets"].get("btc_trade_valuations", {}).get("chunks", [])
+            if not entries:
+                raise HTTPException(404, "No trade replay valuations for this run")
+            result = {"parameters": job.parameters, "summary": {"start": entries[0]["start"], "end": entries[-1]["end"]},
+                      "trade_replay": {"capital_usd": float(job.parameters.get("trade_initial_capital_usd", 100000))}}
+        try:
+            start, end = period(start, end, result["summary"])
+        except (TypeError, ValueError):
+            raise HTTPException(400, "Choose an increasing UTC period inside the completed backtest") from None
+        if not export_slots.acquire(blocking=False):
+            raise HTTPException(429, "Two spreadsheets are already generating on this server; retry shortly")
+        def output():
+            try:
+                yield from replay_workbook(store, manifest, result, start, end)
+            finally:
+                export_slots.release()
+        return StreamingResponse(output(),
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Cache-Control": "private, no-store",
+                     "Content-Disposition": 'attachment; filename="btc-replay-' + start.replace(':','-') + '-to-' + end.replace(':','-') + '.xlsx"'})
 
     @app.post("/api/v1/inspections")
     def inspect_day(request: InspectionRequest) -> dict[str, Any]:

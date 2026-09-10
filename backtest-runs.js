@@ -1,11 +1,12 @@
 /* Durable server jobs. Closing this page never cancels a submitted execution. */
 (function (global) {
   'use strict';
-  global.createBacktestRuns = function ({root, apiUrl, onResult, onParameters, onSelect = () => {}}) {
+  global.createBacktestRuns = function ({root, apiUrl, onResult, onParameters, onSelect = () => {}, includeBenchmarks = false}) {
     const document = root.ownerDocument;
     const jobs = new Map();
     let selected = null, generation = 0, loaded = null, loading = null;
     let nextCursor = null, refreshing = false, timer = null, stopped = false;
+    let benchmarksLoaded = false;
     const active = job => ['queued', 'running'].includes(job.status);
     const resumable = job => ['failed', 'cancelled'].includes(job.status) && job.parameters?.btc_data_source === 'trade_tape';
     const node = (tag, text) => { const el = document.createElement(tag); if (text !== undefined) el.textContent = text; return el; };
@@ -42,7 +43,7 @@
         row.setAttribute('aria-label', 'Backtest ' + job.job_id);
         const p = job.parameters || {};
         const assets = Object.keys(p).filter(key => key.startsWith('weight_') && Number(p[key]) > 0).map(key => key.slice(7)).join(', ');
-        row.append(node('strong', job.status + ' · ' + (assets || 'Strategy') + ' · ' + new Date(job.created_at * 1000).toLocaleString()));
+        row.append(node('strong', job.title || job.status + ' · ' + (assets || 'Strategy') + ' · ' + new Date(job.created_at * 1000).toLocaleString()));
         row.append(node('p', (p.backtest_start || 'Default start') + ' → ' + (p.backtest_end || 'Default end') +
           ' · ' + (p.execution_interval_seconds || 86400) + ' s · ' + (p.btc_data_source || 'daily') +
           (p.trade_ordering ? ' · ' + p.trade_ordering : '') + ' · ' + job.job_id.slice(0, 8)));
@@ -90,11 +91,11 @@
       const id = selected, revision = generation;
       loading = id; viewing.textContent = 'Loading results for ' + id.slice(0, 8) + '…';
       try {
-        const data = await request('/api/v1/backtests/' + id + '/result');
+        const data = await request(job.result_url || '/api/v1/backtests/' + id + '/result');
         if (revision !== generation || selected !== id || stopped) return;
         await onResult(data, job);
         loaded = id;
-        viewing.textContent = 'Viewing completed backtest ' + id.slice(0, 8) + ' · ' + new Date(job.created_at * 1000).toLocaleString() + '. Form edits do not change these saved results.';
+        viewing.textContent = 'Viewing ' + (job.title || 'completed backtest ' + id.slice(0, 8) + ' · ' + new Date(job.created_at * 1000).toLocaleString()) + '. Form edits do not change these saved results.';
       } catch (error) {
         if (revision === generation) { viewing.textContent = 'Result could not be loaded. Select View results to retry.'; message.textContent = error.message; }
       } finally { if (loading === id) loading = null; }
@@ -111,9 +112,16 @@
         const cursor = older ? nextCursor : null;
         const page = await request('/api/v1/backtests?limit=50' + (cursor ? '&before=' + encodeURIComponent(cursor) : ''));
         for (const job of page.jobs) jobs.set(job.job_id, job);
+        if (includeBenchmarks && !benchmarksLoaded) {
+          try {
+            const published = await request('/api/v1/benchmarks');
+            for (const job of published.jobs) jobs.set(job.job_id, job);
+            benchmarksLoaded = true;
+          } catch (error) { message.textContent = 'Published benchmarks could not be loaded: ' + error.message; }
+        }
         // Refresh active jobs on older loaded pages too.
         const seen = new Set(page.jobs.map(job => job.job_id));
-        for (const job of [...jobs.values()]) if (!seen.has(job.job_id) && (active(job) || job.job_id === selected)) {
+        for (const job of [...jobs.values()]) if (!job.is_benchmark && !seen.has(job.job_id) && (active(job) || job.job_id === selected)) {
           jobs.set(job.job_id, await request('/api/v1/backtests/' + job.job_id));
         }
         if (older || !nextCursor) nextCursor = page.next_cursor;

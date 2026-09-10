@@ -201,3 +201,57 @@ access, chart hover, a 1 ms fractional window, and reopening the page to select
 the earlier completed 500 ms run. The same check verified Run became available
 after submission acknowledgement. Full 90-day sequence benchmark recovery has
 also passed; timestamp continuation and the paired comparison are still pending.
+
+
+## Published 90-day benchmarks and period spreadsheets
+
+The Backtests panel includes **90-day BTC benchmark · sequence** and
+**90-day BTC benchmark · timestamp**. Select **View results** to open the
+completed June 6–September 4 (end boundary) research run without launching a
+worker. These fixed published fixtures are separate from owner-scoped GUI jobs;
+**Use parameters** copies the benchmark settings for a new run. They retain the
+zero-cost baseline, regular-futures price proxy and USDT/USD assumptions.
+
+The strategy/direct-holding chart displays USD values using the original
+$100,000 capital. Summary statistics always describe the full run. The replay
+section has UTC start/end inputs, **Apply to charts**, **Full period**, and
+**Download period spreadsheet**. Chart filtering uses the saved samples; an
+interval with fewer than two samples reports that limitation, while its exact
+valuation spreadsheet remains available. The Backtests list stays visible.
+
+The XLSX contains Overview, Valuations, Events and Parameters. Both UTC bounds
+are inclusive. Every stored valuation and event within those bounds is retained,
+including subsecond timestamps, instrument quantities, targets, mark identifiers,
+execution prices and fees. Quantities are also numeric columns for the benchmark's
+instruments. The first interval's opening NAV can precede the chosen start; its
+recorded interval return is retained. Direct BTC value and interval return have
+Excel formulas with cached values. Full-run assumptions are included; this is an
+export of the original calculation, not a new backtest or a rebased return series.
+Futures mark prices were not stored in valuation rows; execution prices are in
+Events. JSON columns preserve the complete original nested records.
+
+Only overlapping audit chunks are fetched and their checksums are verified.
+The server streams a compressed XLSX with bounded buffers, splitting sheets at
+Excel's 1,048,576-row limit. The browser shows MiB received and a cancel button;
+it retains the compressed download, not millions of uncompressed JavaScript
+rows. There is no fabricated percentage or predeclared final file size. Use short
+periods for inspection: large periods can still produce very large downloads.
+Requests have a one-hour Cloud Run deadline and at most two simultaneous XLSX
+exports per web instance. Cancellation leaves the saved backtest intact.
+
+The API exposes only the two allowlisted fixtures at `/api/v1/benchmarks` and
+`/api/v1/benchmarks/{sequence|timestamp}/result`, with audit, CSV and XLSX routes.
+XLSX uses `/spreadsheet?start=<UTC>&end=<UTC>`. The same period XLSX endpoint is
+available for owner-authorized `/api/v1/backtests/{id}` trade replay jobs.
+The web identity receives read-only access restricted to the two published GCS
+job prefixes. Preview Terraform owns the shared identity's conditional binding.
+Private user jobs cannot be accessed through the benchmark routes.
+
+Chart recovery validates the report's market manifest and parameter hashes,
+checks the checkpoint fingerprint, restores historical samples from the last
+hourly checkpoint, and reads the final-hour valuation chunks. Its final NAV must
+match the completed report. It neither reruns strategy decisions nor changes
+existing audit/checkpoint objects. The two recovered results/manifests are cached
+per web process. Missing/corrupt objects are reported rather than replaced by
+new calculations. Benchmark parameter JSON is packaged with the server and must
+continue to match the original report hash.

@@ -374,6 +374,42 @@ async function main() {
       console.log('Subsecond GUI acceptance passed: 500 ms/GCS equivalence, CSV, audit, hover, and 1 ms fractional window.');
     }
 
+    if (process.env.KEEP_AND_LEASE_RUN_BENCHMARKS === 'true') {
+      for (const policy of ['sequence','timestamp']) {
+        const row=page.locator('#backtestRuns [data-job-id="benchmark-'+policy+'"]');
+        await row.waitFor({state:'visible',timeout:30000});
+        await row.getByRole('button',{name:'View results',exact:true}).click();
+        await page.waitForFunction(p=>last?.benchmark?.policy===p,policy,{timeout:120000});
+        const evidence=await page.evaluate(()=>({summary:last.summary,points:last.series.length,end:last.series.at(-1),capital:last.trade_replay.capital_usd}));
+        const expected=policy==='sequence'?2.368865899362444:2.368870223927978;
+        if(Math.abs(evidence.summary.ending_nav-expected)>1e-10||Math.abs(evidence.end[1]-expected)>1e-10||evidence.points<1900||evidence.points>2002||evidence.capital!==100000)throw Error('Published benchmark chart/report mismatch: '+policy);
+        if(!(await page.locator('#backtestRuns').isVisible()))throw Error('Run history hidden by replay charts');
+        console.log('Published 90-day benchmark GUI verified: '+policy+' · '+evidence.points+' chart points · NAV '+evidence.summary.ending_nav);
+      }
+      await page.fill('#tradeExportStart','2026-06-06T00:00:01');
+      await page.fill('#tradeExportEnd','2026-06-06T00:00:06');
+      const workbookDownload=page.waitForEvent('download',{timeout:120000});
+      await page.click('#tradeSpreadsheet');
+      const downloaded=await workbookDownload;
+      const exportPath=path.join(outputDir,'benchmark-period.xlsx');
+      await downloaded.saveAs(exportPath);
+      // Independent ZIP/XML verification of the actual GUI download.
+      require('child_process').execFileSync('python',['-c',`
+import zipfile,xml.etree.ElementTree as E,sys
+with zipfile.ZipFile(sys.argv[1]) as z:
+ assert z.testzip() is None
+ ns={'m':'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
+ root=E.fromstring(z.read('xl/worksheets/sheet2.xml'))
+ rows=root.findall('m:sheetData/m:row',ns)[1:]
+ assert len(rows)==11, len(rows)
+ dates=[r.find('m:c/m:is/m:t',ns).text for r in rows]
+ assert dates[0]=='2026-06-06T00:00:01.000000' and dates[-1]=='2026-06-06T00:00:06.000000', dates
+ assert root.find(".//m:c[@r='D2']/m:f",ns).text=='B2-C2'
+ for name in z.namelist(): E.fromstring(z.read(name))
+print('Published benchmark period workbook verified: 11 exact valuations, valid XLSX, formulas and events')
+`,exportPath],{stdio:'inherit'});
+    }
+
     const sameOriginFailures = failedRequests.filter((request) => {
       try {
         const target = new URL(request.url);

@@ -158,7 +158,7 @@ reopening/preparing the pinned market data; peak process RSS was 653.836 MiB.
 The full compressed audit is 7,445,502,103 bytes. This validates finalization and
 resource gates for sequence ordering on the actual 90-day input. It does not
 supply total runtime across all attempts, timestamp-policy completion, or the
-paired financial comparison. Timestamp continuation remains running.
+paired financial comparison. Timestamp continuation and the paired comparison subsequently completed successfully at 18:41 UTC on September 9 in the same workflow.
 
 
 GUI-owned result/audit/checkpoint objects in `gs://keep-and-lease-results`
@@ -174,3 +174,16 @@ All 93 cloud CI tests passed. Rendered acceptance included reopening the GUI and
 selecting an older completed 500 ms result, plus the existing multi-commodity,
 CSV/audit, hover and 1 ms checks. Earlier packaging failures were corrected in
 the web image and Docker build-context allowlist, now covered by CI.
+
+
+## September 10: GUI integration of completed research results
+
+Both 90-day benchmark reports are now integrated through the published-benchmark
+API and the GUI Backtests list. Sequence ending NAV is 2.368865899362444;
+timestamp ending NAV is 2.368870223927978. These are zero-cost research results,
+not a recovery of a failed owner-specific GUI job. Historical chart samples and
+the final-hour audit reconstruct the display without rerunning the backtest.
+A selected-period XLSX retains full-resolution valuations and order/fill events.
+See `BTC_SUBSECOND_GUI.md` for controls, export semantics and access boundaries.
+The deployment workflow checks both real benchmark NAVs and a five-second GUI
+workbook download; local fixtures cover integrity, bounds and sheet splitting.

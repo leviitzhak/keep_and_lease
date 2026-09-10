@@ -412,7 +412,7 @@ function showSummary(data){const s=data.summary||{};$('compound').textContent=fm
 async function computationApiUrl(path){let base=location.origin;try{const response=await fetch('/compute-config.json',{cache:'no-store'});if(response.ok){const config=await response.json();base=config.apiBaseUrl||base}}catch{}return new URL(path,base.endsWith('/')?base:base+'/').href}
 async function restoreLastResult(){const revision=parameterRevision;try{const latestResponse=await fetch(await computationApiUrl('/api/v1/backtests/latest'),{cache:'no-store',credentials:'include'});if(latestResponse.status===204||latestResponse.status===404)return false;if(!latestResponse.ok)throw Error('Latest completed run returned HTTP '+latestResponse.status);const saved=await latestResponse.json();if(!saved?.result_url)return false;const resultResponse=await fetch(await computationApiUrl(saved.result_url),{cache:'no-store',credentials:'include'});if(!resultResponse.ok)throw Error('Saved result returned HTTP '+resultResponse.status);const restored=normalizePortfolioResult(await resultResponse.json());if(revision!==parameterRevision)return false;if(saved.parameters)applyParameters(saved.parameters);last=restored;showSummary(last);draw();if(typeof document!=='undefined'){const label=document.getElementById('viewingBacktest');if(label)label.textContent='Viewing restored backtest '+(saved.job_id||'').slice(0,8)+'. Form edits do not change these saved results.';}return true}catch(err){console.warn('Could not restore last result',err);return false}}
 const resultsReady=restoreLastResult();
-const backtestRuns=createBacktestRuns({root:$('backtestRuns'),apiUrl:computationApiUrl,
+const backtestRuns=createBacktestRuns({root:$('backtestRuns'),apiUrl:computationApiUrl,includeBenchmarks:true,
  onSelect:()=>{parameterRevision++;},
  onParameters:parameters=>{parameterRevision++;applyParameters(parameters);saveParameters();updateTradeControls();status.textContent='Loaded saved run parameters. Click Run strategy to submit a backtest.';},
  onResult:(data,job)=>{const result=normalizePortfolioResult(data);if(!result?.summary)throw Error('Saved backtest has no valid summary.');last=result;showSummary(last);draw();status.className='status';status.textContent='Completed backtest '+job.job_id.slice(0,8)+' | '+last.summary.start+' to '+last.summary.end;}
@@ -702,23 +702,62 @@ function validateTradeForm(){
 form.elements.namedItem('btc_data_source').addEventListener('change',updateTradeControls);
 $('loadTradeExample').addEventListener('click',()=>{applyParameters(JSON.parse(JSON.stringify(TRADE_EXAMPLE)));loadCommodity('btc');parameterRevision++;saveParameters();updateTradeControls();status.textContent='Loaded 500 ms BTC example: 25 June, 00:00–00:05 UTC, $100,000 and 10% participation. Click Run strategy.';});
 fetch('/api/v1/trade-data',{credentials:'same-origin'}).then(r=>{if(!r.ok)throw Error();return r.json()}).then(data=>{tradeCoverage=data.datasets?.[0];$('tradeCoverage').textContent=tradeCoverage?'Available: '+tradeCoverage.start+' to '+tradeCoverage.end+' UTC (end exclusive). Minimum decision interval: '+tradeCoverage.minimum_interval_seconds+' s. Maximum decisions: '+tradeCoverage.maximum_decisions.toLocaleString()+'.':'No trade data available.';}).catch(()=>{$('tradeCoverage').textContent='Trade replay requires the GCP server. Available uploaded day: 25 June 2026 UTC.';});
+let tradePeriodResult=null,tradeChartBounds=null,tradeExportController=null;
+function initializeTradePeriod(){
+ if(tradePeriodResult===last)return;
+ tradeExportController?.abort();tradePeriodResult=last;tradeChartBounds=null;
+ for(const [id,key] of [['tradeExportStart','start'],['tradeExportEnd','end']]){const input=$(id);input.value=last.summary[key];input.min=last.summary.start;input.max=last.summary.end;}
+ $('tradeApplyPeriod').onclick=()=>{try{const bounds=tradePeriod();if(last.series.filter(r=>r[0]>=bounds[0]&&r[0]<=bounds[1]).length<2)throw Error('This interval is shorter than the saved chart sampling. Its full-resolution spreadsheet is still available.');tradeChartBounds=bounds;drawTradeReplay();$('tradeExportProgress').textContent='Charts show sampled observations in the selected UTC period.';}catch(e){$('tradeExportProgress').textContent=e.message;}};
+ $('tradeFullPeriod').onclick=()=>{tradeChartBounds=null;$('tradeExportStart').value=last.summary.start;$('tradeExportEnd').value=last.summary.end;drawTradeReplay();$('tradeExportProgress').textContent='Full run shown.';};
+ $('tradeSpreadsheet').onclick=downloadTradeSpreadsheet;
+ $('tradeCancelExport').onclick=()=>tradeExportController?.abort();
+ $('tradeExportProgress').textContent='For detailed exports, select the period you want to inspect.';
+}
+function tradePeriod(){
+ const values=[$('tradeExportStart').value,$('tradeExportEnd').value];
+ const normalize=s=>{if(!s)throw Error('Enter both UTC bounds.');const [d,t]=s.split('T');const parts=t.split('.');return d+'T'+parts[0]+(parts[0].length===5?':00':'')+'.'+(parts[1]||'').padEnd(6,'0');};
+ const bounds=values.map(normalize);
+ if(!(bounds[0]<bounds[1])||bounds[0]<last.summary.start||bounds[1]>last.summary.end)throw Error('Choose an increasing UTC period inside this completed run.');
+ return bounds;
+}
+async function downloadTradeSpreadsheet(){
+ const result=last,progress=$('tradeExportProgress'),button=$('tradeSpreadsheet'),cancel=$('tradeCancelExport');
+ if(tradeExportController)return;
+ let controller;
+ try{
+  const [start,end]=tradePeriod();const base=result.audit?.base_url;if(!base)throw Error('This result has no stored audit.');
+  controller=new AbortController();tradeExportController=controller;button.disabled=true;cancel.hidden=false;
+  progress.textContent='Preparing full-resolution spreadsheet…';
+  const url=base.replace(/\/audit$/,'/spreadsheet')+'?'+new URLSearchParams({start,end});
+  const response=await fetch(url,{credentials:'include',signal:controller.signal});
+  if(!response.ok){const error=await response.json();throw Error(error.detail||'Spreadsheet request failed');}
+  const reader=response.body.getReader(),parts=[];let bytes=0;
+  while(true){const {done,value}=await reader.read();if(done)break;parts.push(value);bytes+=value.length;progress.textContent='Generating spreadsheet · '+(bytes/1048576).toFixed(1)+' MiB received';}
+  const blob=new Blob(parts,{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),downloadUrl=URL.createObjectURL(blob),link=document.createElement('a');
+  link.href=downloadUrl;link.download='btc-replay-'+start.replaceAll(':','-')+'-to-'+end.replaceAll(':','-')+'.xlsx';document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(downloadUrl),1000);
+  progress.textContent='Spreadsheet downloaded for '+start+' to '+end+' UTC.';
+ }catch(error){progress.textContent=error.name==='AbortError'?'Spreadsheet download cancelled.':error.message;}
+ finally{if(tradeExportController===controller)tradeExportController=null;button.disabled=false;cancel.hidden=true;}
+}
 let minuteVisibility=null;
 function showMinuteResults(){if(!minuteVisibility)return;for(const [node,hidden] of minuteVisibility)node.hidden=hidden;minuteVisibility=null;$('tradeReplayResults').hidden=true;}
 function drawTradeReplay(){
  const main=document.querySelector('main');
- if(!$('tradeReplayResults')){const section=document.createElement('section');section.id='tradeReplayResults';section.innerHTML='<h2>BTC trade replay</h2><p id="tradeReplaySummary"></p><p id="tradeReplayAssumptions" class="statistics-note"></p><p><a id="tradeReplayCsv">Download every valuation (CSV)</a> · <a id="tradeReplayAudit">Download full order/fill audit (ZIP)</a></p><div class="chart"><h2>Strategy and direct Bitcoin holding</h2><canvas id="tradeReplayNav"></canvas></div><div class="chart"><h2>Actual holdings and futures exposure</h2><canvas id="tradeReplayHoldings"></canvas></div><div class="chart"><h2>Oldest held valuation mark</h2><canvas id="tradeReplayAge"></canvas></div>';main.appendChild(section);}
- if(!minuteVisibility){minuteVisibility=new Map();for(const child of main.children){if(child.classList.contains('metrics')||child.id==='missing'||child.id==='tradeReplayResults')continue;minuteVisibility.set(child,child.hidden);child.hidden=true;}}
+ if(!$('tradeReplayResults')){const section=document.createElement('section');section.id='tradeReplayResults';section.innerHTML='<h2>BTC trade replay</h2><p id="tradeReplaySummary"></p><p id="tradeReplayAssumptions" class="statistics-note"></p><div class="plot-range"><label>Start UTC <input id="tradeExportStart" type="datetime-local" step="any"></label><label>End UTC <input id="tradeExportEnd" type="datetime-local" step="any"></label><button id="tradeApplyPeriod" type="button">Apply to charts</button><button id="tradeFullPeriod" type="button">Full period</button><button id="tradeSpreadsheet" type="button">Download period spreadsheet</button><button id="tradeCancelExport" type="button" hidden>Cancel download</button><span id="tradeExportProgress" role="status"></span></div><p id="tradePeriodNote" class="statistics-note">Summary statistics cover the full run. Choose UTC bounds for charts and the full-resolution spreadsheet.</p><p><a id="tradeReplayCsv">Download every valuation (CSV)</a> · <a id="tradeReplayAudit">Download full order/fill audit (ZIP)</a></p><div class="chart"><h2>Strategy and direct Bitcoin holding</h2><canvas id="tradeReplayNav"></canvas></div><div class="chart"><h2>Actual holdings and futures exposure</h2><canvas id="tradeReplayHoldings"></canvas></div><div class="chart"><h2>Oldest held valuation mark</h2><canvas id="tradeReplayAge"></canvas></div>';main.appendChild(section);}
+ if(!minuteVisibility){minuteVisibility=new Map();for(const child of main.children){if(child.classList.contains('metrics')||child.id==='missing'||child.id==='backtestRuns'||child.id==='tradeReplayResults')continue;minuteVisibility.set(child,child.hidden);child.hidden=true;}}
  $('tradeReplayResults').hidden=false;
  const t=last.trade_replay;
+ initializeTradePeriod();
+ const chartRows=last.series.filter(r=>!tradeChartBounds||(r[0]>=tradeChartBounds[0]&&r[0]<=tradeChartBounds[1]));
  $('tradeReplaySummary').textContent=t.interval_seconds+' s decision interval · '+fmt(t.decisions,0)+' decisions · '+fmt(t.market_events,0)+' observed trades · '+fmt(t.fills,0)+' partial fills · '+fmt(t.no_fresh_curve_decisions,0)+' decisions without a fresh curve · fees $'+fmt(t.fees_usd,6)+'. Charts sample every '+t.plot_sample_every+' valuations; downloads retain every valuation and order/fill event.';
  $('tradeReplayAssumptions').textContent=t.assumptions.join('. ')+'. '+(t.ordering?'Delayed futures trades in this window: '+t.ordering.delayed_trades+'; largest imposed delay: '+(t.ordering.max_delay_us/1000)+' ms.':'');
  $('missingSummary').textContent=last.summary.start+' to '+last.summary.end+' UTC · Maximum NAV reconciliation error: $'+t.max_nav_reconstruction_error_usd;
  $('missingEvents').textContent='Ending mark ages (seconds): '+JSON.stringify(t.end_mark_age_seconds,null,2);
  const base=last.audit?.base_url;
  for(const [id,suffix] of [['tradeReplayCsv','/trade-valuations.csv'],['tradeReplayAudit','/audit-download']]){const link=$(id);link.hidden=!base;if(base)link.href=base.replace(/\/audit$/,'')+suffix;}
- lineChart($('tradeReplayNav'),last.series,[{i:1,c:'#16a34a',label:'Strategy'},{i:2,c:'#2563eb',label:'Direct Bitcoin'}],'NAV',{zero:false});
- lineChart($('tradeReplayHoldings'),last.series,[{i:3,c:'#64748b',label:'Cash / Treasury collateral'},{i:4,c:'#2563eb',label:'Direct Bitcoin'},{i:5,c:'#16a34a',label:'Long futures notional'}],'USD',{zero:false});
- lineChart($('tradeReplayAge'),last.series,[{i:7,c:'#d97706',label:'Oldest held mark'}],'seconds',{zero:false});
+ lineChart($('tradeReplayNav'),chartRows.map(r=>[r[0],r[1]*t.capital_usd,r[2]*t.capital_usd,...r.slice(3)]),[{i:1,c:'#16a34a',label:'Strategy'},{i:2,c:'#2563eb',label:'Direct Bitcoin'}],'USD',{zero:false});
+ lineChart($('tradeReplayHoldings'),chartRows,[{i:3,c:'#64748b',label:'Cash / Treasury collateral'},{i:4,c:'#2563eb',label:'Direct Bitcoin'},{i:5,c:'#16a34a',label:'Long futures notional'}],'USD',{zero:false});
+ lineChart($('tradeReplayAge'),chartRows,[{i:7,c:'#d97706',label:'Oldest held mark'}],'seconds',{zero:false});
  for(const id of ['tradeReplayNav','tradeReplayHoldings','tradeReplayAge']){const cv=$(id);cv.onmousemove=hover;cv.onclick=hover;cv.onmouseleave=leave;}
 }
 updateTradeControls();

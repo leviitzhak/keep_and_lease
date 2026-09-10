@@ -143,3 +143,18 @@ test('cancelled daily run has details without checkpoint guidance or resume acti
   assert.match(text, /This run has stopped/);
   assert.doesNotMatch(text, /Resume checkpoint/);
 });
+
+test('published benchmark uses its result route and is never polled as a user job', async () => {
+  const calls=[];
+  const published={...job('b','completed'),job_id:'benchmark-sequence',is_benchmark:true,
+    title:'90-day BTC benchmark · sequence',result_url:'/api/v1/benchmarks/sequence/result'};
+  const h=harness(async url=>{calls.push(url);
+    if(url.endsWith('/result'))return response({summary:{ending_nav:2.36}});
+    return response({jobs:url==='/api/v1/benchmarks'?[published]:[],next_cursor:null});
+  },{includeBenchmarks:true});
+  await h.controller.refresh();await h.controller.select(published.job_id);await h.controller.refresh();
+  assert.equal(h.results[0].id,published.job_id);
+  assert.equal(calls.filter(p=>p==='/api/v1/benchmarks').length,1);
+  assert.equal(calls.some(p=>p.includes('/backtests/benchmark-')),false);
+  assert.match(h.root.children[3].textContent,/90-day BTC benchmark/);
+});

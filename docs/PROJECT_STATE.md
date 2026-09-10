@@ -119,3 +119,12 @@ This file records the current high-level state. Detailed formulas and behavior b
 Long BTC trade execution now has daily range ingestion and hourly recovery on
 `agent/btc-90day-subsecond`. The catalog remains the one-day pilot until the
 real range and staged acceptance pass; see [BTC_90_DAY_EXECUTION.md](BTC_90_DAY_EXECUTION.md).
+
+
+### Published BTC benchmark results (September 10)
+
+The two completed 90-day/500 ms research benchmarks have read-only GUI/API
+integration, reconstructed chart samples and selected-UTC-period XLSX exports.
+No strategy rerun is needed to inspect them. Exports include full-resolution
+valuations, quantities, order/fill events, original parameters and assumptions,
+with streaming download progress and cancellation. See `BTC_SUBSECOND_GUI.md`.

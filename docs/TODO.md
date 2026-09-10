@@ -292,6 +292,7 @@ three-hour benchmark continuation segments. The recovery workflow reuses old
 checkpoint IDs with the unchanged replay engine. A CLI extension forks the
 checkpoint and verified audit prefix into a new result with a later end date.
 It requires the same immutable dataset/engine/rates and preserves the parent.
-Pending: complete 90-day measured results and Cloud Run acceptance, GUI/API
-extension, append-only validation for newly ingested history, and lifting
+Completed: paired 90-day measured reports, saved benchmark GUI integration,
+and selected-period trade-replay XLSX exports with progress and cancellation.
+Pending: full-period Cloud Run execution acceptance, GUI/API extension, append-only validation for newly ingested history, and lifting
 reader/catalog bounds beyond 90 days after resource checks.
