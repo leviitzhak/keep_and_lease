@@ -9,11 +9,15 @@ from fastapi.testclient import TestClient
 import btc_trade_backtest as replay
 from replay_checkpoints import decode, encode
 from server.app import create_app
+from server.benchmarks import MANIFEST as PUBLISHED_TRADE_MANIFEST
 from server.job_models import Job
 from server.replay_extensions import INTERNAL_PARENT_KEY, engine_parameters, install as install_extensions, seed_extension
 from server.strategy_catalog import install
 from tests.test_btc_trade_backtest import payload
 from tests.test_server_api import FakeEngine
+
+
+EXPECTED_PUBLISHED_TRADE_MANIFEST = '52ef7ab51def1e37fc774f96bd94697ed90ad286d6885c72f69de84c285c9912'
 
 
 class CurrentRuntimeImprovementsTests(unittest.TestCase):
@@ -29,6 +33,10 @@ class CurrentRuntimeImprovementsTests(unittest.TestCase):
         self.assertIn('full silver long gradual', names)
         self.assertIn('research-btc-long-gradual-500ms', names)
         self.assertTrue(all(isinstance(item['parameters'], dict) for item in strategies))
+
+    def test_published_benchmark_manifest_pin_is_exact_verified_sha256(self):
+        self.assertEqual(PUBLISHED_TRADE_MANIFEST, EXPECTED_PUBLISHED_TRADE_MANIFEST)
+        self.assertEqual(len(PUBLISHED_TRADE_MANIFEST), 64)
 
     def test_trade_replay_defaults_to_100k_and_3000_plot_points(self):
         parameters = payload()
@@ -64,15 +72,10 @@ class CurrentRuntimeImprovementsTests(unittest.TestCase):
         self.assertNotIn(INTERNAL_PARENT_KEY, job.public()['parameters'])
         self.assertEqual(engine_parameters(p), job.public()['parameters'])
 
-    def test_completed_replay_can_request_later_end_through_dedicated_api(self):
-        provenance = {'engine_commit': 'same'}
-        parent_parameters = payload()
-        parent_parameters['backtest_end'] = '2026-06-25T00:00:02'
-        parent = Job('a' * 32, parent_parameters, 'parent-hash', owner_id='user@example.com',
-                     status='completed', provenance=provenance)
-        child = Job('b' * 32, {}, 'child-hash', owner_id='user@example.com', provenance=provenance)
+    def extension_service(self, parent, child, provenance, checkpoint):
+        checkpoint_store = SimpleNamespace(latest=lambda: checkpoint)
         class Service:
-            results = object()
+            results = SimpleNamespace(checkpoint_store=lambda _job_id: checkpoint_store)
             def __init__(self): self.provenance = provenance; self.submitted = None
             def get(self, job_id): return parent if job_id == parent.id else None
             def submit(self, parameters, owner):
@@ -80,7 +83,16 @@ class CurrentRuntimeImprovementsTests(unittest.TestCase):
                 child.parameters = dict(parameters)
                 return child, False
             def capabilities(self): return {'schema_version': 1, 'engine_commit': 'same'}
-        service = Service()
+        return Service()
+
+    def test_completed_replay_can_request_later_end_through_dedicated_api(self):
+        provenance = {'engine_commit': 'same'}
+        parent_parameters = payload()
+        parent_parameters['backtest_end'] = '2026-06-25T00:00:02'
+        parent = Job('a' * 32, parent_parameters, 'parent-hash', owner_id='user@example.com',
+                     status='completed', provenance=provenance)
+        child = Job('b' * 32, {}, 'child-hash', owner_id='user@example.com', provenance=provenance)
+        service = self.extension_service(parent, child, provenance, {'identity': 'checkpoint'})
         app = create_app(FakeEngine(), job_service=service)
         install_extensions(app)
         with TestClient(app) as client:
@@ -94,6 +106,26 @@ class CurrentRuntimeImprovementsTests(unittest.TestCase):
         self.assertEqual(service.submitted['backtest_end'], '2026-06-25T00:00:03')
         self.assertNotIn(INTERNAL_PARENT_KEY, response.json()['parameters'])
         self.assertEqual(response.json()['extension_parent_job_id'], parent.id)
+
+    def test_extension_without_durable_checkpoint_is_rejected_before_submit(self):
+        provenance = {'engine_commit': 'same'}
+        parent_parameters = payload()
+        parent_parameters['backtest_end'] = '2026-06-25T00:00:02'
+        parent = Job('a' * 32, parent_parameters, 'parent-hash', owner_id='user@example.com',
+                     status='completed', provenance=provenance)
+        child = Job('b' * 32, {}, 'child-hash', owner_id='user@example.com', provenance=provenance)
+        service = self.extension_service(parent, child, provenance, None)
+        app = create_app(FakeEngine(), job_service=service)
+        install_extensions(app)
+        with TestClient(app) as client:
+            response = client.post(
+                f'/api/v1/backtests/{parent.id}/extend',
+                headers={'x-goog-authenticated-user-email': 'user@example.com'},
+                json={'backtest_end': '2026-06-25T00:00:03'},
+            )
+        self.assertEqual(response.status_code, 409)
+        self.assertIn('no durable checkpoint', response.json()['detail'])
+        self.assertIsNone(service.submitted)
 
     def test_extension_worker_seeds_parent_prefix_once_with_engine_parameters(self):
         old = payload(); old['backtest_end'] = '2026-06-25T00:00:02'
