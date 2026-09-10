@@ -69,3 +69,39 @@ variable "allowed_origin_regex" {
   type    = string
   default = ""
 }
+
+variable "trade_catalog_json" {
+  description = "Pinned trade range catalog, set only after staged data/replay acceptance. Empty retains the one-day pilot."
+  type        = string
+  default     = ""
+}
+
+variable "worker_timeout_seconds" {
+  description = "Worker duration; increase only after staged replay measurements."
+  type        = number
+  default     = 1800
+  validation {
+    condition     = var.worker_timeout_seconds >= 1800 && var.worker_timeout_seconds <= 604800 && floor(var.worker_timeout_seconds) == var.worker_timeout_seconds
+    error_message = "Worker timeout must be an integer between 1800 and 604800 seconds."
+  }
+}
+
+variable "worker_cpu" {
+  description = "CPU allocation for the continuous replay worker."
+  type        = string
+  default     = "1"
+  validation {
+    condition     = contains(["1", "2", "4", "6", "8"], var.worker_cpu)
+    error_message = "Select a supported worker CPU count."
+  }
+}
+
+variable "worker_memory" {
+  description = "Memory includes process allocations and temporary ordering files."
+  type        = string
+  default     = "4Gi"
+  validation {
+    condition     = contains(["1Gi", "2Gi", "4Gi", "8Gi", "16Gi", "24Gi", "32Gi"], var.worker_memory)
+    error_message = "Select a supported worker memory allocation."
+  }
+}

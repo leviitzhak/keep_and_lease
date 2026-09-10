@@ -30,6 +30,11 @@ def main():
     files = []
     for item in [store.source_manifest["spot"], *store.source_manifest["futures"].values()]:
         files.append((args.data / item["path"], "btc/raw/sha256/" + item["sha256"] + "/" + Path(item["path"]).name, item["sha256"]))
+    for item in store.source_manifest.get('evidence_files', []):
+        relative = Path(item['path'])
+        if relative.is_absolute() or '..' in relative.parts:
+            raise ValueError('Unsafe evidence path')
+        files.append((args.data / relative, 'btc/raw/sha256/'+item['sha256']+'/'+relative.name, item['sha256']))
     source_hash = store.manifest["source_manifest_sha256"]
     files.append((args.data / "manifest.json", "btc/raw/sha256/" + source_hash + "/manifest.json", source_hash))
     for item in store.manifest["partitions"]:

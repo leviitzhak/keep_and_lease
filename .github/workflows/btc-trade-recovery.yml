@@ -1,0 +1,136 @@
+name: Recover verified BTC trade range
+on:
+  push:
+    branches: [agent/cloud-autonomous-access]
+    paths: [.cloud-agent/requests/btc-recovery.json]
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+concurrency:
+  group: btc-trade-range
+  cancel-in-progress: false
+jobs:
+  request:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      source: ${{ steps.request.outputs.source }}
+      runs: ${{ steps.request.outputs.runs }}
+      days: ${{ steps.restore.outputs.days }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: request
+        run: |
+          python - <<'PYCODE'
+          import json,os,re
+          from pathlib import Path
+          value=json.loads(Path('.cloud-agent/requests/btc-recovery.json').read_text())
+          assert set(value)=={'schema_version','action','source_commit','reuse_run_ids'}
+          assert value['schema_version']==1 and value['action']=='recover-90day-btc'
+          assert re.fullmatch('[0-9a-f]{40}',value['source_commit'])
+          runs=value['reuse_run_ids']
+          assert isinstance(runs,list) and 1<=len(runs)<=5 and runs[0]==34194533429
+          assert all(type(i) is int and i>0 for i in runs) and len(set(runs))==len(runs)
+          with open(os.environ['GITHUB_OUTPUT'],'a') as stream:
+              stream.write('source='+value['source_commit']+'\n')
+              stream.write('runs='+json.dumps(runs)+'\n')
+          PYCODE
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.request.outputs.source }}
+          persist-credentials: false
+      - id: restore
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUNS: ${{ steps.request.outputs.runs }}
+        run: python scripts/restore-btc-receipts.py --run-ids "$SOURCE_RUNS" --output work/reused --plan
+  daily:
+    needs: request
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        day: ${{ fromJSON(needs.request.outputs.days) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.request.outputs.source }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements-trade-data.txt
+      - uses: google-github-actions/auth@v2
+        with:
+          project_id: keep-and-lease
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com
+      - name: Download, validate, upload and verify one UTC day
+        env:
+          RANGE_DAY_START: ${{ matrix.day.start }}
+          RANGE_DAY_END: ${{ matrix.day.end }}
+        run: |
+          case "$RANGE_DAY_START" in
+            2026-08-26|2026-08-28)
+              python scripts/retry-cloud-command.py scripts/recover-btc-uploaded-days.py --day "$RANGE_DAY_START" --output work/btc-range ;;
+            *)
+              python scripts/retry-cloud-command.py scripts/ingest-btc-trade-range.py --start "$RANGE_DAY_START" --end "$RANGE_DAY_END" --output work/btc-range --upload --daily-only ;;
+          esac
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: btc-failed-${{ matrix.day.start }}
+          path: work/btc-range/raw
+          compression-level: 0
+          retention-days: 30
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() && hashFiles('work/btc-range/receipts/*.json') != '' }}
+        with:
+          name: btc-day-${{ matrix.day.start }}
+          path: |
+            work/btc-range/receipts
+            work/btc-range/evidence
+          retention-days: 30
+          if-no-files-found: error
+  publish:
+    needs: [request, daily]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.request.outputs.source }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements-trade-data.txt
+      - name: Restore verified receipts from earlier runs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUNS: ${{ needs.request.outputs.runs }}
+        run: python scripts/restore-btc-receipts.py --run-ids "$SOURCE_RUNS" --output work/btc-range
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: btc-day-*
+          path: work/btc-range
+          merge-multiple: true
+      - uses: google-github-actions/auth@v2
+        with:
+          project_id: keep-and-lease
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com
+      - name: Publish complete immutable range after all 90 daily gates
+        run: python scripts/retry-cloud-command.py scripts/ingest-btc-trade-range.py --start 2026-06-06 --end 2026-09-04 --output work/btc-range --upload --assemble-only
+      - uses: actions/upload-artifact@v4
+        with:
+          name: btc-90day-manifest
+          path: work/btc-range/manifest.json
+          if-no-files-found: error
+          retention-days: 30

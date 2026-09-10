@@ -4,12 +4,17 @@ GUI rates and allocations are percentages; `silver_strategy_gui.parameters`
 converts them to decimal engine values. The scoring names below are the
 production parameter names.
 
+Trade replay restrictions, fractional execution delay, coverage and CSV/audit outputs
+are documented in [BTC_SUBSECOND_GUI.md](BTC_SUBSECOND_GUI.md).
+
 ## Global
 
 | Parameter | Meaning |
 |---|---|
 | `execution_delay_days` | Historical placeholder; the current engine executes at the same observed close (delay `0`). |
-| `execution_interval_seconds` | BTC-only strategy evaluation and execution interval, including fractional seconds when supported by the data. `0` uses every common spot/futures observation. A positive value must be a whole multiple of the detected data resolution and may be used when BTC is the sole commodity; a standalone Treasury sleeve is still allowed. |
+| `btc_data_source` | `minute` (default) or `trade_tape` for the uploaded June 25 research replay. |
+| `trade_initial_capital_usd` | Positive initial capital for trade replay; default $1. Participation applies to actual quantities at this capital. |
+| `execution_interval_seconds` | For trade replay, a positive multiple of 0.001 seconds, with at most 200,000 decisions per selected window. For candles: BTC-only strategy evaluation and execution interval, including fractional seconds when supported by the data. `0` uses every common spot/futures observation. A positive value must be a whole multiple of the detected data resolution and may be used when BTC is the sole commodity; a standalone Treasury sleeve is still allowed. |
 | `max_total_exposure` | Maximum portfolio gross exposure. |
 | `max_long_exposure` | Maximum long-book exposure. |
 | `max_short_exposure` | Maximum short-book exposure. |

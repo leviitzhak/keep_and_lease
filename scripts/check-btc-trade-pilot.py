@@ -46,9 +46,22 @@ def future_trade(symbol, row):
 
 
 def future_trades(symbol, path):
-    with gzip.open(path, "rt") as stream:
-        for line in stream:
-            yield future_trade(symbol, json.loads(line))
+    # Independent raw normalization, kept separate from the Parquet conversion.
+    import sqlite3, tempfile
+    with tempfile.TemporaryDirectory(prefix='btc-raw-check-') as root:
+        db = sqlite3.connect(str(Path(root)/'check.sqlite'))
+        try:
+            db.execute('PRAGMA cache_size=-8192')
+            db.execute('PRAGMA temp_store=FILE')
+            db.execute('CREATE TABLE tape(seq INTEGER PRIMARY KEY,id TEXT UNIQUE,ts INTEGER,raw TEXT)')
+            with gzip.open(path, 'rt') as stream:
+                for line in stream:
+                    row=json.loads(line)
+                    db.execute('INSERT INTO tape VALUES(?,?,?,?)',(row['trade_seq'],row['trade_id'],row['timestamp'],line))
+            for line, in db.execute('SELECT raw FROM tape ORDER BY ts,seq'):
+                yield future_trade(symbol,json.loads(line))
+        finally:
+            db.close()
 
 
 def main():

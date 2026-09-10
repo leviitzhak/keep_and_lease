@@ -192,3 +192,16 @@ resource "google_storage_bucket_iam_member" "deploy_terraform_state" {
   role   = "roles/storage.objectAdmin"
   member = "serviceAccount:${google_service_account.deploy.email}"
 }
+
+
+# Shared web identity may read only the two intentionally published benchmarks.
+# Bucket IAM is foundation-owned; the workload deploy identity cannot edit it.
+resource "google_storage_bucket_iam_member" "web_published_benchmarks" {
+  bucket = google_storage_bucket.market_data.name
+  role   = "roles/storage.objectViewer"
+  member = "serviceAccount:${google_service_account.web.email}"
+  condition {
+    title      = "published_btc_90day_benchmarks"
+    expression = "resource.name.startsWith('projects/_/buckets/${google_storage_bucket.market_data.name}/objects/jobs/d7afa21dd9da7d3b1b4ab15efe639ed4/') || resource.name.startsWith('projects/_/buckets/${google_storage_bucket.market_data.name}/objects/jobs/e2e5ea42cb21f82926deb6d0ef9a3877/')"
+  }
+}

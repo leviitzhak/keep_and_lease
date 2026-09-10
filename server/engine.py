@@ -10,6 +10,9 @@ from pathlib import Path
 from typing import Any
 
 import silver_strategy_gui as gui
+from .audit_limits import configure_audit_limits
+
+configure_audit_limits()
 
 ProgressCallback = Callable[[str, str], None]
 
@@ -59,6 +62,13 @@ class StrategyEngine:
     ) -> dict[str, Any]:
         gui.backtest_bounds(parameters)
         notify = progress or (lambda _stage, _detail: None)
+        from btc_trade_backtest import validate, run
+        if validate(parameters) is not None:
+            if audit_collection is None:
+                from backtest_audit import AuditCollection, MemoryAuditStore
+                audit_collection = AuditCollection(MemoryAuditStore())
+            with self._execution_lock:
+                return run(parameters, self.data_root, audit_collection, notify)
         self.load(notify)
         notify("running", "Running the requested backtest")
         with self._execution_lock:
@@ -72,6 +82,8 @@ class StrategyEngine:
     def inspect_day(
         self, parameters: dict[str, Any], requested_date: str
     ) -> dict[str, Any]:
+        if parameters.get("btc_data_source") == "trade_tape":
+            raise ValueError("Use the completed trade replay audit for subsecond holdings and marks")
         self.load()
         with self._execution_lock:
             return gui.inspection_for_day(parameters, requested_date)
@@ -87,7 +99,9 @@ class StrategyEngine:
         else:
             from market_data_store import source_manifest_hash
             manifest_hash = source_manifest_hash(self.data_root)
+        from btc_trade_backtest import catalog
         self._provenance = {
+            "trade_manifest_sha256": catalog()["manifest_sha256"],
             "application_version": version,
             "engine_commit": os.getenv(
                 "KEEP_AND_LEASE_ENGINE_COMMIT",

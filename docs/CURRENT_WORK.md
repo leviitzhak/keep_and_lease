@@ -6,13 +6,74 @@ branch._
 
 ## Active change set
 
-- Current status: the one-day raw-trade research replay, Parquet/GCS storage
+Preview acceptance **passed** for the background-run interface on
+`d06eec62bf18b3e10e54733cae11d6978ffb6f19` in
+[deployment 34364647546](https://github.com/leviitzhak/keep_and_lease/actions/runs/34364647546).
+93 cloud CI tests and 47 local JavaScript tests passed. Rendered checks include
+reopening the GUI and selecting an older completed result, the multi-commodity
+baseline, 500 ms/GCS equivalence, CSV/audit, hover and a 1 ms fractional window.
+The 90-day sequence benchmark has completed in recovery `34363722260`; timestamp
+ordering and paired comparison are still running. Existing GUI result retention
+is 90 days; benchmark validation objects use the separate market-data bucket.
+
+
+Latest September 9 update: all 90 daily inputs are published; preview source
+`d38df75c337ea05f0b9adc835cd09a40cac6e070` passed deployment `34342363638` and
+its rendered GUI checks. Continuation `34342399295` reached the end of sequence
+replay but exceeded the 4 MiB audit-index limit. New work raises the operational
+budget to 32 MiB while preserving checkpoints, and adds durable GUI history,
+background submissions, concurrent cloud jobs, progress and result selection.
+The web image and Docker build-context allowlist explicitly include the new
+history runtime, and the source HTML
+and generated public HTML are kept identical. The final paired 90-day benchmark
+remains pending. Sequence recovery then passed in `34363722260` at 14:39 UTC:
+669.038 seconds for the final attempt, 653.836 MiB peak process RSS and
+7,445,502,103 compressed audit bytes. Timestamp continuation is running.
+The older milestones below
+record their state at the time; the current inventory is
+[BTC_BACKTEST_DATA_STATUS.md](BTC_BACKTEST_DATA_STATUS.md).
+
+
+- Active implementation: `agent/btc-90day-subsecond`, based on current GitHub
+  master with PR #39's tested subsecond changes carried forward. Added daily
+  ingestion/range manifests, bounded generation-pinned reads, hourly complete
+  account/audit checkpoints, durable resume, expiry settlement and staged
+  benchmark tooling. See [BTC_90_DAY_EXECUTION.md](BTC_90_DAY_EXECUTION.md).
+  Local pure recovery/financial and GUI checks pass. Pre-deployment CI is the
+  required Arrow/API gate. No 90-day dataset or full-range preview acceptance
+  has yet been completed; the active catalog and timeout remain unchanged.
+  After the initial automatic push-review rejection, the owner explicitly
+  approved the feature push, private preview and bounded ingestion workflow.
+  Published in [PR #40](https://github.com/leviitzhak/keep_and_lease/pull/40).
+  Deployment `34194440773` passed 56 Python tests and private rendered GUI
+  acceptance on `5712b75f953810115844ad332adfc56dd427faa2`. The 90-day ingestion
+  workflow `34194533429` completed with 77 successful days and 13 failed days;
+  its full-range publication and benchmark continuation stopped. The feature
+  branch now implements discrepancy evidence, two ordering assumptions, bounded
+  sorting and recovery from retained receipts. Recovery publication and paired
+  benchmarks remain required before full-range activation.
+
+
+- Preview-verified on `agent/gui-subsecond-execution` in [PR #39](https://github.com/leviitzhak/keep_and_lease/pull/39): integrated the uploaded June 25
+  trade dataset with the GUI and durable worker. Supports positive millisecond
+  clocks, bounded UTC periods, actual capital/participation, streamed audit and
+  CSV exports. See [BTC_SUBSECOND_GUI.md](BTC_SUBSECOND_GUI.md). Local execution
+  and regression checks pass (50 Python, 36 JavaScript/HTML, production build);
+  GCP preview deployment and rendered GUI acceptance passed at
+  `ef0000cb294c622d8e8d40973b8c2cb1ca065042` in
+  [workflow 34149398811](https://github.com/leviitzhak/keep_and_lease/actions/runs/34149398811).
+  Both 500 ms and 1 ms clocks, GCS/local financial equivalence, full CSV,
+  audit access, hover and the multi-commodity baseline passed.
+  No merge into master has been performed.
+
+
+- Previously merged: the one-day raw-trade research replay, Parquet/GCS storage
   pilot, selectable UTC backtest periods and connection-recovery changes were
   preview-verified and merged into `master` in
   [PR #38](https://github.com/leviitzhak/keep_and_lease/pull/38), merge commit
   `608aa6027e77474445c69ad221f33e3f98e953b6`. See
   [BTC_TRADE_PILOT.md](BTC_TRADE_PILOT.md) and
-  [BTC_TRADE_STORAGE.md](BTC_TRADE_STORAGE.md). The GUI still uses minute data.
+  [BTC_TRADE_STORAGE.md](BTC_TRADE_STORAGE.md). That merged revision used minute data in the GUI.
   The owner granted the operator bucket create/read access. The bounded GCS
   upload/replay passed for all 5,739,608 events and both complete audit hashes,
   with an 8 MiB remote-read cache per open partition. The measured capacity
@@ -106,3 +167,32 @@ branch._
   Render-native health-check paths remain to be entered in the current services.
 - Versioned Parquet/DuckDB/Arrow cloud inputs and cloud day inspection remain after
   the durable execution proof; the first worker image keeps the current input set.
+
+BTC 90-day recovery: two remaining failures in run 34242246481 were transient
+OIDC token-fetch timeouts after upload. Recovery now reuses their immutable GCS
+raw/Parquet data, verifies before creating receipts, retains completed receipts
+on later failures, and retries transient credential transport failures. The live
+GUI still selects the pilot; full-range publication, staged paired benchmarks,
+and catalog/worker activation remain required. See BTC_90_DAY_EXECUTION.md.
+
+BTC recovery update: run 34267650300 succeeded; all 90 days are verified and the
+immutable range is published. Preview 34267612174 passed pilot GUI acceptance
+at 5746ecca502ecee22a96d3edc90d20e1f87f9d90. Paired staged benchmarks run
+34267691181 follows publication; full-range GUI activation remains pending.
+
+## September 9: long-run infrastructure and evidence
+
+See [BTC_BACKTEST_DATA_STATUS.md](BTC_BACKTEST_DATA_STATUS.md) for the data
+inventory and measured 1/7/30-day results. Both policies passed those stages.
+The 90-day job hit six hours after saving its sequence checkpoint through
+August 21 13:00 UTC; the timestamp policy had not started.
+
+Implemented: explicit preview/stable Terraform profiles, a 24-hour preview
+worker with the verified 90-day catalog, configurable CPU/memory and bounded
+three-hour benchmark continuation segments. The recovery workflow reuses old
+checkpoint IDs with the unchanged replay engine. A CLI extension forks the
+checkpoint and verified audit prefix into a new result with a later end date.
+It requires the same immutable dataset/engine/rates and preserves the parent.
+Pending: complete 90-day measured results and Cloud Run acceptance, GUI/API
+extension, append-only validation for newly ingested history, and lifting
+reader/catalog bounds beyond 90 days after resource checks.

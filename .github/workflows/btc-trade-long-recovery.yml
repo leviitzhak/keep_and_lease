@@ -1,0 +1,36 @@
+name: Continue timed-out 90-day BTC benchmark
+on:
+  push:
+    branches: [agent/cloud-autonomous-access]
+    paths: [.cloud-agent/requests/btc-long-recovery.json]
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: btc-trade-range-benchmark
+  cancel-in-progress: false
+jobs:
+  request:
+    runs-on: ubuntu-latest
+    outputs:
+      source: ${{ steps.request.outputs.source }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: request
+        run: |
+          python - <<'PYCODE'
+          import json,os,re
+          from pathlib import Path
+          v=json.loads(Path('.cloud-agent/requests/btc-long-recovery.json').read_text())
+          assert set(v)=={'source_commit','action'} and v['action']=='resume-btc-run-34267691181'
+          assert re.fullmatch('[0-9a-f]{40}',v['source_commit'])
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f: f.write('source='+v['source_commit']+'\n')
+          PYCODE
+  ninety:
+    needs: request
+    uses: ./.github/workflows/btc-trade-benchmark-stage.yml
+    with:
+      source: ${{ needs.request.outputs.source }}
+      manifest: 52ef7ab51def1e37fc774f96bd94697ed90ad286d6885c72f69de84c285c9912
+      days: 90
+      checkpoint_run_id: '34267691181'

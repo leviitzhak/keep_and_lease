@@ -6,6 +6,7 @@ import heapq
 import io
 import json
 import resource
+import re
 import time
 import zipfile
 from itertools import chain
@@ -17,7 +18,7 @@ from trade_replay import Trade
 
 VERSION = 1
 ENGINE_COLUMNS = ["timestamp_us", "symbol", "price", "native_quantity",
-                  "quantity_currency", "side", "trade_id", "flags"]
+                  "quantity_currency", "side", "trade_id", "flags", "source_sequence"]
 
 
 def sha256(path):
@@ -52,24 +53,23 @@ def spot_records(path):
                            source_sequence=int(row[0]), flags=0, source_file=Path(path).name)
 
 
-def future_records(symbol, path):
-    with gzip.open(path, "rt") as stream:
-        for line in stream:
-            row = json.loads(line, parse_float=Decimal)
-            flags = sum(1 << i for i, key in enumerate(("block_trade_id", "block_rfq_id", "combo_id"))
-                        if row.get(key))
-            yield dict(timestamp_us=row["timestamp"] * 1000, precision_us=1000,
-                       symbol=symbol, source_symbol=symbol, price=Decimal(row["price"]),
-                       native_quantity=Decimal(row["amount"]), quantity_currency="USD", quote_currency="USD",
-                       side=row["direction"], trade_id=row["trade_id"], source_sequence=row["trade_seq"],
-                       flags=flags, source_file=Path(path).name)
-
+def future_records(symbol, path, *, contiguous=True):
+    from trade_ordering import sorted_raw_futures
+    for line in sorted_raw_futures(path, contiguous=contiguous):
+        row = json.loads(line, parse_float=Decimal)
+        flags = sum(1 << i for i, key in enumerate(("block_trade_id", "block_rfq_id", "combo_id"))
+                    if row.get(key))
+        yield dict(timestamp_us=row["timestamp"] * 1000, precision_us=1000,
+                   symbol=symbol, source_symbol=symbol, price=Decimal(row["price"]),
+                   native_quantity=Decimal(row["amount"]), quantity_currency="USD", quote_currency="USD",
+                   side=row["direction"], trade_id=row["trade_id"], source_sequence=row["trade_seq"],
+                   flags=flags, source_file=Path(path).name)
 
 def record_key(row):
     return row["timestamp_us"], row["symbol"], row["source_sequence"]
 
 
-def write_partition(records, destination, *, expected_rows, batch_rows=16384):
+def write_partition(records, destination, *, expected_rows, batch_rows=16384, contiguous=True):
     import pyarrow as pa
     import pyarrow.parquet as pq
     if not 1 <= batch_rows <= 65536:
@@ -87,7 +87,7 @@ def write_partition(records, destination, *, expected_rows, batch_rows=16384):
             if previous is not None and key <= previous:
                 raise ValueError("Duplicate or unordered source event")
             prior_seq = sequences.get(row["symbol"])
-            if prior_seq is not None and row["source_sequence"] != prior_seq + 1:
+            if contiguous and prior_seq is not None and row["source_sequence"] != prior_seq + 1:
                 raise ValueError("Source trade sequence gap")
             if row["price"] <= 0 or row["native_quantity"] <= 0 or row["side"] not in ("buy", "sell"):
                 raise ValueError("Invalid source trade")
@@ -125,11 +125,11 @@ def convert(raw_directory, destination, *, batch_rows=16384):
     partitions = []
     for path, rows, expected in [
         (spot_path, spot_records(raw / source["spot"]["path"]), source["spot"]["rows"]),
-        (futures_path, heapq.merge(*[future_records(s, raw / info["path"])
+        (futures_path, heapq.merge(*[future_records(s, raw / info["path"], contiguous=not bool(info.get("discrepancy")))
                                     for s, info in sorted(source["futures"].items())], key=record_key),
          sum(info["rows"] for info in source["futures"].values())),
     ]:
-        result = write_partition(rows, out / path, expected_rows=expected, batch_rows=batch_rows)
+        result = write_partition(rows, out / path, expected_rows=expected, batch_rows=batch_rows, contiguous="/market=spot/" in path)
         partitions.append(dict(path=path, **result))
     result = dict(schema_version=VERSION, source_manifest=source,
                   source_manifest_sha256=hashlib.sha256(source_bytes).hexdigest(),
@@ -232,7 +232,7 @@ def partition_trades(path, *, batch_rows=8192, start_us=None, end_us=None, symbo
         for batch in file.iter_batches(batch_size=batch_rows, row_groups=groups,
                                        columns=ENGINE_COLUMNS, use_threads=False):
             columns = [column.to_pylist() for column in batch.columns]
-            for ts, symbol, price, quantity, currency, side, identifier, flags in zip(*columns):
+            for ts, symbol, price, quantity, currency, side, identifier, flags, sequence in zip(*columns):
                 key = (ts, symbol)
                 if previous is not None and key < previous:
                     raise ValueError("Unordered Parquet events")
@@ -244,7 +244,7 @@ def partition_trades(path, *, batch_rows=8192, start_us=None, end_us=None, symbo
                 if currency not in ("BTC", "USD"):
                     raise ValueError("Unknown quantity currency")
                 btc = float(quantity) if currency == "BTC" else float(quantity) / price
-                yield Trade(ts, symbol, price, btc, side, identifier, flags == 0)
+                yield Trade(ts, symbol, price, btc, side, identifier, flags == 0, ts, sequence)
 
 
 class ParquetTradeStore:
@@ -253,9 +253,15 @@ class ParquetTradeStore:
         if str(directory).startswith("gs://"):
             from pyarrow.fs import GcsFileSystem
             self.filesystem = GcsFileSystem()
+            from google.cloud import storage
+            bucket_name, _, object_prefix = str(directory)[5:].partition("/")
+            self.gcs_bucket = storage.Client().bucket(bucket_name)
+            manifest_blob = self.gcs_bucket.blob(object_prefix.rstrip("/") + "/manifest.json")
+            manifest_blob.reload()
+            self.manifest_generation = int(manifest_blob.generation)
             self.root = str(directory)[5:].rstrip("/")
-            with self.filesystem.open_input_file(self.root + "/manifest.json") as stream:
-                self.manifest_bytes = stream.read()
+            self.manifest_bytes = manifest_blob.download_as_bytes(
+                if_generation_match=self.manifest_generation, checksum="crc32c")
         else:
             self.root = Path(directory)
             self.manifest_bytes = (self.root / "manifest.json").read_bytes()
@@ -263,6 +269,15 @@ class ParquetTradeStore:
         if self.manifest.get("schema_version") != VERSION:
             raise ValueError("Unknown dataset schema version")
         self.source_manifest = self.manifest["source_manifest"]
+        self.verified = set()
+        self.generations = {}
+        self.accessed_partitions = []
+        self.timings = {"checksum_reads": 0.0, "decode_and_merge": 0.0}
+        self.daily_cache = OrderedDict()
+        self.check_cancelled = lambda: None
+        if self.manifest.get("daily_datasets"):
+            self._validate_range()
+            return
         paths = set()
         for item in self.manifest["partitions"]:
             relative = Path(item["path"])
@@ -275,26 +290,102 @@ class ParquetTradeStore:
 
     def _partition(self, item, **kwargs):
         path = self.root + "/" + item["path"] if self.filesystem else self.root / item["path"]
-        digest = hashlib.sha256()
-        stream = self.filesystem.open_input_stream(path) if self.filesystem else path.open("rb")
-        with stream:
-            while block := stream.read(1024 * 1024):
-                digest.update(block)
-        if digest.hexdigest() != item["sha256"]:
-            raise ValueError("Parquet checksum mismatch")
+        blob = None
         if self.filesystem:
-            with self.filesystem.open_input_file(path) as remote:
-                with BlockCachedReader(remote) as cached:
+            blob = self.gcs_bucket.blob(path.split("/", 1)[1], generation=self.generations.get(item["path"]))
+            if item["path"] not in self.generations:
+                blob.reload()
+                self.generations[item["path"]] = int(blob.generation)
+            item = {**item, "generation": self.generations[item["path"]]}
+        # Repeated warm-up/comparison reads within the same job reuse verified immutable inputs.
+        if item["path"] not in self.verified:
+            started = time.monotonic()
+            digest = hashlib.sha256()
+            stream = blob.open("rb", chunk_size=4 * 1024 * 1024) if blob else path.open("rb")
+            with stream:
+                while block := stream.read(1024 * 1024):
+                    self.check_cancelled()
+                    digest.update(block)
+            if digest.hexdigest() != item["sha256"]:
+                raise ValueError("Parquet checksum mismatch")
+            self.timings["checksum_reads"] += time.monotonic() - started
+            self.verified.add(item["path"])
+            self.accessed_partitions.append(dict(item))
+        if self.filesystem:
+            # BlobReader pins every ranged read to the verified object generation.
+            with blob.open("rb", chunk_size=4 * 1024 * 1024) as remote:
+                class PinnedReader:
+                    def size(self): return item["bytes"]
+                    def read(self, n): return remote.read(n)
+                    def seek(self, offset): return remote.seek(offset)
+                with BlockCachedReader(PinnedReader()) as cached:
                     yield from partition_trades(cached, **kwargs)
         else:
             yield from partition_trades(path, **kwargs)
 
+    def _validate_range(self):
+        from btc_trade_backtest import us_time
+        expected = us_time(self.source_manifest["start"])
+        days = self.manifest["daily_datasets"]
+        if not 1 <= len(days) <= 90:
+            raise ValueError("Range dataset requires 1 to 90 UTC days")
+        for day in days:
+            lo, hi = us_time(day["start"]), us_time(day["end"])
+            if lo != expected or hi-lo != 86400_000_000 or lo % 86400_000_000:
+                raise ValueError("Missing, overlapping or non-UTC daily coverage")
+            if not re.fullmatch("[0-9a-f]{64}", day["manifest_sha256"]):
+                raise ValueError("Invalid daily manifest checksum")
+            expected = hi
+        if expected != us_time(self.source_manifest["end"]):
+            raise ValueError("Range coverage does not match its days")
+
+    def _range_trades(self, **kwargs):
+        from btc_trade_backtest import us_time
+        lo, hi = kwargs.get("start_us"), kwargs.get("end_us")
+        for day in self.manifest["daily_datasets"]:
+            if (lo is not None and us_time(day["end"]) <= lo) or (hi is not None and us_time(day["start"]) >= hi):
+                continue
+            key = day["manifest_sha256"]
+            if key not in self.daily_cache:
+                if self.filesystem:
+                    # Range manifests may only reference immutable objects in this bucket.
+                    uri = "gs://" + self.root.split("/", 1)[0] + "/btc/trades/v1/" + key
+                else:
+                    relative = Path(day["local_path"])
+                    if relative.is_absolute() or ".." in relative.parts:
+                        raise ValueError("Unsafe daily dataset path")
+                    uri = self.root / relative
+                child = ParquetTradeStore(uri)
+                if hashlib.sha256(child.manifest_bytes).hexdigest() != key:
+                    raise ValueError("Daily manifest checksum mismatch")
+                if (us_time(child.source_manifest["start"]) != us_time(day["start"]) or
+                        us_time(child.source_manifest["end"]) != us_time(day["end"])):
+                    raise ValueError("Daily manifest coverage mismatch")
+                # Retain metadata/checksum identities only; decoded batches are not cached.
+                self.daily_cache[key] = child
+            child = self.daily_cache[key]
+            child.check_cancelled = self.check_cancelled
+            before = dict(child.timings)
+            yield from child.trades(**kwargs)
+            for phase in self.timings:
+                self.timings[phase] += child.timings[phase] - before[phase]
+            for part in child.accessed_partitions:
+                value = {**part, "daily_manifest_sha256": key}
+                if value not in self.accessed_partitions:
+                    self.accessed_partitions.append(value)
+
     def trades(self, *, batch_rows=8192, start_us=None, end_us=None, symbols=None):
+        if self.manifest.get("daily_datasets"):
+            return self._range_trades(batch_rows=batch_rows, start_us=start_us, end_us=end_us, symbols=symbols)
         # Open one partition at a time per venue/market, not one per historical day.
         markets = {}
         for item in self.manifest["partitions"]:
             if (not item["rows"] or (start_us is not None and item["last_us"] < start_us)
                     or (end_us is not None and item["first_us"] >= end_us)):
+                continue
+            if symbols is not None and "SPOT" not in symbols and "/market=spot/" in item["path"]:
+                continue
+            if symbols == {"SPOT"} and "/market=dated-futures/" in item["path"]:
                 continue
             markets.setdefault(str(Path(item["path"]).parent.parent), []).append(item)
         streams = []
@@ -305,4 +396,15 @@ class ParquetTradeStore:
                     raise ValueError("Overlapping partition times")
             streams.append(chain.from_iterable(self._partition(item, batch_rows=batch_rows,
                 start_us=start_us, end_us=end_us, symbols=symbols) for item in parts))
-        return heapq.merge(*streams, key=lambda event: (event.us, event.symbol))
+        def measured():
+            merged = iter(heapq.merge(*streams, key=lambda event: (event.us, event.symbol)))
+            while True:
+                started = time.monotonic()
+                try:
+                    event = next(merged)
+                except StopIteration:
+                    return
+                finally:
+                    self.timings["decode_and_merge"] += time.monotonic() - started
+                yield event
+        return measured()
