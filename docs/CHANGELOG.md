@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-09-11 — Bounded TODO usability batch
+
+- Default new replay capital to $100,000 in the HTML and parameter loader;
+  preserve explicitly saved $1 strategies without runtime upgrades. Clarify
+  funded replay versus normalized candle participation.
+- Append target futures notional, free collateral, collateralization ratio and
+  cumulative filled turnover to streamed replay CSVs. Preserve legacy columns,
+  derive collateral only from available cash/notional, and leave unsupported
+  historical targets/turnover blank. Immutable audit rows are unchanged.
+- Show selected-chunk progress for detailed plots and received-byte progress
+  for full audit archives, with cancellation/error recovery. No invented ETA
+  or percentage is shown for unknown-length streams.
+- Use thinner 60–160 return-distribution bins; keep hover and drawing aligned,
+  exclude missing values and avoid large-array argument overflow.
+- Keep engine/accounting changes, full-period acceptance and deferred work
+  outside this limited batch. Deployment evidence is recorded separately.
+
 ## 2026-09-06 — Preserve edits during durable result restoration
 
 - Keep Run disabled until engine and saved-result initialization finish.

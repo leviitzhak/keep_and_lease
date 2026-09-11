@@ -2,6 +2,10 @@
 
 This checklist reflects the current Google Cloud / GCS implementation and the remaining research, product, data, and engineering work. Completed items are retained when they document important implemented behavior.
 
+The September 11 small batch completes four items and partially improves full-audit
+progress. Scope and validation are recorded in `TODO_SMALL_BATCH_VALIDATION.md`;
+remaining items below are not implicitly completed by that batch.
+
 ## Higher priority
 
 - [x] Complete authenticated GCS publication/read validation for the tested
@@ -64,8 +68,13 @@ This checklist reflects the current Google Cloud / GCS implementation and the re
   including implied lease rate.
 - [x] Add progress and cancellation for selected-period BTC replay spreadsheet
   generation/export.
-- [ ] Add progress when loading detailed plots.
-- [ ] Add progress for full-audit generation/download.
+- [x] Add progress when loading detailed plots (selected chunks received/total,
+  with cancellation and no partial replacement of existing charts).
+- [ ] Complete progress for full-audit generation/download across run types.
+  Ordinary daily/minute results now show preparation status, received bytes and
+  cancellation, with percentage only when the response length is known. Large
+  trade-replay archives still use native browser downloads; in-app progress for
+  that path remains pending rather than buffering a multi-GB archive in RAM.
 - [ ] Later, if suitable data becomes available, investigate historical bid/ask
   quotes and additional order-book depth for executable prices, available size,
   partial fills, participation constraints and slippage.
@@ -181,18 +190,19 @@ This checklist reflects the current Google Cloud / GCS implementation and the re
   the default saved view across sessions, with an explicit option to show all.
 - [ ] Where sensible, unify trade-replay period/export controls with the
   corresponding controls used for legacy/daily runs.
-- [ ] Extend streamed `trade-valuations.csv` output with target futures notional,
+- [x] Extend streamed `trade-valuations.csv` output with target futures notional,
   free collateral, collateralization ratio and cumulative turnover. Preserve
   backward compatibility and leave historical benchmark fields blank when the
   immutable source does not contain enough information to derive them.
-- [ ] Make the HTML source default for `trade_initial_capital_usd` $100,000 and
+- [x] Make the HTML source default for `trade_initial_capital_usd` $100,000 and
   remove the runtime `$1 -> $100,000` upgrade heuristic so a deliberately saved
   $1 strategy remains $1. Update the stale help copy to describe participation
   against configured capital while retaining the research-capacity caveat.
 - [ ] Refresh `BTC_SUBSECOND_GUI.md` for the current configurable chart density,
   accepted published paired benchmarks and deployed GUI/API checkpoint extension;
   keep fresh full-period Cloud Run acceptance documented as a separate pending gate.
-- [ ] Use thinner bins in displayed return-distribution histograms.
+- [x] Use thinner bins in displayed return-distribution histograms (60–160 bins,
+  shared drawing/hover rules; missing values excluded).
 - [x] Show hover information on return-distribution graphs with the bin interval,
   observation count and frequency.
 - [x] Populate the GUI **Saved strategy** dropdown from strategy files in the

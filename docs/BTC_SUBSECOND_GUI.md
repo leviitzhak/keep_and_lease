@@ -28,8 +28,9 @@ available only for the existing candle engine's every-observation setting.
   same-day reactivity, matched-maturity Treasury asset with shortest-rolling
   allocation and accrual valuation. The existing long selection/allocation
   controls and smoothing apply. Other settings fail explicitly.
-- Initial capital is configurable; volume participation therefore applies to
-  actual funded quantities. Trading fees are charged on actual partial fills.
+- Initial capital defaults to $100,000 in the GUI and when an older preset
+  omits it. An explicitly saved $1 value remains $1. Volume participation
+  applies to the configured funded quantities, not a silent runtime upgrade. Trading fees are charged on actual partial fills.
   Proxy expense, half-spread and slippage must be zero in this version.
 - A decision uses only already-observed marks inside the maximum quote age.
   Orders fill strictly after decision time plus the additional delay, using
@@ -82,7 +83,12 @@ computed before chart sampling; drawdowns are measured on decision valuations.
 The view offers all-valuation CSV and complete audit ZIP downloads. The CSV
 streams from `GET /api/v1/backtests/{job_id}/trade-valuations.csv`, including
 exact UTC microseconds, quantities, target quantities, mark IDs/times and NAV
-reconciliation. The existing candle XLSX and book-decomposition charts apply
+reconciliation. Four appended columns expose `target_futures_notional_usd`,
+`free_collateral_usd`, `collateralization_ratio` and `turnover_usd`. Older
+audit rows retain blank target/turnover cells when absent. Free collateral
+and the ratio are derived only when both cash and actual notional exist;
+zero futures notional has a blank ratio. This export never rewrites the
+immutable source audit. The existing candle XLSX and book-decomposition charts apply
 to candle runs; they are not synthesized from trade results.
 
 Global request parameters are `btc_data_source` (`minute`, default, or
