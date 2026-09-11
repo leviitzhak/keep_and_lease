@@ -154,7 +154,14 @@
     if(model.kind==='daily'&&def.id==='mark-age')return 'Not recorded by this daily/legacy execution model; quote timing cannot be inferred from dates alone.';
     return 'Unavailable in this saved result. New runs record additional plot diagnostics; historical data are not invented or backfilled.';
   }
-  function render({result,root,sources,accept,lineChart,histogramChart,scatterChart,annotate}) {
+  function disposeCanvases(container, releaseCanvas) {
+    for (const canvas of container.querySelectorAll('canvas')) {
+      releaseCanvas?.(canvas);
+      canvas.onmousemove=canvas.onclick=canvas.onmouseleave=null;
+      canvas.width=canvas.height=0;
+    }
+  }
+  function render({result,root,sources,accept,lineChart,histogramChart,scatterChart,annotate,releaseCanvas}) {
     if(!root||!result)return;
     const doc=root.ownerDocument;
     let panel=doc.getElementById('sharedRunPlots');
@@ -179,7 +186,7 @@
     if(!group.options.length)for(const [key,title] of Object.entries(groups)){const option=doc.createElement('option');option.value=key;option.textContent=title;group.append(option);}
     group.value=selectedGroup|| (result.result_kind==='btc_trade_replay'?'books':'execution');
     function draw(){
-      const m=all[commodity.value],cards=doc.getElementById('sharedPlotCards');cards.replaceChildren();
+      const m=all[commodity.value],cards=doc.getElementById('sharedPlotCards');disposeCanvases(cards,releaseCanvas);cards.replaceChildren();
       if(!m){doc.getElementById('sharedPlotNote').textContent='No commodity sleeve in this run. The portfolio charts remain available above.';doc.getElementById('sharedPlotStats').textContent='';return;}
       const rows=selectRows(m,accept),sampled=m.sampling>1,interval=m.kind==='replay'?'between displayed valuations':'for each recorded execution interval';
       doc.getElementById('sharedPlotNote').textContent=m.note+' Returns are '+interval+(sampled?'; chart sampling is active, not a change in execution frequency.':' .')+' All panels follow the existing chart-period controls. Volume uses cumulative-counter differences before period filtering. '+m.turnoverLabel+'.';
@@ -229,5 +236,5 @@
     }
     commodity.onchange=draw;group.onchange=draw;draw();
   }
-  global.KeepLeasePlots={finite,replayModel,dailyModel,models,selectRows,catalog,render};
+  global.KeepLeasePlots={finite,replayModel,dailyModel,models,selectRows,catalog,disposeCanvases,render};
 })(typeof window==='undefined'?globalThis:window);

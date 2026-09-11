@@ -2,7 +2,9 @@
 
 The `Shared daily / trade-replay plots` panel uses a single catalog and two
 read-only adapters in `shared-run-plots.js`. Choose a commodity and plot family.
-Only that family is rendered, avoiding dozens of wide canvases in mobile memory.
+Only that family is rendered. Switching families releases obsolete chart-registry
+entries and canvas bitmaps; the application layout grows to show captions, legends
+and the complete chart rather than clipping it to the legacy fixed height.
 Existing daily and replay panels, saved results and exports remain available.
 
 ## Families

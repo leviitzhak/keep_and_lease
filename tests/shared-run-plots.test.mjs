@@ -73,3 +73,12 @@ test('packaging and both draw paths include the shared viewer and schema-safe ag
  assert.match(html,/i:last.fields.indexOf\('max_mark_age_seconds'\)/);
  assert.match(readFileSync(new URL('../Dockerfile.web',import.meta.url),'utf8'),/public\/shared-run-plots.js/);
 });
+
+
+test('replacing a plot family releases renderer references and canvas bitmaps',()=>{
+  const canvases=Array.from({length:4},()=>({width:8000,height:250,onmousemove:()=>{},onclick:()=>{},onmouseleave:()=>{}}));
+  const registry=new Map(canvases.map(c=>[c,{rows:[[1,2]]}]));
+  api.disposeCanvases({querySelectorAll:()=>canvases},canvas=>registry.delete(canvas));
+  assert.equal(registry.size,0);
+  for(const canvas of canvases){assert.equal(canvas.width,0);assert.equal(canvas.height,0);assert.equal(canvas.onmousemove,null);}
+});

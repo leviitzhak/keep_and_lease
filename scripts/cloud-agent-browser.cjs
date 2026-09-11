@@ -349,7 +349,15 @@ async function main() {
       await page.selectOption('#sharedPlotGroup','books');
       if (!(await page.locator('#shared-lease-values').isVisible())) throw Error('Mobile shared book chart missing');
       await page.setViewportSize({width:1440,height:1000});
-      console.log('Shared replay adapter verified: books, market data, inspection and mobile.');
+      for (const family of ['overview','execution','activity','market','curves','rates','books','reconciliation']) {
+        await page.selectOption('#sharedPlotGroup',family);
+        const layout = await page.evaluate(() => ({
+          retained: [...charts.keys()].filter(c=>c.id.startsWith('shared-')&&!c.isConnected).length,
+          clipped: [...document.querySelectorAll('#sharedPlotCards canvas')].some(c=>c.offsetTop+c.offsetHeight>c.parentElement.clientHeight+2)
+        }));
+        if (layout.retained || layout.clipped) throw Error('Shared chart lifecycle/layout failure: '+JSON.stringify(layout));
+      }
+      console.log('Shared replay adapter verified: books, market data, inspection, mobile, all families and bounded canvas lifecycle.');
       await page.waitForFunction(()=>!document.querySelector('#run').disabled);
       const csvDownload = page.waitForEvent('download');
       await page.click('#tradeReplayCsv');
