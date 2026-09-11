@@ -20,7 +20,7 @@
 <label>Data source<select name="btc_data_source"><option value="minute">Minute candles</option><option value="trade_tape">Trade replay (research)</option></select></label>
 <div id="tradeReplayControls" hidden>
 <p class="statistics-note" id="tradeCoverage">Available: 25 June 2026 UTC. Checking server coverage…</p>
-<label>Initial capital (USD)<input name="trade_initial_capital_usd" type="number" value="1" min="0.000001" step="any"></label>
+<label>Initial capital (USD)<input name="trade_initial_capital_usd" type="number" value="100000" min="0.000001" step="any"></label>
 <label>Trade ordering assumption<select name="trade_ordering"><option value="sequence">Preserve instrument sequence (delay backward timestamps)</option><option value="timestamp">Trust reported timestamps (comparison)</option></select></label>
 <p class="statistics-note">These are research assumptions about discrepant records, not verified historical arrival times. Run both with identical parameters to compare sensitivity.</p>
 <progress id="tradeRunProgress" max="1" hidden></progress>
@@ -61,7 +61,7 @@
 <label>Assumed half spread (bps)<input name="half_spread_bps" type="number" value="0" min="0" max="100" step="0.1"></label>
 <label>Slippage (bps per side)<input name="slippage_bps" type="number" value="0" min="0" max="100" step="0.1"></label>
 <label>Maximum observed volume (%)<input name="max_volume_participation" type="number" value="100" min="0" max="100" step="any"></label>
-<p class="statistics-note">Observed regular BTC execution is long only. Signals can fill only on a later observation; no-trade candles can value existing holdings but cannot fill orders. Current candle closes remain a research fill assumption. Fees default to zero and should be tested separately. Volume is applied to a normalized initial portfolio of $1, so this is not a capacity estimate for a funded account.</p>
+<p class="statistics-note">Observed regular BTC execution is long only. Signals can fill only on a later observation; no-trade candles can value existing holdings but cannot fill orders. Current candle closes remain a research fill assumption. Fees default to zero and should be tested separately. Trade replay applies participation to the configured Initial capital (USD); candle execution still uses a normalized $1 portfolio. Neither model is a capacity estimate for a large funded account.</p>
 <label>BTC conversion fee (%)<input name="inverse_payoff_conversion_fee" type="number" value="0" min="0" max="99.999" step="0.01"></label>
 <label>Minimum conversion (BTC)<input name="inverse_min_conversion_btc" type="number" value="0" min="0" step="0.0001"></label>
 <p class="statistics-note">Inverse payoffs accumulate in BTC and enter USD NAV only when the absolute net balance reaches this threshold. Conversion uses that day’s spot and the fixed proportional fee; the final balance is converted at backtest end.</p>
@@ -257,7 +257,7 @@ function captureCommodity(){const profile={};for(const name of LEG_FIELDS){const
 function loadCommodity(key){const profile=commodityProfiles[key]||commodityProfiles.silver||{};for(const name of LEG_FIELDS){const field=form.elements.namedItem(name);if(field&&profile[name]!=null)field.value=profile[name]}if(key==='btc'&&!commodityProfiles[key]){form.elements.namedItem('slv_expense').value=0;form.elements.namedItem('futures_contract_type').value='inverse'}activeCommodity=key;parameterCommodity.value=key;updateScorePreviewButtons();if($('scorePreviewDialog').open)drawScoreParameterHeatmap()}
 function values(){captureCommodity();const result=Object.fromEntries(new FormData(form).entries());result.commodity_parameters=JSON.stringify(commodityProfiles);return result}
 const PARAM_SCHEMA_VERSION=1,PARAM_KEY='keep-and-lease.parameters.v2',PRESET_KEY='keep-and-lease.strategy-presets.v1',VIEW_KEY='keep-and-lease.view.v1',ORDER_KEY='keep-and-lease.chart-order.v1';
-function applyParameters(saved){saved={btc_data_source:'minute',trade_initial_capital_usd:'1',backtest_start:'',backtest_end:'',...(saved||{})};for(const key of ['backtest_start','backtest_end']){if(saved[key]){const date=new Date(/(?:Z|[+-]\d\d:\d\d)$/.test(saved[key])?saved[key]:saved[key]+'Z');if(Number.isFinite(date.getTime()))saved[key]=date.toISOString().slice(0,23).replace(/\.000$/,'')}}if(saved.long_extreme_qualification_rate==null&&(saved.long_extreme_activation_rate!=null||saved.long_extreme_band!=null))saved.long_extreme_qualification_rate=Number(saved.long_extreme_activation_rate??10)-Number(saved.long_extreme_band??2);if(saved.short_extreme_qualification_rate==null&&(saved.short_extreme_activation_rate!=null||saved.short_extreme_band!=null))saved.short_extreme_qualification_rate=Number(saved.short_extreme_activation_rate??-10)+Number(saved.short_extreme_band??2);for(const [name,value] of Object.entries(saved)){const field=form.elements.namedItem(name);if(field)field.value=value}try{commodityProfiles=typeof saved.commodity_parameters==='string'?JSON.parse(saved.commodity_parameters):(saved.commodity_parameters||{})}catch{commodityProfiles={}}if(!commodityProfiles.silver){const shared={};for(const name of LEG_FIELDS)if(saved[name]!=null)shared[name]=saved[name];for(const key of COMMODITIES)if(!commodityProfiles[key])commodityProfiles[key]={...shared}}loadCommodity('silver');if(typeof updateTradeControls==='function')updateTradeControls()}
+function applyParameters(saved){saved={btc_data_source:'minute',trade_initial_capital_usd:'100000',backtest_start:'',backtest_end:'',...(saved||{})};for(const key of ['backtest_start','backtest_end']){if(saved[key]){const date=new Date(/(?:Z|[+-]\d\d:\d\d)$/.test(saved[key])?saved[key]:saved[key]+'Z');if(Number.isFinite(date.getTime()))saved[key]=date.toISOString().slice(0,23).replace(/\.000$/,'')}}if(saved.long_extreme_qualification_rate==null&&(saved.long_extreme_activation_rate!=null||saved.long_extreme_band!=null))saved.long_extreme_qualification_rate=Number(saved.long_extreme_activation_rate??10)-Number(saved.long_extreme_band??2);if(saved.short_extreme_qualification_rate==null&&(saved.short_extreme_activation_rate!=null||saved.short_extreme_band!=null))saved.short_extreme_qualification_rate=Number(saved.short_extreme_activation_rate??-10)+Number(saved.short_extreme_band??2);for(const [name,value] of Object.entries(saved)){const field=form.elements.namedItem(name);if(field)field.value=value}try{commodityProfiles=typeof saved.commodity_parameters==='string'?JSON.parse(saved.commodity_parameters):(saved.commodity_parameters||{})}catch{commodityProfiles={}}if(!commodityProfiles.silver){const shared={};for(const name of LEG_FIELDS)if(saved[name]!=null)shared[name]=saved[name];for(const key of COMMODITIES)if(!commodityProfiles[key])commodityProfiles[key]={...shared}}loadCommodity('silver');if(typeof updateTradeControls==='function')updateTradeControls()}
 function presets(){try{return JSON.parse(localStorage.getItem(PRESET_KEY)||'{}')}catch{return{}}}
 function suggestedName(){const labels={silver:'Silver',gold:'Gold',sp500:'S&P 500',btc:'Bitcoin'},parts=COMMODITIES.filter(k=>Number(form.elements.namedItem('weight_'+k)?.value)>0).map(k=>labels[k]);if(Number(form.elements.namedItem('weight_treasury')?.value)>0)parts.push('Treasuries');return (parts.join(' + ')||'Strategy')+' · '+new Date().toISOString().slice(0,10)}
 function refreshPresets(selected=''){const entries=Object.keys(presets()).sort();$('strategyPreset').innerHTML='<option value="">Choose a saved strategy…</option>'+entries.map(name=>'<option></option>').join('');entries.forEach((name,i)=>{$('strategyPreset').options[i+1].value=name;$('strategyPreset').options[i+1].textContent=name});$('strategyPreset').value=selected;$('strategyName').placeholder=suggestedName()}
@@ -332,7 +332,7 @@ function accountingWorkbook(period){
 }
 async function downloadAccountingSpreadsheet(){const downloadButton=$('downloadSpreadsheet'),originalLabel=downloadButton.textContent;try{downloadButton.disabled=true;downloadButton.textContent='Preparing spreadsheet…';status.className='status';status.textContent='Preparing completed-backtest workbook…';await new Promise(resolve=>setTimeout(resolve,0));if(!last||!plotRangeSource)throw new Error('Run or restore a completed strategy result first.');const period=spreadsheetPeriod();if(!period)throw new Error('No observations are available in the selected interval.');if(typeof fflate==='undefined')throw new Error('Spreadsheet support did not load. Refresh the page and try again.');const bytes=workbookBytes(accountingWorkbook(period)),blob=new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),link=document.createElement('a'),url=URL.createObjectURL(blob);link.href=url;link.download='keep-and-lease-backtest-'+period.start+'-to-'+period.end+'.xlsx';link.hidden=true;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);status.className='status';status.textContent='Downloaded completed-backtest workbook for '+period.start+' to '+period.end}catch(err){status.className='status error';status.textContent=err.message}finally{downloadButton.textContent=originalLabel;downloadButton.disabled=!plotRangeSource?.portfolioSeries?.length}}
 // Large minute results retain their complete audit in immutable server chunks.
-let auditAbort = null;
+let auditAbort = null, auditDownloadAbort = null;
 function initializeAuditControls(){
  const audit=plotRangeSource?.result?.audit;
  $('loadAuditDetails').hidden=$('downloadRawAudit').hidden=$('auditStatus').hidden=!audit;
@@ -348,30 +348,59 @@ async function fetchAuditChunk(audit,product,entry,section='raw',signal){
 }
 function auditEntries(dataset,period){return(dataset?.chunks||[]).filter(entry=>entry.end>=period.start&&entry.start<=period.end)}
 function saveDownload(blob,name){const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=name;link.click();setTimeout(()=>URL.revokeObjectURL(url),60000)}
+function auditProgress(id, label){
+ let progress=$(id);
+ if(!progress){progress=document.createElement('progress');progress.id=id;progress.setAttribute('aria-label',label);$('auditStatus').before(progress)}
+ progress.hidden=false;progress.removeAttribute('value');return progress;
+}
 async function loadAuditDetails(){
  if(auditAbort){auditAbort.abort();return}
  const result=plotRangeSource?.result,audit=result?.audit,period=spreadsheetPeriod();if(!audit||!period)return;
- const controller=auditAbort=new AbortController(),button=$('loadAuditDetails');button.textContent='Cancel detail loading';
+ const work=Object.entries(audit.datasets).filter(([product])=>product!=='portfolio'&&plotRangeSource.sleeves?.[product])
+  .map(([product,dataset])=>[product,auditEntries(dataset,period)]);
+ const total=work.reduce((sum,[,entries])=>sum+entries.length,0);
+ if(!total){$('auditStatus').textContent='No detailed-plot chunks are available for the selected period.';return}
+ const controller=auditAbort=new AbortController(),button=$('loadAuditDetails'),progress=auditProgress('detailProgress','Detailed plots: chunks received');
+ button.textContent='Cancel detail loading';progress.max=total;progress.value=0;
+ $('auditStatus').textContent='Loading detailed plots: 0 / '+total+' chunks received.';
  try{const loaded={};let count=0;
-  for(const [product,dataset] of Object.entries(audit.datasets)){if(product==='portfolio')continue;loaded[product]=[];
-   for(const entry of auditEntries(dataset,period)){const points=await fetchAuditChunk(audit,product,entry,'rate_change',controller.signal);
+  for(const [product,entries] of work){loaded[product]=[];
+   for(const entry of entries){const points=await fetchAuditChunk(audit,product,entry,'rate_change',controller.signal);
+    if(controller.signal.aborted||plotRangeSource.result!==result)return;
     for(const point of points)if(point.date>=period.start&&point.date<=period.end)loaded[product].push(point);
-    $('auditStatus').textContent='Loading detailed plots: '+(++count)+' chunks received…';}
+    progress.value=++count;$('auditStatus').textContent='Loading detailed plots: '+count+' / '+total+' chunks received.';}
   }
-  if(plotRangeSource.result!==result)return;
   for(const [product,points] of Object.entries(loaded))plotRangeSource.sleeves[product].rateChangePoints=points;
-  applyPlotRange();$('auditStatus').textContent='Detailed plots loaded for '+period.start+' to '+period.end+'. Change the period and load again for other dates.';
- }catch(error){$('auditStatus').textContent=error.name==='AbortError'?'Detail loading cancelled.':error.message}
- finally{auditAbort=null;button.textContent='Load detailed plots'}
+  applyPlotRange();$('auditStatus').textContent='Detailed plots loaded: '+count+' / '+total+' chunks for '+period.start+' to '+period.end+'.';
+ }catch(error){if(plotRangeSource.result===result)$('auditStatus').textContent=error.name==='AbortError'?'Detail loading cancelled.':error.message}
+ finally{auditAbort=null;button.textContent='Load detailed plots';progress.hidden=true}
+}
+async function readAuditDownload(response,onProgress){
+ const advertised=Number(response.headers.get('Content-Length'));
+ const total=!response.headers.get('Content-Encoding')&&advertised>0?advertised:null;
+ onProgress(0,total);
+ if(!response.body?.getReader){const blob=await response.blob();onProgress(blob.size,blob.size);return blob}
+ const reader=response.body.getReader(),parts=[];let received=0;
+ try{for(;;){const {done,value}=await reader.read();if(done)break;parts.push(value);received+=value.byteLength;onProgress(received,total)}}
+ finally{reader.releaseLock()}
+ return new Blob(parts,{type:response.headers.get('Content-Type')||'application/zip'});
 }
 async function downloadRawAudit(){
- const audit=plotRangeSource?.result?.audit;if(!audit)return;
- const product=Object.keys(audit.datasets).find(key=>key!=='portfolio');if(!product)return;
- const button=$('downloadRawAudit');button.disabled=true;
- try{const response=await fetch(audit.base_url.replace(/\/audit$/,'/audit-download'),{credentials:'same-origin'});
+ if(auditDownloadAbort){auditDownloadAbort.abort();return}
+ const result=plotRangeSource?.result,audit=result?.audit;if(!audit)return;
+ const controller=auditDownloadAbort=new AbortController(),button=$('downloadRawAudit'),progress=auditProgress('auditDownloadProgress','Full audit: downloaded bytes');
+ button.textContent='Cancel audit download';$('auditStatus').textContent='Preparing full audit archive…';
+ try{const response=await fetch(audit.base_url.replace(/\/audit$/,'/audit-download'),{credentials:'same-origin',signal:controller.signal});
   if(!response.ok)throw Error('Full audit download failed ('+response.status+').');
-  saveDownload(await response.blob(),'keep-and-lease-full-audit.zip');
- }catch(error){$('auditStatus').textContent=error.message}finally{button.disabled=false}
+  const blob=await readAuditDownload(response,(received,total)=>{
+   if(total&&received<=total){progress.max=total;progress.value=received}else progress.removeAttribute('value');
+   if(plotRangeSource.result===result)$('auditStatus').textContent='Downloading full audit: '+received.toLocaleString()+(total?' / '+total.toLocaleString():'')+' bytes received.';
+  });
+  if(controller.signal.aborted)return;
+  saveDownload(blob,'keep-and-lease-full-audit.zip');
+  if(plotRangeSource.result===result)$('auditStatus').textContent='Full audit downloaded: '+blob.size.toLocaleString()+' bytes.';
+ }catch(error){if(plotRangeSource.result===result)$('auditStatus').textContent=error.name==='AbortError'?'Full audit download cancelled.':error.message}
+ finally{auditDownloadAbort=null;button.textContent='Download full audit';progress.hidden=true}
 }
 async function downloadChunkedSpreadsheet(){
  const button=$('downloadSpreadsheet'),result=plotRangeSource.result,audit=result.audit,period=spreadsheetPeriod();if(!period)return;
@@ -527,7 +556,7 @@ function lineChart(canvas, rows, specs, ylabel, opts={}) {
 }
 function histogramChart(canvas,values,color){
   if(!canvas)return;
-  const data=values.map(num).filter(Number.isFinite),parent=canvas.parentElement,mobile=matchMedia('(max-width:850px)').matches,dpr=mobile?1:Math.min(devicePixelRatio||1,1.25),w=Math.max(280,parent.clientWidth),h=250,m={l:58,r:12,t:12,b:38};canvas.style.width=w+'px';canvas.style.height=h+'px';canvas.width=w*dpr;canvas.height=h*dpr;const c=canvas.getContext('2d');c.scale(dpr,dpr);c.clearRect(0,0,w,h);if(!data.length){c.fillStyle='#667085';c.font='13px system-ui';c.fillText('No observations are available for this graph.',m.l,Math.round(h/2));return}let low=arrayMinimum(data),high=arrayMaximum(data);if(low===high){low-=.5;high+=.5}const bins=Math.min(80,Math.max(30,Math.ceil(Math.sqrt(data.length)))),counts=Array(bins).fill(0),width=(high-low)/bins;for(const value of data)counts[Math.min(bins-1,Math.max(0,Math.floor((value-low)/width)))]++;const frequencies=counts.map(count=>100*count/data.length),top=arrayMaximum(frequencies)||1,x=i=>m.l+i/bins*(w-m.l-m.r),y=value=>m.t+(top-value)/top*(h-m.t-m.b);c.font='11px system-ui';c.strokeStyle='#e3e7ee';for(let j=0;j<5;j++){const yy=m.t+j*(h-m.t-m.b)/4;c.beginPath();c.moveTo(m.l,yy);c.lineTo(w-m.r,yy);c.stroke();c.fillStyle='#667085';c.fillText(fmt(top-j*top/4,2)+'%',5,yy+4)}c.fillStyle=color;for(let i=0;i<bins;i++){const left=x(i),right=x(i+1);c.fillRect(left+.5,y(frequencies[i]),Math.max(1,right-left-1),h-m.b-y(frequencies[i]))}c.fillStyle='#667085';for(let j=0;j<=4;j++){const value=low+j*(high-low)/4;c.fillText(fmt(value,3)+'%',m.l+j*(w-m.l-m.r)/4-12,h-18)}c.save();c.translate(13,h/2);c.rotate(-Math.PI/2);c.fillText('% of observations',0,0);c.restore();c.fillText('daily return contribution in underlying',Math.max(m.l,w/2-92),h-3)}
+  const data=values.map(num).filter(Number.isFinite),parent=canvas.parentElement,mobile=matchMedia('(max-width:850px)').matches,dpr=mobile?1:Math.min(devicePixelRatio||1,1.25),w=Math.max(280,parent.clientWidth),h=250,m={l:58,r:12,t:12,b:38};canvas.style.width=w+'px';canvas.style.height=h+'px';canvas.width=w*dpr;canvas.height=h*dpr;const c=canvas.getContext('2d');c.scale(dpr,dpr);c.clearRect(0,0,w,h);if(!data.length){c.fillStyle='#667085';c.font='13px system-ui';c.fillText('No observations are available for this graph.',m.l,Math.round(h/2));return}let low=arrayMinimum(data),high=arrayMaximum(data);if(low===high){low-=.5;high+=.5}const bins=Math.min(160,Math.max(60,Math.ceil(2*Math.sqrt(data.length)))),counts=Array(bins).fill(0),width=(high-low)/bins;for(const value of data)counts[Math.min(bins-1,Math.max(0,Math.floor((value-low)/width)))]++;const frequencies=counts.map(count=>100*count/data.length),top=arrayMaximum(frequencies)||1,x=i=>m.l+i/bins*(w-m.l-m.r),y=value=>m.t+(top-value)/top*(h-m.t-m.b);c.font='11px system-ui';c.strokeStyle='#e3e7ee';for(let j=0;j<5;j++){const yy=m.t+j*(h-m.t-m.b)/4;c.beginPath();c.moveTo(m.l,yy);c.lineTo(w-m.r,yy);c.stroke();c.fillStyle='#667085';c.fillText(fmt(top-j*top/4,2)+'%',5,yy+4)}c.fillStyle=color;for(let i=0;i<bins;i++){const left=x(i),right=x(i+1);c.fillRect(left+.5,y(frequencies[i]),Math.max(1,right-left-1),h-m.b-y(frequencies[i]))}c.fillStyle='#667085';for(let j=0;j<=4;j++){const value=low+j*(high-low)/4;c.fillText(fmt(value,3)+'%',m.l+j*(w-m.l-m.r)/4-12,h-18)}c.save();c.translate(13,h/2);c.rotate(-Math.PI/2);c.fillText('% of observations',0,0);c.restore();c.fillText('daily return contribution in underlying',Math.max(m.l,w/2-92),h-3)}
 function futuresPriceChart(canvas, rows, series, diagnostics, spotIndex=ix('slv_price'), spotLabel='Spot') {
   const specs=[{i:spotIndex,c:'#2563eb',w:2,label:spotLabel}];
   const futuresValues=[];Object.values(series||{}).forEach(points=>points.forEach(point=>futuresValues.push(point[1])));

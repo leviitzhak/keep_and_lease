@@ -343,14 +343,25 @@ def create_app(
         if dataset is None:
             raise HTTPException(404, "No trade replay valuations for this run")
         fields = ["date", "us", "nav_usd", "cash_usd", "direct_nav", "futures_notional_usd",
-                  "fees_usd", "return_fraction", "reconstruction_error_usd", "units", "targets", "mark_us", "mark_ids"]
+                  "fees_usd", "return_fraction", "reconstruction_error_usd", "units", "targets", "mark_us", "mark_ids",
+                  "target_futures_notional_usd", "free_collateral_usd", "collateralization_ratio", "turnover_usd"]
         def output():
             buffer = io.StringIO()
             writer = csv.writer(buffer)
             writer.writerow(fields)
             yield buffer.getvalue()
             for entry in dataset["chunks"]:
-                for row in read_chunk(store, entry):
+                for stored_row in read_chunk(store, entry):
+                    # Enrich the export, never mutate immutable audit records. Older
+                    # runs cannot reconstruct targets/turnover without extra data.
+                    row = dict(stored_row)
+                    cash, notional = row.get("cash_usd"), row.get("futures_notional_usd")
+                    if cash is not None and notional is not None:
+                        gross = abs(notional)
+                        if row.get("free_collateral_usd") is None:
+                            row["free_collateral_usd"] = cash - gross
+                        if row.get("collateralization_ratio") is None and gross > 1e-14:
+                            row["collateralization_ratio"] = cash / gross
                     buffer.seek(0)
                     buffer.truncate(0)
                     writer.writerow([json.dumps(row.get(f), separators=(",", ":"))

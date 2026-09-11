@@ -306,9 +306,14 @@
     const originalHistogram = global.histogramChart;
     if (typeof originalHistogram === 'function') global.histogramChart = function(canvas, values, color) {
       originalHistogram(canvas, values, color);
-      const data = (values || []).map(Number).filter(Number.isFinite); if (!canvas || !data.length) return;
-      let low = Math.min(...data), high = Math.max(...data); if (low === high) {low -= .5; high += .5;}
-      const bins = Math.min(80, Math.max(30, Math.ceil(Math.sqrt(data.length)))), width = (high-low)/bins;
+      const data = (values || []).map(value => value == null || value === '' ? NaN : Number(value)).filter(Number.isFinite);
+      if (!canvas) return;
+      canvas.title = ''; canvas.onmousemove = null;
+      if (!data.length) return;
+      let low = Infinity, high = -Infinity;
+      for (const value of data) {low = Math.min(low, value); high = Math.max(high, value);}
+      if (low === high) {low -= .5; high += .5;}
+      const bins = Math.min(160, Math.max(60, Math.ceil(2*Math.sqrt(data.length)))), width = (high-low)/bins;
       const counts = Array(bins).fill(0); data.forEach(v => counts[Math.min(bins-1,Math.max(0,Math.floor((v-low)/width)))]++);
       canvas.onmousemove = event => {
         const rect=canvas.getBoundingClientRect(), left=58, right=12, usable=Math.max(1,rect.width-left-right);
@@ -339,10 +344,6 @@
       form.addEventListener('input',updateEstimate); form.addEventListener('change',updateEstimate);
       fetch('/api/v1/trade-data',{credentials:'include',cache:'no-store'}).then(r=>r.ok?r.json():null).then(data=>{coverage=data?.datasets?.[0]||null;updateEstimate();}).catch(()=>updateEstimate());
     }
-
-    const capital=form?.elements?.namedItem?.('trade_initial_capital_usd');
-    if (capital && capital.value === '1' && !capital.dataset.userEdited) capital.value='100000';
-    capital?.addEventListener?.('input',()=>{capital.dataset.userEdited='true';});
 
     const preset=document.getElementById('strategyPreset'), name=document.getElementById('strategyName');
     if (preset && typeof global.applyParameters === 'function') {

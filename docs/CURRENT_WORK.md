@@ -6,6 +6,24 @@ branch._
 
 ## Active change set
 
+### September 11 — limited TODO completion
+
+Active branch: `agent/todo-batch-completion`, based on
+`agent/current-running-completion` at
+`fbf6bc95dcad8b7e7d690f8210896e993590d683`.
+
+This batch implements five bounded items: replay capital defaults/preservation,
+CSV collateral fields with historical compatibility, thinner distribution bins,
+detailed-plot chunk progress, and cancellable full-audit byte progress.
+No trading-engine changes or full-period benchmark reruns are included. Issues
+#42–#44 remain open for their broader unimplemented scopes.
+
+Local focused validation: 19 JavaScript tests and 10 Python tests passed.
+Combined build and private preview acceptance have not yet been recorded for
+this batch. Earlier acceptance entries below refer to earlier revisions.
+
+### Earlier milestones
+
 Preview acceptance **passed** for the background-run interface on
 `d06eec62bf18b3e10e54733cae11d6978ffb6f19` in
 [deployment 34364647546](https://github.com/leviitzhak/keep_and_lease/actions/runs/34364647546).
