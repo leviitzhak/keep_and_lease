@@ -35,10 +35,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install validation dependencies
+      - name: Install validation dependencies and generate canonical assets
         run: |
           python -m pip install -r requirements-cloud.txt -r requirements-trade-data.txt
           npm ci --ignore-scripts
+          npm run prepare:assets
       - name: Python regressions
         run: |
           set -o pipefail
