@@ -9,8 +9,8 @@ Existing daily and replay panels, saved results and exports remain available.
 
 ## Families
 
-- Performance: normalized strategy/direct NAV, full-run-high-water drawdowns,
-  interval returns and their distribution.
+- Performance: normalized strategy/direct NAV, drawdowns from the retained
+  history's high-water marks, interval returns and their distribution.
 - Holdings/collateral: direct holding, cash/Treasuries, long/short futures,
   target versus actual gross exposure, free collateral and the collateral ratio.
 - Activity: traded volume between displayed observations, cumulative turnover,
@@ -27,7 +27,10 @@ Line plots retain the existing desktop hover/click and mobile inspection behavio
 Market-chart tooltips expose recorded held instruments. The observation slider
 and previous/next buttons inspect instruments at any displayed point. Existing
 chart-period controls filter all shared families. Full-series drawdowns and
-cumulative-counter differences are calculated **before** filtering.
+cumulative-counter differences are calculated **before** filtering. The drawdown
+curve uses the entire retained chart series, not just the selected window; when
+that series is sampled, it cannot recover peaks between samples and is not a
+replacement for the engine's full-frequency headline maximum drawdown.
 
 ## Units and timing
 
@@ -74,8 +77,9 @@ return/reconstruction-identity displays without rerunning the 90-day strategy.
 New replay chart points retain sampled instruments and display-only cumulative
 P&L/accrual telemetry. Daily counters are accumulated before downsampling. These
 additive engine-state fields are checkpointed; source fingerprint changes mean
-an old unfinished job still needs its original engine to resume. No checkpoint
-compatibility check is relaxed. Completed historical results remain immutable.
+old checkpoints retain their original engine/data compatibility requirements
+for resume or extension. No checkpoint compatibility check is relaxed. Viewing
+completed historical results is unaffected and those results remain immutable.
 
 This delivers the shared time-series, distribution and held-contract plot suite.
 Full daily curve-attribution scatters, alternative-selection research comparisons,
@@ -83,9 +87,15 @@ and decision-frequency annual/leg statistics are not inferred from sampled repla
 rows. Those specialised diagnostics remain separately tracked until their needed
 full-resolution inputs are retained or explicitly loaded.
 
+The inherited line-chart axis formatter can round small changes to repeated tick
+labels, and inherited tooltip precision can also hide tiny changes. The adapter
+does not round the stored result values. Adaptive axis/tooltip precision remains
+a separate small usability follow-up, not an accounting limitation.
+
 ## Validation
 
 Regression tests: `tests/shared-run-plots.test.mjs` and
 `tests/test_shared_run_plots.py`. The deployment browser smoke test exercises
-both adapters, old benchmark compatibility and mobile rendering. Deployment
-results are recorded in a follow-up validation note, not assumed from local tests.
+both adapters, old benchmark compatibility and mobile rendering. Verified runs,
+revisions, evidence and scope limits are recorded in
+[SHARED_RUN_PLOTS_VALIDATION.md](SHARED_RUN_PLOTS_VALIDATION.md).
