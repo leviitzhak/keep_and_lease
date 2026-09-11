@@ -1,0 +1,31 @@
+name: TODO batch validation (no deployment)
+
+on:
+  push:
+    branches: [agent/todo-batch-completion]
+    paths: [.cloud-agent/requests/todo-batch.json]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: todo-batch-validation
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Archive exact source revision
+        run: |
+          git rev-parse HEAD > SOURCE_COMMIT.txt
+          git archive --format=tar.gz HEAD > source.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: todo-batch-source-${{ github.run_id }}
+          path: |
+            source.tar.gz
+            SOURCE_COMMIT.txt
+          retention-days: 1
