@@ -1,1 +1,1 @@
-{"mode":"integrate-and-preview","base_commit":"4674d0601ea3a180d740e89b78bd05e9ac4ce93b","sequence":2,"scope":["shared-plot-catalog","diagnostic-telemetry","plot-schema-compatibility","90-day-todo-clarification"]}
+{"mode":"ui-fix-and-preview","base_commit":"62d03527a8f71a297def7f1de69d2de48360b553","sequence":3,"scope":["mobile-chart-layout","canvas-release","inspection-handler-preservation"]}
