@@ -6,6 +6,18 @@ branch._
 
 ## Active change set
 
+### Shared plots follow-up
+
+Active branch: `agent/shared-run-plots`, based on the verified TODO batch at
+`4674d0601ea3a180d740e89b78bd05e9ac4ce93b`. A shared plot catalog now serves daily,
+candle and trade-replay results. The 90-day computation/Cloud Run acceptance
+checklist distinction is corrected. See `SHARED_RUN_PLOTS.md` for implemented
+scope and historical-data limitations. Combined CI/private preview verification
+is pending for this follow-up; the deployment evidence below is for the prior
+small batch. No merge into `master` has been performed.
+
+### Previous verified small batch
+
 Active branch: `agent/todo-batch-completion`, based on
 `agent/current-running-completion` at
 `fbf6bc95dcad8b7e7d690f8210896e993590d683`.

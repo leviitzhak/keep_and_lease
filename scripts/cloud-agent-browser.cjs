@@ -235,6 +235,13 @@ async function main() {
         }
       }
 
+      await page.waitForSelector('#sharedRunPlots', {state:'visible'});
+      await page.selectOption('#sharedPlotGroup', 'execution');
+      if (!(await page.locator('#shared-holdings').isVisible())) throw Error('Daily shared holdings chart missing');
+      await page.selectOption('#sharedPlotGroup', 'activity');
+      if (!(await page.locator('#shared-volume').isVisible())) throw Error('Daily shared turnover chart missing');
+      console.log('Shared daily plot adapter verified: holdings and turnover.');
+
       strategy = {
         jobId: submission.job_id,
         cached: Boolean(submission.cached),
@@ -331,6 +338,18 @@ async function main() {
       if (Math.abs(result.summary.compounded_return - 0.023825048740855337) > 1e-8) throw Error('GCS trade replay differs from local financial result');
       if (!['9c05efc03118699303e7a55e14205bed29783683a85c165f99319dd3fabc055d', '52ef7ab51def1e37fc774f96bd94697ed90ad286d6885c72f69de84c285c9912'].includes(result.trade_replay.manifest_sha256)) throw Error('Wrong immutable trade dataset');
       await page.waitForSelector('#tradeReplayResults', {state:'visible'});
+      await page.selectOption('#sharedPlotGroup', 'books');
+      if (!(await page.locator('#shared-lease-values').isVisible())) throw Error('Replay commodity-quoted book chart missing');
+      await page.selectOption('#sharedPlotGroup', 'market');
+      if (!(await page.locator('#shared-prices').isVisible())) throw Error('Replay held-price chart missing');
+      await page.selectOption('#sharedPlotGroup', 'overview');
+      await page.locator('#shared-nav').hover({position:{x:120,y:100}});
+      if (!(await page.locator('#tooltip').isVisible())) throw Error('Shared chart tooltip missing');
+      await page.setViewportSize({width:390,height:844});
+      await page.selectOption('#sharedPlotGroup','books');
+      if (!(await page.locator('#shared-lease-values').isVisible())) throw Error('Mobile shared book chart missing');
+      await page.setViewportSize({width:1440,height:1000});
+      console.log('Shared replay adapter verified: books, market data, inspection and mobile.');
       await page.waitForFunction(()=>!document.querySelector('#run').disabled);
       const csvDownload = page.waitForEvent('download');
       await page.click('#tradeReplayCsv');
@@ -386,6 +405,10 @@ async function main() {
         const bounds=await page.evaluate(()=>tradePeriod());
         if(bounds[0]!==evidence.summary.start||bounds[1]!==evidence.summary.end)throw Error('Default export bounds lost microsecond precision');
         if(!(await page.locator('#backtestRuns').isVisible()))throw Error('Run history hidden by replay charts');
+        await page.selectOption('#sharedPlotGroup','books');
+        if (!(await page.locator('#shared-lease-values').isVisible())) throw Error('Historical benchmark shared books missing');
+        await page.selectOption('#sharedPlotGroup','activity');
+        if (await page.locator('#shared-turnover').count()) throw Error('Historical turnover was fabricated');
         console.log('Published 90-day benchmark GUI verified: '+policy+' · '+evidence.points+' chart points · NAV '+evidence.summary.ending_nav);
       }
       await page.fill('#tradeExportStart','2026-06-06T00:00:01');

@@ -209,8 +209,33 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
         sample_every = max(1, math.ceil((end - start) / interval / plot_max_points))
     fields = ["date", "nav", "direct_nav", "cash_usd", "spot_value_usd", "futures_notional_usd",
               "target_futures_notional_usd", "free_collateral_usd", "collateralization_ratio",
-              "turnover_usd", "fees_usd", "max_mark_age_seconds"]
+              "turnover_usd", "fees_usd", "max_mark_age_seconds",
+              "spot_price", "long_weighted_future_price", "long_weighted_forward_premium_pct",
+              "long_weighted_lease_rate_pct", "long_weighted_maturity_days", "treasury_yield_pct",
+              "treasury_accrual_index", "market_pnl_usd", "spot_pnl_usd", "futures_pnl_usd",
+              "treasury_interest_usd", "reconstruction_error_usd", "held_futures"]
     def point(tick, target_notional=None):
+        # Only sampled display rows retain instruments and diagnostic scalars.
+        # Last-observed marks are used; stale held marks are not new fill evidence.
+        held = []
+        spot = account.marks["SPOT"].price
+        day = EPOCH + timedelta(microseconds=tick)
+        for symbol, quantity in account.units.items():
+            if symbol == "SPOT" or quantity <= 1e-14:
+                continue
+            mark = account.marks[symbol]
+            days = (expiries[symbol] - tick) / 86400e6
+            rate = strategy.usd_rate(rates, day, days) if days > 0 else None
+            premium = mark.price / spot - 1
+            held.append(dict(symbol=symbol, side="long", price=mark.price,
+                quantity=quantity, weight_pct=100*quantity*mark.price/account.nav,
+                maturity_days=days, premium_pct=100*premium,
+                lease_pct=100*(rate-premium*365/days) if rate is not None and days > 0 else None,
+                quote_age_seconds=(tick-mark.us)/1e6))
+        def weighted(key):
+            eligible = [h for h in held if h[key] is not None]
+            total = sum(h["weight_pct"] for h in eligible)
+            return sum(h[key]*h["weight_pct"] for h in eligible)/total if total else None
         held_ages = [(tick - account.marks[s].us) / 1e6 for s, q in account.units.items() if q > 0]
         futures_notional = account.collateral
         free_collateral = account.cash - abs(futures_notional)
@@ -219,7 +244,10 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
                 account.cash, account.units.get("SPOT", 0) * account.marks["SPOT"].price,
                 futures_notional, futures_notional if target_notional is None else target_notional,
                 free_collateral, collateral_ratio, account.turnover, account.fees,
-                max(held_ages, default=0)]
+                max(held_ages, default=0), spot, weighted("price"), weighted("premium_pct"),
+                weighted("lease_pct"), weighted("maturity_days"), 100*account.rate,
+                account.plot_treasury_index, account.market_pnl, account.plot_spot_pnl,
+                account.plot_futures_pnl, account.interest, account.reconstruction_error(), held]
     if not restored:
         series.append(point(initial_us, 0.0))
     last_progress = time.monotonic()

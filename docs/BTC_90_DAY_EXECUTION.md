@@ -12,6 +12,19 @@ merging them into master does not trigger the branch-restricted BTC workflows.
 The merge preserves the newer ingestion retry, daily-only publication and
 receipt-retention fixes from `agent/btc-90day-subsecond`.
 
+## Current milestone status (September 11)
+
+The 90-day, 500 ms computation is **done** for both ordering policies, including
+paired comparison in workflow `34363722260`. Both results are published to the
+GUI with immutable audits and selected-period exports. The remaining full-range
+Cloud Run checkbox is an independent operational acceptance test of a fresh
+GUI-submitted job, not missing computational results. Keep these as separate
+TODO entries. The new shared plot viewer can display available fields in those
+published results without repeating the 90-day computation.
+
+The dated implementation and validation sections below retain historical status;
+they do not override this current milestone summary.
+
 ## Implemented path
 
 - `scripts/ingest-btc-trade-range.py` downloads and validates each UTC day,
@@ -112,7 +125,8 @@ roundtrip and expiry between decision ticks. Existing pure replay tests and GUI
 HTML/JavaScript checks also pass. Arrow and FastAPI were initially unavailable locally;
 the dependencies were subsequently installed and the expanded suites pass locally. A required pre-deployment CI job installs
 both and runs the Parquet/API/job/audit/recovery suites, without silently
-skipping Arrow. No real multi-day benchmark or 90-day acceptance has yet passed.
+skipping Arrow. At this initial stage no real multi-day benchmark had passed; later continuation
+completed both 90-day policies as recorded in the current milestone summary.
 
 The initial GitHub push was rejected by automatic approval review. The owner
 subsequently explicitly approved the feature push, private GCP preview and

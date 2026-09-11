@@ -19,8 +19,15 @@ remaining items below are not implicitly completed by that batch.
 - [x] Synchronize horizontal scrolling across related plot panes so long
   intraday/subsecond charts stay aligned during inspection.
 
-- [ ] Complete full-period Cloud Run acceptance for at least 90-day second /
-  subsecond BTC backtests. The implementation already includes resumable daily
+- [x] Complete the 90-day BTC subsecond research backtest for
+  `[2026-06-06, 2026-09-04)` at 500 ms under both sequence and timestamp
+  ordering, including the paired comparison. Workflow `34363722260` completed
+  both policies; published results, audits and selected-period XLSX exports
+  are accessible in the GUI. This computational milestone is done.
+
+- [ ] Separate operational acceptance: run a fresh, full 90-day job through
+  the GUI/Cloud Run worker path and verify its lifecycle/resource behavior.
+  This is not a claim that the completed research backtests are unfinished. The implementation already includes resumable daily
   ingestion and selected-partition range reads, continuous checkpoints, durable
   resume, discrepancy evidence, sequence/timestamp ordering scenarios,
   failed-day recovery, paired 90-day benchmarks, saved GUI results, and
@@ -53,9 +60,14 @@ remaining items below are not implicitly completed by that batch.
 - [x] Add an authenticated deployment gate for the exact feature SHA and full
   BTC resource/audit/export acceptance in the authoritative private GCP preview.
 
-- [ ] Make the complete daily-strategy diagnostic plot/statistics suite available
-  for every strategy/run type, including subsecond BTC-only runs: leg statistics,
-  instruments held, reconstruction diagnostics, and the applicable common plots.
+- [x] Share the applicable daily/candle and trade-replay plot catalog in both
+  directions: performance, exposures/collateral, activity, market/rates/legs,
+  held-contract scatters, books/distributions and reconstruction. New runs retain
+  diagnostic fields; historical missing fields and inactive books are explicit.
+  See `SHARED_RUN_PLOTS.md` for units, timestamps and sampling limits.
+- [ ] Extend specialised daily curve-attribution/research comparisons and exact
+  full-frequency annual/leg statistics to replay when their underlying diagnostic
+  inputs are retained or explicitly loaded; do not infer these from plot samples.
 - [x] Allow user-selectable replay plot density for intraday/subsecond runs without
   changing the underlying decision/execution frequency.
 - [x] Before long trade-replay backtests start, show the planned number of decision

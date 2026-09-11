@@ -22,7 +22,7 @@ COPY backtest_silver_lease_strategy.py silver_strategy_gui.py maturity_scoring.p
 COPY server ./server
 COPY server_main.py ./
 COPY strategies ./strategies
-COPY public/silver_strategy_gui.html public/backtest-runs.js public/backtest-worker-v13.js public/backtest-workbook-v1.js public/fflate.js ./public/
+COPY public/silver_strategy_gui.html public/backtest-runs.js public/shared-run-plots.js public/backtest-worker-v13.js public/backtest-workbook-v1.js public/fflate.js ./public/
 
 USER app
 EXPOSE 8080

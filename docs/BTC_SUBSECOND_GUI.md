@@ -273,3 +273,13 @@ XLSX with exactly 11 valuations. The subsequent patch preserves exact microsecon
 run endpoints while displaying browser-supported millisecond date inputs. It
 also recognizes the attachment request as successful only after independent
 workbook validation; other aborted requests still fail the smoke test.
+
+
+## Shared plots with daily execution
+
+Use **Shared daily / trade-replay plots** below the result, then select a commodity
+and plot family. It exposes the common daily/replay suite in either execution
+mode, with the existing period controls. Read `SHARED_RUN_PLOTS.md` for sampled
+return horizons, initial-capital units and historical fields that were not stored.
+Both published 90-day benchmark policies remain completed and viewable; adding
+plots does not require repeating their computational backtests.
