@@ -1,0 +1,13 @@
+{
+  "commit": "9e367fc295c7930ca4e4689e4e71d4a9d1ff42ad",
+  "kind": "isolated actual-source Chromium regression, not deployed acceptance",
+  "checks": [
+    "fresh default and restored $1",
+    "large histogram render and hover",
+    "detail chunk progress and cancellation",
+    "audit byte progress and mid-stream cancellation",
+    "complete audit download and control recovery"
+  ],
+  "passed": 5,
+  "page_errors": []
+}

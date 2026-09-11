@@ -1,0 +1,13 @@
+{
+  "commit": "9e367fc295c7930ca4e4689e4e71d4a9d1ff42ad",
+  "source": "deployed fixed-fixture CSV from deployment 34615894666",
+  "rows": 600,
+  "appended_columns": [
+    "target_futures_notional_usd",
+    "free_collateral_usd",
+    "collateralization_ratio",
+    "turnover_usd"
+  ],
+  "collateral_equations": "passed for every row",
+  "turnover_monotonic": "passed"
+}
