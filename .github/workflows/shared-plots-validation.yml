@@ -1,0 +1,24 @@
+name: Shared plots validation (no deployment)
+on:
+  push:
+    branches: [agent/shared-run-plots]
+    paths: [.cloud-agent/requests/shared-plots.json]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Archive exact source for review and tests
+        run: |
+          git rev-parse HEAD > SOURCE_COMMIT.txt
+          git archive --format=tar.gz HEAD > source.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shared-plots-source-${{ github.run_id }}
+          path: |
+            source.tar.gz
+            SOURCE_COMMIT.txt
+          retention-days: 1
