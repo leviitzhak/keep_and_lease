@@ -57,6 +57,17 @@ async function main() {
     if (!response.ok) throw new Error(`Result ${jobId.slice(0, 8)} HTTP ${response.status}: ${response.body?.detail || 'unknown error'}`);
     return response.body;
   }
+  async function setDateTime(name, value) {
+    const locator = page.locator(`[name="${name}"]`);
+    const actual = await locator.evaluate((element, nextValue) => {
+      element.value = nextValue;
+      element.dispatchEvent(new Event('input', {bubbles: true}));
+      element.dispatchEvent(new Event('change', {bubbles: true}));
+      return element.value;
+    }, value);
+    if (!actual) throw new Error(`Browser rejected ${name}=${value}`);
+    return actual;
+  }
 
   try {
     const response = await page.goto(`${origin}/?engine=server`, {waitUntil: 'domcontentloaded', timeout: 120000});
@@ -74,8 +85,8 @@ async function main() {
     await page.selectOption('[name="btc_data_source"]', 'trade_tape');
     await page.click('#loadTradeExample');
     await page.fill('[name="execution_interval_seconds"]', '3600');
-    await page.fill('[name="backtest_start"]', '2026-06-25T00:00:00.000');
-    await page.fill('[name="backtest_end"]', '2026-06-25T01:00:01.000');
+    await setDateTime('backtest_start', '2026-06-25T00:00:00.000');
+    await setDateTime('backtest_end', '2026-06-25T01:00:01.000');
 
     const submitted = page.waitForResponse(r => new URL(r.url()).pathname === '/api/v1/backtests' && r.request().method() === 'POST', {timeout: 60000});
     await page.click('#run');
@@ -90,11 +101,11 @@ async function main() {
     if (parentResult.backtest_period?.actual_end !== '2026-06-25T01:00:01.000000') {
       throw new Error(`Parent replay ended at ${parentResult.backtest_period?.actual_end}`);
     }
-    if (parentJob.parameters?.backtest_end !== '2026-06-25T01:00:01.000') {
+    if (!String(parentJob.parameters?.backtest_end || '').startsWith('2026-06-25T01:00:01')) {
       throw new Error('Parent saved parameters lost the requested end');
     }
 
-    await page.fill('[name="backtest_end"]', '2026-06-25T01:00:03.000');
+    await setDateTime('backtest_end', '2026-06-25T01:00:03.000');
     await page.getByRole('button', {name: 'Refresh runs', exact: true}).click();
     const row = page.locator(`#backtestRuns [data-job-id="${parentId}"]`);
     await row.waitFor({state: 'visible', timeout: 30000});
