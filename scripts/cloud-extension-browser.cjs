@@ -74,8 +74,8 @@ async function main() {
     await page.selectOption('[name="btc_data_source"]', 'trade_tape');
     await page.click('#loadTradeExample');
     await page.fill('[name="execution_interval_seconds"]', '3600');
-    await page.fill('[name="backtest_start"]', '2026-06-25T00:00:00');
-    await page.fill('[name="backtest_end"]', '2026-06-25T01:00:01');
+    await page.fill('[name="backtest_start"]', '2026-06-25T00:00:00.000');
+    await page.fill('[name="backtest_end"]', '2026-06-25T01:00:01.000');
 
     const submitted = page.waitForResponse(r => new URL(r.url()).pathname === '/api/v1/backtests' && r.request().method() === 'POST', {timeout: 60000});
     await page.click('#run');
@@ -90,11 +90,11 @@ async function main() {
     if (parentResult.backtest_period?.actual_end !== '2026-06-25T01:00:01.000000') {
       throw new Error(`Parent replay ended at ${parentResult.backtest_period?.actual_end}`);
     }
-    if (parentJob.parameters?.backtest_end !== '2026-06-25T01:00:01') {
+    if (parentJob.parameters?.backtest_end !== '2026-06-25T01:00:01.000') {
       throw new Error('Parent saved parameters lost the requested end');
     }
 
-    await page.fill('[name="backtest_end"]', '2026-06-25T01:00:03');
+    await page.fill('[name="backtest_end"]', '2026-06-25T01:00:03.000');
     await page.getByRole('button', {name: 'Refresh runs', exact: true}).click();
     const row = page.locator(`#backtestRuns [data-job-id="${parentId}"]`);
     await row.waitFor({state: 'visible', timeout: 30000});
