@@ -202,7 +202,8 @@
         const data = await request(job.result_url || '/api/v1/backtests/' + id + '/result');
         if (revision !== generation || selected !== id || stopped) return;
         await onResult(data, job);
-        renderReplayDiagnostics(root, data);
+        // The shared viewer follows chart-period controls for both run types.
+        if (!global.KeepLeasePlots) renderReplayDiagnostics(root, data);
         loaded = id;
         viewing.textContent = 'Viewing ' + (job.title || 'completed backtest ' + id.slice(0, 8) + ' · ' + new Date(job.created_at * 1000).toLocaleString()) + '. Form edits do not change these saved results.';
       } catch (error) {
@@ -304,8 +305,8 @@
     }, {passive:true}));
 
     const originalHistogram = global.histogramChart;
-    if (typeof originalHistogram === 'function') global.histogramChart = function(canvas, values, color) {
-      originalHistogram(canvas, values, color);
+    if (typeof originalHistogram === 'function') global.histogramChart = function(canvas, values, color, axisLabel) {
+      originalHistogram(canvas, values, color, axisLabel);
       const data = (values || []).map(value => value == null || value === '' ? NaN : Number(value)).filter(Number.isFinite);
       if (!canvas) return;
       canvas.title = ''; canvas.onmousemove = null;

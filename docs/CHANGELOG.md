@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-09-11 — Shared daily/replay plot suite
+
+- Add one field-name-based plot catalog for both result types, with commodity
+  and family selectors, existing period controls and mobile inspection.
+- Record sampled replay instruments and read-only P&L/accrual telemetry;
+  accumulate daily turnover/cost diagnostics before plot downsampling.
+- Preserve historical missing fields as unavailable and label sampled returns,
+  collateral definitions and daily/replay units explicitly.
+- Fix the old held-mark-age graph selecting the free-collateral column.
+- Mark both completed 90-day research backtests done; keep fresh full-period
+  Cloud Run operational acceptance as a separate item.
+- See `SHARED_RUN_PLOTS.md`; no execution or trading-cost rule was changed.
+
 ## 2026-09-11 — Bounded TODO usability batch
 
 - Default new replay capital to $100,000 in the HTML and parameter loader;

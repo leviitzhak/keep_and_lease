@@ -129,6 +129,10 @@ def create_app(
     def backtest_runs_runtime() -> FileResponse:
         return static_file("backtest-runs.js", "text/javascript")
 
+    @app.get("/shared-run-plots.js", include_in_schema=False)
+    def shared_run_plots_runtime() -> FileResponse:
+        return static_file("shared-run-plots.js", "text/javascript")
+
     @app.get("/fflate.js", include_in_schema=False)
     def spreadsheet_runtime() -> FileResponse:
         return static_file("fflate.js", "text/javascript")

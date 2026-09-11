@@ -742,8 +742,33 @@ def sleeve_result(payload, market=None, product="silver", audit_collection=None)
     execution_stats = {"model": "legacy_close", "fills": 0, "pending_order_intervals": 0,
                        "stale_valuation_intervals": 0, "maximum_mark_age_seconds": 0,
                        "trading_cost_value": 0.0, "zero_volume_fills": 0}
+    plot_turnover = 0.0
+    plot_cost = 0.0
     def consume(row):
+        nonlocal plot_turnover, plot_cost
         audit = row.get("execution_audit")
+        start = row["starting_nav"]
+        for target, field in [("plot_cash_start", "treasury_weight_pct"),
+                              ("plot_spot_start", "slv_weight_pct"),
+                              ("plot_long_start", "long_futures_notional_pct"),
+                              ("plot_short_start", "short_futures_notional_pct")]:
+            row[target] = start*row[field]/100
+        row["plot_target_start"] = None if audit else abs(row["plot_long_start"])+abs(row["plot_short_start"])
+        if audit:
+            fills = audit["fills"]
+            plot_turnover += sum(abs(f["quantity_change"])*f.get("price", f.get("mark_price", 0)) for f in fills)
+            plot_cost += audit["total_cost_usd"]
+            ages = [m["quote_age_seconds"] for m in audit["valuation_marks"] if m.get("quote_age_seconds") is not None]
+            row["plot_mark_age_seconds"] = max(ages) if ages else None
+        else:
+            # Existing legacy fills are theoretical close-price futures trades;
+            # direct/ETF turnover and unobserved mark ages are NOT fabricated.
+            plot_turnover += start*sum(row.get(k, 0) or 0 for k in (
+                "entered_long_futures_size_pct", "exited_long_futures_size_pct",
+                "entered_short_futures_size_pct", "exited_short_futures_size_pct"))/100
+            row["plot_mark_age_seconds"] = None
+        row["plot_turnover_total"] = plot_turnover
+        row["plot_cost_total"] = plot_cost if audit else None
         if audit:
             execution_stats["model"] = audit["model"]
             execution_stats["fills"] += len(audit["fills"])
@@ -841,6 +866,8 @@ def sleeve_result(payload, market=None, product="silver", audit_collection=None)
               "entered_long_futures_size_pct", "entered_short_futures_size_pct",
               "exited_long_futures_size_pct", "exited_short_futures_size_pct",
               "resulting_long_futures_size_pct", "resulting_short_futures_size_pct"]
+    fields += ["plot_cash_start", "plot_spot_start", "plot_long_start", "plot_short_start",
+               "plot_target_start", "plot_turnover_total", "plot_cost_total", "plot_mark_age_seconds"]
     fields += ["silver_price_return_contribution_pct",
                "slv_expense_contribution_pct",
                "treasury_return_contribution_pct",
@@ -922,6 +949,7 @@ def sleeve_result(payload, market=None, product="silver", audit_collection=None)
         "replication_type": PRODUCTS.get(product, {}).get("replication"),
         "execution": execution_stats,
         "detail_storage": "audit_chunks" if writer else "inline",
+        "plot_sample_every": stride,
         "holding_label": PRODUCTS.get(product, {}).get(
             "holding_label", "Replicating fund"),
         "futures_prices": futures_price_series(sampled, market[1]),
