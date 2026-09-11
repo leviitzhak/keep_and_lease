@@ -2,6 +2,10 @@
 
 This checklist reflects the current Google Cloud / GCS implementation and the remaining research, product, data, and engineering work. Completed items are retained when they document important implemented behavior.
 
+The September 11 small batch completes four items and partially improves full-audit
+progress. Scope and validation are recorded in `TODO_SMALL_BATCH_VALIDATION.md`;
+remaining items below are not implicitly completed by that batch.
+
 ## Higher priority
 
 - [x] Complete authenticated GCS publication/read validation for the tested
@@ -66,8 +70,11 @@ This checklist reflects the current Google Cloud / GCS implementation and the re
   generation/export.
 - [x] Add progress when loading detailed plots (selected chunks received/total,
   with cancellation and no partial replacement of existing charts).
-- [x] Add progress for full-audit generation/download (preparation status,
-  measured received bytes, cancellation; percentage only with a known length).
+- [ ] Complete progress for full-audit generation/download across run types.
+  Ordinary daily/minute results now show preparation status, received bytes and
+  cancellation, with percentage only when the response length is known. Large
+  trade-replay archives still use native browser downloads; in-app progress for
+  that path remains pending rather than buffering a multi-GB archive in RAM.
 - [ ] Later, if suitable data becomes available, investigate historical bid/ask
   quotes and additional order-book depth for executable prices, available size,
   partial fills, participation constraints and slippage.
