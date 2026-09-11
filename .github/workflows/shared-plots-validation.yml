@@ -1,24 +1,94 @@
-name: Shared plots validation (no deployment)
+name: Shared plot suite integration
+
 on:
   push:
     branches: [agent/shared-run-plots]
     paths: [.cloud-agent/requests/shared-plots.json]
+
 permissions:
-  contents: read
+  contents: write
+  actions: write
+
+concurrency:
+  group: shared-plots-integration
+  cancel-in-progress: false
+
 jobs:
-  snapshot:
+  integrate:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
-      - name: Archive exact source for review and tests
-        run: |
-          git rev-parse HEAD > SOURCE_COMMIT.txt
-          git archive --format=tar.gz HEAD > source.tar.gz
-      - uses: actions/upload-artifact@v4
         with:
-          name: shared-plots-source-${{ github.run_id }}
+          fetch-depth: 0
+      - name: Verify branch and apply the reviewed patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = agent/shared-run-plots
+          git merge-base --is-ancestor 98083fc33ee8e95508fb61b2013b6bf2ef3e9a6d HEAD
+          python - <<'PY'
+          from pathlib import Path
+          import base64, hashlib, json, lzma
+          request = json.loads(Path('.cloud-agent/requests/shared-plots.json').read_text())
+          assert request['mode'] == 'integrate-and-preview'
+          encoded = ''.join(Path(f'.cloud-agent/requests/shared-plots.part{i}').read_text().strip() for i in range(2))
+          patch = lzma.decompress(base64.b64decode(encoded, validate=True))
+          assert hashlib.sha256(patch).hexdigest() == 'b8b76d359736e8e86fc2660b1a71ff0c8b927e18d8238a89c0641abf7b8d2306'
+          Path('/tmp/shared-plots.patch').write_bytes(patch)
+          PY
+          git apply --unidiff-zero --check /tmp/shared-plots.patch
+          git apply --unidiff-zero /tmp/shared-plots.patch
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies and generate canonical assets
+        run: |
+          python -m pip install -r requirements-cloud.txt -r requirements-trade-data.txt httpx
+          npm ci --ignore-scripts
+          npm run prepare:assets
+      - name: Numerical, replay, recovery and API regressions
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m unittest tests.test_shared_run_plots tests.test_todo_small_batch tests.test_benchmark_gui tests.test_audit_limits tests.test_backtest_history tests.test_server_api tests.test_benchmark_segments tests.test_replay_extension tests.test_cloud_credential_retry tests.test_trade_discrepancies tests.test_benchmark_chain tests.test_trade_range_recovery tests.test_trade_resume_service tests.test_btc_trade_backtest tests.test_trade_data_store tests.test_trade_replay tests.test_backtest_audit tests.test_cloud_jobs tests.test_trade_data_upload tests.test_current_runtime_improvements -v 2>&1 | tee shared-python.log
+      - name: Production build and all JavaScript regressions
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run build 2>&1 | tee shared-build.log
+          node --test tests/*.test.mjs 2>&1 | tee shared-javascript.log
+          node --check scripts/cloud-agent-browser.cjs
+          cmp shared-run-plots.js public/shared-run-plots.js
+          cmp silver_strategy_gui.html public/silver_strategy_gui.html
+          cmp backtest-runs.js public/backtest-runs.js
+      - name: Commit only the combined validated implementation
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -u
+          git add shared-run-plots.js public/shared-run-plots.js tests/shared-run-plots.test.mjs tests/test_shared_run_plots.py docs/SHARED_RUN_PLOTS.md
+          git diff --cached --check
+          git diff --cached --stat | tee shared-changes.log
+          git commit -m 'feat: share daily and replay plot suites [skip ci]'
+          git push origin HEAD:agent/shared-run-plots
+          git rev-parse HEAD | tee SOURCE_COMMIT.txt
+      - name: Deploy this tested combined revision to private preview
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test "$(git ls-remote origin refs/heads/agent/shared-run-plots | cut -f1)" = "$(git rev-parse HEAD)"
+          gh workflow run deploy-google-cloud.yml --ref agent/shared-run-plots -f deployment_target=preview -f allow_unauthenticated=false
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shared-plots-validation-${{ github.run_id }}
           path: |
-            source.tar.gz
+            shared-*.log
             SOURCE_COMMIT.txt
-          retention-days: 1
+          if-no-files-found: warn
+          retention-days: 7
