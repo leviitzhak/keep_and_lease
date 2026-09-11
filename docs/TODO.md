@@ -24,10 +24,12 @@ This checklist reflects the current Google Cloud / GCS implementation and the re
   fills, smoothing, or Treasury accrual at storage/day boundaries. See
   `BTC_90_DAY_EXECUTION.md`.
 
-- [ ] Extend a completed backtest to a longer period from the GUI, reusing its
+- [x] Extend a completed backtest to a longer period from the GUI, reusing its
   durable checkpoint and verified prefix when the immutable engine/data/rates
-  are compatible. Clarify in the GUI that moving the start earlier requires a
-  fresh initial state unless an earlier compatible checkpoint exists.
+  are compatible. Moving the start earlier remains a fresh-run operation. The
+  deployed preview acceptance passed on commit
+  `c1121291a554bb99fb83ec979c65d8d12f624a98` in workflow `34599205892`,
+  including parent immutability and child resume from the hourly checkpoint.
 
 - [x] Explain the purpose and origin of `agent/cloud-autonomous-access`.
 - [x] Push and verify `agent/btc-90day-subsecond` in the GCP preview.
@@ -179,6 +181,17 @@ This checklist reflects the current Google Cloud / GCS implementation and the re
   the default saved view across sessions, with an explicit option to show all.
 - [ ] Where sensible, unify trade-replay period/export controls with the
   corresponding controls used for legacy/daily runs.
+- [ ] Extend streamed `trade-valuations.csv` output with target futures notional,
+  free collateral, collateralization ratio and cumulative turnover. Preserve
+  backward compatibility and leave historical benchmark fields blank when the
+  immutable source does not contain enough information to derive them.
+- [ ] Make the HTML source default for `trade_initial_capital_usd` $100,000 and
+  remove the runtime `$1 -> $100,000` upgrade heuristic so a deliberately saved
+  $1 strategy remains $1. Update the stale help copy to describe participation
+  against configured capital while retaining the research-capacity caveat.
+- [ ] Refresh `BTC_SUBSECOND_GUI.md` for the current configurable chart density,
+  accepted published paired benchmarks and deployed GUI/API checkpoint extension;
+  keep fresh full-period Cloud Run acceptance documented as a separate pending gate.
 - [ ] Use thinner bins in displayed return-distribution histograms.
 - [x] Show hover information on return-distribution graphs with the bin interval,
   observation count and frequency.
@@ -287,11 +300,12 @@ See `BTC_BACKTEST_DATA_STATUS.md` and `BTC_90_DAY_EXECUTION.md` for the data
 inventory and measured staged results. Implemented infrastructure includes
 explicit preview/stable Terraform profiles, a long-running preview worker,
 verified 90-day catalog, configurable CPU/memory, bounded continuation segments,
-recovery from durable checkpoints, CLI checkpoint extension, paired 90-day
-benchmark evidence, saved-result GUI integration, selected-period replay XLSX
-exports with progress/cancellation, selectable replay chart density, explicit
-execution/collateral diagnostics, and strict-JSON checkpoint sentinel handling.
+recovery from durable checkpoints, compatible GUI/API checkpoint extension,
+paired 90-day benchmark evidence, saved-result GUI integration, selected-period
+replay XLSX exports with progress/cancellation, selectable replay chart density,
+explicit execution/collateral diagnostics, and strict-JSON checkpoint sentinel
+handling.
 
-Remaining long-run work is full-period Cloud Run acceptance, GUI/API extension
-for longer appended periods, append-only validation for newly ingested history,
-and lifting reader/catalog bounds beyond 90 days after resource checks.
+Remaining long-run work is fresh full-period Cloud Run acceptance, append-only
+validation for newly ingested history, and lifting reader/catalog bounds beyond
+90 days after resource checks.
