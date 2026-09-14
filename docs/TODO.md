@@ -60,6 +60,14 @@ remaining items below are not implicitly completed by that batch.
   fills, smoothing, or Treasury accrual at storage/day boundaries. See
   `BTC_90_DAY_EXECUTION.md`.
 
+- [ ] analyse strategy : btc min 90d fees 2bps flg
+
+- [ ] examine the following strategy : 
+              - enter long a future when the lease rate is high
+			        - keep it until maturity (and get the title on the commodity)
+				      - whenever there is a negative lease rate, short the future (either unwinding the existing position, or using the owned title on the commodity) 
+
+
 - [x] Extend a completed backtest to a longer period from the GUI, reusing its
   durable checkpoint and verified prefix when the immutable engine/data/rates
   are compatible. Moving the start earlier remains a fresh-run operation. The
