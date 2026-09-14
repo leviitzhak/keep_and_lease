@@ -6,6 +6,31 @@ The September 11 small batch completes four items and partially improves full-au
 progress. Scope and validation are recorded in `TODO_SMALL_BATCH_VALIDATION.md`;
 remaining items below are not implicitly completed by that batch.
 
+## Priority execution change — paired transfers (specified, not implemented)
+
+- [x] Record the owner-approved **same transfer instruction** requirement for
+  `spot -> (cash/Treasuries + futures)` and the reverse in
+  [PAIRED_TRANSFER_DESIGN.md](PAIRED_TRANSFER_DESIGN.md).
+- [ ] Implement a durable pair-level transfer instruction for both directions.
+  Couple spot fills, futures fills and collateral reservations; size partial
+  transfers by both legs' executable liquidity and funding, not independent
+  portfolio targets. Record all fills/fees and unpaired exposure under one ID.
+- [ ] Separate held inventory from signal/trade eligibility: stale or missing
+  futures quotes must not automatically zero a held future or trigger a spot
+  trade. Define expiry/settlement/collateral-risk exits separately.
+- [ ] Require causal, closely timed spot/futures price evidence with explicit
+  maximum age/skew. When quote-side quantities/depth exist, evaluate the prices
+  and lease rate for the proposed quantity, reserve size without double use,
+  and reject or cap transfers that cannot be paired. Tape-only research must
+  not claim observed executable quote depth or borrow future volume.
+- [ ] Bound advance spot funding, unpaired exposure and legging time; never open
+  unfunded futures or spend collateral from an unfilled exit. Coordinate
+  futures-to-futures rolls without unnecessary intermediate spot churn.
+- [ ] Validate same-opening-state one-day comparisons of the current model and
+  paired transfers: net return/costs, achieved substitution, quote age/skew,
+  liquidity, partial failures, reversals, funding and NAV reconstruction.
+  Keep the current tested strategy and immutable historical results unchanged.
+
 ## Higher priority
 
 - [x] Complete authenticated GCS publication/read validation for the tested
