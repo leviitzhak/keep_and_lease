@@ -12,9 +12,10 @@ are documented in [BTC_SUBSECOND_GUI.md](BTC_SUBSECOND_GUI.md).
 | Parameter | Meaning |
 |---|---|
 | `execution_delay_days` | Historical placeholder; the current engine executes at the same observed close (delay `0`). |
-| `btc_data_source` | `minute` (default) or `trade_tape` for the uploaded June 25 research replay. |
-| `trade_initial_capital_usd` | Positive initial capital for trade replay; default $1. Participation applies to actual quantities at this capital. |
-| `execution_interval_seconds` | For trade replay, a positive multiple of 0.001 seconds, with at most 200,000 decisions per selected window. For candles: BTC-only strategy evaluation and execution interval, including fractional seconds when supported by the data. `0` uses every common spot/futures observation. A positive value must be a whole multiple of the detected data resolution and may be used when BTC is the sole commodity; a standalone Treasury sleeve is still allowed. |
+| `btc_data_source` | `minute` (default) or `trade_tape` for the immutable BTC trade replay dataset advertised by the server. |
+| `trade_initial_capital_usd` | Positive initial capital for trade replay; default $100,000. Participation and fully-funded futures capacity apply to actual quantities at this capital. |
+| `execution_interval_seconds` | For trade replay, a positive multiple of 0.001 seconds. The selected period must fit the deployment's advertised maximum decision count. For candles: BTC-only strategy evaluation and execution interval, including fractional seconds when supported by the data. `0` uses every common spot/futures observation. A positive value must be a whole multiple of the detected data resolution and may be used when BTC is the sole commodity; a standalone Treasury sleeve is still allowed. |
+| `trade_plot_max_points` | Trade-replay chart sampling ceiling, 500–10,000 points; default 3,000. It changes only returned/displayed plot density and never changes execution frequency, order generation, fills, accounting or full-resolution audit rows. |
 | `max_total_exposure` | Maximum portfolio gross exposure. |
 | `max_long_exposure` | Maximum long-book exposure. |
 | `max_short_exposure` | Maximum short-book exposure. |
@@ -29,6 +30,14 @@ of BTC itself. This is a naming and instrument-description distinction only:
 it keeps the same spot return, allocation, extension, and decomposition
 arithmetic as the generic replicating-fund leg. There is no separate ETF price
 series or fund expense for the direct BTC holding.
+
+Trade replay records both the desired futures exposure and the actually filled
+exposure. `target_futures_notional_usd` is the strategy target before observed
+partial-fill/capacity constraints, `futures_notional_usd` is the marked notional
+of filled futures, and `free_collateral_usd = cash_usd -
+abs(futures_notional_usd)`. The diagnostic `collateralization_ratio` is
+`cash_usd / abs(futures_notional_usd)` while futures are held; the current
+fully-funded replay requires a minimum ratio of 1.
 
 ## Eligibility
 
@@ -107,5 +116,9 @@ product-specific scoring path and applies equally to any registered commodity.
 ## GUI requirements
 
 Parameter schema version 2 supports automatic restore, named save/load, JSON
-export/import, and reset. The Sites host persists the current set across devices
-when its strategy-parameter endpoint is available.
+export/import, and reset. The GCP GUI additionally exposes checked-in files from
+`strategies/` in the Saved strategy selector; choosing one loads its exact saved
+parameter document, and subsequent edits are marked as modifications of that
+repository strategy. Saved server-backtest visibility is separately curated in
+the browser so selected runs stay in the default list across sessions while
+**Show all runs** remains available.

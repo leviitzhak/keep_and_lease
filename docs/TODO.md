@@ -2,6 +2,35 @@
 
 This checklist reflects the current Google Cloud / GCS implementation and the remaining research, product, data, and engineering work. Completed items are retained when they document important implemented behavior.
 
+The September 11 small batch completes four items and partially improves full-audit
+progress. Scope and validation are recorded in `TODO_SMALL_BATCH_VALIDATION.md`;
+remaining items below are not implicitly completed by that batch.
+
+## Priority execution change — paired transfers (specified, not implemented)
+
+- [x] Record the owner-approved **same transfer instruction** requirement for
+  `spot -> (cash/Treasuries + futures)` and the reverse in
+  [PAIRED_TRANSFER_DESIGN.md](PAIRED_TRANSFER_DESIGN.md).
+- [ ] Implement a durable pair-level transfer instruction for both directions.
+  Couple spot fills, futures fills and collateral reservations; size partial
+  transfers by both legs' executable liquidity and funding, not independent
+  portfolio targets. Record all fills/fees and unpaired exposure under one ID.
+- [ ] Separate held inventory from signal/trade eligibility: stale or missing
+  futures quotes must not automatically zero a held future or trigger a spot
+  trade. Define expiry/settlement/collateral-risk exits separately.
+- [ ] Require causal, closely timed spot/futures price evidence with explicit
+  maximum age/skew. When quote-side quantities/depth exist, evaluate the prices
+  and lease rate for the proposed quantity, reserve size without double use,
+  and reject or cap transfers that cannot be paired. Tape-only research must
+  not claim observed executable quote depth or borrow future volume.
+- [ ] Bound advance spot funding, unpaired exposure and legging time; never open
+  unfunded futures or spend collateral from an unfilled exit. Coordinate
+  futures-to-futures rolls without unnecessary intermediate spot churn.
+- [ ] Validate same-opening-state one-day comparisons of the current model and
+  paired transfers: net return/costs, achieved substitution, quote age/skew,
+  liquidity, partial failures, reversals, funding and NAV reconstruction.
+  Keep the current tested strategy and immutable historical results unchanged.
+
 ## Higher priority
 
 - [x] Complete authenticated GCS publication/read validation for the tested
@@ -12,10 +41,18 @@ This checklist reflects the current Google Cloud / GCS implementation and the re
   deployment workflow ignores `docs/**` and Markdown-only changes while mixed
   application/documentation commits continue to deploy.
 
-- [ ] Synchronize plots so related plots move together during inspection.
+- [x] Synchronize horizontal scrolling across related plot panes so long
+  intraday/subsecond charts stay aligned during inspection.
 
-- [ ] Complete full-period Cloud Run acceptance for at least 90-day second /
-  subsecond BTC backtests. The implementation already includes resumable daily
+- [x] Complete the 90-day BTC subsecond research backtest for
+  `[2026-06-06, 2026-09-04)` at 500 ms under both sequence and timestamp
+  ordering, including the paired comparison. Workflow `34363722260` completed
+  both policies; published results, audits and selected-period XLSX exports
+  are accessible in the GUI. This computational milestone is done.
+
+- [ ] Separate operational acceptance: run a fresh, full 90-day job through
+  the GUI/Cloud Run worker path and verify its lifecycle/resource behavior.
+  This is not a claim that the completed research backtests are unfinished. The implementation already includes resumable daily
   ingestion and selected-partition range reads, continuous checkpoints, durable
   resume, discrepancy evidence, sequence/timestamp ordering scenarios,
   failed-day recovery, paired 90-day benchmarks, saved GUI results, and
@@ -31,10 +68,12 @@ This checklist reflects the current Google Cloud / GCS implementation and the re
 				      - whenever there is a negative lease rate, short the future (either unwinding the existing position, or using the owned title on the commodity) 
 
 
-- [ ] Extend a completed backtest to a longer period from the GUI, reusing its
+- [x] Extend a completed backtest to a longer period from the GUI, reusing its
   durable checkpoint and verified prefix when the immutable engine/data/rates
-  are compatible. Clarify in the GUI that moving the start earlier requires a
-  fresh initial state unless an earlier compatible checkpoint exists.
+  are compatible. Moving the start earlier remains a fresh-run operation. The
+  deployed preview acceptance passed on commit
+  `c1121291a554bb99fb83ec979c65d8d12f624a98` in workflow `34599205892`,
+  including parent immutability and child resume from the hourly checkpoint.
 
 - [x] Explain the purpose and origin of `agent/cloud-autonomous-access`.
 - [x] Push and verify `agent/btc-90day-subsecond` in the GCP preview.
@@ -54,30 +93,42 @@ This checklist reflects the current Google Cloud / GCS implementation and the re
 - [x] Add an authenticated deployment gate for the exact feature SHA and full
   BTC resource/audit/export acceptance in the authoritative private GCP preview.
 
-- [ ] Make the complete daily-strategy diagnostic plot/statistics suite available
-  for every strategy/run type, including subsecond BTC-only runs: leg statistics,
-  instruments held, reconstruction diagnostics, and the applicable common plots.
-- [ ] Allow finer user-selectable plot resolution for intraday/subsecond runs.
-- [ ] Before long backtests or exports start, estimate the amount of work / output
-  size and show progress relative to the total. Where runtime cannot be predicted
-  robustly, prefer measured work units/rows/partitions over a misleading time ETA.
-- [ ] Add a plot of volume traded by the strategy based on actual simulated fills,
+- [x] Share the applicable daily/candle and trade-replay plot catalog in both
+  directions: performance, exposures/collateral, activity, market/rates/legs,
+  held-contract scatters, books/distributions and reconstruction. New runs retain
+  diagnostic fields; historical missing fields and inactive books are explicit.
+  See `SHARED_RUN_PLOTS.md` for units, timestamps and sampling limits.
+- [ ] Extend specialised daily curve-attribution/research comparisons and exact
+  full-frequency annual/leg statistics to replay when their underlying diagnostic
+  inputs are retained or explicitly loaded; do not infer these from plot samples.
+- [x] Allow user-selectable replay plot density for intraday/subsecond runs without
+  changing the underlying decision/execution frequency.
+- [x] Before long trade-replay backtests start, show the planned number of decision
+  ticks and chart-sample cap, and report progress against the decision total.
+- [ ] Before long exports start, estimate output work/size where robustly possible;
+  prefer measured rows/chunks/bytes over a misleading time ETA.
+- [x] Add a plot of volume traded by the strategy based on actual simulated fills,
   not market-wide volume.
 - [ ] Display hover information for futures in the spot + futures-price plot,
   including implied lease rate.
 - [x] Add progress and cancellation for selected-period BTC replay spreadsheet
   generation/export.
-- [ ] Add progress when loading detailed plots.
-- [ ] Add progress for full-audit generation/download.
+- [x] Add progress when loading detailed plots (selected chunks received/total,
+  with cancellation and no partial replacement of existing charts).
+- [ ] Complete progress for full-audit generation/download across run types.
+  Ordinary daily/minute results now show preparation status, received bytes and
+  cancellation, with percentage only when the response length is known. Large
+  trade-replay archives still use native browser downloads; in-app progress for
+  that path remains pending rather than buffering a multi-GB archive in RAM.
 - [ ] Later, if suitable data becomes available, investigate historical bid/ask
   quotes and additional order-book depth for executable prices, available size,
   partial fills, participation constraints and slippage.
-- [ ] Report statistics for the collateralization ratio of futures positions and
+- [x] Report statistics for the collateralization ratio of futures positions and
   flag any breach of the required minimum collateralization.
-- [ ] In replay/export valuation data, add **Target futures notional USD** and
+- [x] In replay/export valuation data, add **Target futures notional USD** and
   **Free collateral USD = Cash/Treasury USD - absolute actual futures notional
-  USD** (with the appropriate long/short net/gross convention documented). This
-  should make delayed/partial futures execution visibly distinguishable from an
+  USD**. The current trade replay is long-only, so gross and net futures notional
+  coincide; this makes delayed/partial execution distinguishable from an
   accounting mismatch.
 
 ## BTC data / execution research
@@ -154,6 +205,9 @@ This checklist reflects the current Google Cloud / GCS implementation and the re
 - [x] Add no-look-ahead tests that perturb future observations.
 - [x] Add the separate pure-maturity multiplier favoring shorter long positions
   and longer short positions, with a zero-strength backward-compatible default.
+- [x] Keep durable replay checkpoints strict-JSON compliant even when internal
+  accumulators use an infinity sentinel; infinities are tagged for checkpoint
+  storage/restore and NaN remains a hard error.
 
 ## Wanted additions
 
@@ -177,13 +231,26 @@ This checklist reflects the current Google Cloud / GCS implementation and the re
 
 - [ ] improve readability of parameters settings by either merging common legacy and trade replay parameters, or by displaying simulatanesouly all the parametrs of only one of them
 - [ ] parameters settings specific to a commodity (for example btc) should appear in the specific commidities parameters section, when the parameters of the commodity is selected.
-- [ ] Make the saved-backtest list configurable: keep only user-selected runs in
+- [x] Make the saved-backtest list configurable: keep only user-selected runs in
   the default saved view across sessions, with an explicit option to show all.
 - [ ] Where sensible, unify trade-replay period/export controls with the
   corresponding controls used for legacy/daily runs.
-- [ ] Use thinner bins in displayed return-distribution histograms.
-- [ ] Show hover information on return-distribution graphs.
-- [ ] Populate the GUI **Saved strategy** dropdown from strategy files in the
+- [x] Extend streamed `trade-valuations.csv` output with target futures notional,
+  free collateral, collateralization ratio and cumulative turnover. Preserve
+  backward compatibility and leave historical benchmark fields blank when the
+  immutable source does not contain enough information to derive them.
+- [x] Make the HTML source default for `trade_initial_capital_usd` $100,000 and
+  remove the runtime `$1 -> $100,000` upgrade heuristic so a deliberately saved
+  $1 strategy remains $1. Update the stale help copy to describe participation
+  against configured capital while retaining the research-capacity caveat.
+- [ ] Refresh `BTC_SUBSECOND_GUI.md` for the current configurable chart density,
+  accepted published paired benchmarks and deployed GUI/API checkpoint extension;
+  keep fresh full-period Cloud Run acceptance documented as a separate pending gate.
+- [x] Use thinner bins in displayed return-distribution histograms (60–160 bins,
+  shared drawing/hover rules; missing values excluded).
+- [x] Show hover information on return-distribution graphs with the bin interval,
+  observation count and frequency.
+- [x] Populate the GUI **Saved strategy** dropdown from strategy files in the
   repository `strategies` folder.
 - [ ] Add full inspection interactivity to the new log-return decomposition graphs.
 - [ ] Extend the portfolio contribution-by-asset plot to show individual leg
@@ -288,10 +355,12 @@ See `BTC_BACKTEST_DATA_STATUS.md` and `BTC_90_DAY_EXECUTION.md` for the data
 inventory and measured staged results. Implemented infrastructure includes
 explicit preview/stable Terraform profiles, a long-running preview worker,
 verified 90-day catalog, configurable CPU/memory, bounded continuation segments,
-recovery from durable checkpoints, CLI checkpoint extension, paired 90-day
-benchmark evidence, saved-result GUI integration, and selected-period replay XLSX
-exports with progress/cancellation.
+recovery from durable checkpoints, compatible GUI/API checkpoint extension,
+paired 90-day benchmark evidence, saved-result GUI integration, selected-period
+replay XLSX exports with progress/cancellation, selectable replay chart density,
+explicit execution/collateral diagnostics, and strict-JSON checkpoint sentinel
+handling.
 
-Remaining long-run work is full-period Cloud Run acceptance, GUI/API extension
-for longer appended periods, append-only validation for newly ingested history,
-and lifting reader/catalog bounds beyond 90 days after resource checks.
+Remaining long-run work is fresh full-period Cloud Run acceptance, append-only
+validation for newly ingested history, and lifting reader/catalog bounds beyond
+90 days after resource checks.

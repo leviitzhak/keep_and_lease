@@ -46,7 +46,7 @@ jobs:
       - name: Check multi-day accounting, recovery, Parquet and job APIs
         run: |
           python -c 'import pyarrow, fastapi'
-          python -m unittest tests.test_benchmark_gui tests.test_audit_limits tests.test_backtest_history tests.test_server_api tests.test_benchmark_segments tests.test_replay_extension tests.test_cloud_credential_retry tests.test_trade_discrepancies tests.test_benchmark_chain tests.test_trade_range_recovery tests.test_trade_resume_service tests.test_btc_trade_backtest tests.test_trade_data_store tests.test_trade_replay tests.test_backtest_audit tests.test_cloud_jobs tests.test_trade_data_upload -v
+          python -m unittest tests.test_benchmark_gui tests.test_audit_limits tests.test_backtest_history tests.test_server_api tests.test_benchmark_segments tests.test_replay_extension tests.test_cloud_credential_retry tests.test_trade_discrepancies tests.test_benchmark_chain tests.test_trade_range_recovery tests.test_trade_resume_service tests.test_btc_trade_backtest tests.test_trade_data_store tests.test_trade_replay tests.test_backtest_audit tests.test_cloud_jobs tests.test_trade_data_upload tests.test_current_runtime_improvements -v
   deploy:
     needs: replay-checks
     runs-on: ubuntu-latest
@@ -264,6 +264,20 @@ jobs:
           mkdir -p "$KEEP_AND_LEASE_OUTPUT_DIR"
           cd "$browser_dir"
           node run.cjs
+
+      - name: Check completed replay extension in deployed GUI
+        env:
+          KEEP_AND_LEASE_WEB_URI: ${{ steps.verify.outputs.web_uri }}
+          KEEP_AND_LEASE_ID_TOKEN: ${{ steps.health_auth.outputs.id_token }}
+          KEEP_AND_LEASE_EXPECTED_COMMIT: ${{ github.sha }}
+          KEEP_AND_LEASE_OUTPUT_DIR: ${{ runner.temp }}/deployment-smoke/extension
+        run: |
+          set -euo pipefail
+          browser_dir="${RUNNER_TEMP}/keep-lease-browser"
+          mkdir -p "$KEEP_AND_LEASE_OUTPUT_DIR"
+          cp scripts/cloud-extension-browser.cjs "$browser_dir/extension.cjs"
+          cd "$browser_dir"
+          node extension.cjs
 
       - name: Mint identity token for BTC acceptance
         if: github.ref_name == 'agent/btc-binance-minute-data' || github.ref_name == 'agent/btc-trade-pilot'

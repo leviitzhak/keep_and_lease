@@ -57,6 +57,8 @@ class TapeAccount:
         self.interest = self.fees = self.market_pnl = self.turnover = 0.0
         self.fill_count = self.order_count = self.cancellation_count = 0
         self.delayed_fill_count = 0
+        self.plot_spot_pnl = self.plot_futures_pnl = 0.0
+        self.plot_treasury_index = 1.0
 
     def snapshot(self):
         """JSON-roundtrippable state, including partially filled pending orders."""
@@ -84,6 +86,7 @@ class TapeAccount:
             value = self.cash * self.rate * (us - self.last_us) / YEAR_US
             self.cash += value
             self.interest += value
+            self.plot_treasury_index *= 1 + self.rate * (us - self.last_us) / YEAR_US
         self.last_us = us
 
     @property
@@ -147,6 +150,10 @@ class TapeAccount:
         held = self.units.get(trade.symbol, 0.0)
         pnl = held * (trade.price - previous.price) if previous else 0.0
         self.market_pnl += pnl
+        if trade.symbol == "SPOT":
+            self.plot_spot_pnl += pnl
+        else:
+            self.plot_futures_pnl += pnl
         if trade.symbol != "SPOT":
             self.cash += pnl
         self.marks[trade.symbol] = trade
@@ -192,6 +199,7 @@ class TapeAccount:
             pnl = quantity * (price-self.marks[symbol].price)
             self.cash += pnl
             self.market_pnl += pnl
+            self.plot_futures_pnl += pnl
             self.units[symbol] = 0.0
             self.marks[symbol] = Trade(us, symbol, price, 0.0, "buy", "settlement:"+symbol, False)
             self.sink(dict(kind="settlement", us=us, symbol=symbol, price=price,

@@ -1,0 +1,75 @@
+name: TODO batch integration
+
+on:
+  push:
+    branches: [agent/todo-batch-completion]
+    paths: [.cloud-agent/requests/todo-batch.json]
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: todo-batch-validation
+  cancel-in-progress: false
+
+jobs:
+  integrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify bounded request and base
+        run: |
+          test "$GITHUB_REF_NAME" = agent/todo-batch-completion
+          git merge-base --is-ancestor fbf6bc95dcad8b7e7d690f8210896e993590d683 HEAD
+          python -c 'import json; assert json.load(open(".cloud-agent/requests/todo-batch.json"))["mode"] == "apply-and-preview"'
+      - name: Apply source-verified small batch
+        run: python .cloud-agent/requests/todo-small-batch.py
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install validation dependencies and generate canonical assets
+        run: |
+          python -m pip install -r requirements-cloud.txt -r requirements-trade-data.txt
+          npm ci --ignore-scripts
+          npm run prepare:assets
+      - name: Python regressions
+        run: |
+          set -o pipefail
+          python -m unittest tests.test_todo_small_batch tests.test_btc_trade_backtest tests.test_current_runtime_improvements tests.test_benchmark_gui tests.test_audit_limits tests.test_backtest_history tests.test_server_api tests.test_benchmark_segments tests.test_replay_extension tests.test_trade_replay tests.test_backtest_audit -v 2>&1 | tee batch-python.log
+      - name: Build, artifact validation and JavaScript regressions
+        run: |
+          set -o pipefail
+          npm run build 2>&1 | tee batch-build.log
+          node --test tests/*.test.mjs 2>&1 | tee batch-javascript.log
+      - name: Commit the integrated implementation without an intermediate deployment
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add silver_strategy_gui.html public/silver_strategy_gui.html backtest-runs.js public/backtest-runs.js server/app.py docs/TODO.md docs/CHANGELOG.md docs/BTC_SUBSECOND_GUI.md docs/CURRENT_WORK.md
+          git diff --cached --check
+          git commit -m 'feat: complete five bounded TODO usability fixes [skip ci]'
+          git push origin HEAD:agent/todo-batch-completion
+          git rev-parse HEAD | tee SOURCE_COMMIT.txt
+      - name: Deploy the combined tested revision to preview only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test "$(git ls-remote origin refs/heads/agent/todo-batch-completion | cut -f1)" = "$(git rev-parse HEAD)"
+          gh workflow run deploy-google-cloud.yml --ref agent/todo-batch-completion -f deployment_target=preview -f allow_unauthenticated=false
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: todo-batch-validation-${{ github.run_id }}
+          path: |
+            batch-*.log
+            SOURCE_COMMIT.txt
+          if-no-files-found: warn
+          retention-days: 3

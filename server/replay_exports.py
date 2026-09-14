@@ -126,12 +126,22 @@ def replay_workbook(store, manifest, result, start, end):
         for row in selected_rows(store, manifest, 'btc_trade_valuations', start, end):
             def values(n, r=row):
                 opening = r['starting_nav'] * capital
+                futures = float(r.get('futures_notional_usd', 0) or 0)
+                free = r.get('free_collateral_usd')
+                if free is None:
+                    free = float(r.get('cash_usd', 0) or 0) - abs(futures)
+                ratio = r.get('collateralization_ratio')
+                if ratio is None and abs(futures) > 1e-14:
+                    ratio = float(r.get('cash_usd', 0) or 0) / abs(futures)
                 return [r['date'], r['nav_usd'], r['cash_usd'], (f'B{n}-C{n}', r['nav_usd']-r['cash_usd']),
-                        r['futures_notional_usd'], r['direct_nav'], r['fees_usd'], r['return_fraction'],
-                        r['reconstruction_error_usd'], opening, (f'B{n}/J{n}-1', r['nav_usd']/opening-1),
+                        futures, r.get('target_futures_notional_usd'), free, ratio,
+                        r.get('turnover_usd'), r['direct_nav'], r['fees_usd'], r['return_fraction'],
+                        r['reconstruction_error_usd'], opening, (f'B{n}/N{n}-1', r['nav_usd']/opening-1),
                         r['units'], r['targets'], r['mark_us'], r['mark_ids'], *[r['units'].get(s,0) for s in symbols]]
             yield values
-    event_fields = ['date', 'kind', 'symbol', 'order_id', 'trade_id', 'signed_btc', 'price', 'fee_usd', 'cash_usd', 'nav_usd', 'reported_us']
+    event_fields = ['date', 'kind', 'symbol', 'order_id', 'trade_id', 'side', 'signed_btc', 'price',
+                    'observed_btc', 'fee_usd', 'cash_usd', 'nav_usd', 'reported_us', 'eligible_after_us',
+                    'source_sequence', 'requested_btc', 'filled_btc', 'remainder_btc', 'reason']
     def events():
         for row in selected_rows(store, manifest, 'btc_trade_events', start, end):
             yield [row.get(k) for k in event_fields] + [row]
@@ -139,12 +149,19 @@ def replay_workbook(store, manifest, result, start, end):
                 ['Rows', 'All stored valuations and order/fill events within the inclusive UTC bounds; no resimulation or chart sampling.'],
                 ['Opening NAV', 'Value immediately before each valuation interval; the first selected interval can start before the selected bound.'],
                 ['Timestamps', 'UTC ISO text preserves microseconds. Returns are fractions. Units and mark identifiers retain the original JSON records.'],
-                ['Futures', 'Notional exposure is not additive to NAV. Cash includes Treasury collateral. Futures mark prices were not saved in valuation rows; fill prices are in Events.'],
+                ['Futures', 'Long futures are notional overlays collateralized by cash/Treasuries; their principal is not added to NAV. Actual notional is marked from filled units. Target notional is the desired futures exposure before partial-fill constraints.'],
+                ['Collateral', 'Free collateral = cash/Treasuries minus absolute marked futures notional. Cash/futures collateral ratio is blank when no futures are held; a value below 1 would indicate a fully-funded collateral breach.'],
+                ['Turnover', 'Cumulative filled turnover is based on actual simulated fills. The Events sheet exposes each order, fill, cancellation/replacement and observed trade volume used for that fill.'],
                 ['Run identity', result.get('benchmark', {}).get('report_uri', manifest.get('base_url', 'Stored server backtest'))],
                 ['Full-run start', result['summary']['start']], ['Full-run end', result['summary']['end']],
                 *[['Assumption', a] for a in result['trade_replay'].get('assumptions', [])]]
     yield from workbook([
         ('Overview', ['Description', 'Value'], overview),
-        ('Valuations', ['UTC timestamp', 'NAV USD', 'Cash / Treasury USD', 'Direct BTC value USD', 'Long futures notional USD', 'Direct holding index', 'Cumulative fees USD', 'Interval return fraction', 'NAV reconstruction error USD', 'Opening NAV USD', 'Return from NAV fraction', 'Units by instrument', 'Target units by instrument', 'Mark timestamps (microseconds)', 'Mark trade IDs', *['Units: '+s for s in symbols]], valuations()),
+        ('Valuations', ['UTC timestamp', 'NAV USD', 'Cash / Treasury USD', 'Direct BTC value USD',
+                        'Actual long futures notional USD', 'Target long futures notional USD', 'Free collateral USD',
+                        'Cash / futures collateral ratio', 'Cumulative filled turnover USD', 'Direct holding index',
+                        'Cumulative fees USD', 'Interval return fraction', 'NAV reconstruction error USD',
+                        'Opening NAV USD', 'Return from NAV fraction', 'Units by instrument', 'Target units by instrument',
+                        'Mark timestamps (microseconds)', 'Mark trade IDs', *['Units: '+s for s in symbols]], valuations()),
         ('Events', event_fields + ['Complete event record'], events()),
         ('Parameters', ['Parameter', 'Saved value'], result['parameters'].items())])

@@ -2,13 +2,47 @@
 import gzip
 import hashlib
 import json
+import math
 from pathlib import Path
 
 MAX_CHECKPOINT_BYTES = 16 * 1024 * 1024
+_FLOAT_SENTINEL = "__keep_and_lease_float__"
+
+
+def _json_safe(value):
+    """Encode deliberate infinity sentinels without emitting non-standard JSON.
+
+    Checkpoint state occasionally needs an internal +inf/-inf accumulator before
+    the first finite observation exists. JSON itself has no infinity numeric
+    value, so store those sentinels as tagged objects. NaN remains an error: it
+    never represents a legitimate replay state.
+    """
+    if isinstance(value, float):
+        if math.isnan(value):
+            raise ValueError("Replay checkpoint contains NaN")
+        if math.isinf(value):
+            return {_FLOAT_SENTINEL: "positive" if value > 0 else "negative"}
+        return value
+    if isinstance(value, dict):
+        return {key: _json_safe(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(item) for item in value]
+    return value
+
+
+def _restore_json_object(value):
+    if set(value) == {_FLOAT_SENTINEL}:
+        direction = value[_FLOAT_SENTINEL]
+        if direction == "positive":
+            return math.inf
+        if direction == "negative":
+            return -math.inf
+        raise ValueError("Invalid replay checkpoint float sentinel")
+    return value
 
 
 def encode(value):
-    data = json.dumps(value, allow_nan=False, separators=(",", ":")).encode()
+    data = json.dumps(_json_safe(value), allow_nan=False, separators=(",", ":")).encode()
     if len(data) > MAX_CHECKPOINT_BYTES:
         raise ValueError("Replay checkpoint exceeds its bounded size")
     return gzip.compress(data, compresslevel=3, mtime=0)
@@ -20,7 +54,7 @@ def decode(data):
         raw = stream.read(MAX_CHECKPOINT_BYTES + 1)
     if len(raw) > MAX_CHECKPOINT_BYTES:
         raise ValueError("Replay checkpoint exceeds its bounded size")
-    return json.loads(raw)
+    return json.loads(raw, object_hook=_restore_json_object)
 
 
 def fingerprint(payload, manifest_bytes, data_root=None):

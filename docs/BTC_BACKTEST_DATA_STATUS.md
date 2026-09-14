@@ -1,6 +1,7 @@
 # BTC-only backtest data and execution status
 
-Evidence checked September 9, 2026. Dates below are UTC. An exclusive end of
+Current 90-day completion status checked September 11, 2026; dated evidence below
+is retained as history. Dates below are UTC. An exclusive end of
 September 4 includes all of September 3.
 
 ## Available inputs
@@ -12,7 +13,7 @@ September 4 includes all of September 3.
 | Deribit futures candles | Same 90-day requested window; 1 minute | Repository `public/data/btc/intraday/deribit_1m/futures/` and manifest | 93 contracts, 1,202,419 rows, including 840,526 zero-volume synthetic rows. Synthetic marks may support valuation but are not observed executions. Each contract has its own lifetime and coverage. |
 | Kraken BTC/USD midpoint candles | July 1, August 1, September 1, 2026 only; 1 minute | Repository `public/data/btc/intraday/kraken_1m/spot.csv.gz` and manifest | Three free Tardis sample sessions, 4,320 bars with no within-session missing minutes. Not a continuous three-month dataset. |
 | Trade replay pilot | June 25, 2026; event timestamps | GCS `btc/trades/v1/9c05efc03118699303e7a55e14205bed29783683a85c165f99319dd3fabc055d` | Verified raw/Parquet/cloud equivalence and deployed GUI examples at 500 ms and 1 ms clocks. |
-| Full trade replay range | June 6–September 3, 2026; Binance spot aggregate trades and Deribit futures trades | GCS immutable daily datasets and range below | All 90 daily raw/cloud comparisons passed. The 90-day sequence result is complete; timestamp result and paired comparison remain pending. |
+| Full trade replay range | June 6–September 3, 2026; Binance spot aggregate trades and Deribit futures trades | GCS immutable daily datasets and range below | All 90 daily raw/cloud comparisons passed. Both 90-day policies and their paired comparison completed in workflow `34363722260`; GUI result viewing/export is implemented. Fresh full-period Cloud Run operational acceptance is separate. |
 | Treasury yields | Shared daily rate CSVs `DTB3`, `DTB6`, `DGS1`, `DGS2`, `DGS3`, `DGS5` | Repository root and deployed engine data | Replay carries the latest observable yield and accrues between observations; no future interpolation. Rate bytes participate in checkpoint identity. |
 
 The trade range is:
@@ -119,8 +120,8 @@ valuation row to an uninterrupted run, including pending orders across midnight.
 The current extension contract requires the same immutable market manifest.
 Extending within the pinned 90 days works; accepting a new, longer manifest needs
 explicit append-only prefix validation (same historical daily hashes and causal
-seed/ordering metadata). The GUI Extend action and cloud job lineage API remain
-future work. The current reader/catalog still cap data ranges at 90 days and
+seed/ordering metadata). GUI Extend and the cloud lineage API subsequently passed deployed acceptance
+on September 11 (workflow `34599205892`). The current reader/catalog still cap data ranges at 90 days and
 16 million decisions: configurable worker duration alone does not remove those
 engine bounds. Longer history requires extending these bounded manifests and
 validating audit-index/ordering-cache limits, not merely increasing a timeout.

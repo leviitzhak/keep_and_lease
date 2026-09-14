@@ -35,3 +35,11 @@ resource "google_storage_bucket_iam_member" "codex_market_publisher" {
   role     = each.value
   member   = "serviceAccount:${google_service_account.codex_operator.email}"
 }
+
+# Owner-approved standing read access for investigations across saved runs.
+# Foundation-owned: no results writes, expiry condition or project-wide role.
+resource "google_storage_bucket_iam_member" "codex_results_reader" {
+  bucket = google_storage_bucket.results.name
+  role   = "roles/storage.objectViewer"
+  member = "serviceAccount:${google_service_account.codex_operator.email}"
+}

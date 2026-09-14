@@ -1,0 +1,34 @@
+{
+  "application_commit": "8f83983f4493db490f9941130dde86402d1f181d",
+  "integration_run": 34621160549,
+  "python_tests": 130,
+  "javascript_tests": 72,
+  "production_build": "passed",
+  "public_mirror_checks": "passed",
+  "local_browser": {
+    "source": "actual source functions, application CSS and histogram wrapper in synthetic Chromium fixtures",
+    "model_family_combinations": 16,
+    "page_errors": [],
+    "desktop_mobile_layout": "passed",
+    "canvas_release": "passed"
+  },
+  "numerical_regression": {
+    "reference": "source snapshot preceding new shared-plot telemetry",
+    "replay_summary": "identical",
+    "replay_full_event_and_valuation_audit": "identical",
+    "daily_and_replay_original_chart_fields": "identical",
+    "daily_summary": "identical"
+  },
+  "preview": {
+    "workflow_run": 34621268667,
+    "artifact_id": 10273088885,
+    "result": "success",
+    "multi_commodity_observations": 4836,
+    "replay_500ms_observations": 600,
+    "replay_1ms_observations": 998,
+    "gui_page_errors": [],
+    "gui_error": null,
+    "checkpoint_extension": "passed",
+    "fresh_90_day_cloud_run": "not run"
+  }
+}
