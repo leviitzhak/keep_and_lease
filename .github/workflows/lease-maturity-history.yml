@@ -1,0 +1,59 @@
+name: Market lease maturity history (read only, no deployment)
+on:
+  push:
+    branches: [agent/cloud-autonomous-access]
+    paths: [.cloud-agent/requests/lease-maturity-history.json]
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: market-lease-maturity-history
+  cancel-in-progress: false
+jobs:
+  history:
+    if: github.ref == 'refs/heads/agent/cloud-autonomous-access'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate fixed market-only request
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          request=json.loads(Path('.cloud-agent/requests/lease-maturity-history.json').read_text())
+          assert request == {'schema_version':1,'action':'full-market-lease-history','sequence':1}
+          PY
+      - uses: actions/checkout@v4
+        with:
+          ref: 6719e43f16b81d2cc4b41dcbcb020f537ec3f4f0
+          path: source
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install optional market research dependencies
+        run: python -m pip install -r source/requirements-trade-data.txt 'numpy>=2,<3'
+      - name: Validate causal pairing and existing diagnostics before cloud reads
+        working-directory: source
+        run: |
+          set -o pipefail
+          python -m py_compile scripts/build_lease_maturity_history.py
+          python -m unittest tests.test_lease_maturity_history tests.test_lease_signal_diagnostic tests.test_diagnose_run_costs tests.test_operator_results_access tests.test_cloud_agent_operator -v 2>&1 | tee ../history-tests.log
+      - uses: google-github-actions/auth@v2
+        with:
+          project_id: keep-and-lease
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com
+      - name: Extract entire pinned 90-day market history, not portfolio results
+        run: |
+          python source/scripts/build_lease_maturity_history.py --io adc --max-gap-seconds 1 --max-read-gib 16 --output history-output
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lease-maturity-history-${{ github.run_id }}
+          path: |
+            history-output/
+            history-tests.log
+          retention-days: 1
+          if-no-files-found: error
