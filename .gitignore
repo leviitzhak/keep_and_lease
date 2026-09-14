@@ -79,3 +79,6 @@ next-env.d.ts
 gha-creds-*.json
 public/data/*.sqlite3
 public/data/*.tmp
+
+# Owner-run diagnostic output. Use --output outside the checkout for other names.
+/run-cost-diagnostics/
