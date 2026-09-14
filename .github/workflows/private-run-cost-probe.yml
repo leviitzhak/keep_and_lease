@@ -1,0 +1,35 @@
+name: Private saved-run cost probe (read only)
+on:
+  push:
+    branches: [agent/cloud-autonomous-access]
+    paths: [.cloud-agent/requests/private-run-cost-probe.json]
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: private-saved-run-cost-probe
+  cancel-in-progress: false
+jobs:
+  probe:
+    if: github.ref == 'refs/heads/agent/cloud-autonomous-access'
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install google-cloud-storage==3.13.1 cryptography
+      - uses: google-github-actions/auth@v2
+        with:
+          project_id: keep-and-lease
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com
+      - name: Read selected saved result if existing IAM permits; encrypt all output
+        run: python scripts/private-run-cost-probe.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: encrypted-run-cost-probe-${{ github.run_id }}
+          path: private-probe-output/report.encrypted.json
+          if-no-files-found: error
+          retention-days: 1
