@@ -21,9 +21,16 @@ jobs:
           set -o pipefail
           python -m py_compile scripts/diagnose_lease_signal.py
           python -m unittest tests.test_lease_signal_diagnostic tests.test_diagnose_run_costs tests.test_operator_results_access tests.test_cloud_agent_operator -v 2>&1 | tee lease-signal-tests.log
+      - name: Record exact public source tested (no data or credentials)
+        run: |
+          git rev-parse HEAD > SOURCE_COMMIT.txt
+          git archive --format=tar.gz HEAD > source.tar.gz
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: lease-signal-tests-${{ github.run_id }}
-          path: lease-signal-tests.log
-          retention-days: 7
+          path: |
+            lease-signal-tests.log
+            SOURCE_COMMIT.txt
+            source.tar.gz
+          retention-days: 1
