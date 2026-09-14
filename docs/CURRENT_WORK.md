@@ -4,7 +4,20 @@ _Update this file whenever active development moves to another branch or pull
 request. Other documents link here instead of duplicating a change-specific PR or
 branch._
 
-## Active change set
+## Active foundation-only change
+
+Branch: `agent/operator-results-reader`, based on `agent/shared-run-plots` at
+`989acd51b8895f868e96a7895a84a2d549ce9d8a`. Adds one persistent results-bucket
+objectViewer member for the existing operator. Existing market grants and
+impersonation restrictions are unchanged. All 13 permission-scope/operator
+request-privacy tests passed locally. These are source tests; native Terraform
+validation, the live foundation plan and IAM activation remain pending.
+
+No preview/stable deployment or private-run retrieval is part of this change.
+See [OPERATOR_RESULTS_ACCESS.md](OPERATOR_RESULTS_ACCESS.md) for activation and
+remaining private-diagnostics work. The verified application below is unchanged.
+
+## Latest verified application change
 
 Active branch: `agent/shared-run-plots`, based on the verified TODO batch at
 `4674d0601ea3a180d740e89b78bd05e9ac4ce93b`. PR #46 targets

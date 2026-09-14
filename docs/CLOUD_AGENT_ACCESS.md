@@ -34,7 +34,9 @@ in the repository, a GitHub secret, an artifact, or the Codex agent filesystem.
 - `roles/iam.workloadIdentityUser` for the exact GitHub ref
   `refs/heads/agent/cloud-autonomous-access`;
 - the owner-granted `roles/storage.objectCreator` and `roles/storage.objectViewer`
-  on `keep-and-lease-market-data` for the fixed pilot ingestion workflow.
+  on `keep-and-lease-market-data` for the fixed pilot ingestion workflow;
+- foundation-managed `roles/storage.objectViewer` on `keep-and-lease-results`
+  for standing read access to saved runs (activation status and commands below).
 
 The foundation owns the stable invoker binding. The isolated preview workload
 state adds the same service account as an invoker only on
@@ -64,11 +66,13 @@ terraform plan
 terraform apply
 ```
 
-The foundation plan remains unchanged for this preview extension. The next normal
-preview deployment plans and applies only the preview service's operator invoker
-binding alongside its ordinary workload update. It must not replace either web
-service, calculation Job, buckets, Firestore database, or GitHub deployment
-identity.
+The preview-invoker extension itself needs no additional foundation change.
+The separately approved results-reader resource does require a foundation apply;
+follow [Standing results access](OPERATOR_RESULTS_ACCESS.md) from the branch
+containing that resource, not an older operator checkout. A normal application
+deployment applies only `infra/gcp/workloads/` and does not activate this bucket
+grant. No service, calculation Job, bucket, Firestore database or existing
+identity should be replaced to enable results reading.
 
 No new GitHub secret is required. The workflow reuses the existing identifier
 variable `GCP_WORKLOAD_IDENTITY_PROVIDER`.
@@ -186,3 +190,19 @@ using the existing branch-restricted OIDC identity. It validates source events
 before publication and reproduces both GCS-backed replay audits. The grants are
 represented in foundation Terraform. No credentials are exported. See the linked
 storage runbook for request shape, immutable object paths and live evidence.
+
+## Standing read access for saved-run investigations
+
+The September 14, 2026 permission change adds
+`google_storage_bucket_iam_member.codex_results_reader` to the foundation.
+It covers all existing and future objects in the results bucket, including
+results, audits, checkpoints and exports; it is not limited to a run ID or date.
+The existing market-data grants remain unchanged. This is an additive member
+resource, not a replacement of the bucket IAM policy.
+
+Configuration is added; **live activation is not yet verified**. Follow
+[OPERATOR_RESULTS_ACCESS.md](OPERATOR_RESULTS_ACCESS.md) for plan review,
+application, optional adoption of an existing manual grant, and revocation.
+The private-diagnostics transport remains unimplemented. Bucket read access
+neither bypasses the application's owner checks nor permits private run data in
+public workflow logs/artifacts. All keyless and output restrictions above remain.
