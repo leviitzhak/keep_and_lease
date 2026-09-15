@@ -66,8 +66,8 @@ remaining items below are not implicitly completed by that batch.
 
 - [ ] examine the following strategy : 
               - enter long a future when the lease rate is high
-			        - keep it until maturity (and get the title on the commodity)
-				      - whenever there is a negative lease rate, short the future (either unwinding the existing position, or using the owned title on the commodity) 
+			  - keep it until maturity (and get the title on the commodity)
+              - whenever there is a negative lease rate and a positive lease rate, and we have either a long position or titles on the commodity, short the future with the negative lease rate (up to the amount allowed by the existing position or the titles on the commodity), and take the equivalent long position on the future with the positive lease rate. 
 
 
 - [x] Extend a completed backtest to a longer period from the GUI, reusing its
