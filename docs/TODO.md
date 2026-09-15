@@ -6,30 +6,56 @@ The September 11 small batch completes four items and partially improves full-au
 progress. Scope and validation are recorded in `TODO_SMALL_BATCH_VALIDATION.md`;
 remaining items below are not implicitly completed by that batch.
 
-## Priority execution change — paired transfers (specified, not implemented)
+## Next implementation — cost-aware, funded paired-transfer strategy
 
-- [x] Record the owner-approved **same transfer instruction** requirement for
-  `spot -> (cash/Treasuries + futures)` and the reverse in
-  [PAIRED_TRANSFER_DESIGN.md](PAIRED_TRANSFER_DESIGN.md).
-- [ ] Implement a durable pair-level transfer instruction for both directions.
-  Couple spot fills, futures fills and collateral reservations; size partial
-  transfers by both legs' executable liquidity and funding, not independent
-  portfolio targets. Record all fills/fees and unpaired exposure under one ID.
-- [ ] Separate held inventory from signal/trade eligibility: stale or missing
-  futures quotes must not automatically zero a held future or trigger a spot
-  trade. Define expiry/settlement/collateral-risk exits separately.
-- [ ] Require causal, closely timed spot/futures price evidence with explicit
-  maximum age/skew. When quote-side quantities/depth exist, evaluate the prices
-  and lease rate for the proposed quantity, reserve size without double use,
-  and reject or cap transfers that cannot be paired. Tape-only research must
-  not claim observed executable quote depth or borrow future volume.
-- [ ] Bound advance spot funding, unpaired exposure and legging time; never open
-  unfunded futures or spend collateral from an unfilled exit. Coordinate
-  futures-to-futures rolls without unnecessary intermediate spot churn.
-- [ ] Validate same-opening-state one-day comparisons of the current model and
-  paired transfers: net return/costs, achieved substitution, quote age/skew,
-  liquidity, partial failures, reversals, funding and NAV reconstruction.
-  Keep the current tested strategy and immutable historical results unchanged.
+This is the single next development workstream, to be implemented in a new
+thread/feature branch after the documentation merge. See
+[NEXT_STRATEGY_IMPLEMENTATION.md](NEXT_STRATEGY_IMPLEMENTATION.md) for the
+ordered implementation handoff and links to the complete specifications.
+Documented plans and preliminary studies are not implemented strategy features.
+
+- [x] Document the common strategy specification, including the **same transfer
+  instruction** for `spot <-> (cash/Treasuries + futures)`, expected net BTC
+  wealth versus KEEPING the current funded position, and full-period acceptance.
+- [ ] Audit/refresh Treasury coverage and normalize yield conventions before new
+  acceptance runs. Preserve the old July 14 carry-forward vintage/results and
+  expose rate age; model real security holdings or explicitly labeled proxies.
+- [ ] Implement separate spot/futures feed-availability delays, distinct from
+  processing, order-entry and fill-response delays. Either observation order
+  is allowed once both observations are available; never use future knowledge.
+- [ ] Require causal, closely timed observations and size-aware executable prices.
+  Reserve liquidity without double use; do not call past trade size quote depth.
+- [ ] Implement durable paired incremental transfers, both directions and direct
+  futures rolls, coupling child fills, cash/Treasury movements and collateral.
+  Bound prefunding, unpaired exposure and legging time; retain partial failures.
+- [ ] Separate held inventory from stale/missing signal eligibility. Missing new
+  prices do not alone trigger liquidation or a compensating spot transaction.
+- [ ] Implement venue-aware futures mark-to-market, variation settlement and
+  funding in backtests, replacing the replay's immediate-P&L-to-cash shortcut
+  rather than counting P&L twice. Separate marks, unsettled P&L and settled cash;
+  model Treasury sales/financing, haircuts and settlement/payment calendars.
+- [ ] Add optional product-specific fixed commissions and minimum ticket charges,
+  alongside proportional/per-contract fees, spread, impact, delivery and funding
+  costs. Define fee scope across partial fills/replacements; zero preserves the
+  old behavior. Only actual fee-bearing transactions incur commissions.
+- [ ] support proxy expense for trade replay
+- [ ] Evaluate feasible transfer quantities and holding horizons using expected
+  incremental NET BTC wealth against keeping the CURRENT position, with a
+  cost-recovery safety margin/no-trade region. Reuse holdings; do not re-charge
+  sunk costs or require arbitrary long holds instead of an economic comparison.
+- [ ] Implement discretionary exits that crystallize acceptable net gains OR
+  enable a sufficiently better forward net opportunity; compare executable pair
+  limits and preserve mandatory expiry/collateral/risk overrides.
+- [ ] Model expiry-reference basis, delivery fees and pre-expiry close choices;
+  do not equate official settlement with an unrelated spot price or physical BTC.
+- [ ] Report observed versus executed matched-fill lease rates, predicted versus
+  realized BTC returns, cost/quantity/horizon breakdowns and KEEP alternatives.
+  Retain unsuccessful/unmatched instructions and the full calculation provenance.
+- [ ] Validate accounting, fixed fees, causal latency, funding stress, partial
+  fills, liquidation, restart and zero-cost compatibility; then compare bounded
+  same-opening-state runs and the full 90 days with chronological holdout dates.
+  Keep all earlier strategies and results immutable. Leverage support must be
+  explicit and separately tested, not silently enabled by this accounting work.
 
 ## Higher priority
 
@@ -61,8 +87,6 @@ remaining items below are not implicitly completed by that batch.
   `BTC_90_DAY_EXECUTION.md`.
 
 - [ ] analyse strategy : btc min 90d fees 2bps flg
-
-- [ ] support proxy expense for trade replay
 
 - [ ] examine the following strategy : 
               - enter long a future when the lease rate is high
@@ -224,8 +248,8 @@ remaining items below are not implicitly completed by that batch.
   - choose the extension from the eligible shorter-maturity subset using the
     same construction logic and replicating/direct-holding versus
     Treasuries+long-futures trade-off as the lease book.
-- [ ] Implement configurable transaction costs on every buy and sell, including
-  explicit fees and simulated bid-ask spread costs.
+Transaction-cost implementation (including explicit fees and simulated bid-ask
+spread costs) is grouped in the next-workstream checklist above.
 - [ ] Add a scatter plot of lease rates scaled to a daily horizon versus the
   corresponding daily return quoted in the commodity.
 
