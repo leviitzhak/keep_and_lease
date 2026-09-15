@@ -42,3 +42,20 @@ opening state and source data, including costs and achieved matched exposure.
 This design does not claim that cross-venue fills are atomic or that a top quote
 or a past trade is executable for arbitrary size. No hard-coded choice of quote
 tolerance, transfer size, smoothing or maximum legging time is approved here.
+
+## Planned extensions recorded 2026-09-15
+
+See [QUOTE_LATENCY_AND_CARRY_PLAN.md](QUOTE_LATENCY_AND_CARRY_PLAN.md) for the
+open implementation checklist and acceptance criteria:
+
+- delay observed quotes before the trading system can use them, independently
+  of order and fill-response delays; allow either observation order once both
+  records are available, without imposing a universal execution order;
+- compare each transfer's authorizing observed lease rate with the achieved
+  matched-fill rate and costs, preserving incomplete transfers and separating
+  execution quality from subsequent realized BTC return; and
+- study longer holding/roll periods using a funded commodity-denominated
+  portfolio, separating horizon, smoothing and maturity and retaining the
+  residual-basis, funding, settlement and liquidity risks.
+
+These are planned changes, not implemented behavior or new backtest results.
