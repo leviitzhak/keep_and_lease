@@ -62,6 +62,8 @@ remaining items below are not implicitly completed by that batch.
 
 - [ ] analyse strategy : btc min 90d fees 2bps flg
 
+- [ ] support proxy expense for trade replay
+
 - [ ] examine the following strategy : 
               - enter long a future when the lease rate is high
 			        - keep it until maturity (and get the title on the commodity)
