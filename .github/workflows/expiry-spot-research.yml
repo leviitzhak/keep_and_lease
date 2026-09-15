@@ -1,0 +1,107 @@
+name: Expiry spot comparison (market read only)
+on:
+  push:
+    branches: [agent/cloud-autonomous-access]
+    paths: [.cloud-agent/requests/expiry-spot-research.json]
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: expiry-spot-research
+  cancel-in-progress: false
+jobs:
+  research:
+    if: github.ref == 'refs/heads/agent/cloud-autonomous-access'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate fixed market-only request
+        run: |
+          python - <<'PY'
+          import json
+          assert json.load(open('.cloud-agent/requests/expiry-spot-research.json')) == {'action':'expiry-spot-90day','sequence':1}
+          PY
+      - uses: actions/checkout@v4
+        with:
+          ref: 6719e43f16b81d2cc4b41dcbcb020f537ec3f4f0
+          path: source
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r source/requirements-trade-data.txt 'numpy>=2,<3'
+      - uses: google-github-actions/auth@v2
+        with:
+          project_id: keep-and-lease
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com
+      - name: Read pinned spot partitions; compare expiry instant and window
+        run: |
+          python - <<'PY'
+          import sys,json,csv,tempfile,hashlib
+          from pathlib import Path
+          import numpy as np
+          import pyarrow as pa
+          import pyarrow.parquet as pq
+          sys.path.insert(0,'source/scripts')
+          from build_lease_maturity_history import Inputs,RANGE_SHA,timestamp,iso
+          out=Path('expiry-evidence');out.mkdir()
+          inputs=Inputs('adc',budget=8*1024**3)
+          top=inputs.fetch(f'btc/trades/ranges/{RANGE_SHA}/manifest.json',RANGE_SHA,out/'range.json',cap=8*1024**2)
+          catalog=json.load(open(top));rows=[]
+          for day in catalog['daily_datasets']:
+            date=day['start'][:10]; expiry=timestamp(date+'T08:00:00Z');begin=expiry-1800*1000000
+            before=None;after=None;carry=None;last_t=begin;weighted=0.;observed=0;source_rows=0
+            with tempfile.TemporaryDirectory() as td:
+              td=Path(td);h=day['manifest_sha256'];prefix=f'btc/trades/v1/{h}/'
+              mp=inputs.fetch(prefix+'manifest.json',h,td/'manifest.json',cap=8*1024**2)
+              manifest=json.load(open(mp));delivery=json.loads(manifest['source_manifest']['delivery_price_response'])
+              assert delivery['testnet'] is False
+              settle={r['date']:r['delivery_price'] for r in delivery['result']['data']}[date]
+              for k,part in enumerate(manifest['partitions']):
+                if '/market=spot/' not in part['path']:continue
+                path=inputs.fetch(prefix+part['path'],part['sha256'],td/f'{k}.parquet')
+                with pq.ParquetFile(path,pre_buffer=False,page_checksum_verification=True) as pf:
+                  assert pf.metadata.num_rows==part['rows'];source_rows+=part['rows']
+                  for b in pf.iter_batches(batch_size=65536,columns=['timestamp_us','price','trade_id','native_quantity'],use_threads=False):
+                    ts=b.column(0).to_numpy(zero_copy_only=False)
+                    assert np.all(ts[1:]>=ts[:-1])
+                    def record(i):
+                      return {'time_us':int(ts[i]),'price':str(b.column(1)[i].as_py()),'trade_id':str(b.column(2)[i].as_py()),'amount_btc':str(b.column(3)[i].as_py())}
+                    j=int(np.searchsorted(ts,expiry,side='right'))
+                    if j:before=record(j-1)
+                    j=int(np.searchsorted(ts,expiry,side='left'))
+                    if after is None and j<len(ts):after=record(j)
+                    lo=int(np.searchsorted(ts,begin,side='left'));hi=int(np.searchsorted(ts,expiry,side='left'))
+                    if lo:carry=float(b.column(1)[lo-1].as_py())
+                    if hi>lo:
+                      u=ts[lo:hi];v=b.column(1).slice(lo,hi-lo).cast(pa.float64()).to_numpy(zero_copy_only=False)
+                      assert carry is not None
+                      weighted+=carry*(int(u[0])-last_t)
+                      if len(u)>1:weighted+=float(np.sum(v[:-1]*np.diff(u)))
+                      last_t=int(u[-1]);carry=float(v[-1]);observed+=len(u)
+                    if after is not None:break
+            assert before is not None and after is not None and carry is not None and observed>0
+            weighted+=carry*(expiry-last_t);twap=weighted/(1800*1000000)
+            assert before['time_us']<=expiry<=after['time_us']
+            row={'date':date,'expiry_utc':iso(expiry),'delivery_price':settle,'spot_twap_0730_0800':twap,'twap_trades':observed,'spot_source_rows':source_rows}
+            for key,r in [('before',before),('after',after)]:
+              row.update({f'spot_{key}_{k}':v for k,v in r.items()})
+              row[f'spot_{key}_gap_ms']=abs(r['time_us']-expiry)/1000
+              row[f'delivery_minus_spot_{key}_bps']=(settle/float(r['price'])-1)*10000
+            row['delivery_minus_binance_twap_bps']=(settle/twap-1)*10000
+            rows.append(row)
+            with (out/'expiry_spot.csv').open('w',newline='') as f:
+              w=csv.DictWriter(f,rows[0].keys());w.writeheader();w.writerows(rows)
+            print('Verified market day',date,len(rows),'of',len(catalog['daily_datasets']),flush=True)
+          assert len(rows)==90
+          (out/'receipts.json').write_text(json.dumps({'status':'COMPLETE','source_manifest_sha256':RANGE_SHA,'rows':len(rows),'bytes_read':inputs.bytes,'receipts':inputs.receipts,'method':'first raw Binance spot trade at/after expiry, latest at/before; LOCF time-weighted raw-spot average from 07:30 to 08:00 UTC; USDT parity assumed; no private results or cloud writes'},indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: expiry-spot-research-${{ github.run_id }}
+          path: expiry-evidence/
+          retention-days: 7
+          if-no-files-found: error
