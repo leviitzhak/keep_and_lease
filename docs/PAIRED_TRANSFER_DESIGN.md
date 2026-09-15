@@ -59,3 +59,15 @@ open implementation checklist and acceptance criteria:
   residual-basis, funding, settlement and liquidity risks.
 
 These are planned changes, not implemented behavior or new backtest results.
+
+## Next analysis: cost-aware transfers versus keeping current positions
+
+See [COST_AWARE_PAIRED_TRANSFER_PLAN.md](COST_AWARE_PAIRED_TRANSFER_PLAN.md).
+This adds the requested economic no-trade threshold as an alternative to merely
+lengthening mandatory holding time. It covers incremental expected BTC returns
+versus keeping the current position, all spot/futures/Treasury costs, feasible
+break-even horizons, profit-taking or compensated-switch exits with risk
+exceptions, settlement-reference comparisons, the preliminary holding-horizon
+study, and acceptance for a complete causal funded paired-transfer backtest.
+The new analysis/implementation checklist remains pending; no engine rule is
+changed by this documentation update.
