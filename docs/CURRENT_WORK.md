@@ -1,62 +1,44 @@
 # Current work
 
-## September 14 — completed user-approved integration
+## Next implementation handoff — cost-aware, funded paired transfers
 
-PR #48 merged the verified stack from `agent/operator-results-reader` into
-`master` at `952b980845f1944da3566217cd4d78fea12b0515`. It includes
-`agent/current-running-completion`, `agent/todo-batch-completion` and
-`agent/shared-run-plots`, the standing results-reader declaration and owner-run
-diagnostics. The two strategy TODOs concurrently added on master at
-`b26376149dbd99909b28d049de3cea15c1d83ec9` were preserved.
+The owner has authorized merging the documentation plan in PR #49 and will
+start implementation in a NEW thread. Begin from current GitHub master after
+that merge and create a fresh feature branch; no implementation is made here.
 
-The user reported successful Terraform plan/apply and validation on September 14;
-this is not an independent live-IAM certification. The master merge follows the
-normal stable-deployment path; no new stable acceptance result is claimed here.
-Subsequent documentation-only evidence commits do not redeploy the application.
+Read [NEXT_STRATEGY_IMPLEMENTATION.md](NEXT_STRATEGY_IMPLEMENTATION.md) first.
+It groups all next changes in one ordered workstream; [TODO.md](TODO.md) contains
+the primary checklist. The existing detailed paired-transfer, quote-latency,
+cost-aware decision and preliminary-study documents remain linked specifications.
 
-The tested application is the shared daily/replay plot version whose application
-commit is `8f83983f4493db490f9941130dde86402d1f181d`. Its final preview acceptance
-passed in `34621268667`, after integration `34621160549` (130 Python / 72 JS tests).
-Diagnostic/documentation additions do not change its decision, fill or fee rules.
-See [SHARED_RUN_PLOTS_VALIDATION.md](SHARED_RUN_PLOTS_VALIDATION.md) and
-[TODO_SMALL_BATCH_VALIDATION.md](TODO_SMALL_BATCH_VALIDATION.md).
+Next scope: rate-data/convention audit; separate source/receipt/decision/fill
+clocks; size-aware paired transfers and reservation states; venue-aware futures
+mark-to-market and cash settlement/Treasury funding; optional fixed and minimum
+commissions; expected incremental NET BTC wealth versus KEEPING the current
+position; executable exits and risk overrides; observed-versus-executed and
+realized-return diagnostics; bounded then full-period and holdout acceptance.
 
-## Next execution change — specification only
+[FUTURES_MTM_AND_COMMISSION_PLAN.md](FUTURES_MTM_AND_COMMISSION_PLAN.md)
+explains how to replace the existing immediate futures-P&L-to-cash shortcut
+without double counting. Signed quantities/margin tests prepare for later
+leverage; this merge does not enable it. All new engine work remains pending.
 
-The owner-approved **same transfer instruction** for both directions between
-spot and cash/Treasuries plus futures is now in
-[PAIRED_TRANSFER_DESIGN.md](PAIRED_TRANSFER_DESIGN.md) and the priority section
-of [TODO.md](TODO.md). The engine implementation remains unchecked.
+[TREASURY_CARRY_FORWARD_AUDIT.md](TREASURY_CARRY_FORWARD_AUDIT.md) records the
+exact July 14 rate vector, next-UTC-day availability, flat node extrapolation,
+shortest-rate tape accrual and separate synthetic matched-bond prices. The
+preliminary holding study omits intra-horizon VM financing and its Treasury data
+freeze after that date; it remains research, not accepted strategy performance.
 
-The design couples spot/futures fills and collateral reservations, limits
-transfers by both legs' executable quantities, uses close causal price evidence,
-and does not treat a stale/missing new futures quote as an instruction to remove
-held inventory. It explicitly bounds prefunding and unpaired exposure/legging
-time, and separates settlement/risk exits. Existing results remain immutable;
-the new policy needs a controlled same-opening-state comparison.
+## Baseline and delivery boundary
 
-## Completed full-history market diagnostics
+The existing tested engine, strategies and saved results are unchanged. No
+backtest rerun, application deployment, new data vintage or IAM change belongs
+to this documentation patch. Coherent future application changes should use the
+single authoritative GCP preview, with the usual tests, not local Sites.
 
-`scripts/build_lease_maturity_history.py` constructs observation-level implied
-lease/maturity data across the pinned 90-day market catalog. It reads market data
-only, not user run results, and does not simulate another portfolio. It retains
-exact source price strings, IDs, timestamps, sizes, premiums, Treasury components
-and the original simple annualization. See
-[LEASE_MATURITY_HISTORY.md](LEASE_MATURITY_HISTORY.md) for scope and limitations.
-
-Workflow `34901878190` completed all 90 UTC days in `[2026-06-06, 2026-09-04)`:
-2,178,117 accepted observation pairs, of which 1,492,689 have at least 10 days
-remaining. All accepted calculation rows were independently checked after
-download. Both requested scatters retain the full-period date-color scale;
-negative rates and near-expiry extremes remain visible. A standalone explorer
-and full per-day calculation CSVs were prepared as research outputs, not as a new
-GUI feature. See [LEASE_MATURITY_HISTORY_VALIDATION.md](LEASE_MATURITY_HISTORY_VALIDATION.md).
-
-The dedicated extraction workflow runs on `agent/cloud-autonomous-access`, not
-on the shared preview. Its output is market-derived diagnostics only; no private
-strategy parameters, positions, results or credentials are published. This does
-not implement paired transfers or establish executable book depth.
-
-The earlier current-work record is retained unchanged in
-[CURRENT_WORK_HISTORY_2026-09-14.md](CURRENT_WORK_HISTORY_2026-09-14.md).
-Earlier branch/deployment statements in that file are historical snapshots.
+The complete previous current-work document is preserved unchanged in
+[CURRENT_WORK_HISTORY_2026-09-15_PRE_STRATEGY_PLAN.md](CURRENT_WORK_HISTORY_2026-09-15_PRE_STRATEGY_PLAN.md).
+It records PR #48's prior integration, the verified shared-plots baseline and
+completed full-history market extraction. Those milestones are not reset by the
+new strategy plan. The completed old 90-day computations remain marked done;
+a NEW cost-aware/funded strategy still needs its own acceptance run.
