@@ -24,6 +24,21 @@
   90-day empirical run follows inspection of the short run; deployment and
   realized acceptance evidence are separate from implementation.
 
+- Deploy empirical revision `6fd1ae2a4fa24b28a8a5972e8445975a2f5a8fd2` after
+  311 Python and 34 GUI checks. Workflow `35147345496` passed all application
+  checks, including health, GUI, subsecond replay, paired exports and replay
+  extension, but **failed overall** solely on final artifact-evidence upload
+  with `403 Forbidden`. Independent authenticated browser inspection confirmed
+  the exact SHA and ready engine.
+- Start empirical job `69d512c2e4da4cd8b1fa27a9870c0769` at 20:40 UTC; freeze
+  67,452 June 6–16 calibration labels and score June 16–26. Adaptive comparison
+  job `d1da8ce988ec49d890d61e89aa8fe040` uses prior engine
+  `663e60c5b10bb98675baf7785b66b64d18ea6b34` for the same scored window. Results
+  and empirical acceptance are pending; no new 90-day empirical test is claimed.
+- Keep the pending-initial-decision, zero-fill censoring audit-checker fix
+  separate from simulation behavior. Its 14 focused checks passed; the follow-up
+  does not alter the engines of the running jobs.
+
 ## 2026-09-16 — Adaptive funded BTC entry limits
 
 - Add optional adaptive spot-to-future entry limits tied to the accepted

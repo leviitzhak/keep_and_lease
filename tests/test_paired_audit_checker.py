@@ -238,6 +238,18 @@ class PairedAuditCheckerTests(unittest.TestCase):
         self.assertEqual(self.checks.failures["study_label_before_cutoff"],1)
         self.assertEqual(self.checks.failures["study_complete_window_before_cutoff"],1)
 
+    def test_pending_decision_end_window_censor_requires_no_pair_or_execution(self):
+        row=dict(kind="empirical_instruction_result",us=100,pair_id=None,
+            status="end_window_censored",reason="decision_not_completed_before_window_end",
+            decision_started_us=1,deadline_us=1_000_001,completed_by_deadline=False,
+            actual_source_btc=0,actual_target_btc=0,unmatched_source_btc=0,residual_cash_usd=0)
+        self.audit.event(row)
+        self.assertFalse(self.checks.failures,self.checks.report())
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM pairs").fetchone()[0],0)
+        self.assertEqual(self.audit.empirical_statuses["end_window_censored"],1)
+        self.audit.event({**row,"actual_source_btc":.001})
+        self.assertEqual(self.checks.failures,{"empirical_unsubmitted_censor_has_no_execution":1})
+
 
 if __name__ == "__main__":
     unittest.main()

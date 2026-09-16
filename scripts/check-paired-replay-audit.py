@@ -665,6 +665,23 @@ class Audit:
         self.put("restorations", identifier, saved)
 
     def empirical_result(self, row):
+        if row.get("pair_id") is None:
+            # An admitted decision can still be in flight when the evaluation
+            # ends. It has no orders/pair and must not invent executed exposure.
+            valid = (row.get("status") == "end_window_censored"
+                     and row.get("reason") == "decision_not_completed_before_window_end"
+                     and row.get("completed_by_deadline") is False
+                     and all(row.get(name) == 0 for name in ("actual_source_btc", "actual_target_btc",
+                             "unmatched_source_btc", "residual_cash_usd"))
+                     and all(row.get(name) is None for name in ("first_source_fill_us",
+                             "first_target_fill_us", "last_target_fill_us", "actual_slippage_bps"))
+                     and isinstance(row.get("decision_started_us"), int)
+                     and isinstance(row.get("deadline_us"), int)
+                     and row["decision_started_us"] <= row["us"]
+                     and row["deadline_us"] > row["decision_started_us"])
+            self.c.check("empirical_unsubmitted_censor_has_no_execution",valid,row)
+            self.empirical_statuses[row.get("status", "unknown")] += 1
+            return
         pair = self.get("pairs",row["pair_id"])
         self.c.check("empirical_result_has_pair",pair is not None,row["pair_id"])
         if not pair:

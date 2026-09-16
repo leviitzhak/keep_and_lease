@@ -71,13 +71,30 @@ income. The original fixed target quantity made the funding cap bind despite
 repricing. The empirical extension therefore evaluates execution cost before
 fixing its funded target quantity.
 
-That evidence predates the empirical extension. Its frozen calibration window is
-`[2026-06-06, 2026-06-16)` and its first scored window is
-`[2026-06-16, 2026-06-26)`, both UTC. The scored ten days must be inspected before
-starting a new 90-day empirical run. Deployment, empirical completion and
-out-of-sample coverage remain pending until recorded with exact job IDs and
-engine/data revisions; implementation or synthetic tests alone do not establish
-the requested completion probability.
+The empirical extension is pushed and deployed on
+`agent/cost-aware-funded-transfers` at
+`6fd1ae2a4fa24b28a8a5972e8445975a2f5a8fd2`. Local validation passed 311 Python
+and 34 GUI tests. [Workflow 35147345496](https://github.com/leviitzhak/keep_and_lease/actions/runs/35147345496)
+passed every application health, rendered-GUI/multi-commodity, subsecond,
+paired-export and replay-extension check. **The overall workflow failed** solely
+at the final `actions/upload-artifact` evidence finalization with `403 Forbidden`;
+it must not be reported as an overall successful workflow. An authenticated
+browser check independently verified the exact deployed SHA and ready server
+engine at the [GCP preview](https://keep-and-lease-preview-web-vfk2j2rgoq-zf.a.run.app/).
+
+The empirical job `69d512c2e4da4cd8b1fa27a9870c0769` started at 20:40 UTC on
+September 16. It froze 67,452 execution labels from calibration
+`[2026-06-06, 2026-06-16)` and is scoring `[2026-06-16, 2026-06-26)`, both UTC.
+The comparable adaptive baseline job `d1da8ce988ec49d890d61e89aa8fe040` is running
+on the prior immutable engine `663e60c5b10bb98675baf7785b66b64d18ea6b34` over the
+same ten scored days. Results, independent audit acceptance, empirical
+completion and out-of-sample coverage remain pending. The scored ten days must
+be inspected before starting a new 90-day empirical run; implementation and
+synthetic tests alone do not establish the requested completion probability.
+
+A separate audit-checker correction for a pending initial decision censored
+before any fill has 14 passing focused checks and is included in this follow-up. It does
+not change the simulation engine or the immutable engines of these running jobs.
 
 The mode remains a BTC tape-participation, USD-linear research proxy with
 cash-interest accrual. Native inverse settlement, historical quote depth,

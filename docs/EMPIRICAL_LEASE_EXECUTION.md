@@ -95,7 +95,7 @@ If the mandatory conservative budget-priced forecast already fails its gain
 hurdle, the engine rejects that candidate or holding horizon before evaluating
 weighted execution scenarios. This avoids unnecessary work without changing
 which candidate can be accepted. Skipped `expected_*` fields are null and an
-`expected_evaluation` marker explains the omission; the decision's core values
+`execution_expected_evaluation` marker explains the omission; the decision's core values
 remain the conservative forecast and must not be read as an evaluated empirical
 mean. The full forecast still uses the declared holding-horizon assumptions
 rather than predicting future spot prices.

@@ -28,6 +28,14 @@ Build an interactive research and backtesting application for strategies that al
   [EMPIRICAL_LEASE_EXECUTION.md](EMPIRICAL_LEASE_EXECUTION.md). Prior adaptive
   three-day results validated accounting but completed no pair, so they do not
   certify this new model's completion coverage or profitability.
+  Empirical preview revision `6fd1ae2a4fa24b28a8a5972e8445975a2f5a8fd2` is deployed
+  and authenticated exact-SHA/ready-engine checks passed, along with 311 Python
+  and 34 GUI tests. Workflow `35147345496` passed all application validation
+  steps but **failed overall** when final artifact evidence upload returned
+  `403 Forbidden`. The ten-day empirical and adaptive comparison jobs are
+  running; 67,452 historical execution labels are frozen, but scored results
+  and empirical acceptance remain pending. See `CURRENT_WORK.md` for job IDs
+  and their distinct immutable engine revisions.
 
 - Optional bounded BTC trade replay: June 25 uploaded data, millisecond decision
   clocks, GCS worker audit, charts and full valuation CSV. See
