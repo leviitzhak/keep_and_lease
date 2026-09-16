@@ -62,19 +62,23 @@ implementation is not full-period or native-market acceptance.
   Use one small complete source tranche then a protected hedge, an explicit
   entry deadline and bounded restoration with retained failure diagnostics.
   Surface model assumptions and predicted/actual waiting/slippage statistics.
-- [ ] Complete the new empirical execution acceptance: freeze ten calibration
-  days, score a separate ten-day window, compare slippage and waiting-time
-  distributions with their predictions, and count missed deadlines, partial
-  transfers, recovery costs and unresolved inventory. Inspect this short run
-  before starting a longer empirical strategy run. The current 90-day archive
-  permits at most 80 scored days after ten calibration days; 90 scored days
-  require additional preceding data. The ten-day adaptive baseline full audit
-  passed, with five fills and no complete instruction. The empirical test
-  completed with no attempts because no sufficiently sampled calibration group
-  supports 95% joint coverage; raw-label/event verification passed and its full
-  valuation audit is pending. Actual execution coverage remains unvalidated.
-  See
-  `EMPIRICAL_LEASE_EXECUTION.md` for the declared windows and limitations.
+- [x] Freeze ten calibration days and run the separate June 16–26 empirical and
+  adaptive comparison. Both full audits passed. The baseline produced five
+  fills and no complete instruction; the empirical policy submitted no attempts
+  because no sufficiently sampled calibration group supported 95% joint
+  completion. Verify the exact raw-label slippage/wait distribution separately
+  from completed-only quantiles and retain the numerical checker correction's
+  original failed report. See `EMPIRICAL_LEASE_EXECUTION.md`.
+- [ ] Validate empirical execution coverage and realized waiting/slippage on
+  admitted instructions; the completed no-attempt test supplies no such sample.
+  Study longer waiting horizons or other explicitly declared support/acceptance
+  changes first: extending scored dates alone with the frozen model and 95%
+  setting cannot admit a discretionary trade because no calibrated group meets
+  that gate.
+  Any further study must keep noncompletion in its denominator and preserve
+  out-of-sample evaluation. No longer empirical run has started. The current
+  90-day archive permits at most 80 scored days after ten calibration days;
+  90 scored days require additional preceding data.
 - [ ] Extend adaptive effective-lease pricing to reverse transfers and futures
   rolls, with appropriate economic direction and funding constraints.
 - [x] Emit decision forecasts, rate/quote provenance, matched-fill pair IDs,
@@ -102,10 +106,12 @@ implementation is not full-period or native-market acceptance.
   see `COST_AWARE_FUNDED_VALIDATION.md`. The short real-tape run selected KEEP;
   synthetic integration tests cover funded transfers and partial fills.
 - [x] Verify the empirical preview at
-  `203ef2b10ff0afbbe821028180507978ce03c7a3`. Workflow `35149632543` succeeded
+  `e02934abf0505da478af9c552983a25dd37dcd18`. Workflow `35155749804` succeeded
   including artifact upload and all application checks; authenticated browser
-  inspection confirmed the exact SHA and ready engine. This deployment evidence
-  does not complete the pending empirical ten-day execution acceptance.
+  inspection confirmed the exact SHA, ready engine and restored completed
+  empirical result. This deployment evidence
+  does not establish actual empirical execution coverage; the ten-day comparison
+  completed but the empirical policy admitted no instructions.
 - [ ] Complete bounded performance comparisons from identical opening states,
   then the new full 90-day strategy and holdout acceptance. Development is predeclared as `[2026-06-06, 2026-08-01)` and the
   chronological holdout as `[2026-08-01, 2026-09-04)`, before threshold tuning.

@@ -285,13 +285,15 @@ not certification of native inverse futures or a live trading system.
 
 ## Verified deployment and comparison evidence
 
-Preview revision `203ef2b10ff0afbbe821028180507978ce03c7a3` passed
-[workflow 35149632543](https://github.com/leviitzhak/keep_and_lease/actions/runs/35149632543),
+Preview revision `e02934abf0505da478af9c552983a25dd37dcd18` passed
+[workflow 35155749804](https://github.com/leviitzhak/keep_and_lease/actions/runs/35155749804),
 including artifact upload and all application checks. Authenticated browser
-inspection confirmed the full SHA and ready engine. The simulation code matches
+inspection confirmed the full SHA, ready engine and restored completed empirical
+result. The simulation code matches
 `6fd1ae2a4fa24b28a8a5972e8445975a2f5a8fd2`; the later revision changes the audit
-checker and documentation only. Local validation passed 311 Python and 34 GUI
-checks, and the focused checker correction passed 14 tests.
+checker and documentation only. The deployment replay gate passed 315 Python
+tests and local GUI validation passed 34 checks; the earlier focused censoring correction passed
+14 tests.
 
 The original empirical deployment workflow `35147345496` passed every
 application check but failed overall on final artifact-evidence upload with
@@ -301,7 +303,7 @@ workflow above completed successfully.
 | Run | Immutable engine | Status |
 |---|---|---|
 | Adaptive baseline `d1da8ce988ec49d890d61e89aa8fe040` | `663e60c5b10bb98675baf7785b66b64d18ea6b34` | Completed; independent full audit passed |
-| Empirical `69d512c2e4da4cd8b1fa27a9870c0769` | `6fd1ae2a4fa24b28a8a5972e8445975a2f5a8fd2` | Completed with no attempts; raw-label/event verification passed; valuation audit pending |
+| Empirical `69d512c2e4da4cd8b1fa27a9870c0769` | `6fd1ae2a4fa24b28a8a5972e8445975a2f5a8fd2` | Completed with no attempts; corrected independent full audit passed |
 
 Both scored windows are June 16–26 UTC, with the parameters recorded above.
 The baseline audit verified 1,728,000 valuations and 208,501 events with zero
@@ -327,8 +329,11 @@ transfers or timely execution.
 
 The empirical replay completed all 1,727,999 scheduled decisions with KEEP.
 There were **zero submitted attempts, zero fills and zero fees**. Exact raw-data
-verification passed for all 67,452 calibration labels and 219,165 scored events;
-the independent full-valuation audit remains pending.
+verification passed for all 67,452 calibration labels and 219,165 scored events.
+The corrected independent full audit passed all 1,728,000 valuations and dataset
+checksums with zero findings. Ending wealth was $90,147.95094856317, or
+1.5076420869746658 BTC—exactly the initial BTC quantity. Maximum drawdown was
+−13.231850554073699%; no orders, fills or fees occurred.
 
 The first full audit flagged ten floating-point comparison discrepancies from
 one near-expiry June 12 07:56 calibration cohort repeated across size/wait
@@ -340,9 +345,14 @@ now retains its independent raw-price/basis assertion and separately verifies
 that stored annualization relation. The implemented and reviewed correction
 passes all 17 focused tests, including rejection of a +0.01-bp annualization
 corruption and forged raw basis. The original failed audit is retained.
-The corrected full-archive audit is running; this changes no simulation data.
-The subsequent checker/docs deployment has not yet been verified, so
-`203ef2b10ff0afbbe821028180507978ce03c7a3` remains the last verified preview.
+The corrected full-archive audit passed with zero findings. NAV reconstruction
+and stored annualization relation errors were zero; the maximum independent
+raw-basis error was 4.0714e-12 bp. No simulation data changed. The checker/docs
+correction is pushed at `e02934abf0505da478af9c552983a25dd37dcd18`; workflow
+`35155749804` succeeded, including the 315-test replay gate in 21.076 seconds,
+all application checks, replay extension and artifact upload. Authenticated
+browser verification confirmed this exact final preview revision, a ready
+engine and the restored completed empirical result.
 
 Among groups with at least 100 calibration observations, none of the 252
 contract/maturity/size/wait cells or 196 pooled maturity/size/wait cells has a
@@ -387,3 +397,12 @@ provide 95% overall completion. No actual-instruction waiting or slippage
 statistics exist for the empirical scored run because none was admitted. This
 short test therefore does not validate realized 95% coverage or a profitable
 paired transfer, and no longer empirical replay has been started.
+
+Extending the scored portfolio period with this same frozen model and 95%
+setting cannot create a supported discretionary entry: none of its sufficiently
+sampled groups has a finite 95% execution budget. More scored dates do not add
+calibration observations or relax that gate. A longer-wait sensitivity study,
+additional execution data or a deliberately changed acceptance setting must
+first establish usable support before another longer portfolio replay is
+informative. Any such change requires a newly declared calibration/evaluation
+comparison; it is not an improvement demonstrated by the present no-trade run.

@@ -72,15 +72,15 @@ repricing. The empirical extension therefore evaluates execution cost before
 fixing its funded target quantity.
 
 The verified preview on `agent/cost-aware-funded-transfers` is
-`203ef2b10ff0afbbe821028180507978ce03c7a3`.
-[Workflow 35149632543](https://github.com/leviitzhak/keep_and_lease/actions/runs/35149632543)
+`e02934abf0505da478af9c552983a25dd37dcd18`.
+[Workflow 35155749804](https://github.com/leviitzhak/keep_and_lease/actions/runs/35155749804)
 **succeeded**, including artifact upload and all application health,
 rendered-GUI/multi-commodity, subsecond, paired-export and replay-extension
-checks. An authenticated browser check independently verified the exact SHA
-and ready server engine at the
+checks. An authenticated browser check independently verified the exact SHA,
+ready server engine and restored completed empirical result at the
 [GCP preview](https://keep-and-lease-preview-web-vfk2j2rgoq-zf.a.run.app/).
-Local validation passed 311 Python and 34 GUI tests; the focused zero-fill,
-pending-decision censoring checker correction passed 14 checks.
+The latest deployment replay gate passed 315 Python tests; 34 local GUI tests
+also passed. The earlier focused zero-fill, pending-decision censoring checker correction passed 14 checks.
 
 The empirical engine was introduced at
 `6fd1ae2a4fa24b28a8a5972e8445975a2f5a8fd2`; the later preview revision changes only
@@ -94,10 +94,12 @@ September 16 on immutable engine `6fd1ae2a4fa24b28a8a5972e8445975a2f5a8fd2`. It
 froze 67,452 execution labels from `[2026-06-06, 2026-06-16)` and completed
 `[2026-06-16, 2026-06-26)`, both UTC. All 1,727,999 scheduled decisions were KEEP:
 zero submitted attempts, fills and fees. Raw-label/event verification passed
-for all 67,452 study rows and 219,165 scored events. The independent valuation
-audit is still pending; no actual empirical execution coverage or slippage
-sample exists because no instruction was admitted. The first full valuation
-audit identified ten near-expiry floating-point comparison discrepancies in a
+for all 67,452 study rows and 219,165 scored events. The corrected independent
+full audit also passed all 1,728,000 valuations and dataset checksums with zero
+findings. Ending wealth was $90,147.95094856317 or 1.5076420869746658 BTC, exactly
+the initial BTC quantity; maximum drawdown was −13.2318505541%. There are no
+actual empirical execution-coverage or slippage observations because no
+instruction was admitted. The first full valuation audit identified ten near-expiry floating-point comparison discrepancies in a
 single June 12 07:56 calibration cohort repeated across size/wait alternatives.
 The largest annualized difference was about 3.0716e-7 bp and the independently
 recomputed raw-basis difference about 1e-12 bp. Stored annualization exactly
@@ -105,10 +107,15 @@ matches stored raw basis divided by original maturity. A checker-only numerical
 correction is implemented and reviewed; it retains the independent raw-basis
 assertion and tests that stored relation separately. All 17 focused tests pass,
 including rejection of a +0.01-bp annualization corruption and forged raw basis.
-The original failed audit is preserved. The corrected full-archive audit is
-running, and the separate checker/docs deployment is not yet verified.
-`203ef2b10ff0afbbe821028180507978ce03c7a3` remains the last verified preview.
-Simulation and historical job results are unchanged.
+The original failed audit is preserved. The corrected full-archive audit passed
+with zero findings: NAV reconstruction and stored annualization relation errors
+were zero, and maximum independent raw-basis error was 4.0714e-12 bp. The
+checker/docs patch is pushed at `e02934abf0505da478af9c552983a25dd37dcd18`;
+workflow `35155749804` succeeded, including its 315-test replay gate in 21.076
+seconds, application checks, replay extension and artifact upload. The exact
+new preview SHA, ready engine and restored completed empirical result were
+also verified in the authenticated browser. Simulation and historical job
+results are unchanged.
 
 No calibrated group with at least 100 observations supports the requested 95%
 joint-completion target at any studied size/wait combination: this holds across
@@ -119,7 +126,11 @@ candidate decisions rejected with `joint_confidence_unattainable` (657,429 size
 rejections over three executable sizes). The policy kept the position because
 the requested execution coverage was unsupported, not because its realized
 trades achieved 95% coverage. Exact distribution examples are recorded in
-`EMPIRICAL_LEASE_EXECUTION.md`.
+`EMPIRICAL_LEASE_EXECUTION.md`. Extending scored dates with the same frozen
+model and 95% setting cannot create a supported discretionary entry; none of
+its sufficiently sampled groups has a finite qualifying budget. A longer-wait
+sensitivity study or other explicit change to model support/acceptance is
+needed before a longer portfolio replay can answer the execution question.
 
 The same-period adaptive baseline `d1da8ce988ec49d890d61e89aa8fe040` completed on
 engine `663e60c5b10bb98675baf7785b66b64d18ea6b34`. Its independent full audit

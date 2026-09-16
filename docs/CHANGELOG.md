@@ -37,8 +37,10 @@
   `663e60c5b10bb98675baf7785b66b64d18ea6b34` for the same scored window. Results
   were pending at submission; no new 90-day empirical test is claimed.
 - Keep the pending-initial-decision, zero-fill censoring audit-checker fix
-  separate from simulation behavior. Its 14 focused checks passed; the follow-up
-  does not alter the engines of the running jobs.
+  separate from simulation behavior. Its 14 focused checks passed; preview
+  `203ef2b10ff0afbbe821028180507978ce03c7a3` and workflow `35149632543` passed
+  including artifact upload. This did not alter the engines of the historical
+  comparison jobs.
 
 - Preserve the first empirical full-audit failure: ten near-expiry numerical
   comparisons differ by at most about 3.0716e-7 annualized bp after amplifying an
@@ -47,9 +49,22 @@
   reviewed checker-only correction retains independent raw-basis validation and
   tests that relation separately. All 17 focused tests pass, including rejection
   of +0.01-bp annualization corruption and forged raw basis. The corrected full
-  archive audit is running; the subsequent checker/docs deployment is not yet
-  verified. Preview `203ef2b10ff0afbbe821028180507978ce03c7a3` remains the last
-  verified revision. No simulation behavior or historical outcomes are changed.
+  archive audit passed with zero findings across 67,452 study rows, 219,165
+  scored events and 1,728,000 valuations/checksums. NAV reconstruction and stored
+  annualization relation errors were zero. Checker/docs revision
+  `e02934abf0505da478af9c552983a25dd37dcd18` is pushed; workflow `35155749804`
+  succeeded, including its 315-test replay gate in 21.076 seconds, all
+  application checks, replay extension and artifact upload. Authenticated
+  browser inspection verified the exact new SHA, ready engine and restored
+  completed empirical result. No simulation behavior or historical outcomes
+  changed; immutable comparison-job engines remain recorded separately.
+- Complete both ten-day comparison audits. The adaptive baseline has five fills,
+  zero complete instructions and 0.00009 BTC unmatched at the end; its matched
+  legs exceeded the desired 30-second wait. The empirical policy took no trades:
+  none of the sufficiently sampled calibration groups supported 95% joint
+  completion. Ending empirical wealth was $90,147.95094856317 and
+  1.5076420869746658 BTC, exactly the initial BTC quantity. This does not supply
+  actual execution-coverage or slippage observations.
 
 ## 2026-09-16 — Adaptive funded BTC entry limits
 
