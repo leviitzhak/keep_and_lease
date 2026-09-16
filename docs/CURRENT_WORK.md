@@ -35,9 +35,12 @@ hashes, retrieved times, normalization version and rate-age gating are audited.
 
 The implementation includes focused tests for economics, funding and fee
 accounting, causal Treasury normalization/availability, paired execution and
-checkpoint continuity, runner integration and detailed exports. Completion and
-deployment evidence belongs to this feature branch's validation report; do not
-infer a deployed revision from this document alone.
+checkpoint continuity, runner integration and detailed exports. All 219 Python
+and 33 JavaScript checks passed. The complete preview deployment, paired GUI and
+workbook checks, and replay extension passed for commit
+`d1fb73487e1f9aee42064d57799d55edd8445dd8`. See
+[COST_AWARE_FUNDED_VALIDATION.md](COST_AWARE_FUNDED_VALIDATION.md) for the workflow,
+preview URL, exact results and research limitations.
 
 The mode remains a BTC tape-participation, USD-linear research proxy with
 cash-interest accrual. Native inverse settlement, historical quote depth,

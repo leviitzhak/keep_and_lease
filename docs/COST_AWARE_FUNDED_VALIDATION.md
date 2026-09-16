@@ -51,8 +51,30 @@ issue. A second corrected run (`35074508176`, commit
 results and verified workbook. The classifier had recorded the workbook's Blob
 URL instead of its API request. Both CSV and paired-workbook checks now register
 their exact original API paths only after validating the downloaded contents;
-unverified failed requests remain errors. Final full-workflow verification is
-pending the next run.
+unverified failed requests remain errors.
+
+## Successful deployed verification
+
+The full **Deploy Google Cloud workloads** workflow
+[35075897193](https://github.com/leviitzhak/keep_and_lease/actions/runs/35075897193)
+completed successfully on September 16, 2026, for implementation commit
+`d1fb73487e1f9aee42064d57799d55edd8445dd8` on `agent/cost-aware-funded-transfers`.
+The private [GCP preview](https://keep-and-lease-preview-web-vfk2j2rgoq-zf.a.run.app/)
+was checked against that exact displayed commit and a ready server engine.
+
+- The complete 219-test Python cloud gate passed.
+- Authenticated health, rendered multi-commodity GUI, legacy BTC subsecond
+  replay, durable run history, charts and published benchmark exports passed.
+- The new BTC paired-policy run completed 30 valuations with zero collateral
+  breaches and maximum NAV reconstruction error `1.4551915228366852e-11` USD.
+  It selected KEEP in this short window. Mobile diagnostics and all paired
+  workbook sheets passed download, ZIP and XML verification.
+- The completed replay-extension GUI check passed: the parent ended at
+  `2026-06-25T01:00:01.000000`, its child resumed from the saved UTC-hour
+  checkpoint and reached `2026-06-25T01:00:03.000000` with preserved lineage.
+
+This final documentation-only commit does not redeploy or change the verified
+application. The feature remains unmerged pending preview review.
 
 This validates implementation and bounded research execution. It is not a
 full 90-day performance result, a calibrated expected-return model, measured

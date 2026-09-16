@@ -65,9 +65,12 @@ implementation is not full-period or native-market acceptance.
 - [ ] Add complete realized-versus-KEEP horizon outcome attribution, including
   failure/censor denominators; forecasted wealth and executed lease diagnostics
   must not be mislabeled as realized net BTC gains.
-- [ ] Complete deployed preview GUI/worker/export checks, bounded comparisons
-  from identical opening states, then the new full 90-day strategy and holdout
-  acceptance. Development is predeclared as `[2026-06-06, 2026-08-01)` and the
+- [x] Complete the deployed preview GUI/worker/export and continuation checks.
+  Workflow `35075897193` passed for `d1fb73487e1f9aee42064d57799d55edd8445dd8`;
+  see `COST_AWARE_FUNDED_VALIDATION.md`. The short real-tape run selected KEEP;
+  synthetic integration tests cover funded transfers and partial fills.
+- [ ] Complete bounded performance comparisons from identical opening states,
+  then the new full 90-day strategy and holdout acceptance. Development is predeclared as `[2026-06-06, 2026-08-01)` and the
   chronological holdout as `[2026-08-01, 2026-09-04)`, before threshold tuning.
   Defaults are unoptimized. Earlier completed legacy 90-day computations remain
   completed and do not certify the new policy.
