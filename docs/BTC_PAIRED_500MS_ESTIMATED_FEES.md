@@ -68,10 +68,10 @@ pinned preview catalog, including the decision ceiling, effective 10 bp fee and
 preserved 100% participation. This configuration-only commit does not require a
 replacement engine; preserve the checked preview with `[skip ci]`.
 
-Submission is pending authenticated application access. No 90-day backtest has
-been submitted by this preparation step. A submitted long run must use the
-durable application job API and preserve its ID; the existing public smoke
-operator's seven-minute cancellation rule is unsuitable for this run.
+The full 90-day backtest was submitted through the authenticated application GUI
+on September 16, 2026. Its durable server job was confirmed
+running in the `trade_ordering` stage, with 8,192 futures records indexed at the
+initial check. Completion and performance results have not yet been verified.
 
 This is one untuned full-period evaluation. It does not establish profitable or
 native executable performance, and the predeclared holdout is not used to tune
