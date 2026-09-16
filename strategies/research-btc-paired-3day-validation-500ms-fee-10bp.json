@@ -141,7 +141,7 @@
   "research_assumptions": {
     "reference_preset": "strategies/full-btc-long-gradual-1m-regular.json",
     "policy": "Cost-aware funded paired transfers; inherited legacy gradual allocation/scoring parameters are retained for reference but do not drive paired transfer decisions.",
-    "parameter_changes": "Trade tape, funded paired policy and explicit untuned paired defaults; 0.5-second decisions; 10 bp common per-side transaction fee; explicit full available 90-day period and USD 100000 trade-replay capital.",
+    "parameter_changes": "Identical to the saved full-period paired preset except backtest_end is shortened to 2026-06-09T00:00:00 for a three-day validation. All strategy, fee, funding and execution settings are unchanged.",
     "preserved_reference_settings": "100% BTC, regular/linear long-only futures, 100% maximum tape participation, 60-second quote age, zero execution delay, zero custody expense, zero half spread and zero slippage. Legacy allocation/scoring fields are copied unchanged.",
     "initial_notional_usd": 100000,
     "period": "[2026-06-06T00:00:00, 2026-06-09T00:00:00) UTC; 3 days; 518400 scheduled decisions.",
