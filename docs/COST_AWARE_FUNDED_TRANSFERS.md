@@ -245,7 +245,9 @@ policy only.
 
 The empirical setting uses a frozen historical calibration interval preceding
 the scored run. The first declared test fits June 6–16 and scores June 16–26,
-2026 UTC, with ten scored days required before a new 90-day empirical run.
+2026 UTC, with ten scored days reviewed before a longer empirical run. The
+90-day archive leaves at most 80 scored days after the ten-day calibration
+prefix; a 90-day scored empirical run requires additional historical data.
 Read [EMPIRICAL_LEASE_EXECUTION.md](EMPIRICAL_LEASE_EXECUTION.md) for the waiting,
 slippage, failure/recovery and data-proxy definitions. No live completion
 probability or performance improvement is implied by adding the model.

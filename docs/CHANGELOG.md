@@ -21,8 +21,9 @@
   assumptions.
 - Declare June 6–16 calibration and June 16–26 scored ten-day comparison presets
   at 0.5-second decisions, three 100-ms delays and estimated 10-bp fees. A new
-  90-day empirical run follows inspection of the short run; deployment and
-  realized acceptance evidence are separate from implementation.
+  longer empirical run requires inspection of the short run. The available
+  90-day tape supports at most 80 scored days after ten calibration days; a
+  90-day scored run requires additional preceding data.
 
 - Deploy empirical revision `6fd1ae2a4fa24b28a8a5972e8445975a2f5a8fd2` after
   311 Python and 34 GUI checks. Workflow `35147345496` passed all application
@@ -34,10 +35,21 @@
   67,452 June 6–16 calibration labels and score June 16–26. Adaptive comparison
   job `d1da8ce988ec49d890d61e89aa8fe040` uses prior engine
   `663e60c5b10bb98675baf7785b66b64d18ea6b34` for the same scored window. Results
-  and empirical acceptance are pending; no new 90-day empirical test is claimed.
+  were pending at submission; no new 90-day empirical test is claimed.
 - Keep the pending-initial-decision, zero-fill censoring audit-checker fix
   separate from simulation behavior. Its 14 focused checks passed; the follow-up
   does not alter the engines of the running jobs.
+
+- Preserve the first empirical full-audit failure: ten near-expiry numerical
+  comparisons differ by at most about 3.0716e-7 annualized bp after amplifying an
+  approximately 1e-12-bp raw-basis rounding discrepancy. Stored annualization
+  matches stored raw basis/original maturity exactly. The implemented and
+  reviewed checker-only correction retains independent raw-basis validation and
+  tests that relation separately. All 17 focused tests pass, including rejection
+  of +0.01-bp annualization corruption and forged raw basis. The corrected full
+  archive audit is running; the subsequent checker/docs deployment is not yet
+  verified. Preview `203ef2b10ff0afbbe821028180507978ce03c7a3` remains the last
+  verified revision. No simulation behavior or historical outcomes are changed.
 
 ## 2026-09-16 — Adaptive funded BTC entry limits
 

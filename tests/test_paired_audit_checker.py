@@ -250,6 +250,43 @@ class PairedAuditCheckerTests(unittest.TestCase):
         self.audit.event({**row,"actual_source_btc":.001})
         self.assertEqual(self.checks.failures,{"empirical_unsubmitted_censor_has_no_execution":1})
 
+    @staticmethod
+    def near_expiry_study_row():
+        # Recorded four-minute-to-expiry cohort: algebraically equivalent
+        # price-ratio forms differ by 1.07e-12 bp before annualization.
+        return dict(kind="execution_outcome", symbol="BTC-12JUN26",
+            decision_us=1781250960000000, expiry_us=1781251200000000,
+            label_available_us=1781250962000000, wait_seconds=2,
+            requested_source_btc=.001, source_fill_fraction=1,
+            target_fill_fraction=1, completed=True,
+            source_observed_price=63053.62, target_observed_price=62950,
+            source_vwap=63053.61, target_vwap=62950,
+            source_completed_seconds=.36784, target_completed_seconds=1.841,
+            raw_basis_slip_bps=.0015833457233850748,
+            annualized_slip_bps=208.05162805279883,
+            max_adverse_budget_bps=.0015859517665806067)
+
+    def test_near_expiry_study_annualization_accepts_float_cancellation(self):
+        row = self.near_expiry_study_row()
+        self.audit.study_outcome(row, dict(label_cutoff_us=row["expiry_us"]))
+        self.assertFalse(self.checks.failures, self.checks.report())
+        self.assertGreater(self.checks.max_errors["study_basis_from_vwaps"], 0)
+        self.assertEqual(self.checks.max_errors["study_annualization_original_maturity"], 0)
+
+    def test_near_expiry_study_rejects_incorrect_annualized_value(self):
+        row = self.near_expiry_study_row()
+        row["annualized_slip_bps"] += .01
+        self.audit.study_outcome(row, dict(label_cutoff_us=row["expiry_us"]))
+        self.assertEqual(self.checks.failures, {"study_annualization_original_maturity": 1})
+
+    def test_near_expiry_study_still_independently_checks_raw_basis(self):
+        row = self.near_expiry_study_row()
+        row["raw_basis_slip_bps"] += .001
+        row["annualized_slip_bps"] = row["raw_basis_slip_bps"] / (
+            (row["expiry_us"] - row["decision_us"]) / YEAR_US)
+        self.audit.study_outcome(row, dict(label_cutoff_us=row["expiry_us"]))
+        self.assertEqual(self.checks.failures, {"study_basis_from_vwaps": 1})
+
 
 if __name__ == "__main__":
     unittest.main()

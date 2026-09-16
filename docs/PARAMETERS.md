@@ -55,7 +55,9 @@ scores and fixed/minimum-hold controls do not drive the paired policy.
 
 The empirical waiting time cannot exceed its study horizon. The replay must
 have the configured calibration history available before its scored start;
-that history does not become part of the scored portfolio. Confidence is
+that history does not become part of the scored portfolio. With the current
+90-day tape, ten calibration days leave at most 80 scored days; 90 scored days
+would require 100 total days of suitable data. Confidence is
 strictly between zero and one, minimum samples is a positive integer, and the
 calibration days, waiting time and size-grid values must be positive.
 

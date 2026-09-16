@@ -71,30 +71,72 @@ income. The original fixed target quantity made the funding cap bind despite
 repricing. The empirical extension therefore evaluates execution cost before
 fixing its funded target quantity.
 
-The empirical extension is pushed and deployed on
-`agent/cost-aware-funded-transfers` at
-`6fd1ae2a4fa24b28a8a5972e8445975a2f5a8fd2`. Local validation passed 311 Python
-and 34 GUI tests. [Workflow 35147345496](https://github.com/leviitzhak/keep_and_lease/actions/runs/35147345496)
-passed every application health, rendered-GUI/multi-commodity, subsecond,
-paired-export and replay-extension check. **The overall workflow failed** solely
-at the final `actions/upload-artifact` evidence finalization with `403 Forbidden`;
-it must not be reported as an overall successful workflow. An authenticated
-browser check independently verified the exact deployed SHA and ready server
-engine at the [GCP preview](https://keep-and-lease-preview-web-vfk2j2rgoq-zf.a.run.app/).
+The verified preview on `agent/cost-aware-funded-transfers` is
+`203ef2b10ff0afbbe821028180507978ce03c7a3`.
+[Workflow 35149632543](https://github.com/leviitzhak/keep_and_lease/actions/runs/35149632543)
+**succeeded**, including artifact upload and all application health,
+rendered-GUI/multi-commodity, subsecond, paired-export and replay-extension
+checks. An authenticated browser check independently verified the exact SHA
+and ready server engine at the
+[GCP preview](https://keep-and-lease-preview-web-vfk2j2rgoq-zf.a.run.app/).
+Local validation passed 311 Python and 34 GUI tests; the focused zero-fill,
+pending-decision censoring checker correction passed 14 checks.
 
-The empirical job `69d512c2e4da4cd8b1fa27a9870c0769` started at 20:40 UTC on
-September 16. It froze 67,452 execution labels from calibration
-`[2026-06-06, 2026-06-16)` and is scoring `[2026-06-16, 2026-06-26)`, both UTC.
-The comparable adaptive baseline job `d1da8ce988ec49d890d61e89aa8fe040` is running
-on the prior immutable engine `663e60c5b10bb98675baf7785b66b64d18ea6b34` over the
-same ten scored days. Results, independent audit acceptance, empirical
-completion and out-of-sample coverage remain pending. The scored ten days must
-be inspected before starting a new 90-day empirical run; implementation and
-synthetic tests alone do not establish the requested completion probability.
+The empirical engine was introduced at
+`6fd1ae2a4fa24b28a8a5972e8445975a2f5a8fd2`; the later preview revision changes only
+the audit checker and documentation, not simulation behavior. Its earlier
+workflow `35147345496` passed all application checks but failed overall solely
+on final artifact-evidence upload with `403 Forbidden`. That historical failure
+remains distinct from the successful replacement workflow.
 
-A separate audit-checker correction for a pending initial decision censored
-before any fill has 14 passing focused checks and is included in this follow-up. It does
-not change the simulation engine or the immutable engines of these running jobs.
+Empirical job `69d512c2e4da4cd8b1fa27a9870c0769` started at 20:40 UTC on
+September 16 on immutable engine `6fd1ae2a4fa24b28a8a5972e8445975a2f5a8fd2`. It
+froze 67,452 execution labels from `[2026-06-06, 2026-06-16)` and completed
+`[2026-06-16, 2026-06-26)`, both UTC. All 1,727,999 scheduled decisions were KEEP:
+zero submitted attempts, fills and fees. Raw-label/event verification passed
+for all 67,452 study rows and 219,165 scored events. The independent valuation
+audit is still pending; no actual empirical execution coverage or slippage
+sample exists because no instruction was admitted. The first full valuation
+audit identified ten near-expiry floating-point comparison discrepancies in a
+single June 12 07:56 calibration cohort repeated across size/wait alternatives.
+The largest annualized difference was about 3.0716e-7 bp and the independently
+recomputed raw-basis difference about 1e-12 bp. Stored annualization exactly
+matches stored raw basis divided by original maturity. A checker-only numerical
+correction is implemented and reviewed; it retains the independent raw-basis
+assertion and tests that stored relation separately. All 17 focused tests pass,
+including rejection of a +0.01-bp annualization corruption and forged raw basis.
+The original failed audit is preserved. The corrected full-archive audit is
+running, and the separate checker/docs deployment is not yet verified.
+`203ef2b10ff0afbbe821028180507978ce03c7a3` remains the last verified preview.
+Simulation and historical job results are unchanged.
+
+No calibrated group with at least 100 observations supports the requested 95%
+joint-completion target at any studied size/wait combination: this holds across
+252 contract/maturity groups and 196 pooled maturity groups. The strongest
+qualifying contract cell completed 269/387 (69.51%) within 60 seconds; the
+strongest pooled cell completed 277/425 (65.18%). All 219,143 emitted paired
+candidate decisions rejected with `joint_confidence_unattainable` (657,429 size
+rejections over three executable sizes). The policy kept the position because
+the requested execution coverage was unsupported, not because its realized
+trades achieved 95% coverage. Exact distribution examples are recorded in
+`EMPIRICAL_LEASE_EXECUTION.md`.
+
+The same-period adaptive baseline `d1da8ce988ec49d890d61e89aa8fe040` completed on
+engine `663e60c5b10bb98675baf7785b66b64d18ea6b34`. Its independent full audit
+passed with zero findings across 1,728,000 valuations and 208,501 events. It
+ended at $90,147.987215 (−9.852013%), about $0.036266 or 0.000000606523 BTC above
+direct holding, after $0.026677 in fees. Eleven attempts produced five fills,
+zero complete instructions, two partial, seven timed-out and two cancelled
+instructions. The two matched legs took 165.571 and 199.631 seconds; 0.00009 BTC
+remained unmatched. This validates accounting, not completion within the desired
+30-second waiting time or profitable fully completed transfers.
+
+The ten-day empirical test must be reviewed before any longer empirical run.
+The current archive has 90 total days; reserving ten preceding days for causal
+calibration leaves at most 80 scored days. A 90-day scored empirical run would
+require at least 100 days of suitable data. None is being started as part of
+this short-test acceptance, and no calibration or coverage requirement is
+relaxed to force trades.
 
 The mode remains a BTC tape-participation, USD-linear research proxy with
 cash-interest accrual. Native inverse settlement, historical quote depth,

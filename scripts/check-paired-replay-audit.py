@@ -751,7 +751,10 @@ class Audit:
         if row.get("source_observed_price") and source > 0 and target > 0:
             basis = 10000*(row["target_vwap"]/row["source_vwap"]-row["target_observed_price"]/row["source_observed_price"])
             self.c.equal("study_basis_from_vwaps",row["raw_basis_slip_bps"],basis,start,atol=1e-8)
-            self.c.equal("study_annualization_original_maturity",row["annualized_slip_bps"],basis/((row["expiry_us"]-start)/(365*86400e6)),start,atol=1e-7)
+            # Validate the two arithmetic steps separately. Equivalent VWAP
+            # ratio forms differ by floating cancellation; annualizing that
+            # tiny difference just before expiry can create a false failure.
+            self.c.equal("study_annualization_original_maturity",row["annualized_slip_bps"],row["raw_basis_slip_bps"]/((row["expiry_us"]-start)/(365*86400e6)),start,atol=1e-7)
         self.study_counts["labels"] += 1
         self.study_counts["completed" if complete else "unfilled" if source <= 1e-12 else "partial"] += 1
         budget = row["max_adverse_budget_bps"]

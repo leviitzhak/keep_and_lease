@@ -219,12 +219,15 @@ comparison. Fill acknowledgement is a separate existing setting. The saved adapt
 comparison uses the same scored period and economic parameters without the
 empirical execution policy.
 
-Before launching a new 90-day empirical run, inspect at least this ten-day
+Before launching a longer empirical run, inspect at least this ten-day
 scored test for completion fractions, waiting-time and slippage distributions,
 missed deadlines, partials, recovery outcomes, fees, net BTC versus KEEP/direct
 holding, and accounting/audit consistency. A result with no accepted or completed
 transfers cannot validate the requested completion coverage. Keep prior fixed
 and adaptive runs as separate evidence with their original engine revisions.
+The available tape contains 90 total days. Ten preceding calibration days leave
+at most 80 scored days; a 90-day scored empirical test requires at least 100 days
+of suitable data. No longer empirical run is included in this short-test gate.
 
 ## Saved files and inspection
 
@@ -280,10 +283,107 @@ parity, USD-linearized futures and the cash-interest proxy remain explicit
 assumptions. A successful ten-day test is evidence about this model and window,
 not certification of native inverse futures or a live trading system.
 
-## Evidence status
+## Verified deployment and comparison evidence
 
-The preceding adaptive implementation and three-day comparison were verified at
-preview commit `663e60c5b10bb98675baf7785b66b64d18ea6b34`. The empirical extension
-requires its own local checks, deployment, immutable calibration and scored-run
-evidence. Until those results are recorded, no empirical completion or
-performance improvement is claimed.
+Preview revision `203ef2b10ff0afbbe821028180507978ce03c7a3` passed
+[workflow 35149632543](https://github.com/leviitzhak/keep_and_lease/actions/runs/35149632543),
+including artifact upload and all application checks. Authenticated browser
+inspection confirmed the full SHA and ready engine. The simulation code matches
+`6fd1ae2a4fa24b28a8a5972e8445975a2f5a8fd2`; the later revision changes the audit
+checker and documentation only. Local validation passed 311 Python and 34 GUI
+checks, and the focused checker correction passed 14 tests.
+
+The original empirical deployment workflow `35147345496` passed every
+application check but failed overall on final artifact-evidence upload with
+`403 Forbidden`. It is not reported as a successful workflow; the subsequent
+workflow above completed successfully.
+
+| Run | Immutable engine | Status |
+|---|---|---|
+| Adaptive baseline `d1da8ce988ec49d890d61e89aa8fe040` | `663e60c5b10bb98675baf7785b66b64d18ea6b34` | Completed; independent full audit passed |
+| Empirical `69d512c2e4da4cd8b1fa27a9870c0769` | `6fd1ae2a4fa24b28a8a5972e8445975a2f5a8fd2` | Completed with no attempts; raw-label/event verification passed; valuation audit pending |
+
+Both scored windows are June 16–26 UTC, with the parameters recorded above.
+The baseline audit verified 1,728,000 valuations and 208,501 events with zero
+findings. Ending marked wealth was $90,147.9872149967, a −9.8520127850% return
+and −13.2318217575% maximum drawdown. Excess versus direct holding was
+0.000000606523 BTC (about 60.65 satoshis, or $0.036266), after $0.02667675337 in
+fees.
+
+Eleven baseline attempts ended as two partial, seven timed-out and two cancelled
+instructions, with **zero fully completed instructions**. Its five fills were
+three 0.00009-BTC spot sales and two futures fills totaling about 0.0001791315 BTC.
+Matched source quantity was 0.00018 BTC and 0.00009 BTC remained unmatched at the
+end. The two matched legs took 165.570658 and 199.630893 seconds, while the final
+unmatched interval lasted 34,582.955615 seconds. The older adaptive soft timeout
+therefore did not implement completion within a 30-second deadline. Timeout
+reason counts overlap final-status counts and must not be added as independent
+attempts.
+
+The baseline is internally consistent but does not establish profitable complete
+transfers or timely execution.
+
+### Empirical result: the requested coverage was unsupported
+
+The empirical replay completed all 1,727,999 scheduled decisions with KEEP.
+There were **zero submitted attempts, zero fills and zero fees**. Exact raw-data
+verification passed for all 67,452 calibration labels and 219,165 scored events;
+the independent full-valuation audit remains pending.
+
+The first full audit flagged ten floating-point comparison discrepancies from
+one near-expiry June 12 07:56 calibration cohort repeated across size/wait
+alternatives. The maximum annualized difference was about 3.0716e-7 bp, caused
+by amplifying an approximately 1e-12-bp raw-basis rounding difference over a
+short remaining maturity. The stored annualized value exactly matches its
+stored raw-basis value divided by original maturity. The independent checker
+now retains its independent raw-price/basis assertion and separately verifies
+that stored annualization relation. The implemented and reviewed correction
+passes all 17 focused tests, including rejection of a +0.01-bp annualization
+corruption and forged raw basis. The original failed audit is retained.
+The corrected full-archive audit is running; this changes no simulation data.
+The subsequent checker/docs deployment has not yet been verified, so
+`203ef2b10ff0afbbe821028180507978ce03c7a3` remains the last verified preview.
+
+Among groups with at least 100 calibration observations, none of the 252
+contract/maturity/size/wait cells or 196 pooled maturity/size/wait cells has a
+finite 95% joint execution budget. The strongest contract cell was
+`BTC-31JUL26`, 30–90 days remaining, 0.0001 BTC and a 60-second wait: 269/387
+completed, or 69.51%. The strongest pooled cell was 14–30 days remaining,
+0.0001 BTC and a 60-second wait: 277/425 completed, or 65.18%. These maxima use
+different groups and do not constitute directly comparable same-cell estimates.
+
+All 219,143 emitted paired candidate decisions carried
+`joint_confidence_unattainable`; their three executable size checks generated
+657,429 rejections, and none was selected. The much larger scheduled-decision
+count also includes times without a fresh eligible candidate. The run therefore retained the position because the requested coverage was
+unsupported; there are no actual trades from which to verify that coverage.
+
+An exact raw-label example illustrates why completed-only slippage is
+insufficient. For the pooled 14–30-day maturity group and 0.001 BTC, there were
+425 sampled opportunities:
+
+| Waiting deadline | Completed | Completion fraction |
+|---|---:|---:|
+| 30 seconds | 222 / 425 | 52.2353% |
+| 60 seconds | 269 / 425 | 63.2941% |
+
+Among the 222 **completed** 30-second paths, exact raw-label statistics were:
+
+| Metric | Median | 95th percentile |
+|---|---:|---:|
+| Gross price-basis slippage | −0.4490 bp | +4.8475 bp |
+| Original-maturity annualized lease slippage | −9.597 bp/year | +98.660 bp/year |
+| Pair completion wait | 7.250 s | 24.594 s |
+
+Positive slippage means a worse executed lease. These empirical quantiles were
+reconstructed from every applicable raw label; they are not the compact GUI
+scenario-reservoir approximation. The annualized quantile uses each cohort's
+own original remaining maturity. A +98.660 annualized basis-point shortfall is
+about 0.9866 percentage points of annualized lease rate, not a 98.66% price loss.
+
+The 203 noncompleted opportunities at 30 seconds remain in the denominator.
+A 95th-percentile slippage or waiting time among the 222 completed paths cannot
+provide 95% overall completion. No actual-instruction waiting or slippage
+statistics exist for the empirical scored run because none was admitted. This
+short test therefore does not validate realized 95% coverage or a profitable
+paired transfer, and no longer empirical replay has been started.

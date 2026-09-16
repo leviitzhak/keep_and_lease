@@ -24,18 +24,27 @@ Build an interactive research and backtesting application for strategies that al
   The empirical execution extension estimates joint slippage/completion before
   sizing a funded entry, retaining noncompletion in its economics and deadline
   statistics. Its declared ten-day calibration and separate ten-day scored test
-  precede any new 90-day empirical run; see
+  precede any longer empirical run; see
   [EMPIRICAL_LEASE_EXECUTION.md](EMPIRICAL_LEASE_EXECUTION.md). Prior adaptive
   three-day results validated accounting but completed no pair, so they do not
   certify this new model's completion coverage or profitability.
-  Empirical preview revision `6fd1ae2a4fa24b28a8a5972e8445975a2f5a8fd2` is deployed
-  and authenticated exact-SHA/ready-engine checks passed, along with 311 Python
-  and 34 GUI tests. Workflow `35147345496` passed all application validation
-  steps but **failed overall** when final artifact evidence upload returned
-  `403 Forbidden`. The ten-day empirical and adaptive comparison jobs are
-  running; 67,452 historical execution labels are frozen, but scored results
-  and empirical acceptance remain pending. See `CURRENT_WORK.md` for job IDs
-  and their distinct immutable engine revisions.
+  Verified preview revision `203ef2b10ff0afbbe821028180507978ce03c7a3` passed
+  workflow `35149632543`, including artifact upload and all application checks;
+  authenticated exact-SHA/ready-engine checks also passed. Local validation
+  includes 311 Python and 34 GUI tests. Simulation behavior matches empirical
+  engine `6fd1ae2a4fa24b28a8a5972e8445975a2f5a8fd2`; the later change fixes only
+  the audit checker and documentation. The prior workflow's artifact-upload
+  failure remains documented in `CURRENT_WORK.md`.
+  The ten-day adaptive baseline audit passed, with five fills and no fully
+  completed instruction. The empirical test completed with no attempts, fills
+  or fees: none of its sufficiently sampled calibration groups supported the
+  requested 95% joint coverage. All 67,452 raw labels and 219,165 scored events
+  passed verification; the independent valuation audit remains pending.
+  Actual empirical execution coverage and slippage have no admitted-instruction
+  sample, so execution performance is not certified. Ten calibration days within the current
+  90-day archive leave at most 80 scored days; a 90-day scored empirical run
+  requires additional preceding data. See `CURRENT_WORK.md` for job IDs and
+  immutable engine revisions.
 
 - Optional bounded BTC trade replay: June 25 uploaded data, millisecond decision
   clocks, GCS worker audit, charts and full valuation CSV. See

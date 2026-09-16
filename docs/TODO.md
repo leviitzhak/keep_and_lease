@@ -66,7 +66,14 @@ implementation is not full-period or native-market acceptance.
   days, score a separate ten-day window, compare slippage and waiting-time
   distributions with their predictions, and count missed deadlines, partial
   transfers, recovery costs and unresolved inventory. Inspect this short run
-  before starting a new 90-day empirical strategy run. See
+  before starting a longer empirical strategy run. The current 90-day archive
+  permits at most 80 scored days after ten calibration days; 90 scored days
+  require additional preceding data. The ten-day adaptive baseline full audit
+  passed, with five fills and no complete instruction. The empirical test
+  completed with no attempts because no sufficiently sampled calibration group
+  supports 95% joint coverage; raw-label/event verification passed and its full
+  valuation audit is pending. Actual execution coverage remains unvalidated.
+  See
   `EMPIRICAL_LEASE_EXECUTION.md` for the declared windows and limitations.
 - [ ] Extend adaptive effective-lease pricing to reverse transfers and futures
   rolls, with appropriate economic direction and funding constraints.
@@ -94,6 +101,11 @@ implementation is not full-period or native-market acceptance.
   Workflow `35075897193` passed for `d1fb73487e1f9aee42064d57799d55edd8445dd8`;
   see `COST_AWARE_FUNDED_VALIDATION.md`. The short real-tape run selected KEEP;
   synthetic integration tests cover funded transfers and partial fills.
+- [x] Verify the empirical preview at
+  `203ef2b10ff0afbbe821028180507978ce03c7a3`. Workflow `35149632543` succeeded
+  including artifact upload and all application checks; authenticated browser
+  inspection confirmed the exact SHA and ready engine. This deployment evidence
+  does not complete the pending empirical ten-day execution acceptance.
 - [ ] Complete bounded performance comparisons from identical opening states,
   then the new full 90-day strategy and holdout acceptance. Development is predeclared as `[2026-06-06, 2026-08-01)` and the
   chronological holdout as `[2026-08-01, 2026-09-04)`, before threshold tuning.
