@@ -5,8 +5,13 @@ import unittest
 import zipfile
 from xml.etree import ElementTree as ET
 
+from fastapi.testclient import TestClient
+
 from backtest_audit import AuditCollection, MemoryAuditStore
-from server.replay_exports import replay_workbook
+from server.app import create_app
+from server.job_models import Job
+from server.replay_exports import replay_workbook, stored_replay_period
+from tests.test_server_api import FakeEngine
 
 
 START = '2026-06-25T00:00:00.000000'
@@ -72,6 +77,61 @@ def decision(accepted=True):
 
 
 class PairedExportTests(unittest.TestCase):
+    def test_api_exports_opening_fractional_second_before_first_valuation(self):
+        actual_start = '2026-06-25T00:00:00.106918'
+        actual_end = '2026-06-25T00:00:30.000000'
+        for include_metadata in (False, True):
+            with self.subTest(include_metadata=include_metadata):
+                store = MemoryAuditStore()
+                audit = AuditCollection(store)
+                # This is the pre-existing deployed layout: the portfolio owns
+                # BTC before the first decision-clock valuation at one second.
+                audit.writer('btc_trade_events').emit(dict(
+                    date=actual_start, kind='initial_holding', btc=1, price=100))
+                valuations = audit.writer('btc_trade_valuations')
+                if include_metadata:
+                    valuations.metadata.update(replay_start=actual_start, replay_end=actual_end)
+                for timestamp in ('2026-06-25T00:00:01.000000', actual_end):
+                    valuations.emit(dict(date=timestamp, nav_usd=100, cash_usd=0,
+                        direct_btc_value_usd=100, units={'SPOT': 1}, targets=None,
+                        starting_nav=1, direct_nav=1, fees_usd=0, return_fraction=0,
+                        reconstruction_error_usd=0, mark_us={'SPOT': 0}, mark_ids={'SPOT': 'first'}))
+                audit.finish()
+                job = Job('a' * 32, {'trade_strategy': 'cost_aware_paired',
+                                    'trade_initial_capital_usd': 100}, 'hash', status='completed')
+                class Service:
+                    def get(self, job_id):
+                        return job if job_id == job.id else None
+                    def audit_store(self, selected_job):
+                        return store
+                    def result(self, selected_job):
+                        raise AssertionError('Export bounds must not require the full result download')
+                client = TestClient(create_app(FakeEngine(), job_service=Service()))
+                route = f'/api/v1/backtests/{job.id}/spreadsheet'
+                response = client.get(route, params={'start': actual_start, 'end': actual_end})
+                self.assertEqual(response.status_code, 200, response.text[:300])
+                with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
+                    self.assertIsNone(archive.testzip())
+                    self.assertIn(actual_start.encode(), archive.read('xl/worksheets/sheet1.xml'))
+                    self.assertIn(b'initial_holding', archive.read('xl/worksheets/sheet3.xml'))
+                # The actual opening period is valid even with no decision tick.
+                opening = client.get(route, params={'start': actual_start,
+                                                    'end': '2026-06-25T00:00:00.500000'})
+                self.assertEqual(opening.status_code, 200)
+                for left, right in ((START, actual_end),
+                                    (actual_start, '2026-06-25T00:00:30.000001')):
+                    self.assertEqual(client.get(route, params={'start': left, 'end': right}).status_code, 400)
+
+    def test_explicit_replay_bounds_override_old_bootstrap_quote_clocks(self):
+        manifest = {'datasets': {
+            'btc_trade_valuations': {'replay_start': '2026-06-25T00:00:00.106918',
+                                     'replay_end': END,
+                                     'chunks': [{'start': '2026-06-25T00:00:01', 'end': END}]},
+            'btc_trade_events': {'chunks': [{'start': '2026-06-24T23:59:00', 'end': END}]},
+        }}
+        self.assertEqual(stored_replay_period(manifest),
+                         {'start': '2026-06-25T00:00:00.106918', 'end': END})
+
     def test_keep_forecasts_failed_pairs_funding_and_exact_raw_evidence_are_visible(self):
         frozen = decision()
         events = [

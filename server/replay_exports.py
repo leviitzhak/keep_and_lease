@@ -93,6 +93,29 @@ def period(start, end, summary):
     return start, end
 
 
+def stored_replay_period(manifest):
+    """Include the owned opening position before the first valuation tick.
+
+    The replay's first spot observation initializes its endowment immediately;
+    its first valuation is only written at the next decision-clock boundary.
+    New audits record the exact replay bounds as dataset metadata. Historical
+    replay audits instead begin their event dataset with the initialization
+    event, so its first chunk supplies the compatible opening bound. Do not
+    take the minimum over every event: later bootstrap records can contain
+    pre-window quote timestamps.
+    """
+    dataset = manifest['datasets']['btc_trade_valuations']
+    entries = dataset['chunks']
+    start = dataset.get('replay_start')
+    if start is None:
+        start = utc(entries[0]['start'])
+        events = manifest['datasets'].get('btc_trade_events', {}).get('chunks', [])
+        if events:
+            start = min(start, utc(events[0]['start']))
+    end = dataset.get('replay_end', entries[-1]['end'])
+    return {'start': utc(start), 'end': utc(end)}
+
+
 def selected_rows(store, manifest, product, start, end):
     for entry in manifest['datasets'].get(product, {}).get('chunks', []):
         if entry['end'] < start or entry['start'] > end:

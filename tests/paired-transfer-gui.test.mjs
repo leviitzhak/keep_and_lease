@@ -122,6 +122,20 @@ test('diagnostics retain the full attempt denominator and distinguish forecasts 
   assert.match(source('drawPairedTransferSummary'),/not added across overlapping decisions/);
 });
 
+test('switching from benchmark export bounds resets the paired period and preserves microsecond endpoints',()=>{
+  const nodes=Object.fromEntries(['tradeExportStart','tradeExportEnd','tradeApplyPeriod','tradeFullPeriod','tradeSpreadsheet','tradeCancelExport','tradeExportProgress'].map(id=>[id,{}]));
+  nodes.tradeExportStart.value='2026-06-06T00:00:01';nodes.tradeExportEnd.value='2026-06-06T00:00:06';
+  let aborted=false;
+  const paired={summary:{start:'2026-06-25T00:00:00.106918',end:'2026-06-25T00:00:30.000000'},series:[]};
+  const context={$:id=>nodes[id],last:paired,tradePeriodResult:{benchmark:true},tradeChartBounds:['old start','old end'],tradeExportController:{abort(){aborted=true}},downloadTradeSpreadsheet(){},drawTradeReplay(){}};
+  vm.createContext(context);vm.runInContext(source('initializeTradePeriod')+'\n'+source('tradePeriod'),context);
+  context.initializeTradePeriod();
+  assert.equal(aborted,true);assert.equal(context.tradePeriodResult,paired);assert.equal(context.tradeChartBounds,null);
+  assert.equal(nodes.tradeExportStart.value,'2026-06-25T00:00:00.106');
+  assert.equal(nodes.tradeExportEnd.value,'2026-06-25T00:00:30.000');
+  assert.equal(JSON.stringify(context.tradePeriod()),JSON.stringify([paired.summary.start,paired.summary.end]));
+});
+
 test('canonical and served HTML match and inline JavaScript compiles',()=>{
   assert.equal(readFileSync(new URL('../public/silver_strategy_gui.html',import.meta.url),'utf8'),html);
   for(const script of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g))new vm.Script(script[1]);

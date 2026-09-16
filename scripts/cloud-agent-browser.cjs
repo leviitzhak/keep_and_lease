@@ -453,9 +453,22 @@ print('Published benchmark period workbook verified: 11 exact valuations, valid 
       // A short immutable-data smoke checks the complete new path; it is not a
       // profitability or full-period acceptance test.
       await page.fill('[name="backtest_end"]', '2026-06-25T00:00:30');
-      const resultResponse = page.waitForResponse(r => /\/api\/v1\/backtests\/[0-9a-f]{32}\/result$/.test(new URL(r.url()).pathname), {timeout: 10*60*1000});
-      await page.click('#run');
-      const response = await resultResponse;
+      const pairedResults = new Map();
+      const observePairedResult = candidate => {
+        const target = new URL(candidate.url());
+        if (target.origin === origin && /^\/api\/v1\/backtests\/[0-9a-f]{32}\/result$/.test(target.pathname)) pairedResults.set(target.pathname, candidate);
+      };
+      page.on('response', observePairedResult);
+      let response;
+      try {
+        const submissionPromise = page.waitForResponse(candidate => new URL(candidate.url()).pathname === '/api/v1/backtests' && candidate.request().method() === 'POST', {timeout:60000});
+        await page.click('#run');
+        const submitted = await submissionPromise, job = await submitted.json();
+        if (![200,202].includes(submitted.status()) || !job.job_id) throw Error('Funded paired submission HTTP '+submitted.status()+': '+(job.detail||'Missing job ID'));
+        console.log('Funded paired replay submitted: '+job.job_id+' · '+job.status);
+        const resultPath = '/api/v1/backtests/'+job.job_id+'/result';
+        response = pairedResults.get(resultPath) || await page.waitForResponse(candidate => new URL(candidate.url()).origin === origin && new URL(candidate.url()).pathname === resultPath, {timeout:10*60*1000});
+      } finally { page.off('response', observePairedResult); }
       if (!response.ok()) throw Error('Funded paired replay result HTTP '+response.status());
       const result = await response.json();
       if (result.trade_replay?.strategy !== 'cost_aware_paired' || !result.trade_replay.paired_transfer ||
@@ -467,12 +480,32 @@ print('Published benchmark period workbook verified: 11 exact valuations, valid 
       }
       await page.waitForSelector('#pairedTransferSummary', {state:'visible'});
       await page.waitForFunction(() => !document.querySelector('#run').disabled);
+      console.log('Funded paired replay validated before export: '+JSON.stringify({
+        jobId:new URL(response.url()).pathname.split('/')[4],observations:result.summary.observations,
+        start:result.summary.start,end:result.summary.end,
+        submittedPairs:result.trade_replay.paired_transfer.submitted_pairs,
+        collateralBreaches:result.trade_replay.collateral_breach_count,
+        reconstructionError:result.trade_replay.max_nav_reconstruction_error_usd,
+        guiExportBounds:await page.evaluate(()=>tradePeriod())
+      }));
       await page.setViewportSize({width:390,height:844});
       if (!(await page.locator('#pairedTransferSummary').isVisible())) throw Error('Mobile paired diagnostics missing');
       await page.setViewportSize({width:1440,height:1000});
       const downloadPromise = page.waitForEvent('download', {timeout:120000});
+      // If the API rejects the period, report that response immediately instead
+      // of hiding it behind a two-minute download-event timeout.
+      downloadPromise.catch(()=>{});
+      const exportPathname = new URL(response.url()).pathname.replace(/\/result$/, '/spreadsheet');
+      const exportResponsePromise = page.waitForResponse(candidate => new URL(candidate.url()).origin === origin && new URL(candidate.url()).pathname === exportPathname, {timeout:120000});
+      const checkedExportPromise = exportResponsePromise.then(async exportResponse => {
+        if (!exportResponse.ok()) throw Error('Funded paired spreadsheet HTTP '+exportResponse.status()+' at '+exportResponse.url()+': '+(await exportResponse.text()).slice(0,2000));
+        return downloadPromise;
+      });
+      // Chromium may hand an attachment directly to its download manager,
+      // without emitting an ordinary page response event.
+      checkedExportPromise.catch(()=>{});
       await page.click('#tradeSpreadsheet');
-      const download = await downloadPromise;
+      const download = await Promise.race([downloadPromise, checkedExportPromise]);
       const exportPath = path.join(outputDir, 'paired-period.xlsx');
       await download.saveAs(exportPath);
       require('child_process').execFileSync('python', ['-c', `

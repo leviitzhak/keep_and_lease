@@ -230,6 +230,9 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
         min_collateralization_ratio, collateral_breach_count = math.inf, 0
         series = []
         sample_every = max(1, math.ceil((end - start) / interval / plot_max_points))
+    # The opening holding interval precedes the first scheduled valuation tick.
+    # Keep its exact bounds so selected-period exports include opening events.
+    valuations.metadata.update(replay_start=iso_time(initial_us), replay_end=iso_time(end))
     fields = ["date", "nav", "direct_nav", "cash_usd", "spot_value_usd", "futures_notional_usd",
               "target_futures_notional_usd", "free_collateral_usd", "collateralization_ratio",
               "turnover_usd", "fees_usd", "max_mark_age_seconds",
