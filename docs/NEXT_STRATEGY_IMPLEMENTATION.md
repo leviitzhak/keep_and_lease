@@ -1,9 +1,12 @@
 # Next implementation: cost-aware, funded paired transfers
 
-Status: owner-approved next implementation workstream, 2026-09-15. The next
-thread should start a new feature branch from current GitHub master after the
-documentation merge. This page groups the requirements; it does not implement
-them or claim an accepted new strategy.
+Status: implementation underway on 2026-09-16. The opt-in BTC trade-replay
+policy, separate funded linear ledger, net KEEP-versus-transfer economics,
+durable paired execution, GUI controls and immutable refreshed Treasury snapshot
+are implemented. See [COST_AWARE_FUNDED_TRANSFERS.md](COST_AWARE_FUNDED_TRANSFERS.md)
+for the code's exact behavior and remaining limitations. This page retains the
+broader acceptance specification; local implementation does not establish full
+90-day, native-venue or quote-depth acceptance.
 
 ## Objective and invariant
 
@@ -32,11 +35,11 @@ churn or disposal of a held future solely because its quote becomes stale.
 | Exact old Treasury vintage, curve and accrual/pricing behavior | [TREASURY_CARRY_FORWARD_AUDIT.md](TREASURY_CARRY_FORWARD_AUDIT.md) |
 | Preliminary examples, not funded strategy acceptance | [COST_AWARE_PRELIMINARY_ANALYSIS.md](COST_AWARE_PRELIMINARY_ANALYSIS.md) |
 
-The open items in all these component specifications are part of this ONE next
-workstream. [TODO.md](TODO.md) holds its primary progress checklist. Other
+The remaining items in these component specifications are part of this workstream.
+[TODO.md](TODO.md) holds its primary progress checklist. Other
 research ideas, UI backlog, Sites and heavy infrastructure remain separate.
 
-## Implementation sequence for the new thread
+## Implementation and acceptance sequence
 
 ### 1. Pin the baseline and normalize the inputs
 
@@ -125,7 +128,10 @@ strategy or a freshly funded execution model.
 
 ## Delivery boundary
 
-This thread changes documentation only. No engine modification, new backtest,
-rate refresh, live trading, leverage activation, IAM update or application
-release is part of this merge. Group coherent implementation/test changes before
-using the single GCP preview; do not run the deferred local Sites preview.
+The new implementation is opt-in; the existing policy, source files, saved
+strategies and completed results retain their original behavior and provenance.
+The 2026-09-16 FRED snapshot is a new checked-in data version. Live trading,
+leverage activation and IAM changes are outside this implementation. Group
+coherent implementation/test changes before using the single GCP preview;
+do not run the deferred local Sites preview. Deployment and full-period
+acceptance must be reported from actual completed evidence.

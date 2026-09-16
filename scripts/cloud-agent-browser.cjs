@@ -446,6 +446,58 @@ print('Published benchmark period workbook verified: 11 exact valuations, valid 
       verifiedDownloadPaths.add('/api/v1/benchmarks/timestamp/spreadsheet');
     }
 
+    if (process.env.KEEP_AND_LEASE_RUN_PAIRED === 'true') {
+      await page.selectOption('[name="btc_data_source"]', 'trade_tape');
+      await page.selectOption('[name="trade_strategy"]', 'cost_aware_paired');
+      await page.click('#loadPairedExample');
+      // A short immutable-data smoke checks the complete new path; it is not a
+      // profitability or full-period acceptance test.
+      await page.fill('[name="backtest_end"]', '2026-06-25T00:00:30');
+      const resultResponse = page.waitForResponse(r => /\/api\/v1\/backtests\/[0-9a-f]{32}\/result$/.test(new URL(r.url()).pathname), {timeout: 10*60*1000});
+      await page.click('#run');
+      const response = await resultResponse;
+      if (!response.ok()) throw Error('Funded paired replay result HTTP '+response.status());
+      const result = await response.json();
+      if (result.trade_replay?.strategy !== 'cost_aware_paired' || !result.trade_replay.paired_transfer ||
+          result.summary.observations !== 30 || result.trade_replay.collateral_breach_count !== 0 ||
+          result.trade_replay.max_nav_reconstruction_error_usd > 1e-5 ||
+          result.fields.length !== result.series.at(-1).length ||
+          !Number.isFinite(result.trade_replay.ending_commodity_nav_btc)) {
+        throw Error('Funded paired replay reconciliation or schema failed');
+      }
+      await page.waitForSelector('#pairedTransferSummary', {state:'visible'});
+      await page.waitForFunction(() => !document.querySelector('#run').disabled);
+      await page.setViewportSize({width:390,height:844});
+      if (!(await page.locator('#pairedTransferSummary').isVisible())) throw Error('Mobile paired diagnostics missing');
+      await page.setViewportSize({width:1440,height:1000});
+      const downloadPromise = page.waitForEvent('download', {timeout:120000});
+      await page.click('#tradeSpreadsheet');
+      const download = await downloadPromise;
+      const exportPath = path.join(outputDir, 'paired-period.xlsx');
+      await download.saveAs(exportPath);
+      require('child_process').execFileSync('python', ['-c', `
+import zipfile,xml.etree.ElementTree as E,sys
+with zipfile.ZipFile(sys.argv[1]) as z:
+ assert z.testzip() is None
+ root=E.fromstring(z.read('xl/workbook.xml'))
+ ns={'m':'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
+ names={s.attrib['name'] for s in root.findall('m:sheets/m:sheet',ns)}
+ assert 'Paired transfers' in names and 'Transfer decisions' in names, names
+ for name in z.namelist(): E.fromstring(z.read(name))
+`, exportPath], {stdio:'inherit'});
+      verifiedDownloadPaths.add(new URL(download.url()).pathname);
+      fs.writeFileSync(path.join(outputDir, 'paired-smoke.json'), JSON.stringify({
+        strategy: result.trade_replay.strategy, observations: result.summary.observations,
+        submittedPairs: result.trade_replay.paired_transfer.submitted_pairs,
+        completedPairs: result.trade_replay.paired_transfer.completed,
+        collateralBreaches: result.trade_replay.collateral_breach_count,
+        reconstructionError: result.trade_replay.max_nav_reconstruction_error_usd,
+        rateDataVersion: result.trade_replay.treasury_rate_model.data_version,
+        workbookVerified: true, mobileDiagnosticsVerified: true
+      }, null, 2));
+      console.log('Funded paired GUI smoke passed: immutable tape, rates, funding, audit, mobile diagnostics and period workbook.');
+    }
+
     const sameOriginFailures = failedRequests.filter((request) => {
       try {
         const target = new URL(request.url);

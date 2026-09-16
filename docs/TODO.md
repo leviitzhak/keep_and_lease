@@ -6,56 +6,71 @@ The September 11 small batch completes four items and partially improves full-au
 progress. Scope and validation are recorded in `TODO_SMALL_BATCH_VALIDATION.md`;
 remaining items below are not implicitly completed by that batch.
 
-## Next implementation — cost-aware, funded paired-transfer strategy
+## Cost-aware funded paired-transfer strategy — implementation and acceptance
 
-This is the single next development workstream, to be implemented in a new
-thread/feature branch after the documentation merge. See
-[NEXT_STRATEGY_IMPLEMENTATION.md](NEXT_STRATEGY_IMPLEMENTATION.md) for the
-ordered implementation handoff and links to the complete specifications.
-Documented plans and preliminary studies are not implemented strategy features.
+The opt-in BTC research path is implemented alongside the preserved legacy
+policy. [COST_AWARE_FUNDED_TRANSFERS.md](COST_AWARE_FUNDED_TRANSFERS.md) describes
+its actual behavior; [NEXT_STRATEGY_IMPLEMENTATION.md](NEXT_STRATEGY_IMPLEMENTATION.md)
+retains the broader venue/data/acceptance specification. A completed research
+implementation is not full-period or native-market acceptance.
 
-- [x] Document the common strategy specification, including the **same transfer
-  instruction** for `spot <-> (cash/Treasuries + futures)`, expected net BTC
-  wealth versus KEEPING the current funded position, and full-period acceptance.
-- [ ] Audit/refresh Treasury coverage and normalize yield conventions before new
-  acceptance runs. Preserve the old July 14 carry-forward vintage/results and
-  expose rate age; model real security holdings or explicitly labeled proxies.
-- [ ] Implement separate spot/futures feed-availability delays, distinct from
-  processing, order-entry and fill-response delays. Either observation order
-  is allowed once both observations are available; never use future knowledge.
-- [ ] Require causal, closely timed observations and size-aware executable prices.
-  Reserve liquidity without double use; do not call past trade size quote depth.
-- [ ] Implement durable paired incremental transfers, both directions and direct
-  futures rolls, coupling child fills, cash/Treasury movements and collateral.
-  Bound prefunding, unpaired exposure and legging time; retain partial failures.
-- [ ] Separate held inventory from stale/missing signal eligibility. Missing new
-  prices do not alone trigger liquidation or a compensating spot transaction.
-- [ ] Implement venue-aware futures mark-to-market, variation settlement and
-  funding in backtests, replacing the replay's immediate-P&L-to-cash shortcut
-  rather than counting P&L twice. Separate marks, unsettled P&L and settled cash;
-  model Treasury sales/financing, haircuts and settlement/payment calendars.
-- [ ] Add optional product-specific fixed commissions and minimum ticket charges,
-  alongside proportional/per-contract fees, spread, impact, delivery and funding
-  costs. Define fee scope across partial fills/replacements; zero preserves the
-  old behavior. Only actual fee-bearing transactions incur commissions.
-- [ ] support proxy expense for trade replay
-- [ ] Evaluate feasible transfer quantities and holding horizons using expected
-  incremental NET BTC wealth against keeping the CURRENT position, with a
-  cost-recovery safety margin/no-trade region. Reuse holdings; do not re-charge
-  sunk costs or require arbitrary long holds instead of an economic comparison.
-- [ ] Implement discretionary exits that crystallize acceptable net gains OR
-  enable a sufficiently better forward net opportunity; compare executable pair
-  limits and preserve mandatory expiry/collateral/risk overrides.
-- [ ] Model expiry-reference basis, delivery fees and pre-expiry close choices;
-  do not equate official settlement with an unrelated spot price or physical BTC.
-- [ ] Report observed versus executed matched-fill lease rates, predicted versus
-  realized BTC returns, cost/quantity/horizon breakdowns and KEEP alternatives.
-  Retain unsuccessful/unmatched instructions and the full calculation provenance.
-- [ ] Validate accounting, fixed fees, causal latency, funding stress, partial
-  fills, liquidation, restart and zero-cost compatibility; then compare bounded
-  same-opening-state runs and the full 90 days with chronological holdout dates.
-  Keep all earlier strategies and results immutable. Leverage support must be
-  explicit and separately tested, not silently enabled by this accounting work.
+- [x] Preserve existing strategies/results and default policy; add the explicit
+  BTC-only `cost_aware_paired` selector, parameters and bounded GUI example.
+- [x] Refresh all six Treasury source series in a NEW checksummed FRED snapshot
+  covering June 1–September 4, without overwriting the July 14 vintage. Normalize
+  DTB3 discount-basis quotes via a 91-day benchmark price, expose source age,
+  coverage and publication assumptions; fail closed for stale discretionary
+  transfers while preserving funding valuation.
+- [x] Separate spot/futures feed availability, order eligibility, exchange fills
+  and delayed responses; require causal recent/skew-bounded observations.
+- [x] Couple spot/future/reverse/direct-roll instructions with durable pair IDs,
+  funding reservations, bounded source chunks, partial fills and fee tickets.
+  Preserve timeouts, incomplete exposure and restart state. Tape participation
+  is explicitly a research assumption, not observed executable quote depth.
+- [x] Keep stale signal eligibility separate from held inventory. Stale quotes
+  alone do not liquidate futures or manufacture offsetting spot trades.
+- [x] Separate futures marks, unsettled P&L and cash settlement in a funded
+  USD-linear ledger. Preserve NAV across internal cash moves; add separately
+  tested synthetic Treasury lots, funding sales and haircut/payment constraints.
+  The GUI uses cash-interest and scheduled last-trade variation proxies.
+- [x] Implement checkpoint-safe proportional, fixed, minimum-ticket and per-unit
+  commissions by product/child-order ticket, plus configured adverse spread and
+  slippage. Optional proxy/direct-BTC custody expense now works in the new path.
+- [x] Evaluate feasible incremental sizes and common holding horizons using net
+  BTC wealth versus KEEP, including expected cash flows, residual basis, future
+  costs, reserve requirements and uncertainty/cost-recovery buffers. Preserve
+  residual cash and do not recharge sunk entry costs.
+- [x] Re-evaluate unexecuted source quantities at the original horizon with
+  marginal remaining ticket fees; stop further source fills when the surplus
+  disappears and preserve recovery inventory. Prioritize whole-position expiry
+  exits/rolls with economic-target overrides, retaining funding/execution gates
+  and allowing stale-rate expiry reductions only into spot.
+- [x] Emit decision forecasts, rate/quote provenance, matched-fill pair IDs,
+  observed/executed/completion lease measures, funding/fee rows and unsuccessful
+  instruction counts. Add GUI summaries and transfer/decision/horizon XLSX sheets.
+- [x] Add focused accounting/economic/rate/latency/partial-fill/restart and legacy
+  regression tests. This is separate from full-period performance validation.
+- [ ] Complete broader executable exit/risk acceptance: mark-to-market funding
+  shocks, severe liquidity/legging failures and successful compulsory pre-expiry
+  close/roll under actual data constraints; add realized net-target exits beyond
+  the implemented better-forward-alternative and expiry-risk rules.
+- [ ] Verify historical publication/receipt and rate-revision vintages; the new
+  next-business-release/next-midnight rule is a documented modeled delay.
+- [ ] Replace proxy assumptions with actual security-level Treasury prices,
+  transaction/funding/delivery costs and venue margin/payment calendars before
+  claiming native fully funded market execution. Native inverse payoff and
+  collateral acceptance remains separate; leverage is not enabled.
+- [ ] Validate quote-depth/executable quantities and cross-venue/USDT settlement
+  basis. Trade prints alone do not establish available order-book liquidity.
+- [ ] Add complete realized-versus-KEEP horizon outcome attribution, including
+  failure/censor denominators; forecasted wealth and executed lease diagnostics
+  must not be mislabeled as realized net BTC gains.
+- [ ] Complete deployed preview GUI/worker/export checks, bounded comparisons
+  from identical opening states, then the new full 90-day strategy and holdout
+  acceptance. Development is predeclared as `[2026-06-06, 2026-08-01)` and the
+  chronological holdout as `[2026-08-01, 2026-09-04)`, before threshold tuning.
+  Defaults are unoptimized. Earlier completed legacy 90-day computations remain
+  completed and do not certify the new policy.
 
 ## Higher priority
 

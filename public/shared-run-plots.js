@@ -12,32 +12,40 @@
 
   function replayModel(result) {
     const fields=result.fields||[],g=getter(fields),capital=finite(result.trade_replay?.capital_usd);
+    const paired=result.trade_replay?.strategy==='cost_aware_paired'||Boolean(result.trade_replay?.paired_transfer);
     if(!(capital>0))return {name:'BTC replay',rows:[],reason:'Configured initial capital is missing.'};
     const rows=(result.series||[]).map(r=>{
       const nav=g(r,'nav'),direct=g(r,'direct_nav'),cash=g(r,'cash_usd'),spot=g(r,'spot_value_usd');
       const long=g(r,'futures_notional_usd'),gross=long===null?null:Math.abs(long),pnl=g(r,'market_pnl_usd');
       const interest=g(r,'treasury_interest_usd'),fees=g(r,'fees_usd');
       const error=g(r,'reconstruction_error_usd');
-      const balance=add(cash,spot),underlying=divide(nav,direct);
+      const unsettled=paired?g(r,'unsettled_pnl_usd'):0,pending=paired?g(r,'pending_variation_usd'):0;
+      const treasury=paired?g(r,'treasury_value_usd'):0,liabilities=paired?g(r,'liabilities_usd'):0;
+      const funding=paired?add(cash,unsettled,pending,treasury,liabilities===null?null:-liabilities):cash;
+      const balance=add(funding,spot),underlying=divide(nav,direct);
       return {date:r[0],start:r[0],sourceDate:r[0],nav,direct,cash,spot,long,short:null,
         target:g(r,'target_futures_notional_usd'),gross,
-        free:g(r,'free_collateral_usd')??(cash!==null&&gross!==null?cash-gross:null),
-        ratio:g(r,'collateralization_ratio')??divide(cash,gross),turnover:g(r,'turnover_usd'),fees,
+        free:paired?(funding!==null&&gross!==null?funding-gross:null):(g(r,'free_collateral_usd')??(cash!==null&&gross!==null?cash-gross:null)),
+        ratio:paired?divide(funding,gross):(g(r,'collateralization_ratio')??divide(cash,gross)),turnover:g(r,'turnover_usd'),fees,
         age:g(r,'max_mark_age_seconds'),price:g(r,'spot_price'),future:g(r,'long_weighted_future_price'),
         premium:g(r,'long_weighted_forward_premium_pct'),leaseRate:g(r,'long_weighted_lease_rate_pct'),
         maturity:g(r,'long_weighted_maturity_days'),yield:g(r,'treasury_yield_pct'),
         treasuryIndex:g(r,'treasury_accrual_index'),
         underlyingPrice:direct,leaseValue:underlying,keepValue:null,totalUnderlying:underlying,
-        directUnderlying:divide(spot,product(capital,direct)),futureUnderlying:divide(cash,product(capital,direct)),
+        directUnderlying:divide(spot,product(capital,direct)),futureUnderlying:divide(funding,product(capital,direct)),
         reconstructed:error!==null&&nav!==null?nav-error/capital:null,
         balanceNav:divide(balance,capital),error:error===null?null:error/capital,
         marketPnl:pnl,spotPnl:g(r,'spot_pnl_usd'),futurePnl:g(r,'futures_pnl_usd'),interest,
+        ...(paired?{fundingEquity:funding,unsettledPnl:unsettled,pendingVariation:pending,treasuryAssets:treasury,liabilities,
+          freeCash:g(r,'free_cash_usd'),postedCash:g(r,'posted_cash_usd'),reservedCash:g(r,'reserved_cash_usd'),
+          availableCash:g(r,'available_cash_usd'),commodityWealth:g(r,'commodity_nav_btc')}:{}),
         holdings:raw(fields,r,'held_futures')||[],
       };
     });
     return finish({name:'Bitcoin',kind:'replay',rows,capital,money:'USD',
+      ...(paired?{paired:true}:{}),
       turnoverLabel:'All actual simulated fills',sampling:result.trade_replay?.plot_sample_every||1,
-      note:'USD values use configured capital. Futures are exposure, not an extra cash asset. The long-only replay has no keep/short book. Historical snapshots may lack newer diagnostics.'});
+      note:paired?'USD values use configured capital. Funding value includes cash, Treasury assets, unsettled futures P&L and signed pending variation, less liabilities. Immediately available cash is shown separately; reservations and posted cash are parts of cash, not additional assets. Missing ledger constituents remain unavailable.':'USD values use configured capital. Futures are exposure, not an extra cash asset. The long-only replay has no keep/short book. Historical snapshots may lack newer diagnostics.'});
   }
 
   function dailyModel(sleeve, key) {
@@ -113,10 +121,12 @@
     {id:'drawdown',group:'overview',title:'Drawdowns from full-run high-water marks',unit:'%',series:[['drawdown','Strategy'],['directDrawdown','Direct holding']]},
     {id:'returns',group:'overview',title:'Strategy returns',unit:'%',series:[['returnPct','Strategy return']]},
     {id:'distribution',group:'overview',title:'Strategy return distribution',hist:'returnPct'},
-    {id:'holdings',group:'execution',title:'Direct holding, cash/Treasuries and futures exposure',money:true,start:true,series:[['spot','Direct holding'],['cash','Cash / Treasuries'],['long','Long futures'],['short','Short futures']]},
+    {id:'holdings',group:'execution',title:'Direct holding, cash/Treasuries and futures exposure',money:true,start:true,series:[['spot','Direct holding'],['cash','Cash / Treasuries'],['long','Long futures'],['short','Short futures']],pairedView:{title:'Direct holding, cash and futures exposure',series:[['spot','Direct holding'],['cash','Cash (free + posted)'],['treasuryAssets','Treasury assets'],['long','Long futures exposure']]}},
     {id:'target',group:'execution',title:'Futures target versus actual gross exposure',money:true,start:true,series:[['target','Target gross futures'],['gross','Actual gross futures']]},
-    {id:'free-collateral',group:'execution',title:'Free collateral: cash/Treasuries minus gross futures',money:true,start:true,series:[['free','Free collateral']]},
-    {id:'collateral-ratio',group:'execution',title:'Cash/Treasuries to gross futures ratio',unit:'ratio',start:true,series:[['ratio','Collateral ratio']]},
+    {id:'free-collateral',group:'execution',title:'Free collateral: cash/Treasuries minus gross futures',money:true,start:true,series:[['free','Free collateral']],pairedView:{title:'Funding value minus gross futures',series:[['free','Economic funding surplus']],note:'Includes unsettled P&L and pending variation. This surplus is not immediately spendable cash.'}},
+    {id:'collateral-ratio',group:'execution',title:'Cash/Treasuries to gross futures ratio',unit:'ratio',start:true,series:[['ratio','Collateral ratio']],pairedView:{title:'Funding value to gross futures ratio',series:[['ratio','Economic funding ratio']]}},
+    {id:'funding-components',group:'execution',title:'Futures funding assets and liabilities',money:true,start:true,pairedOnly:true,series:[['fundingEquity','Funding value'],['cash','Cash'],['unsettledPnl','Unsettled futures P&L'],['pendingVariation','Pending variation'],['treasuryAssets','Treasury assets'],['liabilities','Liabilities']],note:'Funding value = cash + Treasury assets + unsettled P&L + signed pending variation − liabilities. Futures notional is exposure and is not added to NAV.'},
+    {id:'cash-availability',group:'execution',title:'Cash availability and reservations',money:true,start:true,pairedOnly:true,series:[['freeCash','Free cash'],['postedCash','Posted cash'],['reservedCash','Reserved cash'],['availableCash','Immediately available cash']],note:'Free and posted cash sum to cash. Reserved cash is already included in cash and is not an additional asset or expense. Immediately available cash respects the ledger funding constraints.'},
     {id:'volume',group:'activity',title:'Traded volume between displayed observations',money:true,start:true,series:[['volume','Traded notional']]},
     {id:'turnover',group:'activity',title:'Cumulative traded notional',money:true,start:true,series:[['turnover','Cumulative traded notional']]},
     {id:'fees',group:'activity',title:'Cumulative recorded trading costs',money:true,start:true,series:[['fees','Trading costs']]},
@@ -131,13 +141,13 @@
     {id:'treasury-index',group:'rates',title:'Treasury return / accrual index',unit:'index (initial = 1)',series:[['treasuryIndex','Treasury index']]},
     {id:'underlying',group:'rates',title:'Underlying price evolution',unit:'price index',series:[['underlyingPrice','Underlying price']]},
     {id:'legs',group:'rates',title:'Returns by leg',unit:'%',series:[['directReturn','Direct holding'],['longReturn','Long futures'],['shortReturn','Short futures'],['treasuryReturn','Treasury']]},
-    {id:'lease-values',group:'books',title:'Unextended lease book in underlying equivalents',unit:'initial-commodity equivalents',series:[['directUnderlying','Direct holding'],['futureUnderlying','Futures + Treasuries'],['leaseValue','Lease total']]},
+    {id:'lease-values',group:'books',title:'Unextended lease book in underlying equivalents',unit:'initial-commodity equivalents',series:[['directUnderlying','Direct holding'],['futureUnderlying','Futures + Treasuries'],['leaseValue','Lease total']],pairedView:{series:[['directUnderlying','Direct BTC holding'],['futureUnderlying','Futures funding assets less liabilities'],['leaseValue','Lease total']]}},
     {id:'keep-value',group:'books',title:'Keep book in underlying equivalents',unit:'initial-commodity equivalents',series:[['keepValue','Keep book']]},
     {id:'book-returns',group:'books',title:'Commodity-quoted book return contributions',unit:'%',series:[['leaseReturn','Lease'],['keepReturn','Keep']]},
     {id:'book-indexes',group:'books',title:'Compounded commodity-quoted book indexes',unit:'index (initial = 1)',series:[['leaseIndex','Lease'],['keepIndex','Keep'],['combinedIndex','Combined']]},
     {id:'lease-distribution',group:'reconciliation',title:'Lease return distribution',hist:'leaseReturn'},
     {id:'keep-distribution',group:'reconciliation',title:'Keep return distribution',hist:'keepReturn'},
-    {id:'reconstruction',group:'reconciliation',title:'NAV reconstruction check',unit:'NAV (initial = 1)',series:[['nav','Strategy NAV'],['reconstructed','Accounting reconstruction'],['balanceNav','Cash + spot identity']]},
+    {id:'reconstruction',group:'reconciliation',title:'NAV reconstruction check',unit:'NAV (initial = 1)',series:[['nav','Strategy NAV'],['reconstructed','Accounting reconstruction'],['balanceNav','Cash + spot identity']],pairedView:{series:[['nav','Strategy NAV'],['reconstructed','Accounting reconstruction'],['balanceNav','Asset/liability identity']]}},
     {id:'reconstruction-error',group:'reconciliation',title:'Accounting reconstruction difference',unit:'per initial capital',series:[['error','Reconstruction difference']]},
   ];
   const groups={overview:'Performance',execution:'Holdings and collateral',activity:'Volume, costs and quote age',market:'Prices, premiums, lease rates and maturities',rates:'Rates and returns by leg',curves:'Held-contract maturity scatters',books:'Lease / keep book decomposition',reconciliation:'Distributions and reconstruction'};
@@ -193,10 +203,11 @@
       const values=rows.map(r=>r.returnPct).filter(v=>v!==null),mean=values.length?values.reduce((a,b)=>a+b,0)/values.length:null;
       let low=null,high=null;for(const v of values){low=low===null?v:Math.min(low,v);high=high===null?v:Math.max(high,v);}
       doc.getElementById('sharedPlotStats').textContent=rows.length+' displayed observations · '+values.length+' return observations'+(mean===null?'':` · mean ${mean.toFixed(6)}% · min ${low.toFixed(6)}% · max ${high.toFixed(6)}%`)+(sampled?' (displayed intervals only; not full-frequency risk statistics)':'');
-      for(const def of catalog.filter(d=>d.group===group.value)){
+      for(const baseDef of catalog.filter(d=>d.group===group.value&&(!d.pairedOnly||m.paired))){
+        const def=m.paired&&baseDef.pairedView?{...baseDef,...baseDef.pairedView}:baseDef;
         const card=doc.createElement('section');card.className='chart';card.dataset.plot=def.id;
         const h=doc.createElement('h2');h.textContent=m.name+' — '+def.title;card.append(h);
-        const note=doc.createElement('p');note.className='statistics-note';card.append(note);cards.append(card);
+        const note=doc.createElement('p');note.className='statistics-note';note.textContent=def.note||'';card.append(note);cards.append(card);
         let data=rows;
         if(m.initial&&(!accept||accept(m.initial.sourceDate))&&['nav','drawdown','underlying','lease-values','book-indexes','reconstruction'].includes(def.id))data=[m.initial,...rows];
         if(def.scatter){

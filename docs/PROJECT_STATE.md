@@ -1,12 +1,21 @@
 # Keep & Lease — Project State
 
-_Last updated: 2026-09-07_
+_Last updated: 2026-09-16_
 
 ## Purpose
 
 Build an interactive research and backtesting application for strategies that allocate among commodity ETFs, commodity futures across maturities, and Treasury/cash instruments. The application should expose all economically meaningful parameters in a GUI and make the daily decisions auditable.
 
 ## Current scope
+
+- Opt-in **cost-aware funded paired transfers** for BTC trade replay compare
+  feasible incremental sizes/horizons with KEEP using expected net BTC wealth.
+  A separate funded USD-linear ledger, durable pair IDs/reservations, causal
+  feed/response latency, ticket fees, refreshed versioned Treasury inputs and
+  detailed audit/export paths are implemented. This remains a tape-participation
+  and cash-interest research proxy; new 90-day/holdout, native-venue and depth
+  acceptance are not implied. Existing saved strategies default to the original
+  policy. See [COST_AWARE_FUNDED_TRANSFERS.md](COST_AWARE_FUNDED_TRANSFERS.md).
 
 - Optional bounded BTC trade replay: June 25 uploaded data, millisecond decision
   clocks, GCS worker audit, charts and full valuation CSV. See

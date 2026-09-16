@@ -1,44 +1,57 @@
 # Current work
 
-## Next implementation handoff — cost-aware, funded paired transfers
+## Cost-aware funded BTC paired transfers — 2026-09-16
 
-The owner has authorized merging the documentation plan in PR #49 and will
-start implementation in a NEW thread. Begin from current GitHub master after
-that merge and create a fresh feature branch; no implementation is made here.
+The owner requested implementation of feasible funded transfers and holding
+horizons evaluated by expected net BTC wealth versus keeping the current
+position. The opt-in `trade_strategy="cost_aware_paired"` path is implemented
+beside the preserved default allocation policy. The GUI provides a strategy
+selector, economics/funding/latency/fee controls and a bounded example.
 
-Read [NEXT_STRATEGY_IMPLEMENTATION.md](NEXT_STRATEGY_IMPLEMENTATION.md) first.
-It groups all next changes in one ordered workstream; [TODO.md](TODO.md) contains
-the primary checklist. The existing detailed paired-transfer, quote-latency,
-cost-aware decision and preliminary-study documents remain linked specifications.
+Read [COST_AWARE_FUNDED_TRANSFERS.md](COST_AWARE_FUNDED_TRANSFERS.md) for exact
+behavior and assumptions. Key components are `funded_ledger.py`,
+`paired_transfer_economics.py`, `paired_transfer.py` and
+`paired_transfer_rates.py`; `btc_trade_backtest.py` connects them to the
+existing durable worker, charts, audit and export flow.
 
-Next scope: rate-data/convention audit; separate source/receipt/decision/fill
-clocks; size-aware paired transfers and reservation states; venue-aware futures
-mark-to-market and cash settlement/Treasury funding; optional fixed and minimum
-commissions; expected incremental NET BTC wealth versus KEEPING the current
-position; executable exits and risk overrides; observed-versus-executed and
-realized-return diagnostics; bounded then full-period and holdout acceptance.
+The new ledger separates marks, unsettled P&L and cash settlement, tracks full
+funding/reservations and charges fixed/minimum/per-unit/proportional commissions
+by durable child-order ticket. Transfers share one pair ID and bounded source-
+first funding through partial fills and delayed responses. Economics compare
+equal-capital KEEP/SWAP candidates over feasible sizes and common horizons,
+including prospective costs and uncertainty allowances. Forecasts assume flat
+spot, residual basis converging toward a configured settlement reference and
+current normalized cash-proxy yield; they do not guarantee profitable exits.
 
-[FUTURES_MTM_AND_COMMISSION_PLAN.md](FUTURES_MTM_AND_COMMISSION_PLAN.md)
-explains how to replace the existing immediate futures-P&L-to-cash shortcut
-without double counting. Signed quantities/margin tests prepare for later
-leverage; this merge does not enable it. All new engine work remains pending.
+Six FRED series were retrieved as an immutable NEW snapshot covering June
+1–September 4, 2026, under `public/data/paired-rates/`. The overlap matches the
+retained source observations. DTB3 discount quotes are normalized through a
+91-day benchmark price into an ACT/365 investment yield. The new availability
+model waits for the next federal business release day and following UTC
+midnight; actual historical publication timestamps remain unverified. Source
+hashes, retrieved times, normalization version and rate-age gating are audited.
 
-[TREASURY_CARRY_FORWARD_AUDIT.md](TREASURY_CARRY_FORWARD_AUDIT.md) records the
-exact July 14 rate vector, next-UTC-day availability, flat node extrapolation,
-shortest-rate tape accrual and separate synthetic matched-bond prices. The
-preliminary holding study omits intra-horizon VM financing and its Treasury data
-freeze after that date; it remains research, not accepted strategy performance.
+## Validation and limits
 
-## Baseline and delivery boundary
+The implementation includes focused tests for economics, funding and fee
+accounting, causal Treasury normalization/availability, paired execution and
+checkpoint continuity, runner integration and detailed exports. Completion and
+deployment evidence belongs to this feature branch's validation report; do not
+infer a deployed revision from this document alone.
 
-The existing tested engine, strategies and saved results are unchanged. No
-backtest rerun, application deployment, new data vintage or IAM change belongs
-to this documentation patch. Coherent future application changes should use the
-single authoritative GCP preview, with the usual tests, not local Sites.
+The mode remains a BTC tape-participation, USD-linear research proxy with
+cash-interest accrual. Native inverse settlement, historical quote depth,
+security-level Treasury prices, verified venue margin/payment calendars,
+full-period holdout acceptance and complete realized-versus-KEEP attribution
+are not certified. Synthetic Treasury facilities in the ledger are separate
+from the GUI's cash proxy. Timeouts preserve unresolved inventory instead of
+assuming liquidity existed. No leverage or live trading is enabled.
 
-The complete previous current-work document is preserved unchanged in
+[NEXT_STRATEGY_IMPLEMENTATION.md](NEXT_STRATEGY_IMPLEMENTATION.md) retains the
+complete acceptance specification; [TODO.md](TODO.md) distinguishes implemented
+research behavior from remaining venue/data/validation work. The previous
+current-work history remains in
 [CURRENT_WORK_HISTORY_2026-09-15_PRE_STRATEGY_PLAN.md](CURRENT_WORK_HISTORY_2026-09-15_PRE_STRATEGY_PLAN.md).
-It records PR #48's prior integration, the verified shared-plots baseline and
-completed full-history market extraction. Those milestones are not reset by the
-new strategy plan. The completed old 90-day computations remain marked done;
-a NEW cost-aware/funded strategy still needs its own acceptance run.
+Earlier completed 90-day legacy computations stay completed; this new strategy
+requires its own performance and holdout assessment. The single GCP preview is
+the authoritative deployment target; local Sites remains deferred.
