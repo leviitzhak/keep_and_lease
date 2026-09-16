@@ -101,6 +101,15 @@ Benchmarks must use the same date range and return convention. Any benchmark exp
 
 ## Observed regular BTC execution and full-resolution audits
 
+The separate opt-in `cost_aware_paired` trade-tape policy uses the funded ledger
+and partial-transfer model in
+[COST_AWARE_FUNDED_TRANSFERS.md](COST_AWARE_FUNDED_TRANSFERS.md). Its optional
+adaptive spot-to-future entry limits preserve a fee-adjusted lease target
+constrained by expected net BTC versus KEEP. Observation, frozen-snapshot
+decision and order-transport delays apply to both initial and replacement
+instructions; a live limit changes only when its replacement arrives. The
+existing observed-allocation behavior described below remains its own policy.
+
 The user-approved regular BTC test is saved in
 `strategies/full-btc-long-gradual-1m-regular.json`. GUI/API `execution_model=auto`
 selects observed execution for regular intraday data. Raw `Parameters` defaults

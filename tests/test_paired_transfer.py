@@ -309,5 +309,170 @@ class PairedTransferTests(unittest.TestCase):
         self.assertEqual(pair.first_unpaired_us, 2)
 
 
+class AdaptivePairedTransferTests(unittest.TestCase):
+    def account(self, *, fee_bps=0, **kwargs):
+        config = dict(repricing_mode="adaptive", price_limit_bps=10,
+                      max_unpaired_btc=1, max_quote_age_seconds=1000,
+                      max_quote_skew_seconds=1000)
+        config.update(kwargs)
+        audit = []
+        account = PairedTransferAccount(1000, fee_bps=fee_bps,
+            config=PairedConfig(**config), sink=audit.append, expiries={"F": 30*DAY})
+        account.marks["F"] = trade(0, "F", 98)
+        account.initialize_spot(trade(0))
+        account.rate = .04
+        return account, audit
+
+    def test_economic_limit_recovers_fill_missed_by_fixed_ten_basis_points(self):
+        fixed, _ = self.account(repricing_mode="fixed")
+        adaptive, audit = self.account()
+        for account in (fixed, adaptive):
+            account.decide(1)
+            account.on_trade(trade(2, side="sell", btc=.1))
+            account.on_trade(trade(3, "F", 98.5, btc=.1))
+        self.assertEqual(fixed.fill_count, 1)
+        self.assertEqual(adaptive.fill_count, 2)
+        self.assertAlmostEqual(adaptive.units["F"], .1)
+        pair = adaptive.pairs[adaptive.active_pair_id]
+        self.assertAlmostEqual(pair.unpaired_btc, 0)
+        self.assertGreater(pair.target_effective_lease, 0)
+        self.assertTrue(any(r["kind"] == "order_replace_arrival" and r["applied"] for r in audit))
+        self.assertAlmostEqual(adaptive.reconstruction_error(), 0)
+
+    def test_initial_decision_freezes_prices_and_observation_delay_is_additive(self):
+        account, audit = self.account(observation_delay_seconds=.2,
+            futures_feed_delay_seconds=.1, decision_delay_seconds=.3, order_delay_seconds=.4)
+        self.assertNotIn("SPOT", account.observed_quotes())
+        account.accrue(200_000)
+        self.assertIn("SPOT", account.observed_quotes())
+        self.assertNotIn("F", account.observed_quotes())
+        account.accrue(300_000)
+        self.assertIsNone(account.decide(300_000))
+        self.assertTrue(account.pending_initial_decision)
+        account.on_trade(trade(310_000, "F", 101))
+        account.accrue(610_000)
+        self.assertEqual(account.observed_marks["F"].price, 101)
+        pair = account.pairs[account.active_pair_id]
+        self.assertEqual(pair.decision["quote_snapshots"]["F"]["price"], 98)
+        self.assertEqual(pair.submitted_us, 600_000)
+        self.assertEqual(account.orders["SPOT"].eligible_us, 1_000_000)
+        initial = next(r for r in audit if r["kind"] == "order")
+        self.assertEqual(initial["decision_started_us"], 300_000)
+        self.assertEqual(initial["decision_ready_us"], 600_000)
+        self.assertEqual(initial["observation_us"], 300_000)
+
+    def test_recovery_waits_for_ack_decision_and_transport(self):
+        account, audit = self.account(decision_delay_seconds=.2, order_delay_seconds=.3,
+                                      response_delay_seconds=.4)
+        account.decide(1)
+        account.accrue(500_001)
+        account.on_trade(trade(500_002, side="sell", btc=.1))
+        self.assertEqual(account.fill_count, 1)
+        self.assertFalse(account.orders["F"].active)
+        account.on_trade(trade(800_000, "F", 98, btc=.1))
+        self.assertEqual(account.fill_count, 1)
+        account.accrue(1_400_002)
+        self.assertTrue(account.orders["F"].active)
+        self.assertEqual(account.orders["F"].eligible_us, 1_400_002)
+        account.on_trade(trade(1_400_002, "F", 98.5, btc=.1))
+        self.assertEqual(account.fill_count, 1)
+        account.on_trade(trade(1_400_003, "F", 98.5, btc=.1))
+        self.assertEqual(account.fill_count, 2)
+        arrived = [r for r in audit if r["kind"] == "order_replace_arrival" and r["applied"]]
+        self.assertTrue(any(r["decision_started_us"] == 900_002 and r["decision_ready_us"] == 1_100_002
+                            and r["eligible_after_us"] == 1_400_002 for r in arrived))
+
+    def test_actual_source_fill_anchors_recovery_despite_later_spot_rise(self):
+        account, _ = self.account()
+        account.decide(1)
+        account.on_trade(trade(2, side="sell", price=100, btc=.1))
+        cap = account.orders["F"].limit_price
+        account.on_trade(trade(3, price=120, side="buy"))
+        self.assertAlmostEqual(account.orders["F"].limit_price, cap, places=7)
+        account.on_trade(trade(4, "F", price=110, btc=.1))
+        self.assertEqual(account.fill_count, 1)
+        self.assertAlmostEqual(account.pairs[account.active_pair_id].source_filled_btc, .1)
+        account.on_trade(trade(5, side="sell", price=120, btc=1))
+        self.assertEqual(account.fill_count, 1, "A new source lot waits for its funded target")
+
+    def test_old_source_limit_remains_live_until_replacement_arrives(self):
+        account, _ = self.account(order_delay_seconds=.5)
+        account.decide(1)
+        account.accrue(500_001)
+        old = account.orders["SPOT"].limit_price
+        account.on_trade(trade(600_000, "F", price=98.5))
+        self.assertEqual(account.orders["SPOT"].limit_price, old)
+        account.on_trade(trade(700_000, side="sell", price=100, btc=.1))
+        self.assertEqual(account.fill_count, 1)
+        account.accrue(1_100_000)
+        self.assertEqual(account.orders["SPOT"].limit_price, old,
+                         "A stale fill revision must not overwrite the live source")
+        self.assertFalse(account.orders["F"].active,
+                         "Recovery must wait for its executed-price instruction")
+
+    def test_restart_preserves_queued_decision_replacement_and_partial_fee_lot(self):
+        account, _ = self.account(order_delay_seconds=.3, decision_delay_seconds=.2,
+                                 futures_fixed_fee_usd=.1)
+        account.decide(1)
+        first = PairedTransferAccount.restore(json.loads(json.dumps(account.snapshot())))
+        for item in (account, first):
+            item.accrue(500_001)
+            item.on_trade(trade(500_002, side="sell", btc=.2))
+            item.accrue(700_002)
+        self.assertEqual(account.snapshot(), first.snapshot())
+        restored = PairedTransferAccount.restore(json.loads(json.dumps(account.snapshot())))
+        for item in (account, restored):
+            item.on_trade(trade(1_000_003, "F", price=98, btc=.05))
+            item.accrue(1_500_003)
+            item.on_trade(trade(1_500_004, "F", price=98, btc=.15))
+        self.assertEqual(account.snapshot(), restored.snapshot())
+        self.assertAlmostEqual(account.reconstruction_error(), 0, places=8)
+
+    def test_economic_cancel_delays_but_exchange_timeout_remains_standing_guard(self):
+        account, audit = self.account(decision_delay_seconds=.2, order_delay_seconds=.3)
+        account.decide(1)
+        account.accrue(500_001)
+        pair = account.pairs[account.active_pair_id]
+        account.decide(600_000, rate_snapshot={"allows_new_transfers": False})
+        self.assertTrue(account.orders["SPOT"].active)
+        self.assertEqual(pair.status, "pending")
+        account.on_trade(trade(900_000, side="sell", btc=.1))
+        self.assertEqual(account.fill_count, 1)
+        account.accrue(1_100_000)
+        self.assertFalse(account.orders["SPOT"].active)
+        self.assertEqual(pair.status, "cancelled")
+        arrival = next(r for r in audit if r["kind"] == "order_cancel_arrival")
+        self.assertEqual(arrival["decision_started_us"], 600_000)
+        self.assertEqual(arrival["decision_ready_us"], 800_000)
+        self.assertEqual(arrival["us"], 1_100_000)
+
+    def test_repricing_queue_coalesces_during_transport(self):
+        account, _ = self.account(order_delay_seconds=1)
+        account.decide(1)
+        account.accrue(1_000_001)
+        account.on_trade(trade(1_000_002, side="sell", btc=.1))
+        for offset in range(1, 501):
+            account.on_trade(trade(1_000_002+offset, price=100+offset/1000))
+        self.assertLessEqual(len(account.command_queue), 1)
+        self.assertLessEqual(len(account.decision_queue), 1)
+        account.accrue(2_000_002)
+        self.assertTrue(account.orders["F"].active)
+        self.assertEqual(account.orders["F"].eligible_us, 2_000_002)
+        self.assertLessEqual(len(account.command_queue), 1)
+
+    def test_explicit_order_delay_overrides_legacy_and_config_round_trips(self):
+        absent = PairedConfig.from_payload({"paired_repricing_mode": "adaptive"})
+        legacy = PairedTransferAccount(1000, delay_us=4_000_000, config=absent)
+        explicit = PairedConfig.from_payload({"paired_repricing_mode": "adaptive", "paired_order_delay_seconds": .3})
+        override = PairedTransferAccount(1000, delay_us=4_000_000, config=explicit)
+        self.assertEqual(legacy.delay_us, 4_000_000)
+        self.assertEqual(override.delay_us, 300_000)
+        for bad in ("dynamic", None, 7):
+            with self.assertRaises(ValueError):
+                PairedConfig(repricing_mode=bad)
+        with self.assertRaises(ValueError):
+            PairedConfig(order_delay_seconds=-.1)
+
+
 if __name__ == "__main__":
     unittest.main()

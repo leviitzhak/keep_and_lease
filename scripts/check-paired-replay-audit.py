@@ -195,6 +195,9 @@ class Audit:
                                 PRIMARY KEY(symbol,trade_id));
             CREATE TABLE fills(order_id TEXT, trade_id TEXT, symbol TEXT,
                                PRIMARY KEY(order_id,trade_id,symbol));
+            CREATE TABLE replacements(order_id TEXT, revision INTEGER, data TEXT,
+                                      PRIMARY KEY(order_id,revision));
+            CREATE TABLE cancellations(id TEXT PRIMARY KEY, data TEXT);
         """)
         self.kinds, self.reasons, self.statuses = Counter(), Counter(), Counter()
         self.decisions = defaultdict(Moments)
@@ -215,6 +218,89 @@ class Audit:
         self.collateral_breaches = 0
         self.maximum_reported_reconstruction_error = 0.0
         self.day_closes = []
+
+    def replacement(self, row):
+        """A request is evidence only; the live limit changes at its arrival."""
+        order_id, revision = row["order_id"], row["revision"]
+        context = {"order_id": order_id, "revision": revision, "us": row["us"]}
+        order = self.get("orders", order_id)
+        self.c.check("replacement_has_order", order is not None, context)
+        self.c.check("replacement_positive_revision", isinstance(revision, int) and revision > 0, context)
+        self.c.check("replacement_positive_limit", math.isfinite(row["limit_price"]) and row["limit_price"] > 0, context)
+        if order:
+            self.c.check("replacement_order_identity", row["pair_id"] == order["pair_id"] and
+                         row["symbol"] == order["symbol"] and row["role"] == order["role"], context)
+        clocks = ("observation_us", "decision_started_us", "decision_ready_us",
+                  "submitted_us", "eligible_after_us")
+        self.c.check("replacement_clocks_causal", all(row[left] <= row[right]
+                     for left, right in zip(clocks, clocks[1:])), context)
+        stored = self.db.execute("SELECT data FROM replacements WHERE order_id=? AND revision=?",
+                                 (str(order_id), revision)).fetchone()
+        if row["kind"] == "order_replace_requested":
+            self.c.check("unique_replacement_request", stored is None, context)
+            self.c.check("replacement_request_after_decision", row["us"] >= row["decision_ready_us"] and
+                         row["us"] == row["submitted_us"], context)
+            if stored is None:
+                self.db.execute("INSERT INTO replacements VALUES(?,?,?)",
+                                (str(order_id), revision, json.dumps(row, separators=(",", ":"))))
+            return
+        self.c.check("replacement_arrival_has_request", stored is not None, context)
+        self.c.check("replacement_arrival_after_transport", row["us"] >= row["eligible_after_us"], context)
+        if stored:
+            request = loads(stored[0])
+            self.c.check("unique_replacement_arrival", not request.get("arrived", False), context)
+            for name in ("pair_id", "symbol", "role", "limit_price", *clocks):
+                self.c.check("replacement_arrival_matches_request", row[name] == request[name],
+                             {**context, "field": name})
+            request["arrived"] = True
+            self.db.execute("UPDATE replacements SET data=? WHERE order_id=? AND revision=?",
+                            (json.dumps(request, separators=(",", ":")), str(order_id), revision))
+        if order:
+            if row.get("previous_limit_price") is not None:
+                self.c.equal("replacement_previous_live_limit", row["previous_limit_price"],
+                             order["limit_price"], context, atol=1e-8)
+            else:
+                self.c.check("replacement_missing_live_order_not_applied", not row["applied"], context)
+            if row["applied"]:
+                self.c.check("replacement_revision_advances", revision > order.get("revision", 0), context)
+                order.update(limit_price=row["limit_price"], revision=revision,
+                             eligible_after_us=row["eligible_after_us"])
+                pair = self.get("pairs", row["pair_id"])
+                if pair and "fill_revision" in row:
+                    self.c.check("replacement_based_on_current_fills", row["fill_revision"] == pair["fill_revision"], context)
+                if order["role"] == "target" and pair:
+                    ratio = pair["target_quantity_btc"] / pair["source_quantity_btc"]
+                    if pair["source_filled"] - pair["target_filled"] / ratio > 1e-12:
+                        order["active"] = True
+                self.put("orders", order_id, order)
+
+    def cancellation(self, row):
+        order = self.get("orders", row["order_id"])
+        context = {"order_id": row["order_id"], "us": row["us"]}
+        self.c.check("cancellation_has_order", order is not None, context)
+        if order:
+            self.c.check("cancellation_order_identity", row["pair_id"] == order["pair_id"] and
+                         row["symbol"] == order["symbol"] and row["role"] == order["role"], context)
+        clocks = ("decision_started_us", "decision_ready_us", "submitted_us", "eligible_after_us")
+        self.c.check("cancellation_clocks_causal", all(row[left] <= row[right]
+                     for left, right in zip(clocks, clocks[1:])), context)
+        if row["kind"] == "order_cancel_requested":
+            self.c.check("unique_cancellation_request", self.get("cancellations", row["order_id"]) is None, context)
+            self.c.check("cancellation_request_at_submission", row["us"] == row["submitted_us"], context)
+            self.put("cancellations", row["order_id"], row)
+            return
+        request = self.get("cancellations", row["order_id"])
+        self.c.check("cancellation_arrival_has_request", request is not None, context)
+        self.c.check("cancellation_arrival_after_transport", row["us"] >= row["eligible_after_us"], context)
+        if request:
+            self.c.check("unique_cancellation_arrival", not request.get("arrived", False), context)
+            for name in ("pair_id", "symbol", "role", "reason", *clocks):
+                self.c.check("cancellation_arrival_matches_request", row[name] == request[name],
+                             {**context, "field": name})
+            self.put("cancellations", row["order_id"], {**request, "arrived": True})
+        if order and row["applied"]:
+            order["active"] = False
+            self.put("orders", row["order_id"], order)
 
     def get(self, table, key):
         record = self.db.execute("SELECT data FROM " + table + " WHERE id=?", (str(key),)).fetchone()
@@ -237,6 +323,9 @@ class Audit:
             self.c.equal("initial_endowment", row["btc"] * row["price"], self.args.capital)
         elif kind == "order":
             self.c.check("unique_order", self.get("orders", row["order_id"]) is None, row["order_id"])
+            if "decision_started_us" in row:
+                self.c.check("initial_order_clocks_causal", row["observation_us"] <= row["decision_started_us"] <=
+                             row["decision_ready_us"] <= us <= row["eligible_after_us"], row["order_id"])
             self.put("orders", row["order_id"], {**row, "filled": 0.0,
                      "active": not row.get("conditional", False)})
         elif kind == "order_activation":
@@ -245,15 +334,27 @@ class Audit:
             if order:
                 order.update(active=True, eligible_after_us=row["eligible_after_us"])
                 self.put("orders", row["order_id"], order)
+        elif kind in ("order_replace_requested", "order_replace_arrival"):
+            self.replacement(row)
+        elif kind in ("order_cancel_requested", "order_cancel_arrival"):
+            self.cancellation(row)
         elif kind == "paired_transfer":
             self.c.check("unique_pair", self.get("pairs", row["pair_id"]) is None, row["pair_id"])
             self.put("pairs", row["pair_id"], {"source_quantity_btc": row["source_quantity_btc"],
                      "target_quantity_btc": row["target_quantity_btc"], "source_filled": 0.0,
                      "target_filled": 0.0, "source_acknowledged": 0.0,
                      "source_order_id": row["source_order_id"], "target_order_id": row["target_order_id"],
+                     "source_symbol": row["source_symbol"], "target_symbol": row["target_symbol"],
+                     "source_lots": [], "source_value": 0.0, "target_value": 0.0,
+                     "source_fees": 0.0, "target_fees": 0.0,
+                     "matched_source_value": 0.0, "matched_source_fees": 0.0,
+                     "fill_revision": 0,
+                     "decision": row.get("decision", {}),
+                     "target_effective_lease": row.get("target_effective_lease"),
                      "fees": 0.0, "result": None})
+            started = row.get("decision", {}).get("decision_started_us", us)
             for quote in row.get("decision", {}).get("quote_snapshots", {}).values():
-                self.c.check("decision_quotes_causal", quote["source_us"] <= us and quote["available_us"] <= us, us)
+                self.c.check("decision_quotes_causal", quote["source_us"] <= started and quote["available_us"] <= started, us)
         elif kind == "fill":
             self.fill(row)
         elif kind == "fill_acknowledgement":
@@ -327,7 +428,48 @@ class Audit:
                                        ("paired_fill_ratio", matched / pair["source_quantity_btc"])):
                     self.c.equal("pair_result_" + name, row[name], expected, row["pair_id"], atol=1e-8)
                 pair["result"] = {k: row[k] for k in ("status", "reason", "max_legging_seconds", "max_unpaired_btc")}
+                self.effective_entry(row, pair, matched)
                 self.put("pairs", row["pair_id"], pair)
+
+    def effective_entry(self, row, pair, matched):
+        """Recompute the optional new entry metric from independently matched fills."""
+        if "executed_effective_lease" not in row:
+            return  # Historical fixed-order archives did not report this measure.
+        context = row["pair_id"]
+        if pair["source_symbol"] != "SPOT" or pair["target_symbol"] == "SPOT" or matched <= 1e-12:
+            self.c.check("effective_lease_only_for_matched_entry", row["executed_effective_lease"] is None, context)
+            return
+        target_quantity = pair["target_filled"]
+        source_vwap = pair["matched_source_value"] / matched
+        target_vwap = pair["target_value"] / target_quantity
+        for name, expected in (("source_vwap", source_vwap), ("target_vwap", target_vwap),
+                               ("matched_source_fees_usd", pair["matched_source_fees"]),
+                               ("target_fees_usd", pair["target_fees"])):
+            if name in row:
+                self.c.equal("matched_entry_" + name, row[name], expected, context, atol=1e-8)
+        # The explicit clock/yield provenance prevents guessing between decision-
+        # time and completion-time annualization when reading older schema variants.
+        expiry_us = row.get("effective_lease_expiry_us")
+        rate_us = row.get("effective_lease_rate_time_us")
+        cash_rate = row.get("effective_lease_cash_rate")
+        self.c.check("effective_lease_has_time_and_rate", expiry_us is not None and rate_us is not None and
+                     cash_rate is not None, context)
+        if expiry_us is None or rate_us is None or cash_rate is None:
+            return
+        self.c.check("effective_lease_clock_causal", rate_us <= row["us"], context)
+        years = (expiry_us - rate_us) / (365 * 86400e6)
+        net_spot = source_vwap - pair["matched_source_fees"] / matched
+        if years <= 0 or net_spot <= 0:
+            self.c.check("effective_lease_undefined_boundary", row["executed_effective_lease"] is None, context)
+            return
+        cost_future = target_vwap + pair["target_fees"] / target_quantity
+        expected = cash_rate - (cost_future / net_spot - 1) / years
+        self.c.equal("executed_effective_lease_from_matched_fills", row["executed_effective_lease"],
+                     expected, context, atol=1e-9)
+        target = row.get("target_effective_lease", pair.get("target_effective_lease"))
+        if target is not None and "effective_lease_shortfall" in row:
+            self.c.equal("effective_lease_shortfall", row["effective_lease_shortfall"],
+                         max(0.0, target - expected), context, atol=1e-9)
 
     def fill(self, row):
         us, quantity, symbol = row["us"], row["signed_btc"], row["symbol"]
@@ -363,17 +505,39 @@ class Audit:
             self.c.check("fill_order_capacity", order["filled"] <= abs(order["signed_btc"]) + 1e-10, us)
             self.c.check("fill_limit", row["price"] <= order["limit_price"] + 1e-8 if quantity > 0
                          else row["price"] >= order["limit_price"] - 1e-8, us)
+            if "limit_price" in row:
+                self.c.equal("fill_reported_live_limit", row["limit_price"], order["limit_price"], us, atol=1e-8)
+            if "order_revision" in row:
+                self.c.check("fill_reported_order_revision", row["order_revision"] == order.get("revision", 0), us)
+            if "eligible_after_us" in row:
+                self.c.check("fill_reported_order_eligibility", row["eligible_after_us"] == order["eligible_after_us"], us)
             self.put("orders", row["order_id"], order)
         pair = self.get("pairs", row["pair_id"])
         self.c.check("fill_has_pair", pair is not None, us)
         if pair:
             pair[row["role"] + "_filled"] += abs(quantity)
+            pair["fill_revision"] += 1
             pair["fees"] += row["fee_usd"]
+            pair[row["role"] + "_value"] += value
+            pair[row["role"] + "_fees"] += row["fee_usd"]
             ratio = pair["target_quantity_btc"] / pair["source_quantity_btc"]
             self.c.check("target_funded_by_prior_source", pair["target_filled"] <= pair["source_filled"] * ratio + 1e-10, us)
             if row["role"] == "target":
                 self.c.check("target_after_source_acknowledgement", pair["target_filled"] <= pair["source_acknowledged"] * ratio + 1e-10, us)
+                remaining = abs(quantity) / ratio
+                while remaining > 1e-12 and pair["source_lots"]:
+                    lot = pair["source_lots"][0]
+                    take = min(remaining, lot["quantity"])
+                    pair["matched_source_value"] += take * lot["price"]
+                    pair["matched_source_fees"] += take * lot["fee_per_btc"]
+                    remaining -= take
+                    lot["quantity"] -= take
+                    if lot["quantity"] <= 1e-12:
+                        pair["source_lots"].pop(0)
+                self.c.check("matched_source_lots_cover_target", remaining <= 1e-10, us)
             else:
+                pair["source_lots"].append({"quantity": abs(quantity), "price": row["price"],
+                                            "fee_per_btc": row["fee_usd"] / abs(quantity)})
                 target_order = self.get("orders", pair["target_order_id"])
                 if target_order:
                     target_order["active"] = False
@@ -554,6 +718,8 @@ class Audit:
                 "Full-frequency return statistics include the initial capital before the first, potentially partial, interval. Terminal positions are marked without a liquidation transaction.",
                 "Forecast checks assume this preset's uncertainty5bps, zero minimum gain and cost buffer1. They cover reported edge arithmetic and selection thresholds, not predictive accuracy, exhaustive candidate search, or realization within this run's shorter horizon.",
                 "No-candidate and pending ticks do not necessarily emit paired_decision events; decision event counts are not all scheduled decisions. Timeout reasons can overlap final partial/completed statuses.",
+                "Adaptive replacement requests do not change the checked active limit until an applied arrival event. The recorded causal clocks are checked, but actual network latency and quote depth are not measured.",
+                "Effective entry lease, when supplied with its clock/rate provenance, is independently recomputed from FIFO matched source fills and target fills with allocated entry fees. It is an annualized entry-basis diagnostic, not subsequent realized net BTC return.",
                 "Return distributions are population moments of full audit intervals, including zero returns; sampled GUI histograms need not match them. Daily last valuations are capped at 400 days.",
                 "Checksums detect archive corruption relative to its manifest, not tampering with both archive and manifest. No independent signed manifest is supplied."]}
 

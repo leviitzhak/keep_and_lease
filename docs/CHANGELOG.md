@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-09-16 — Adaptive funded BTC entry limits
+
+- Add optional adaptive spot-to-future entry limits tied to the accepted
+  net-BTC forecast and a fee-adjusted effective entry lease, using acknowledged
+  executed source prices for funded target recovery.
+- Separate observation, frozen-snapshot decision and order-arrival delays;
+  apply them to repricing, preserve live limits until replacement arrival and
+  keep fill acknowledgements on their own clock.
+- Preserve fixed-limit presets, bounded partial funding and unsuccessful
+  transfer diagnostics. Audit replacement requests/arrivals and matched entry
+  rates without treating a filled pair as atomic or its lease as realized profit.
+- Keep reverse transfers and futures rolls on their existing execution path.
+  Performance and deployment evidence are recorded separately from this change.
+
 ## 2026-09-11 — Shared daily/replay plot suite
 
 - Add one field-name-based plot catalog for both result types, with commodity

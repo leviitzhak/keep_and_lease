@@ -33,6 +33,19 @@ with their shipped defaults. Invalid or temporarily incomplete numeric input
 is not persisted or submitted; the interface highlights the field instead of
 sending an invalid value to the calculation engine.
 
+For the BTC-only funded-pair policy, the execution controls expose fixed or
+adaptive repricing and separate observation, decision and order-to-market
+delays. Common observation delay adds to the advanced per-feed delays; fill
+acknowledgement remains separate. A blank order-delay value inherits the
+Bitcoin execution delay. Loading an old preset without these new settings
+preserves fixed repricing and zero observation/decision delay.
+
+Paired-run diagnostics display the recorded repricing mode, applied replacements
+and delay assumptions. When available, the latest pair shows target and
+matched-fill effective entry lease, matched BTC and annualized rate shortfall.
+These are entry-basis diagnostics, not realized net BTC returns. Missing fields
+in older saved results are not invented or inferred from unrelated fills.
+
 ## Plot rendering and point inspection
 
 Common portfolio plots are rebuilt from the filtered portfolio series without

@@ -8,6 +8,12 @@ for the code's exact behavior and remaining limitations. This page retains the
 broader acceptance specification; local implementation does not establish full
 90-day, native-venue or quote-depth acceptance.
 
+The current adaptive extension implements fee-adjusted effective-lease limits
+for spot-to-future entries and separate observation, decision and order-arrival
+delays. Reverse/roll adaptive pricing, actual depth/security-level funding and
+full outcome acceptance remain broader requirements below. Fixed-limit presets
+and their historical results remain available for comparison.
+
 ## Objective and invariant
 
 Retain commodity exposure while choosing between direct spot and futures backed

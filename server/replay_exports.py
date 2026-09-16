@@ -27,6 +27,10 @@ PAIRED_EVENT_FIELDS = [
     'fees_usd', 'reserved_usd', 'free_cash_usd', 'posted_cash_usd',
     'unsettled_pnl_usd', 'amount_usd', 'reservation_id', 'payment_id',
     'acknowledgement_us', 'limit_price',
+    'revision', 'order_revision', 'fill_revision', 'observation_us', 'decision_started_us',
+    'decision_ready_us', 'submitted_us', 'previous_limit_price', 'applied',
+    'rejection_reason', 'counterpart_price', 'counterpart_fee_usd',
+    'target_effective_lease', 'binding_constraint',
 ]
 DECISION_FIELDS = [
     'accepted', 'reason', 'source_symbol', 'target_symbol',
@@ -54,6 +58,10 @@ TRANSFER_FIELDS = [
     'submitted_us', 'completed_us', 'max_unpaired_btc', 'max_legging_seconds',
     'observed_lease', 'executed_price_only_lease', 'lease_price_deviation',
     'direction_adjusted_lease_deviation', 'completion_lease',
+    'repricing_supported', 'target_effective_lease', 'executed_effective_lease',
+    'effective_lease_shortfall',
+    'source_vwap', 'target_vwap', 'matched_source_fees_usd', 'target_fees_usd',
+    'effective_lease_expiry_us', 'effective_lease_rate_time_us', 'effective_lease_cash_rate',
     'decision.horizon_us', 'decision.keep_btc', 'decision.swap_btc',
     'decision.edge_btc', 'decision.required_edge_btc',
 ]
@@ -284,6 +292,8 @@ def replay_workbook(store, manifest, result, start, end):
             ['Decision forecasts', 'Transfer decisions shows recorded KEEP/SWAP forecasts in BTC at the same stored horizon. Horizon alternatives includes evaluated sizes/horizons and rejection reasons. These conditional forecasts are not realized returns. No historical entry cost is charged again by the exporter.'],
             ['Transfer periods', 'Every sheet contains only events inside the selected inclusive UTC period. A pair can start earlier or finish later; absence of a completion inside this export is not evidence of failure.'],
             ['Rate and fill measures', 'Observed, executed-price-only and completion lease measures are distinct from realized BTC return. All source quotes, clocks, model assumptions and raw event details remain on Events.'],
+            ['Adaptive limits', 'For supported spot-to-futures entries, replacement requests record frozen observations and computation clocks. A limit changes only on an applied order_replace_arrival. The previous limit remains in force during transport; a rejected arrival does not change it.'],
+            ['Effective lease', 'The entry lease includes matched spot-sale and futures-buy fees before annualization. It is distinct from the full-horizon net BTC forecast and from realized portfolio returns. Funding can bind before the economic price limit; separate child orders cannot guarantee an atomic paired fill.'],
             ['Legacy evidence', 'Transfer IDs are exported only when explicitly present in the stored audit. No pairs are inferred from unrelated historical fills.'],
         ])
         overview = [row for row in overview if row[0] != 'Collateral']

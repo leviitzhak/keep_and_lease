@@ -12,7 +12,7 @@ function source(name){
 }
 
 test('old parameter imports reset paired policy and costs while preserving explicit paired imports',()=>{
-  const fields=new Map(['trade_strategy','paired_horizon_days','paired_spot_fixed_fee_usd','paired_max_unpaired_btc'].map(key=>[key,{value:'prior paired run'}]));
+  const fields=new Map(['trade_strategy','paired_horizon_days','paired_spot_fixed_fee_usd','paired_max_unpaired_btc','paired_repricing_mode','paired_observation_delay_seconds','paired_decision_delay_seconds','paired_order_delay_seconds'].map(key=>[key,{value:'prior paired run'}]));
   const context={form:{elements:{namedItem:name=>fields.get(name)}},LEG_FIELDS:[],COMMODITIES:['btc'],loadCommodity(){}};
   vm.runInNewContext(source('applyParameters'),context);
   context.applyParameters({});
@@ -20,10 +20,31 @@ test('old parameter imports reset paired policy and costs while preserving expli
   assert.equal(fields.get('paired_horizon_days').value,'1,3,7,14,30');
   assert.equal(fields.get('paired_spot_fixed_fee_usd').value,'0');
   assert.equal(fields.get('paired_max_unpaired_btc').value,'0.01');
+  assert.equal(fields.get('paired_repricing_mode').value,'fixed');
+  for(const name of ['paired_observation_delay_seconds','paired_decision_delay_seconds','paired_order_delay_seconds'])assert.equal(fields.get(name).value,'0');
   context.applyParameters({trade_strategy:'cost_aware_paired',paired_spot_fixed_fee_usd:'1.75',paired_horizon_days:'0.25,1,3'});
   assert.equal(fields.get('trade_strategy').value,'cost_aware_paired');
   assert.equal(fields.get('paired_spot_fixed_fee_usd').value,'1.75');
   assert.equal(fields.get('paired_horizon_days').value,'0.25,1,3');
+});
+
+test('import migrates the BTC transport delay without adding the legacy delay twice',()=>{
+  const fields=new Map(['paired_repricing_mode','paired_observation_delay_seconds','paired_decision_delay_seconds','paired_order_delay_seconds'].map(name=>[name,{value:''}]));
+  const context={form:{elements:{namedItem:name=>fields.get(name)}},LEG_FIELDS:[],COMMODITIES:['btc'],loadCommodity(){}};
+  vm.runInNewContext(source('applyParameters'),context);
+  context.applyParameters({execution_delay_seconds:'0.8',commodity_parameters:{btc:{execution_delay_seconds:'0.35'}}});
+  assert.equal(fields.get('paired_order_delay_seconds').value,'0.35');
+  assert.equal(fields.get('paired_repricing_mode').value,'fixed');
+  context.applyParameters({execution_delay_seconds:'0.8',commodity_parameters:'{"btc":{"execution_delay_seconds":"0.35"}}',paired_repricing_mode:'adaptive',paired_order_delay_seconds:'0',paired_observation_delay_seconds:'0.2',paired_decision_delay_seconds:'0.1'});
+  assert.equal(fields.get('paired_order_delay_seconds').value,'0');
+  assert.equal(fields.get('paired_repricing_mode').value,'adaptive');
+  assert.equal(fields.get('paired_observation_delay_seconds').value,'0.2');
+  assert.equal(fields.get('paired_decision_delay_seconds').value,'0.1');
+  context.applyParameters({execution_delay_seconds:'0.8'});
+  assert.equal(fields.get('paired_order_delay_seconds').value,'0.8');
+  assert.equal(fields.get('paired_repricing_mode').value,'fixed');
+  context.applyParameters({commodity_parameters:'invalid'});
+  assert.equal(fields.get('paired_order_delay_seconds').value,'0');
 });
 
 test('switching commodity editors cannot copy paired settings into a commodity profile',()=>{
@@ -42,7 +63,7 @@ test('switching commodity editors cannot copy paired settings into a commodity p
 });
 
 test('paired mode disables irrelevant allocation controls and serialization preserves them for legacy reloads',()=>{
-  const names=['btc_data_source','trade_strategy','min_days','long_score_rate_scale','short_pure_maturity_strength','enable_short_book','trading_fee_bps','execution_delay_seconds'];
+  const names=['btc_data_source','trade_strategy','min_days','long_score_rate_scale','short_pure_maturity_strength','enable_short_book','trading_fee_bps','execution_delay_seconds','paired_order_delay_seconds'];
   const elements=names.map(name=>({name,value:name==='btc_data_source'?'trade_tape':name==='trade_strategy'?'cost_aware_paired':'3',disabled:false,closest:()=>null}));
   elements.namedItem=name=>elements.find(field=>field.name===name);
   const nodes=Object.fromEntries(['tradeReplayControls','pairedTransferControls','pairedLegacyNotice','previewLongScore','previewShortScore'].map(id=>[id,{}]));
@@ -52,19 +73,23 @@ test('paired mode disables irrelevant allocation controls and serialization pres
   assert.equal(elements.namedItem('min_days').disabled,true);
   assert.equal(elements.namedItem('long_score_rate_scale').disabled,true);
   assert.equal(elements.namedItem('trading_fee_bps').disabled,false);
-  assert.equal(elements.namedItem('execution_delay_seconds').disabled,false);
+  assert.equal(elements.namedItem('execution_delay_seconds').disabled,true);
+  assert.equal(elements.namedItem('paired_order_delay_seconds').disabled,false);
   assert.equal(elements.namedItem('enable_short_book').disabled,false);
   assert.equal(nodes.pairedLegacyNotice.hidden,false);
   assert.equal(nodes.previewLongScore.hidden,true);
   assert.equal(context.values().min_days,'3');
+  assert.equal(context.values().execution_delay_seconds,'3');
+  assert.equal(context.values().paired_order_delay_seconds,'3');
   elements.namedItem('trade_strategy').value='legacy';context.updateTradeControls();
   assert.equal(elements.namedItem('min_days').disabled,false);
+  assert.equal(elements.namedItem('execution_delay_seconds').disabled,false);
   assert.equal(nodes.previewLongScore.hidden,false);
   assert.equal(nodes.pairedLegacyNotice.hidden,true);
 });
 
 function validationContext(overrides={},profile={}){
-  const values={trade_strategy:'cost_aware_paired',btc_data_source:'trade_tape',weight_btc:'100',weight_silver:'0',weight_gold:'0',weight_sp500:'0',weight_treasury:'0',paired_horizon_days:'1,3,7,14,30',paired_max_horizon_days:'30',...overrides};
+  const values={trade_strategy:'cost_aware_paired',btc_data_source:'trade_tape',weight_btc:'100',weight_silver:'0',weight_gold:'0',weight_sp500:'0',weight_treasury:'0',paired_horizon_days:'1,3,7,14,30',paired_max_horizon_days:'30',paired_repricing_mode:'fixed',paired_observation_delay_seconds:'0',paired_decision_delay_seconds:'0',paired_order_delay_seconds:'0',...overrides};
   const context={form:{elements:{namedItem:name=>({value:values[name]})}},captureCommodity(){},commodityProfiles:{btc:{futures_contract_type:'regular',enable_short_book:'false',...profile}}};
   vm.runInNewContext(source('validatePairedForm'),context);
   return context;
@@ -87,19 +112,40 @@ test('holding horizons reject malformed and nonfinite forecasts',()=>{
   assert.doesNotThrow(()=>validationContext({paired_horizon_days:'0.25, 1, 3'}).validatePairedForm());
 });
 
+test('repricing validates its mode and three independent nonnegative delays',()=>{
+  assert.doesNotThrow(()=>validationContext({paired_repricing_mode:'adaptive',paired_observation_delay_seconds:'0.2',paired_decision_delay_seconds:'0.1',paired_order_delay_seconds:'0.3'}).validatePairedForm());
+  assert.throws(()=>validationContext({paired_repricing_mode:'market'}).validatePairedForm(),/repricing/);
+  for(const name of ['paired_observation_delay_seconds','paired_decision_delay_seconds','paired_order_delay_seconds']){
+    for(const value of ['',' ','-0.1','NaN','Infinity'])assert.throws(()=>validationContext({[name]:value}).validatePairedForm(),/finite, nonnegative/);
+  }
+});
+
 test('paired preset is bounded and every paired numeric default satisfies browser constraints',()=>{
   const preset=JSON.parse(readFileSync(new URL('../strategies/research-btc-cost-aware-paired.json',import.meta.url),'utf8'));
   assert.equal(preset.parameters.trade_strategy,'cost_aware_paired');
   assert.equal(preset.parameters.btc_data_source,'trade_tape');
   assert.equal(Date.parse(preset.parameters.backtest_end)-Date.parse(preset.parameters.backtest_start),300000);
+  const migrationDefaults={paired_observation_delay_seconds:'0',paired_decision_delay_seconds:'0',paired_order_delay_seconds:'0'};
   for(const tag of html.matchAll(/<input\b[^>]*name="paired_[^>]*>/g)){
     const attrs=Object.fromEntries([...tag[0].matchAll(/([\w-]+)="([^"]*)"/g)].map(match=>[match[1],match[2]]));
-    assert.equal(String(preset.parameters[attrs.name]),attrs.value,attrs.name+' preset default');
+    assert.equal(String(preset.parameters[attrs.name]??migrationDefaults[attrs.name]),attrs.value,attrs.name+' preset default');
     if(attrs.type!=='number')continue;
     assert.ok(Number.isFinite(Number(attrs.value)),attrs.name);
     assert.ok(Number(attrs.value)>=Number(attrs.min),attrs.name+' minimum');
     if(attrs.max!==undefined)assert.ok(Number(attrs.value)<=Number(attrs.max),attrs.name+' maximum');
   }
+});
+
+test('adaptive comparison presets preserve the three-day baseline and isolate latency sensitivity',()=>{
+  const read=name=>JSON.parse(readFileSync(new URL('../strategies/'+name,import.meta.url),'utf8')).parameters;
+  const baseline=read('research-btc-paired-3day-validation-500ms-fee-10bp.json');
+  const comparable=read('research-btc-paired-adaptive-3day-500ms-fee-10bp.json');
+  const delayed=read('research-btc-paired-adaptive-3day-500ms-latency-100ms-fee-10bp.json');
+  const added={paired_repricing_mode:'adaptive',paired_observation_delay_seconds:'0',paired_decision_delay_seconds:'0',paired_order_delay_seconds:'0'};
+  assert.deepEqual(comparable,{...baseline,...added});
+  assert.deepEqual(delayed,{...comparable,paired_observation_delay_seconds:'0.1',paired_decision_delay_seconds:'0.1',paired_order_delay_seconds:'0.1'});
+  assert.equal(comparable.execution_interval_seconds,0.5);
+  assert.equal(comparable.commodity_parameters.btc.trading_fee_bps,'10');
 });
 
 test('diagnostics retain the full attempt denominator and distinguish forecasts from realized returns',()=>{
@@ -120,6 +166,30 @@ test('diagnostics retain the full attempt denominator and distinguish forecasts 
   assert.ok(!absent.has('Modeled extra gain vs KEEP (BTC)'));
   assert.match(source('drawPairedTransferSummary'),/is not a realized return/);
   assert.match(source('drawPairedTransferSummary'),/not added across overlapping decisions/);
+});
+
+test('adaptive diagnostics expose saved latency and achieved lease without treating an unfilled pair as zero lease',()=>{
+  const context={fmt:(value,digits)=>value.toFixed(digits)};
+  vm.runInNewContext(source('pairedTransferSummaryRows'),context);
+  const paired={repricing_mode:'adaptive',replacement_count:17,observation_delay_seconds:0.1,decision_delay_seconds:0.2,order_delay_seconds:0.35,spot_feed_delay_seconds:0.05,futures_feed_delay_seconds:0,response_delay_seconds:0.04,
+    latest_pair_result:{pair_id:'pair-3',status:'partial',target_effective_lease:0.1234,executed_effective_lease:0.1214,effective_lease_shortfall:0.002,matched_source_btc:0.008}};
+  const rows=new Map(context.pairedTransferSummaryRows(paired));
+  assert.equal(rows.get('Limit repricing'),'Adaptive effective lease');
+  assert.equal(rows.get('Limit replacements reaching the market'),'17');
+  assert.equal(rows.get('Common observation delay (seconds)'),'0.100');
+  assert.equal(rows.get('Decision delay (seconds)'),'0.200');
+  assert.equal(rows.get('Order-to-market delay (seconds)'),'0.350');
+  assert.equal(rows.get('Extra spot feed delay (seconds)'),'0.050');
+  assert.equal(rows.get('Latest lease pair'),'pair-3');
+  assert.equal(rows.get('Target net entry lease (annualized %)'),'12.3400');
+  assert.equal(rows.get('Matched-fill net entry lease (annualized %)'),'12.1400');
+  assert.equal(rows.get('Entry lease shortfall (annualized bps)'),'20.0000');
+  assert.equal(rows.get('Latest lease pair matched source (BTC)'),'0.00800000');
+  const unfilled=new Map(context.pairedTransferSummaryRows({...paired,latest_pair_result:{target_effective_lease:0.1234,executed_effective_lease:null}}));
+  assert.equal(unfilled.get('Matched-fill net entry lease (annualized %)'),'Unavailable');
+  assert.ok(!unfilled.has('Entry lease shortfall (annualized bps)'));
+  assert.ok(!new Map(context.pairedTransferSummaryRows({})).has('Limit replacements reaching the market'));
+  assert.match(source('drawPairedTransferSummary'),/entry-basis diagnostic/);
 });
 
 test('switching from benchmark export bounds resets the paired period and preserves microsecond endpoints',()=>{

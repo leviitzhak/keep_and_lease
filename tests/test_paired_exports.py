@@ -190,6 +190,28 @@ class PairedExportTests(unittest.TestCase):
         self.assertEqual(sheets['Paired transfers'], [])
         self.assertEqual(sheets['Transfer decisions'], [])
 
+    def test_replacement_request_and_arrival_keep_their_distinct_evidence(self):
+        events = [dict(date=START, kind='order_replace_requested', pair_id='pair-1',
+                       order_id=2, role='target', revision=3, limit_price=101,
+                       observation_us=10, decision_started_us=20, decision_ready_us=30,
+                       submitted_us=30, eligible_after_us=40, counterpart_price=103,
+                       counterpart_fee_usd=.1, target_effective_lease=.08,
+                       binding_constraint='funding'),
+                  dict(date=END, kind='order_replace_arrival', pair_id='pair-1',
+                       order_id=2, role='target', revision=3, limit_price=101,
+                       previous_limit_price=100, applied=False,
+                       rejection_reason='fills_changed_during_latency')]
+        rows = exported(events)['Events']
+        self.assertEqual(rows[0]['decision_ready_us'], 30)
+        self.assertEqual(rows[0]['eligible_after_us'], 40)
+        self.assertEqual(rows[0]['target_effective_lease'], .08)
+        self.assertIsNone(rows[0]['applied'])
+        self.assertEqual(rows[1]['applied'], 'False')
+        self.assertEqual(rows[1]['previous_limit_price'], 100)
+        self.assertEqual(rows[1]['rejection_reason'], 'fills_changed_during_latency')
+        for expected, actual in zip(events, rows):
+            self.assertEqual(json.loads(actual['Complete event record']), expected)
+
 
 if __name__ == '__main__':
     unittest.main()

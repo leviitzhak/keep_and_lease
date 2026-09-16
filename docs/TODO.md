@@ -45,6 +45,17 @@ implementation is not full-period or native-market acceptance.
   disappears and preserve recovery inventory. Prioritize whole-position expiry
   exits/rolls with economic-target overrides, retaining funding/execution gates
   and allowing stale-rate expiry reductions only into spot.
+- [x] Add opt-in adaptive spot-to-future limits constrained by the accepted
+  net-BTC forecast and an effective entry lease. Reprice against observed or
+  acknowledged executed counterpart prices/fees; preserve fixed presets and
+  funded source-first staging. Separate common observation, frozen-snapshot
+  decision and order-arrival delays for initial and replacement instructions.
+  Preserve in-flight limits and replacement revisions through checkpoints.
+- [ ] Compare adaptive and fixed execution over the same short tape window,
+  opening state, costs and allocation parameters; inspect actual matched lease,
+  completion, unmatched exposure and net BTC before claiming improvement.
+- [ ] Extend adaptive effective-lease pricing to reverse transfers and futures
+  rolls, with appropriate economic direction and funding constraints.
 - [x] Emit decision forecasts, rate/quote provenance, matched-fill pair IDs,
   observed/executed/completion lease measures, funding/fee rows and unsuccessful
   instruction counts. Add GUI summaries and transfer/decision/horizon XLSX sheets.

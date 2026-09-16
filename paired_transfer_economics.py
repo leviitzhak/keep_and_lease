@@ -5,8 +5,10 @@ forecast holds spot flat while today's futures basis fades linearly toward a
 configured settlement-reference basis. This is an assumption, not earned carry.
 All candidates start with exactly the same marked capital as their KEEP slice.
 """
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 import math
+
+from funded_ledger import FeeSchedule
 
 DAY_US = 86400 * 1_000_000
 YEAR_US = 365 * DAY_US
@@ -212,6 +214,229 @@ def funded_quantity(budget, price, fees=None, product="futures"):
     if low <= EPS * max(1.0, budget / price):
         return 0.0, 0.0
     return low, _fee(fees, product, low, low * price)
+
+
+def effective_lease_rate(spot_price, futures_price, *, cash_rate, remaining_years,
+                         spot_quantity_btc=1.0, futures_quantity_btc=None,
+                         spot_fee_usd=0.0, futures_fee_usd=0.0):
+    """Net-entry annual lease for selling spot and buying a funded long future.
+
+    The convention is ``r - (net_future / net_spot - 1) / T``, with fees
+    allocated per unit of their respective matched legs. Prices may be executed
+    VWAPs or explicit prospective prices. This is an entry-basis statistic, not
+    a terminal BTC forecast: cash reserves, unequal exposure, future exit fees,
+    variation timing and cash compounding still require ``evaluate_transfer``.
+    Nonpositive maturity or spot proceeds make the statistic undefined.
+    """
+    futures_quantity_btc = spot_quantity_btc if futures_quantity_btc is None else futures_quantity_btc
+    if (any(not math.isfinite(v) for v in (spot_price, futures_price, cash_rate,
+            remaining_years, spot_quantity_btc, futures_quantity_btc,
+            spot_fee_usd, futures_fee_usd)) or min(spot_price, futures_price,
+            remaining_years, spot_quantity_btc, futures_quantity_btc) <= 0 or
+            min(spot_fee_usd, futures_fee_usd) < 0):
+        return None
+    net_spot = spot_price - spot_fee_usd / spot_quantity_btc
+    net_future = futures_price + futures_fee_usd / futures_quantity_btc
+    if net_spot <= 0 or not math.isfinite(net_future):
+        return None
+    lease = cash_rate - (net_future / net_spot - 1.0) / remaining_years
+    return lease if math.isfinite(lease) else None
+
+
+def _affine_counterpart_limit(instrument, bound, quantity, schedule, fee_per_unit):
+    """Exact branches for the ledger's capped/minimum affine ticket schedule.
+
+    An existing ticket adds its paid quantity/notional before calculating the
+    cumulative fee, then subtracts the actual fee already charged. All possible
+    affine branches are cheap to solve; evaluating the real fee validates which
+    candidate lies inside its branch. Arbitrary schedules use the general search.
+    """
+    cumulative_quantity = cumulative_notional = paid = 0.0
+    if isinstance(schedule, IncrementalFeeSchedule):
+        cumulative_quantity = schedule.cumulative_quantity
+        cumulative_notional = schedule.cumulative_notional
+        paid = schedule.already_paid
+        schedule = schedule.schedule
+    if schedule is None:
+        pieces = ((0.0, 0.0),)
+    elif isinstance(schedule, FeeSchedule):
+        intercept = (schedule.fixed + schedule.per_unit * (cumulative_quantity + quantity)
+                     + schedule.fee_bps * cumulative_notional / 10000 - paid)
+        slope = schedule.fee_bps * quantity / 10000
+        pieces = [(0.0, 0.0), (max(0.0, schedule.minimum - paid), 0.0),
+                  (intercept, slope)]
+        if schedule.cap is not None:
+            pieces.append((max(0.0, schedule.cap - paid), 0.0))
+    else:
+        return None
+    sign = 1 if instrument == "futures" else -1
+    for intercept, slope in pieces:
+        denominator = 1 + sign * slope / quantity
+        if denominator <= 0:
+            continue
+        price = (bound - sign * intercept / quantity) / denominator
+        if not math.isfinite(price) or price <= 0:
+            continue
+        value = price + sign * fee_per_unit(price)
+        if not math.isclose(value, bound, rel_tol=2e-14, abs_tol=1e-13):
+            continue
+        # Choose the conservative representable side of a rounded solution.
+        for _ in range(4):
+            if (value <= bound if instrument == "futures" else value >= bound):
+                return price
+            price = math.nextafter(price, 0.0 if instrument == "futures" else math.inf)
+            value = price + sign * fee_per_unit(price)
+    return None
+
+
+def counterpart_price_limit(*, instrument, counterpart_price, target_lease_rate,
+                            cash_rate, remaining_years, quantity_btc,
+                            counterpart_quantity_btc=None, counterpart_fee_usd=0.0,
+                            fee_schedule=None):
+    """Maximum future BUY or minimum spot SELL preserving a net-entry lease.
+
+    ``counterpart_price`` and its fee are fixed evidence, normally an executed
+    VWAP and actual allocated fee after the first leg fills. Before a fill they
+    are an observed price and estimated fee. ``fee_schedule`` estimates only
+    the still-open leg and can be an ``IncrementalFeeSchedule``. The two limits
+    are conditional on their counterpart evidence, not an atomic fill promise.
+
+    Fee schedules must have nondecreasing total fees and net spot proceeds as
+    price increases (as the supported USD schedules do below 100% commission).
+    The funded ledger and full KEEP comparison remain separate mandatory gates.
+    """
+    if instrument not in ("spot", "futures"):
+        raise ValueError("Lease counterpart must be spot or futures")
+    counterpart_quantity_btc = quantity_btc if counterpart_quantity_btc is None else counterpart_quantity_btc
+    if (any(not math.isfinite(v) for v in (counterpart_price, target_lease_rate,
+            cash_rate, remaining_years, quantity_btc, counterpart_quantity_btc,
+            counterpart_fee_usd)) or min(counterpart_price, remaining_years,
+            quantity_btc, counterpart_quantity_btc) <= 0 or counterpart_fee_usd < 0):
+        return None
+    ratio = 1.0 + (cash_rate - target_lease_rate) * remaining_years
+    if not math.isfinite(ratio) or ratio <= 0:
+        return None
+    fees = {instrument: fee_schedule} if fee_schedule is not None else None
+    fee_per_unit = lambda p: _fee(fees, instrument, quantity_btc, quantity_btc * p) / quantity_btc
+    if instrument == "futures":
+        net_spot = counterpart_price - counterpart_fee_usd / counterpart_quantity_btc
+        ceiling = net_spot * ratio
+        if not math.isfinite(ceiling) or ceiling <= 0 or fee_per_unit(0) >= ceiling:
+            return None
+        exact = _affine_counterpart_limit(instrument, ceiling, quantity_btc, fee_schedule, fee_per_unit)
+        if exact is not None:
+            return exact
+        low, high = 0.0, ceiling
+        for _ in range(64):
+            mid = (low + high) / 2
+            if mid + fee_per_unit(mid) <= ceiling:
+                low = mid
+            else:
+                high = mid
+        return low if low > 0 else None
+    net_future = counterpart_price + counterpart_fee_usd / counterpart_quantity_btc
+    floor = net_future / ratio
+    if not math.isfinite(floor) or floor <= 0:
+        return None
+    exact = _affine_counterpart_limit(instrument, floor, quantity_btc, fee_schedule, fee_per_unit)
+    if exact is not None:
+        return exact
+    low, high = 0.0, floor
+    for _ in range(64):
+        if high - fee_per_unit(high) >= floor:
+            break
+        high *= 2
+        if not math.isfinite(high) or not math.isfinite(quantity_btc * high):
+            return None
+    else:
+        return None
+    for _ in range(64):
+        mid = (low + high) / 2
+        if mid - fee_per_unit(mid) >= floor:
+            high = mid
+        else:
+            low = mid
+    return high
+
+
+def solve_economic_price_limit(now_us, source, target, spot, *, counterpart_price,
+                               cash_rate, target_quantity_btc, comparison_horizon_us,
+                               price_role="target", fees=None, config=None,
+                               entry_fees=None, reference_price=None):
+    """Find the last accepted buy cap/sell floor under the full KEEP forecast.
+
+    ``source`` is the exact already-selected quantity, assigned cash and
+    unsettled P&L. The search fixes that size, the target quantity and the
+    absolute common horizon; it cannot manufacture acceptance by shrinking a
+    ticket or changing its holding period. ``price_role='target'`` maximizes a
+    target BUY price with the source SELL price fixed to ``counterpart_price``;
+    ``'source'`` minimizes a source SELL price with the target BUY price fixed.
+
+    Returns ``(price, accepted_decision)`` or ``(None, None)``. The last accepted
+    side of the numerical bracket preserves the strictly positive net BTC
+    hurdle, including funding, entry/exit costs and uncertainty. This helper
+    supports all evaluator routes; interpreting its boundary as a single lease
+    rate is supported only for SPOT-to-future transfers.
+    """
+    if price_role not in ("source", "target"):
+        raise ValueError("Economic price role must be source or target")
+    cfg = replace(config or EconomicsConfig(), max_transfer_fraction=1.0, size_fractions=(1.0,))
+    quote = source.quote if price_role == "source" else target
+    reference_price = quote.price if reference_price is None else reference_price
+    if any(not math.isfinite(v) or v <= 0 for v in (reference_price, counterpart_price)):
+        return None, None
+    opposite = "target" if price_role == "source" else "source"
+
+    def evaluate(price):
+        return evaluate_transfer(now_us, source, target, spot, cash_rate=cash_rate,
+            fees=fees, config=cfg, entry_fees=entry_fees,
+            target_quantity_btc=target_quantity_btc,
+            execution_price_overrides={price_role: price, opposite: counterpart_price},
+            comparison_horizon_us=comparison_horizon_us)
+
+    price = reference_price
+    decision = evaluate(price)
+    # Locate one accepted point before looking for the first rejected bound.
+    for _ in range(64):
+        if decision.accepted:
+            break
+        price = price / 2 if price_role == "target" else price * 2
+        if not math.isfinite(price) or price <= 0:
+            return None, None
+        decision = evaluate(price)
+    else:
+        return None, None
+    accepted_price, accepted_decision = price, decision
+    for _ in range(64):
+        price = price * 2 if price_role == "target" else price / 2
+        if not math.isfinite(price) or price <= 0:
+            return None, None
+        decision = evaluate(price)
+        if not decision.accepted:
+            break
+        accepted_price, accepted_decision = price, decision
+    else:
+        return None, None
+    rejected_price = price
+    rejected_decision = decision
+    for _ in range(56):
+        price = (accepted_price + rejected_price) / 2
+        if price in (accepted_price, rejected_price):
+            break
+        decision = evaluate(price)
+        if decision.accepted:
+            accepted_price, accepted_decision = price, decision
+        else:
+            rejected_price = price
+            rejected_decision = decision
+    boundary = dict(price_role=price_role, accepted_price=accepted_price,
+                    rejected_price=rejected_price, binding_reason=rejected_decision.reason,
+                    fixed_source_quantity_btc=source.quantity_btc,
+                    fixed_target_quantity_btc=target_quantity_btc,
+                    fixed_horizon_us=comparison_horizon_us)
+    accepted_decision = replace(accepted_decision, diagnostics={
+        **accepted_decision.diagnostics, "economic_price_boundary": boundary})
+    return accepted_price, accepted_decision
 
 
 def _projected_price(quote, spot_price, at_us, now_us, config):

@@ -26,6 +26,10 @@ class PairedConfig:
     max_quote_age_seconds: float = 1
     max_quote_skew_seconds: float = 1
     price_limit_bps: float = 10
+    repricing_mode: str = "fixed"
+    observation_delay_seconds: float = 0
+    decision_delay_seconds: float = 0
+    order_delay_seconds: float | None = None
     spot_feed_delay_seconds: float = 0
     futures_feed_delay_seconds: float = 0
     response_delay_seconds: float = 0
@@ -44,10 +48,12 @@ class PairedConfig:
 
     def __post_init__(self):
         for name, value in asdict(self).items():
-            if name == "economics_payload":
+            if name in ("economics_payload", "repricing_mode") or (name == "order_delay_seconds" and value is None):
                 continue
             if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0:
                 raise ValueError(f"paired_{name} must be finite and nonnegative")
+        if self.repricing_mode not in ("fixed", "adaptive"):
+            raise ValueError("paired_repricing_mode must be fixed or adaptive")
         for name in ("max_transfer_fraction", "max_legging_seconds", "max_unpaired_btc",
                      "max_quote_age_seconds", "settlement_interval_seconds", "max_rate_age_days"):
             if getattr(self, name) <= 0:
@@ -66,7 +72,9 @@ class PairedConfig:
         unknown = {k for k in source if k.startswith("paired_") and k[7:] not in allowed | economic_keys}
         if unknown:
             raise ValueError("Unsupported paired setting: " + ", ".join(sorted(unknown)))
-        values = {key: float(source["paired_" + key]) for key in allowed if "paired_" + key in source}
+        values = {key: (source["paired_" + key] if key == "repricing_mode" or source["paired_" + key] is None
+                        else float(source["paired_" + key]))
+                  for key in allowed if "paired_" + key in source}
         if "max_quote_age_seconds" not in values:
             age = getattr(p, "max_quote_age_seconds", source.get("max_quote_age_seconds"))
             if age is not None:
@@ -107,6 +115,10 @@ class PairedOrder:
     filled_value: float = 0
     fee_usd: float = 0
     active: bool = True
+    revision: int = 0
+    decision_started_us: int | None = None
+    decision_ready_us: int | None = None
+    observation_us: int | None = None
 
 
 @dataclass
@@ -134,6 +146,16 @@ class Transfer:
     max_legging_us: int = 0
     completed_us: int | None = None
     reason: str = "economic_surplus"
+    target_effective_lease: float | None = None
+    repricing_supported: bool = False
+    fill_revision: int = 0
+    reprice_pending: bool = False
+    reprice_dirty: bool = False
+    transport_pending: int = 0
+    matched_source_fee_usd: float = 0
+    cancel_pending: bool = False
+    funding_cap_revision: int = -1
+    funding_cap_price: float = 0
 
     @property
     def ratio(self):
@@ -171,6 +193,8 @@ class PairedTransferAccount:
         self.initial, self.participation = float(capital), float(participation)
         self.delay_us, self.fee = int(delay_us), fee_bps / 10000
         self.config = config if isinstance(config, PairedConfig) else PairedConfig(**(config or {}))
+        if self.config.order_delay_seconds is not None:
+            self.delay_us = round(self.config.order_delay_seconds * 1e6)
         self.expiries = dict(expiries or {})
         self.sink = sink or (lambda row: None)
         self.last_us, self.rate = None, 0.0
@@ -179,12 +203,17 @@ class PairedTransferAccount:
         self.active_pair_id = None
         self.order_id = self.pair_sequence = self.queue_sequence = 0
         self.feed_queue, self.response_queue = [], []
+        self.decision_queue, self.command_queue = [], []
+        self.pending_initial_decision = False
+        self.replacement_count = 0
+        self._draining = False
         self.known_units = {}
         self.fill_count = self.order_count = self.cancellation_count = self.delayed_fill_count = 0
         self.turnover = self.plot_spot_pnl = self.plot_futures_pnl = 0.0
         self.plot_treasury_index = 1.0
         self.decision_count = self.rejected_count = self.no_trade_count = self.timeout_count = 0
         self.latest_decision = None
+        self.latest_pair_result = None
         self.finalized = dict(count=0, completed=0, partial=0, cancelled=0,
                               matched_source_btc=0.0, requested_source_btc=0.0,
                               max_unpaired_btc=0.0, max_legging_seconds=0.0)
@@ -278,7 +307,7 @@ class PairedTransferAccount:
 
     def _queue_observation(self, trade):
         delay = self.config.spot_feed_delay_seconds if trade.symbol == "SPOT" else self.config.futures_feed_delay_seconds
-        available = trade.us + round(delay * 1e6)
+        available = trade.us + round((delay + self.config.observation_delay_seconds) * 1e6)
         self.queue_sequence += 1
         heapq.heappush(self.feed_queue, (available, self.queue_sequence, asdict(trade)))
 
@@ -286,31 +315,142 @@ class PairedTransferAccount:
     def _source_us(trade):
         return trade.us if trade.reported_us is None else trade.reported_us
 
+    def _push_event(self, queue, available, data):
+        self.queue_sequence += 1
+        heapq.heappush(queue, (int(available), self.queue_sequence, data))
+
     def _drain_queues(self, us):
-        while self.feed_queue and self.feed_queue[0][0] <= us:
-            available, _, data = heapq.heappop(self.feed_queue)
-            trade = Trade(**data)
-            previous = self.observed_marks.get(trade.symbol)
-            # Late observations may be recorded, but cannot rewind signal time.
-            if previous is None or (self._source_us(trade), trade.us) >= (self._source_us(previous), previous.us):
-                self.observed_marks[trade.symbol] = trade
-                self.observed_available_us[trade.symbol] = available
-        while self.response_queue and self.response_queue[0][0] <= us:
-            available, _, data = heapq.heappop(self.response_queue)
-            symbol = data["symbol"]
-            self.known_units[symbol] = self.known_units.get(symbol, 0) + data["signed_btc"]
-            kind = "settlement_acknowledgement" if data.get("response_kind") == "settlement" else "fill_acknowledgement"
-            self.sink(dict(kind=kind, us=available, **data))
-            pair = self.pairs.get(data["pair_id"])
-            if pair and self.active_pair_id == pair.pair_id:
-                target = self.orders.get(pair.target_symbol)
-                if target and not target.active and pair.unpaired_btc > EPS:
-                    target.active = True
-                    target.eligible_us = available + self.delay_us
-                    self.sink(dict(kind="order_activation", us=available, pair_id=pair.pair_id,
-                                   order_id=target.identifier, symbol=target.symbol,
-                                   eligible_after_us=target.eligible_us))
-        self._maybe_complete(us)
+        # One chronological scheduler is essential: a decision completing between
+        # two delayed observations must never use the later observation.
+        if self._draining:
+            return
+        self._draining = True
+        try:
+            queues = (self.feed_queue, self.response_queue, self.decision_queue, self.command_queue)
+            while True:
+                next_event = min(((q[0][0], i) for i, q in enumerate(queues) if q and q[0][0] <= us),
+                                 default=None)
+                if next_event is None:
+                    break
+                available, index = next_event
+                _, _, data = heapq.heappop(queues[index])
+                if index == 0:
+                    trade = Trade(**data)
+                    previous = self.observed_marks.get(trade.symbol)
+                    if previous is None or (self._source_us(trade), trade.us) >= (self._source_us(previous), previous.us):
+                        self.observed_marks[trade.symbol] = trade
+                        self.observed_available_us[trade.symbol] = available
+                        pair = self.pairs.get(self.active_pair_id)
+                        if pair and trade.symbol in (pair.source_symbol, pair.target_symbol):
+                            self._schedule_reprice(available)
+                elif index == 1:
+                    symbol = data["symbol"]
+                    self.known_units[symbol] = self.known_units.get(symbol, 0) + data["signed_btc"]
+                    kind = "settlement_acknowledgement" if data.get("response_kind") == "settlement" else "fill_acknowledgement"
+                    self.sink(dict(kind=kind, us=available, **data))
+                    pair = self.pairs.get(data["pair_id"])
+                    if pair and self.active_pair_id == pair.pair_id:
+                        target = self.orders.get(pair.target_symbol)
+                        if pair.repricing_supported:
+                            self._schedule_reprice(available)
+                        elif target and not target.active and pair.unpaired_btc > EPS:
+                            # Even an unchanged recovery instruction takes decision
+                            # time before its order transport can begin.
+                            ready = available + round(self.config.decision_delay_seconds * 1e6)
+                            self._push_event(self.command_queue, ready + self.delay_us,
+                                dict(action="activate", pair_id=pair.pair_id, order_id=target.identifier,
+                                     symbol=target.symbol, decision_started_us=available, decision_ready_us=ready))
+                elif index == 2:
+                    self._finish_decision(available, data)
+                else:
+                    self._apply_command(available, data)
+                self._maybe_complete(available)
+            self._maybe_complete(us)
+        finally:
+            self._draining = False
+
+    def _finish_decision(self, us, data):
+        if data["action"] == "initial":
+            self.pending_initial_decision = False
+            self.start_transfer(us, data["decision"], _ready=True,
+                                _observations=data["observations"], _available=data["available"])
+            return
+        pair = self.pairs.get(data["pair_id"])
+        if not pair or self.active_pair_id != pair.pair_id:
+            return
+        if data["action"] == "cancel_source":
+            data["decision_ready_us"] = us
+            data["submitted_us"] = us
+            data["eligible_after_us"] = us + self.delay_us
+            self._push_event(self.command_queue, us+self.delay_us, data)
+            self.sink(dict(kind="order_cancel_requested", us=us, **data))
+            return
+        pair.reprice_pending = False
+        dirty, pair.reprice_dirty = pair.reprice_dirty, False
+        pair.transport_pending += len(data["commands"])
+        for command in data["commands"]:
+            command["decision_ready_us"] = us
+            command["submitted_us"] = us
+            command["eligible_after_us"] = us + self.delay_us
+            self._push_event(self.command_queue, us + self.delay_us, command)
+            self.sink(dict(kind="order_replace_requested", us=us, **command))
+        if dirty:
+            self._schedule_reprice(us)
+
+    def _apply_command(self, us, data):
+        pair = self.pairs.get(data["pair_id"])
+        order = self.orders.get(data["symbol"])
+        valid = bool(pair and self.active_pair_id == pair.pair_id and order
+                     and order.identifier == data["order_id"])
+        if data["action"] == "cancel_source":
+            self.sink(dict(kind="order_cancel_arrival", us=us, applied=valid, **data))
+            if valid:
+                pair.cancel_pending = False
+                self._stop_source(us, data["reason"])
+            return
+        if data["action"] == "activate":
+            if valid and pair.unpaired_btc > EPS and not self._pair_has_responses(pair.pair_id):
+                order.active = True
+                order.eligible_us = us
+                self.sink(dict(kind="order_activation", us=us, pair_id=pair.pair_id,
+                               order_id=order.identifier, symbol=order.symbol,
+                               eligible_after_us=us, decision_started_us=data["decision_started_us"],
+                               decision_ready_us=data["decision_ready_us"]))
+            return
+        if valid:
+            pair.transport_pending = max(0, pair.transport_pending-1)
+        reason = None
+        if not valid:
+            reason = "closed_or_replaced_pair"
+        elif data["fill_revision"] != pair.fill_revision:
+            reason = "fills_changed_during_latency"
+        elif pair.reason in ("end_of_window", "expiry"):
+            reason = "window_or_contract_closed"
+        elif order.role == "source" and pair.status != "pending":
+            reason = "source_halted"
+        elif data["revision"] <= order.revision:
+            reason = "superseded_revision"
+        elif self._pair_has_responses(pair.pair_id):
+            reason = "awaiting_fill_acknowledgement"
+        elif (abs(data["limit_price"]-order.limit_price) <= max(1e-8, abs(order.limit_price)*1e-10)
+                and not (order.role == "target" and pair.unpaired_btc > EPS and not order.active)):
+            reason = "unchanged_limit"
+            order.revision = data["revision"]
+        previous = order.limit_price if valid else None
+        if reason is None:
+            order.limit_price = data["limit_price"]
+            order.revision = data["revision"]
+            order.eligible_us = us
+            order.decision_started_us = data["decision_started_us"]
+            order.decision_ready_us = data["decision_ready_us"]
+            order.observation_us = data["observation_us"]
+            if order.role == "target" and pair.unpaired_btc > EPS:
+                order.active = True
+            self.replacement_count += 1
+        self.sink(dict(kind="order_replace_arrival", us=us, previous_limit_price=previous,
+                       applied=reason is None, rejection_reason=reason, **data))
+        if valid and (pair.reprice_dirty or reason in ("fills_changed_during_latency", "awaiting_fill_acknowledgement")):
+            self._schedule_reprice(us)
 
     def bootstrap_observations(self):
         """Seed pre-window exchange marks into their original availability clocks."""
@@ -376,8 +516,9 @@ class PairedTransferAccount:
                                 expiry_us=self.expiries.get(s), size_btc=None)
                 for s, t in self.observed_marks.items()}
 
-    def _fresh_pair(self, us, source, target):
-        marks = [self.observed_marks.get(s) for s in ("SPOT", source, target)]
+    def _fresh_pair(self, us, source, target, observations=None):
+        observations = self.observed_marks if observations is None else observations
+        marks = [observations.get(s) for s in ("SPOT", source, target)]
         if any(m is None for m in marks):
             return False, "missing_observation"
         if any(not m.executable for m in marks):
@@ -397,6 +538,9 @@ class PairedTransferAccount:
         if expiries is not None:
             self.expiries.update(expiries)
         self.decision_count += 1
+        if self.pending_initial_decision:
+            self.last_reason = "pending_decision"
+            return None
         if self.active_pair_id is not None or self.response_queue:
             self._reevaluate_pending(us, rate_snapshot)
             return None
@@ -477,6 +621,15 @@ class PairedTransferAccount:
     def _reevaluate_pending(self, us, rate_snapshot):
         pair = self.pairs.get(self.active_pair_id)
         self.last_reason = "pending_transfer"
+        if pair and pair.repricing_supported:
+            permitted = getattr(rate_snapshot, "allows_new_transfers", True)
+            if isinstance(rate_snapshot, dict):
+                permitted = rate_snapshot.get("allows_new_transfers", not rate_snapshot.get("stale", False))
+            if not permitted:
+                self._request_source_cancel(us, "stale_treasury_rate")
+            self._schedule_reprice(us)
+            if pair.unpaired_btc > EPS or pair.repricing_supported:
+                return
         if (pair is None or pair.status != "pending" or self._pair_has_responses(pair.pair_id)
                 or pair.reason == "forced_expiry_exit"):
             return
@@ -491,7 +644,7 @@ class PairedTransferAccount:
         if isinstance(rate_snapshot, dict):
             permits = rate_snapshot.get("allows_new_transfers", not rate_snapshot.get("stale", False))
         if not permits:
-            self._stop_source(us, "stale_treasury_rate")
+            self._request_source_cancel(us, "stale_treasury_rate")
             return
         from paired_transfer_economics import PositionSlice, IncrementalFeeSchedule, evaluate_transfer
         quotes = self.observed_quotes()
@@ -520,13 +673,35 @@ class PairedTransferAccount:
         self.sink(dict(kind="paired_decision", us=us, pair_id=pair.pair_id,
                        selected=data["accepted"], remaining_quantity=True, decision=data))
         if not data["accepted"]:
-            self._stop_source(us, "remaining_"+data["reason"])
+            self._request_source_cancel(us, "remaining_"+data["reason"])
 
 
     def start_transfer(self, us, decision=None, **kwargs):
         """Submit one immutable accepted decision; caller cannot replace a pair."""
-        self.accrue(us)
+        ready = kwargs.pop("_ready", False)
+        snapshots = kwargs.pop("_observations", None)
+        observed_available = kwargs.pop("_available", None)
+        if not ready:
+            self.accrue(us)
         data = decision.to_dict() if hasattr(decision, "to_dict") else dict(decision or kwargs)
+        observations = ({s: Trade(**t) for s, t in snapshots.items()} if snapshots is not None
+                        else self.observed_marks)
+        observed_available = self.observed_available_us if observed_available is None else observed_available
+        if not ready and self.config.decision_delay_seconds:
+            if self.pending_initial_decision or self.active_pair_id is not None or self.response_queue:
+                self.last_reason = "pending_decision" if self.pending_initial_decision else "pending_transfer"
+                return None
+            decision_ready = us + round(self.config.decision_delay_seconds * 1e6)
+            data = {**data, "decision_started_us": us, "decision_ready_us": decision_ready}
+            self.pending_initial_decision = True
+            self._push_event(self.decision_queue, decision_ready, dict(action="initial", decision=data,
+                observations={s: asdict(t) for s, t in observations.items()}, available=dict(observed_available)))
+            self.sink(dict(kind="paired_decision_pending", us=us, decision_started_us=us,
+                           decision_ready_us=decision_ready, decision=data))
+            self.last_reason = "decision_in_progress"
+            return None
+        data.setdefault("decision_started_us", us)
+        data.setdefault("decision_ready_us", us)
         if not data.get("accepted", True):
             self.last_reason = data.get("reason", "economic_rejection")
             return None
@@ -539,7 +714,7 @@ class PairedTransferAccount:
             self.last_reason = "pending_transfer"
             self.rejected_count += 1
             return None
-        valid, reason = self._fresh_pair(us, source, target)
+        valid, reason = self._fresh_pair(us, source, target, observations)
         if not valid or source_qty > self.units.get(source, 0) + EPS:
             self.last_reason = reason if not valid else "insufficient_source_inventory"
             self.rejected_count += 1
@@ -548,7 +723,7 @@ class PairedTransferAccount:
         source_pad = (self.config.price_limit_bps+self.config.half_spread_bps+self.config.slippage_bps)/10000
         try:
             probe.execute_fill(source, -min(source_qty, self.config.max_unpaired_btc),
-                               self.observed_marks[source].price*(1-source_pad), "source-preflight")
+                               observations[source].price*(1-source_pad), "source-preflight")
         except FundingError:
             self.last_reason = "first_chunk_unfunded"
             self.rejected_count += 1
@@ -560,10 +735,10 @@ class PairedTransferAccount:
         source_order_id, target_order_id = self.order_id + 1, self.order_id + 2
         self.order_id += 2
         data = {**data, "quote_kind": "last_trade_participation_proxy", "quote_snapshots": {
-            s: dict(price=self.observed_marks[s].price, source_us=self._source_us(self.observed_marks[s]),
-                    available_us=self.observed_available_us[s],
-                    source_age_us=us-self._source_us(self.observed_marks[s]),
-                    observed_trade_btc=self.observed_marks[s].btc)
+            s: dict(price=observations[s].price, source_us=self._source_us(observations[s]),
+                    available_us=observed_available[s],
+                    source_age_us=us-self._source_us(observations[s]),
+                    observed_trade_btc=observations[s].btc)
             for s in {"SPOT", source, target}}}
         pair = Transfer(pair_id, source, target, source_qty, target_qty, us, data,
                         source_order_id, target_order_id)
@@ -571,19 +746,220 @@ class PairedTransferAccount:
         self.pairs[pair_id] = pair
         self.active_pair_id = pair_id
         pad = (self.config.price_limit_bps+self.config.half_spread_bps+self.config.slippage_bps) / 10000
+        source_limit, target_limit = self._initialize_adaptive(pair, observations,
+            observations[source].price*(1-pad), observations[target].price*(1+pad))
+        observation_us = max(observed_available[s] for s in (source, target))
         self.orders[source] = PairedOrder(source_order_id, pair_id, "source", source,
-            -source_qty, us, us + self.delay_us, self.observed_marks[source].price * (1-pad))
+            -source_qty, us, us + self.delay_us, source_limit,
+            decision_started_us=data["decision_started_us"], decision_ready_us=us,
+            observation_us=observation_us)
         self.orders[target] = PairedOrder(target_order_id, pair_id, "target", target,
-            target_qty, us, us + self.delay_us, self.observed_marks[target].price * (1+pad), active=False)
+            target_qty, us, us + self.delay_us, target_limit, active=False,
+            decision_started_us=data["decision_started_us"], decision_ready_us=us,
+            observation_us=observation_us)
         self.order_count += 2
         self.sink(dict(kind="paired_transfer", us=us, **asdict(pair)))
         for order in self.orders.values():
             self.sink(dict(kind="order", us=us, order_id=order.identifier, pair_id=pair_id,
                            symbol=order.symbol, signed_btc=order.signed_btc,
                            eligible_after_us=order.eligible_us, role=order.role,
-                           limit_price=order.limit_price, conditional=not order.active))
+                           limit_price=order.limit_price, conditional=not order.active, revision=0,
+                           decision_started_us=order.decision_started_us, decision_ready_us=us,
+                           observation_us=observation_us, target_effective_lease=pair.target_effective_lease))
         self.last_reason = "transfer_submitted"
         return pair
+
+    def _incremental_fee(self, order):
+        from paired_transfer_economics import IncrementalFeeSchedule
+        product = "spot" if order.symbol == "SPOT" else "futures"
+        return IncrementalFeeSchedule(self.fee_schedules[product], order.filled_btc,
+                                      order.filled_value, order.fee_usd)
+
+    def _initialize_adaptive(self, pair, observations, source_limit, target_limit):
+        """Pin the desired net-entry lease to the admissible economic boundary.
+
+        Roll/reverse routes retain their original limits: this lease convention
+        specifically describes selling spot and buying a long future.
+        """
+        if (self.config.repricing_mode != "adaptive" or pair.source_symbol != "SPOT"
+                or pair.target_symbol == "SPOT" or pair.reason == "forced_expiry_exit"):
+            return source_limit, target_limit
+        from paired_transfer_economics import (QuoteSnapshot, PositionSlice,
+            effective_lease_rate, solve_economic_price_limit)
+        now = pair.decision["decision_started_us"]
+        snapshots = pair.decision["quote_snapshots"]
+        quotes = {symbol: QuoteSnapshot(symbol, mark.price, self._source_us(mark),
+                    snapshots[symbol]["available_us"], self.expiries.get(symbol))
+                  for symbol, mark in observations.items() if symbol in snapshots}
+        rate = pair.decision.get("cash_rate", self.rate)
+        horizon = pair.decision.get("horizon_us")
+        if horizon is None or rate is None:
+            return source_limit, target_limit
+        cap, boundary = solve_economic_price_limit(now,
+            PositionSlice(quotes["SPOT"], pair.source_quantity_btc),
+            quotes[pair.target_symbol], quotes["SPOT"], counterpart_price=source_limit,
+            target_quantity_btc=pair.target_quantity_btc, comparison_horizon_us=horizon,
+            reference_price=target_limit, cash_rate=rate, fees=self.fee_schedules,
+            config=self.config.economics_config())
+        if cap is None:
+            pair.decision["adaptive_limit_reason"] = "no_admissible_economic_boundary"
+            return source_limit, target_limit
+        years = (self.expiries[pair.target_symbol] - now) / YEAR_US
+        source_fee = self.fee_schedules["spot"].total_fee(pair.source_quantity_btc,
+                                                       pair.source_quantity_btc*source_limit)
+        target_fee = self.fee_schedules["futures"].total_fee(pair.target_quantity_btc,
+                                                          pair.target_quantity_btc*cap)
+        lease = effective_lease_rate(source_limit, cap, cash_rate=rate, remaining_years=years,
+            spot_quantity_btc=pair.source_quantity_btc, futures_quantity_btc=pair.target_quantity_btc,
+            spot_fee_usd=source_fee, futures_fee_usd=target_fee)
+        if lease is not None:
+            pair.target_effective_lease = lease
+            pair.repricing_supported = True
+            pair.decision["adaptive_price_boundary"] = boundary.diagnostics["economic_price_boundary"]
+            pair.decision["target_effective_lease"] = lease
+            pair.decision["adaptive_limit_reason"] = "economic_and_funding_boundary"
+            return source_limit, cap
+        return source_limit, target_limit
+
+    def _schedule_reprice(self, us):
+        pair = self.pairs.get(self.active_pair_id)
+        if not pair or not pair.repricing_supported or self._pair_has_responses(pair.pair_id):
+            return
+        if pair.reprice_pending or pair.transport_pending:
+            pair.reprice_dirty = True
+            return
+        if pair.reason in ("end_of_window", "expiry"):
+            return
+        from paired_transfer_economics import counterpart_price_limit
+        source, target = self.orders[pair.source_symbol], self.orders[pair.target_symbol]
+        remaining_years = (self.expiries[pair.target_symbol] - us) / YEAR_US
+        if remaining_years <= 0 or self.rate is None:
+            return
+        commands = []
+        source_fee, target_fee = self._incremental_fee(source), self._incremental_fee(target)
+        # Match one acknowledged source lot at a time. Future observations cannot
+        # replace its actual execution price, including after a source timeout.
+        if pair.unpaired_btc > EPS and pair.unmatched_source_lots:
+            lot = pair.unmatched_source_lots[0]
+            quantity, anchor = lot[:2]
+            fee_per_btc = lot[2] if len(lot) > 2 else source.fee_usd/max(source.filled_btc, EPS)
+            target_quantity = min(quantity*pair.ratio, abs(target.signed_btc)-target.filled_btc)
+            original_quantity = lot[3] if len(lot) > 3 else quantity
+            already_spent = lot[4] if len(lot) > 4 else 0.0
+            actual_fee = quantity*fee_per_btc
+            # A minimum/fixed fee may be charged on the first tiny target fill.
+            # Keep the ORIGINAL lot's total fee-inclusive spend budget and
+            # subtract all actual target costs already paid; recalculating only
+            # on its shrinking quantity would forget that first-fill charge.
+            factor = 1+(self.rate-pair.target_effective_lease)*remaining_years
+            lease_budget = ((anchor-fee_per_btc)*factor*original_quantity*pair.ratio-already_spent)
+            if lease_budget <= EPS or target_quantity <= EPS:
+                return
+            cap = counterpart_price_limit(instrument="futures",
+                counterpart_price=lease_budget/target_quantity, target_lease_rate=0.0,
+                cash_rate=0.0, remaining_years=1.0, quantity_btc=target_quantity,
+                counterpart_quantity_btc=target_quantity, fee_schedule=target_fee)
+            if cap is None:
+                return
+            # The cash reserve belongs to the entire source lot, including any
+            # target prefix already filled, and is never borrowed for repricing.
+            budget = min(pair.reserved_usd,
+                original_quantity*(anchor-fee_per_btc)*(1-self.config.cash_reserve_fraction)-already_spent)
+            if pair.funding_cap_revision != pair.fill_revision:
+                funding_cap = counterpart_price_limit(instrument="futures",
+                    counterpart_price=max(0.0, budget)/target_quantity,
+                    target_lease_rate=0.0, cash_rate=0.0, remaining_years=1.0,
+                    quantity_btc=target_quantity, fee_schedule=target_fee)
+                pair.funding_cap_price = funding_cap or 0.0
+                pair.funding_cap_revision = pair.fill_revision
+            binding = "effective_lease"
+            if pair.funding_cap_price < cap:
+                cap, binding = pair.funding_cap_price, "released_cash_and_reserve"
+            if cap > EPS:
+                commands.append((target, cap, anchor, actual_fee, binding))
+        elif pair.status == "pending" and not pair.cancel_pending:
+            fresh, _ = self._fresh_pair(us, pair.source_symbol, pair.target_symbol)
+            if not fresh:
+                return
+            remaining_source = abs(source.signed_btc)-source.filled_btc
+            remaining_target = remaining_source*pair.ratio
+            if remaining_source <= EPS or remaining_target <= EPS:
+                return
+            pad = (self.config.price_limit_bps+self.config.half_spread_bps+self.config.slippage_bps)/10000
+            observed_future = self.observed_marks[pair.target_symbol].price*(1+pad)
+            estimated_target_fee = target_fee.total_fee(remaining_target, remaining_target*observed_future)
+            floor = counterpart_price_limit(instrument="spot", counterpart_price=observed_future,
+                target_lease_rate=pair.target_effective_lease, cash_rate=self.rate,
+                remaining_years=remaining_years, quantity_btc=remaining_source,
+                counterpart_quantity_btc=remaining_target, counterpart_fee_usd=estimated_target_fee,
+                fee_schedule=source_fee)
+            if floor is not None:
+                required_source_net = ((remaining_target*observed_future+estimated_target_fee)
+                    / (remaining_source*(1-self.config.cash_reserve_fraction)))
+                funding_floor = counterpart_price_limit(instrument="spot",
+                    counterpart_price=required_source_net, target_lease_rate=0.0,
+                    cash_rate=0.0, remaining_years=1.0, quantity_btc=remaining_source,
+                    fee_schedule=source_fee)
+                if funding_floor is None:
+                    return
+                floor = math.nextafter(max(floor, funding_floor), math.inf)
+                # A lease screen alone does not prove terminal BTC gain. Recheck
+                # the full KEEP comparison for this frozen price decision, using
+                # the future price expected at the source floor. The conditional
+                # future order is repriced again from the actual source fill.
+                tolerance = max(1e-8, abs(source.limit_price)*1e-10)
+                if abs(floor-source.limit_price) > tolerance:
+                    from paired_transfer_economics import PositionSlice, evaluate_transfer
+                    quotes = self.observed_quotes()
+                    check = evaluate_transfer(us, PositionSlice(quotes["SPOT"], remaining_source),
+                        quotes[pair.target_symbol], quotes["SPOT"], cash_rate=self.rate,
+                        fees=self.fee_schedules, entry_fees={"source": source_fee, "target": target_fee},
+                        config=replace(self.config.economics_config(), max_transfer_fraction=1, size_fractions=(1,)),
+                        target_quantity_btc=remaining_target,
+                        execution_price_overrides={"source": floor, "target": observed_future},
+                        comparison_horizon_us=pair.decision.get("horizon_us"),
+                        horizon_limit_us=pair.decision.get("horizon_us"))
+                    if not check.accepted:
+                        self.sink(dict(kind="paired_reprice_rejected", us=us, pair_id=pair.pair_id,
+                            decision_started_us=us, reason=check.reason, source_limit=floor,
+                            target_limit=observed_future, edge_btc=check.edge_btc,
+                            required_edge_btc=check.required_edge_btc))
+                        self._request_source_cancel(us, "remaining_"+check.reason)
+                        return
+                commands.append((source, floor, observed_future, estimated_target_fee, "effective_lease_and_net_btc"))
+                # Both conditional limits come from the opposite observed leg.
+                observed_spot = self.observed_marks["SPOT"].price*(1-pad)
+                estimated_source_fee = source_fee.total_fee(remaining_source, remaining_source*observed_spot)
+                provisional_cap = counterpart_price_limit(instrument="futures", counterpart_price=observed_spot,
+                    target_lease_rate=pair.target_effective_lease, cash_rate=self.rate,
+                    remaining_years=remaining_years, quantity_btc=remaining_target,
+                    counterpart_quantity_btc=remaining_source, counterpart_fee_usd=estimated_source_fee,
+                    fee_schedule=target_fee)
+                if provisional_cap is not None:
+                    commands.append((target, provisional_cap, observed_spot,
+                                     estimated_source_fee, "conditional_observed_counterpart"))
+        packed = []
+        observation = max((self.observed_available_us.get(s, 0)
+                           for s in (pair.source_symbol, pair.target_symbol)), default=us)
+        for order, limit, anchor, anchor_fee, binding in commands:
+            needs_activation = order.role == "target" and pair.unpaired_btc > EPS and not order.active
+            tolerance = max(1e-8, abs(order.limit_price)*1e-10)
+            if not needs_activation and abs(limit-order.limit_price) <= tolerance:
+                continue
+            # One frozen decision at a time, but transport commands can overlap.
+            # Each revision is monotonically numbered and guarded by fill state.
+            self.queue_sequence += 1
+            packed.append(dict(action="replace", pair_id=pair.pair_id, order_id=order.identifier,
+                symbol=order.symbol, role=order.role, revision=self.queue_sequence,
+                limit_price=limit, counterpart_price=anchor, counterpart_fee_usd=anchor_fee,
+                target_effective_lease=pair.target_effective_lease, binding_constraint=binding,
+                observation_us=observation, decision_started_us=us, fill_revision=pair.fill_revision))
+        if not packed:
+            return
+        pair.reprice_pending = True
+        pair.reprice_dirty = False
+        self._push_event(self.decision_queue, us+round(self.config.decision_delay_seconds*1e6),
+                         dict(action="reprice", pair_id=pair.pair_id, commands=packed))
 
     def _pair_has_responses(self, pair_id):
         return any(item[2]["pair_id"] == pair_id for item in self.response_queue)
@@ -602,6 +978,19 @@ class PairedTransferAccount:
             if clock is not None and us-clock > self.config.max_legging_seconds * 1e6:
                 self.timeout_count += 1
                 self._stop_source(us, reason)
+
+    def _request_source_cancel(self, us, reason):
+        """An economic cancellation travels through the same two outbound stages."""
+        pair = self.pairs.get(self.active_pair_id)
+        if not pair or pair.status != "pending" or pair.cancel_pending:
+            return
+        pair.cancel_pending = True
+        source = self.orders[pair.source_symbol]
+        data = dict(action="cancel_source", pair_id=pair.pair_id, order_id=source.identifier,
+                    symbol=source.symbol, role="source", reason=reason, decision_started_us=us)
+        self._push_event(self.decision_queue, us+round(self.config.decision_delay_seconds*1e6), data)
+        if not self._draining:
+            self._drain_queues(us)
 
     def _stop_source(self, us, reason):
         pair = self.pairs.get(self.active_pair_id)
@@ -647,6 +1036,9 @@ class PairedTransferAccount:
         for role in ("source", "target"):
             self.ledger.fee_engine.tickets.pop(f"{pair.pair_id}:{role}", None)
         self.pairs.pop(pair.pair_id, None)
+        for queue in (self.decision_queue, self.command_queue):
+            queue[:] = [event for event in queue if event[2].get("pair_id") != pair.pair_id]
+            heapq.heapify(queue)
 
     def _emit_pair_result(self, pair, us):
         data = asdict(pair)
@@ -657,6 +1049,22 @@ class PairedTransferAccount:
         if pair.matched_source_btc > EPS:
             source_vwap = pair.matched_source_value_usd / pair.matched_source_btc
             target_vwap = pair.target_value_usd / pair.target_filled_btc
+            target_order = self.orders.get(pair.target_symbol)
+            target_fees = target_order.fee_usd if target_order else 0.0
+            data.update(source_vwap=source_vwap, target_vwap=target_vwap,
+                        matched_source_fees_usd=pair.matched_source_fee_usd, target_fees_usd=target_fees)
+            if pair.source_symbol == "SPOT" and pair.target_symbol != "SPOT" and self.rate is not None:
+                from paired_transfer_economics import effective_lease_rate
+                years = (self.expiries.get(pair.target_symbol, us)-us)/YEAR_US
+                effective = effective_lease_rate(source_vwap, target_vwap, cash_rate=self.rate,
+                    remaining_years=years, spot_quantity_btc=pair.matched_source_btc,
+                    futures_quantity_btc=pair.target_filled_btc,
+                    spot_fee_usd=pair.matched_source_fee_usd, futures_fee_usd=target_fees)
+                data.update(executed_effective_lease=effective, effective_lease_rate_time_us=us,
+                            effective_lease_expiry_us=self.expiries.get(pair.target_symbol),
+                            effective_lease_cash_rate=self.rate,
+                            effective_lease_shortfall=(max(0.0, pair.target_effective_lease-effective)
+                                if pair.target_effective_lease is not None and effective is not None else None))
             snapshots = pair.decision.get("quote_snapshots", {})
             if pair.source_symbol == "SPOT" or pair.target_symbol == "SPOT":
                 future = pair.target_symbol if pair.source_symbol == "SPOT" else pair.source_symbol
@@ -673,6 +1081,9 @@ class PairedTransferAccount:
                                 direction_adjusted_lease_deviation=(executed-observed)*(1 if pair.source_symbol == "SPOT" else -1))
                     remaining = (self.expiries[future]-us)/YEAR_US
                     data["completion_lease"] = self.rate-(sf/ss-1)/remaining if remaining > 0 else None
+        self.latest_pair_result = {key: data.get(key) for key in (
+            "pair_id", "status", "target_effective_lease", "executed_effective_lease", "effective_lease_shortfall",
+            "matched_source_btc", "source_vwap", "target_vwap", "effective_lease_rate_time_us", "effective_lease_cash_rate")}
         self.sink(dict(kind="paired_transfer_result", us=us, **data))
 
     def on_trade(self, trade):
@@ -693,9 +1104,12 @@ class PairedTransferAccount:
             self.plot_futures_pnl += pnl
         self.marks[trade.symbol] = trade
         self.ledger.mark(trade.symbol, trade.price, timestamp_us=trade.us)
+        if self.config.repricing_mode == "adaptive":
+            self._execute(trade)
         self._queue_observation(trade)
         self._drain_queues(trade.us)
-        self._execute(trade)
+        if self.config.repricing_mode != "adaptive":
+            self._execute(trade)
 
     def _execute(self, trade):
         pair = self.pairs.get(self.active_pair_id)
@@ -713,7 +1127,7 @@ class PairedTransferAccount:
             return
         available = min(abs(order.signed_btc)-order.filled_btc, trade.btc*self.participation)
         if order.role == "source":
-            if pair.status != "pending":
+            if pair.status != "pending" or (pair.repricing_supported and pair.unpaired_btc > EPS):
                 return
             valid, _ = self._fresh_pair(trade.us, pair.source_symbol, pair.target_symbol)
             if not valid:
@@ -721,8 +1135,29 @@ class PairedTransferAccount:
             available = min(available, max(0, self.config.max_unpaired_btc-pair.unpaired_btc), self.units.get(trade.symbol, 0))
         else:
             available = min(available, pair.source_filled_btc*pair.ratio-pair.target_filled_btc)
+            if pair.repricing_supported and pair.unmatched_source_lots:
+                available = min(available, pair.unmatched_source_lots[0][0]*pair.ratio)
         if available <= EPS:
             return
+        if order.role == "source" and pair.repricing_supported:
+            # A tiny print must not open a source lot whose whole approved
+            # target cannot pay the first fixed/minimum ticket charge. With
+            # serialized chunks there would be no subsequent source sale to
+            # repair that fee deficit. Leave the source order for a feasible
+            # print instead; there is still no assumed displayed depth.
+            target_order = self.orders[pair.target_symbol]
+            prospective_target = available*pair.ratio
+            source_fee = self._incremental_fee(order).total_fee(available, available*fill_price)
+            target_reference = min(target_order.limit_price,
+                self.observed_marks[pair.target_symbol].price*(1+adjustment))
+            target_fee = self._incremental_fee(target_order).total_fee(
+                prospective_target, prospective_target*target_reference)
+            released = available*fill_price-source_fee
+            budget = released*(1-self.config.cash_reserve_fraction)
+            if (prospective_target*target_reference+target_fee
+                    > budget+EPS*max(1.0, abs(budget))):
+                self.last_reason = "source_chunk_cannot_fund_target_ticket"
+                return
         ticket = f"{pair.pair_id}:{order.role}"
         signed = available if buying else -available
         before_available = self.ledger.available_cash
@@ -757,10 +1192,11 @@ class PairedTransferAccount:
         order.filled_value += available*fill_price
         order.fee_usd += fee
         pair.fees_usd += fee
+        pair.fill_revision += 1
         if order.role == "source":
             pair.source_filled_btc += available
             pair.source_value_usd += available*fill_price
-            pair.unmatched_source_lots.append([available, fill_price])
+            pair.unmatched_source_lots.append([available, fill_price, fee/available, available, 0.0])
             if pair.first_unpaired_us is None:
                 pair.first_unpaired_us = trade.us
             # Reserve only money actually released by this exchange-side fill.
@@ -772,11 +1208,17 @@ class PairedTransferAccount:
         else:
             pair.target_filled_btc += available
             pair.target_value_usd += available*fill_price
+            if pair.repricing_supported:
+                order.active = False
             to_match = available/pair.ratio
             while to_match > EPS and pair.unmatched_source_lots:
                 lot = pair.unmatched_source_lots[0]
                 matched = min(to_match, lot[0])
                 pair.matched_source_value_usd += matched*lot[1]
+                pair.matched_source_fee_usd += matched*(lot[2] if len(lot) > 2 else 0)
+                if len(lot) > 4:
+                    target_matched = matched*pair.ratio
+                    lot[4] += target_matched*fill_price + fee*target_matched/available
                 lot[0] -= matched
                 to_match -= matched
                 if lot[0] <= EPS:
@@ -807,12 +1249,19 @@ class PairedTransferAccount:
                        signed_btc=signed, price=fill_price, raw_trade_price=trade.price, observed_btc=trade.btc,
                        fee_usd=fee, cash_usd=self.cash, nav_usd=self.nav,
                        acknowledgement_us=ack_at, reserved_usd=pair.reserved_usd,
-                       unpaired_btc=pair.unpaired_btc))
+                       unpaired_btc=pair.unpaired_btc, order_revision=order.revision,
+                       limit_price=order.limit_price, eligible_after_us=order.eligible_us,
+                       target_effective_lease=pair.target_effective_lease))
         self._drain_queues(trade.us)
 
     def cancel(self, us, reason="cancelled", symbols=None):
         self.accrue(us)
         pair = self.pairs.get(self.active_pair_id)
+        if self.pending_initial_decision:
+            self.decision_queue[:] = [row for row in self.decision_queue if row[2].get("action") != "initial"]
+            heapq.heapify(self.decision_queue)
+            self.pending_initial_decision = False
+            self.sink(dict(kind="paired_decision_cancelled", us=us, reason=reason))
         if not pair or (symbols is not None and not {pair.source_symbol, pair.target_symbol} & set(symbols)):
             return
         self._stop_source(us, reason)
@@ -859,9 +1308,16 @@ class PairedTransferAccount:
                     requested_source_btc=totals["requested_source_btc"]+sum(p.source_quantity_btc for p in pairs),
                     max_unpaired_btc=max([totals["max_unpaired_btc"]]+[p.max_unpaired_btc for p in pairs]),
                     max_legging_seconds=max([totals["max_legging_seconds"]]+[p.max_legging_us/1e6 for p in pairs]),
-                    latest_decision=self.latest_decision,
+                    latest_decision=self.latest_decision, latest_pair_result=self.latest_pair_result,
                     actual_units=dict(self.units), known_units=dict(self.known_units),
                     pending_feed_records=len(self.feed_queue), pending_responses=len(self.response_queue),
+                    pending_decisions=len(self.decision_queue), pending_order_commands=len(self.command_queue),
+                    replacement_count=self.replacement_count, repricing_mode=self.config.repricing_mode,
+                    observation_delay_seconds=self.config.observation_delay_seconds,
+                    decision_delay_seconds=self.config.decision_delay_seconds, order_delay_seconds=self.delay_us/1e6,
+                    spot_feed_delay_seconds=self.config.spot_feed_delay_seconds,
+                    futures_feed_delay_seconds=self.config.futures_feed_delay_seconds,
+                    response_delay_seconds=self.config.response_delay_seconds,
                     reserved_usd=sum(p.reserved_usd for p in pairs),
                     execution_model="tape participation; bounded staged source-first transfers",
                     settlement_model="scheduled last-trade USD linear-proxy variation; not official venue marks")
@@ -892,8 +1348,13 @@ class PairedTransferAccount:
             setattr(account, key, {s: constructor(**v) for s, v in value.items()} if constructor else value)
         account.feed_queue = [tuple(row) for row in account.feed_queue]
         account.response_queue = [tuple(row) for row in account.response_queue]
+        account.decision_queue = [tuple(row) for row in account.decision_queue]
+        account.command_queue = [tuple(row) for row in account.command_queue]
+        account._draining = False
         heapq.heapify(account.feed_queue)
         heapq.heapify(account.response_queue)
+        heapq.heapify(account.decision_queue)
+        heapq.heapify(account.command_queue)
         account.ledger = FundedLedger.restore(state["ledger"], sink=account._ledger_event)
         return account
 

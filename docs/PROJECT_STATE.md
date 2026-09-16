@@ -16,6 +16,11 @@ Build an interactive research and backtesting application for strategies that al
   and cash-interest research proxy; new 90-day/holdout, native-venue and depth
   acceptance are not implied. Existing saved strategies default to the original
   policy. See [COST_AWARE_FUNDED_TRANSFERS.md](COST_AWARE_FUNDED_TRANSFERS.md).
+  Optional adaptive spot-to-future entries target a fee-adjusted effective lease
+  constrained by the original net-BTC forecast, with separate observation,
+  decision and market-arrival delays. Old files retain fixed limits. Actual
+  acknowledged source fills inform recovery prices; replacement arrivals and
+  achieved matched rates remain auditable, without an atomic-fill guarantee.
 
 - Optional bounded BTC trade replay: June 25 uploaded data, millisecond decision
   clocks, GCS worker audit, charts and full valuation CSV. See

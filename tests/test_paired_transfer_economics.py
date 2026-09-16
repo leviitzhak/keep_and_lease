@@ -4,8 +4,11 @@ import json
 import math
 import unittest
 
+from funded_ledger import FeeSchedule
+
 from paired_transfer_economics import (DAY_US, EconomicsConfig, IncrementalFeeSchedule, PositionSlice,
-    QuoteSnapshot, evaluate_transfer, funded_quantity)
+    QuoteSnapshot, counterpart_price_limit, effective_lease_rate, evaluate_transfer,
+    funded_quantity, solve_economic_price_limit)
 
 
 @dataclass(frozen=True)
@@ -40,6 +43,140 @@ def decide(source=None, target=None, *, rate=0, fees=None, config_=None, **kwarg
 
 
 class PairedEconomicsTests(unittest.TestCase):
+    def test_effective_entry_lease_uses_executed_vwap_and_each_leg_fee_per_unit(self):
+        values = dict(cash_rate=.04, remaining_years=30 / 365,
+                      spot_quantity_btc=.2, futures_quantity_btc=.18)
+        plain = effective_lease_rate(100, 99, **values)
+        net = effective_lease_rate(100, 99, spot_fee_usd=.02,
+                                   futures_fee_usd=.018, **values)
+        expected = .04 - ((99 + .018 / .18) / (100 - .02 / .2) - 1) / (30 / 365)
+        self.assertAlmostEqual(net, expected)
+        self.assertLess(net, plain)
+        self.assertGreater(effective_lease_rate(101, 99, **values), plain)
+        self.assertLess(effective_lease_rate(100, 100, **values), plain)
+
+    def test_future_cap_tracks_filled_spot_price_and_includes_both_fees(self):
+        fee = Fee(fee_bps=10, fixed=.01)
+        args = dict(instrument="futures", target_lease_rate=.1, cash_rate=.04,
+                    remaining_years=30 / 365, quantity_btc=.18,
+                    counterpart_quantity_btc=.2, counterpart_fee_usd=.02,
+                    fee_schedule=fee)
+        cap = counterpart_price_limit(counterpart_price=100, **args)
+        expected = ((100 - .02 / .2) * (1 + (.04 - .1) * 30 / 365) - .01 / .18) / 1.001
+        self.assertAlmostEqual(cap, expected)
+        self.assertGreater(counterpart_price_limit(counterpart_price=101, **args), cap)
+        obtained = effective_lease_rate(100, cap, cash_rate=.04, remaining_years=30 / 365,
+            spot_quantity_btc=.2, futures_quantity_btc=.18, spot_fee_usd=.02,
+            futures_fee_usd=fee.total_fee(.18, .18 * cap))
+        self.assertAlmostEqual(obtained, .1)
+
+    def test_spot_floor_uses_filled_future_price_and_fee(self):
+        fee = Fee(fee_bps=10, minimum=.03)
+        args = dict(instrument="spot", counterpart_price=99, target_lease_rate=.1,
+                    cash_rate=.04, remaining_years=30 / 365, quantity_btc=.2,
+                    counterpart_quantity_btc=.18, counterpart_fee_usd=.018,
+                    fee_schedule=fee)
+        floor = counterpart_price_limit(**args)
+        obtained = effective_lease_rate(floor, 99, cash_rate=.04, remaining_years=30 / 365,
+            spot_quantity_btc=.2, futures_quantity_btc=.18,
+            spot_fee_usd=fee.total_fee(.2, .2 * floor), futures_fee_usd=.018)
+        self.assertAlmostEqual(obtained, .1)
+        self.assertLess(effective_lease_rate(floor - .01, 99, cash_rate=.04,
+            remaining_years=30 / 365, spot_quantity_btc=.2, futures_quantity_btc=.18,
+            spot_fee_usd=fee.total_fee(.2, .2 * (floor - .01)), futures_fee_usd=.018), .1)
+
+    def test_counterpart_repricing_preserves_paid_ticket_minimum(self):
+        paid = IncrementalFeeSchedule(Fee(minimum=5), cumulative_quantity=.1,
+                                     cumulative_notional=10, already_paid=5)
+        args = dict(instrument="futures", counterpart_price=100, target_lease_rate=0,
+                    cash_rate=0, remaining_years=1, quantity_btc=.1)
+        self.assertAlmostEqual(counterpart_price_limit(fee_schedule=paid, **args), 100)
+        self.assertAlmostEqual(counterpart_price_limit(fee_schedule=Fee(minimum=5), **args), 50)
+        self.assertIsNone(counterpart_price_limit(fee_schedule=Fee(minimum=10), **args))
+
+    def test_affine_fast_path_matches_general_solver_across_ticket_fee_branches(self):
+        class WrappedFee:
+            currency = "USD"
+
+            def __init__(self, fee):
+                self.fee = fee
+
+            def total_fee(self, quantity, notional):
+                return self.fee.total_fee(quantity, notional)
+
+        for schedule in (FeeSchedule(), FeeSchedule(fee_bps=10),
+                         FeeSchedule(fee_bps=100, fixed=2, per_unit=.3, minimum=5),
+                         FeeSchedule(fee_bps=1000, fixed=2, minimum=5, cap=7)):
+            for prior_q, prior_notional in ((0, 0), (.1, 100), (10, 1000)):
+                prior_fee = schedule.total_fee(prior_q, prior_notional)
+                paid = IncrementalFeeSchedule(schedule, prior_q, prior_notional, prior_fee)
+                for instrument in ("spot", "futures"):
+                    with self.subTest(schedule=schedule, prior_q=prior_q, instrument=instrument):
+                        args = dict(instrument=instrument, counterpart_price=100,
+                                    target_lease_rate=.1, cash_rate=.04,
+                                    remaining_years=1, quantity_btc=.2)
+                        fast = counterpart_price_limit(fee_schedule=paid, **args)
+                        general = counterpart_price_limit(fee_schedule=WrappedFee(paid), **args)
+                        self.assertAlmostEqual(fast, general, places=11)
+
+    def test_undefined_lease_or_impossible_counterpart_fails_closed(self):
+        self.assertIsNone(effective_lease_rate(100, 99, cash_rate=0, remaining_years=0))
+        self.assertIsNone(effective_lease_rate(100, 99, cash_rate=0,
+                                              remaining_years=1, spot_fee_usd=100))
+        self.assertIsNone(counterpart_price_limit(instrument="futures", counterpart_price=100,
+            target_lease_rate=2, cash_rate=0, remaining_years=1, quantity_btc=1))
+
+    def test_economic_buy_cap_is_net_btc_hurdle_not_original_price_pad(self):
+        cfg = replace(config(horizon_days=(1,), size_fractions=(1,)), uncertainty_bps=10)
+        cap, decision = solve_economic_price_limit(NOW, PositionSlice(SPOT, 1),
+            future(95, expiry_days=1), SPOT, counterpart_price=100, cash_rate=0,
+            target_quantity_btc=1, comparison_horizon_us=DAY_US, config=cfg)
+        self.assertAlmostEqual(cap, 99.9, places=6)
+        self.assertTrue(decision.accepted)
+        self.assertGreater(cap, 95 * 1.001)
+        self.assertGreater(decision.edge_btc, decision.required_edge_btc)
+        self.assertEqual(decision.diagnostics["economic_price_boundary"]["binding_reason"],
+                         "keep_net_gain_below_buffer")
+        rejected = evaluate_transfer(NOW, PositionSlice(SPOT, 1), future(95, expiry_days=1),
+            SPOT, cash_rate=0, config=cfg, target_quantity_btc=1,
+            execution_price_overrides={"source": 100, "target": cap + .000001},
+            comparison_horizon_us=DAY_US)
+        self.assertFalse(rejected.accepted)
+
+    def test_economic_cap_keeps_original_quantity_reserve_and_reports_funding_bound(self):
+        cfg = replace(config(horizon_days=(1,)), cash_reserve_fraction=.01)
+        cap, decision = solve_economic_price_limit(NOW, PositionSlice(SPOT, .2),
+            future(95, expiry_days=1), SPOT, counterpart_price=100, cash_rate=0,
+            target_quantity_btc=.2, comparison_horizon_us=DAY_US, config=cfg)
+        self.assertAlmostEqual(cap, 99, places=6)
+        self.assertAlmostEqual(decision.source_quantity_btc, .2)
+        self.assertAlmostEqual(decision.target_quantity_btc, .2)
+        self.assertEqual(decision.horizon_us, DAY_US)
+        self.assertEqual(decision.diagnostics["economic_price_boundary"]["binding_reason"],
+                         "fixed_target_exceeds_funding")
+
+    def test_economic_cap_deducts_entry_delivery_and_terminal_conversion_costs(self):
+        cfg = config(horizon_days=(1,))
+        fees = {"spot": Fee(fee_bps=10), "futures": Fee(fee_bps=10), "delivery": Fee(fee_bps=20)}
+        cap, decision = solve_economic_price_limit(NOW, PositionSlice(SPOT, 1),
+            future(95, expiry_days=1), SPOT, counterpart_price=100, cash_rate=0,
+            target_quantity_btc=1, comparison_horizon_us=DAY_US, config=cfg, fees=fees)
+        # Cash after expiry = 199.7 - 1.001 * F; conversion to one BTC costs 100.1.
+        self.assertAlmostEqual(cap, 99.6 / 1.001, places=6)
+        self.assertTrue(decision.accepted)
+
+    def test_economic_source_floor_and_unavailable_quote(self):
+        cfg = replace(config(horizon_days=(1,)), uncertainty_bps=10)
+        floor, decision = solve_economic_price_limit(NOW, PositionSlice(SPOT, 1),
+            future(95, expiry_days=1), SPOT, counterpart_price=95, price_role="source",
+            cash_rate=0, target_quantity_btc=1, comparison_horizon_us=DAY_US, config=cfg)
+        self.assertAlmostEqual(floor, 95.1, places=6)
+        self.assertTrue(decision.accepted)
+        result = solve_economic_price_limit(NOW, PositionSlice(SPOT, 1),
+            replace(future(95), available_us=1), SPOT, counterpart_price=100,
+            cash_rate=0, target_quantity_btc=1, comparison_horizon_us=DAY_US, config=cfg)
+        self.assertEqual(result, (None, None))
+
     def test_zero_cost_flat_forward_is_keep(self):
         d = decide()
         self.assertFalse(d.accepted)

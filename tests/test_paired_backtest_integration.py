@@ -115,6 +115,34 @@ class PairedBacktestIntegrationTests(unittest.TestCase):
         self.assertEqual(result['trade_replay']['fills'], 0)
         self.assertEqual(rows['btc_trade_valuations'][-1]['units']['SPOT'], 1000)
 
+    def test_adaptive_latency_and_orders_resume_identically_across_midnight(self):
+        p, store, coverage = scenario(midnight=True)
+        p.update(paired_repricing_mode='adaptive',
+                 paired_observation_delay_seconds=.1,
+                 paired_decision_delay_seconds=.2,
+                 paired_order_delay_seconds=.3,
+                 paired_response_delay_seconds=.4)
+        # The explicit delivery delay supersedes, rather than adds to, the
+        # legacy delay. A replay restarted with queued work must be identical.
+        p['commodity_parameters']['btc']['execution_delay_seconds'] = 4
+        with tempfile.TemporaryDirectory() as root:
+            full_store, resumed_store = MemoryAuditStore(), MemoryAuditStore()
+            expected, expected_rows, _ = run_case(
+                p, store, coverage, full_store, DirectoryCheckpoints(Path(root)/'full'))
+            journal = DirectoryCheckpoints(Path(root)/'resume')
+            with self.assertRaisesRegex(RuntimeError, 'intentional checkpoint'):
+                run_case(p, store, coverage, resumed_store, journal, True)
+            actual, actual_rows, _ = run_case(p, store, coverage, resumed_store, journal)
+        self.assertEqual(actual['summary'], expected['summary'])
+        self.assertEqual(actual['series'], expected['series'])
+        self.assertEqual(actual_rows, expected_rows)
+        self.assertEqual(actual['trade_replay']['paired_transfer'],
+                         expected['trade_replay']['paired_transfer'])
+        self.assertEqual(actual['trade_replay']['delay_seconds'], .3)
+        self.assertGreater(actual['trade_replay']['fills'], 0)
+        self.assertEqual(actual['trade_replay']['collateral_breach_count'], 0)
+        self.assertLess(actual['trade_replay']['max_nav_reconstruction_error_usd'], 1e-7)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -23,6 +23,17 @@ including prospective costs and uncertainty allowances. Forecasts assume flat
 spot, residual basis converging toward a configured settlement reference and
 current normalized cash-proxy yield; they do not guarantee profitable exits.
 
+The adaptive-entry extension adds `paired_repricing_mode="adaptive"` for
+spot-to-future transfers. The desired effective entry lease comes from the
+existing net-BTC economic hurdle; target limits incorporate acknowledged source
+fill prices and fees. Explicit observation, frozen-snapshot decision and
+order-arrival delays also apply to repricing. Replacements take effect on
+arrival, and durable audit records preserve requested versus applied limits.
+Old presets remain fixed, while reverse transfers and rolls retain their
+existing funded execution. Partial slices accumulate the requested delta using
+the accepted funding ratio; cash accrual is the third component, with no actual
+Treasury-security fill or atomic cross-venue guarantee.
+
 Six FRED series were retrieved as an immutable NEW snapshot covering June
 1–September 4, 2026, under `public/data/paired-rates/`. The overlap matches the
 retained source observations. DTB3 discount quotes are normalized through a
@@ -33,7 +44,7 @@ hashes, retrieved times, normalization version and rate-age gating are audited.
 
 ## Validation and limits
 
-The implementation includes focused tests for economics, funding and fee
+The original fixed-limit implementation includes focused tests for economics, funding and fee
 accounting, causal Treasury normalization/availability, paired execution and
 checkpoint continuity, runner integration and detailed exports. All 219 Python
 and 33 JavaScript checks passed. The complete preview deployment, paired GUI and
@@ -41,6 +52,10 @@ workbook checks, and replay extension passed for commit
 `d1fb73487e1f9aee42064d57799d55edd8445dd8`. See
 [COST_AWARE_FUNDED_VALIDATION.md](COST_AWARE_FUNDED_VALIDATION.md) for the workflow,
 preview URL, exact results and research limitations.
+
+That deployment evidence predates adaptive repricing. New adaptive test,
+deployment and comparable-backtest evidence must be recorded separately; it
+does not establish an improvement simply because orders can now be repriced.
 
 The mode remains a BTC tape-participation, USD-linear research proxy with
 cash-interest accrual. Native inverse settlement, historical quote depth,

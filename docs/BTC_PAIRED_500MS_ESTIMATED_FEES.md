@@ -32,6 +32,23 @@ The inherited legacy gradual-allocation and maturity-score fields are kept in th
 file but do not drive the new policy: it selects funded transfer sizes and common
 horizons by expected net BTC wealth versus KEEP.
 
+These original saved presets retain fixed limits when `paired_repricing_mode`
+is absent. The optional adaptive extension is documented in
+[COST_AWARE_FUNDED_TRANSFERS.md](COST_AWARE_FUNDED_TRANSFERS.md); it does not
+silently alter either this baseline or an already submitted job. A comparable
+adaptive run must save its explicit repricing mode and observation, decision
+and order-transport delay assumptions in a separate strategy file.
+
+The comparable adaptive files are
+[`research-btc-paired-adaptive-3day-500ms-fee-10bp.json`](../strategies/research-btc-paired-adaptive-3day-500ms-fee-10bp.json)
+and
+[`research-btc-paired-adaptive-3day-500ms-latency-100ms-fee-10bp.json`](../strategies/research-btc-paired-adaptive-3day-500ms-latency-100ms-fee-10bp.json).
+The first isolates repricing with zero delays; the second adds 100 ms to each
+of the three requested stages. They use the same three-day bounds, 500 ms
+allocation decisions, 10 bp fees and funded transfer parameters. Their results
+must be compared with the original fixed-limit run, including unfilled and
+unmatched quantities, rather than only completed-trade returns.
+
 ## Fee estimate and scope
 
 Official schedules checked September 16, 2026:
@@ -57,11 +74,11 @@ conditional forecast are recorded in the strategy JSON itself.
 
 ## Deployment and run status
 
-The latest preview deployment, commit
+The fixed-mode preview deployment checked for this original run, commit
 `d1fb73487e1f9aee42064d57799d55edd8445dd8`, passed the complete
 [deployment workflow 35075897193](https://github.com/leviitzhak/keep_and_lease/actions/runs/35075897193),
-including the funded paired GUI/workbook and replay-extension checks. No later
-deployment was present when checked for this request.
+including the funded paired GUI/workbook and replay-extension checks. This
+evidence predates adaptive repricing and is not its deployment acceptance.
 
 The new preset passes the deployed engine's parameter validation against the
 pinned preview catalog, including the decision ceiling, effective 10 bp fee and
@@ -107,3 +124,10 @@ this preset. The report distinguishes independently recomputed quantities from
 recorded diagnostics and lists evidence limitations. Passing these checks does
 not independently verify omitted exchange marks, forecast accuracy or actual
 order-book liquidity.
+
+For adaptive archives the checker reconstructs active limits from replacement
+arrival events, retaining the previous limit while a replacement is in flight.
+When matched entry metrics are present it recomputes quantity-weighted prices,
+allocated source/target entry fees and the effective entry lease. This validates
+the recorded entry arithmetic; it does not establish subsequent realized carry
+or net BTC gains versus KEEP.

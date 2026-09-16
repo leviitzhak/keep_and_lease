@@ -99,18 +99,27 @@ block further execution, and target sizes are rechecked against actual
 affordability. Only one transfer is active at a time, preventing two instructions
 from promising the same cash or liquidity.
 
+The desired allocation is accumulated through bounded partial transfers. Each
+source slice releases cash, and its funded target slice consumes that cash. The
+target/source BTC ratio is fixed by the accepted quantity and can be below one
+because fees and the reserve reduce affordable exposure. This is not a sequence
+of three independent exchange orders: the third component is the cash-interest
+proxy described above. There is no Treasury-security fill to assume complete.
+
 Source/received/available clocks, decision/order eligibility, exchange fills and
 fill acknowledgements remain distinct. Either feed can arrive first; signal
 quotes must be available, sufficiently recent and sufficiently synchronized.
 Delayed fill responses update known inventory later, while actual holdings and
 funding change at exchange execution. Checkpoints retain orders, pair state,
-reservations, cumulative fee tickets and pending feed/response queues.
+reservations, cumulative fee tickets and pending observations, decisions,
+order replacements and fill responses.
 
 The fill model uses future trade prints, aggressor-side compatibility and the
 configured participation fraction. It does **not** claim historical printed
 volume is executable order-book depth. Half-spread and slippage apply adverse
 execution adjustments; the forecast also budgets the configured adverse price
-limit. A pending order cannot fill beyond that original limit. Stale signal
+limit. In fixed mode an order cannot fill beyond its original limit; adaptive
+mode changes that limit through delayed replacement instructions. Stale signal
 quotes block new source fills; they do not by themselves liquidate held futures.
 
 At later decisions, the unexecuted source quantity is compared with KEEP again
@@ -131,6 +140,75 @@ limits and actual future prints. With stale Treasury rates, only an expiry exit
 to spot is permitted; new futures allocation remains blocked. Missing execution
 liquidity can leave inventory until final expiry handling, so a risk instruction
 does not guarantee a completed pre-expiry exit.
+
+## Adaptive effective-lease limits and three delay stages
+
+`paired_repricing_mode="adaptive"` enables adaptive limits for spot-to-future
+entries. `fixed` remains the default for older saved files. Reverse transfers,
+futures rolls and mandatory expiry instructions retain their existing funded
+execution behavior. The adaptive target is derived from the accepted transfer's
+economics, rather than treating the initial 10 bp price allowance as the highest
+price worth paying. The original quantity, common comparison horizon, fees,
+reserve and required surplus still constrain the acceptable futures price.
+
+For a matched entry with spot-sale price `S`, futures-buy price `F`, allocated
+entry fees `c_S`, `c_F`, matched quantities `q_S`, `q_F`, cash-proxy annual rate
+`r`, and remaining ACT/365 years `T`, the entry diagnostic is:
+
+```
+S_net = S - c_S / q_S
+F_cost = F + c_F / q_F
+effective_entry_lease = r - (F_cost / S_net - 1) / T
+```
+
+Fees enter the execution prices before annualization. This measure is a
+fee-adjusted entry basis, not the realized net BTC return or the full funded
+cash-flow forecast. Unequal source/target quantities, retained cash, daily
+variation settlement, compounding and future exit costs remain part of the
+KEEP/SWAP comparison. The rate is undefined at expiry or without positive
+matched quantities and a positive net spot price.
+
+Before source execution, limits use the other leg's latest usable observation.
+Price observations are consumed as they become available between the scheduled
+allocation decisions. While one repricing calculation is pending, additional
+updates are coalesced for a following calculation; they do not rewrite its
+frozen inputs or bypass the configured delays.
+Once a source slice fills and its acknowledgement arrives, target recovery
+processes the oldest unmatched source fill first, using its actual spot price
+and allocated fee. Matched reporting uses quantity-weighted prices across these
+filled slices. Repricing
+preserves the desired effective entry lease with the remaining maturity, subject
+to funding and the economic checks. The futures child remains conditional on
+released source cash; merely observing both prices never makes an unfunded buy
+executable. Replacement orders retain the same fee ticket.
+
+Three explicit settings model the reaction path:
+
+1. `paired_observation_delay_seconds` delays common market-data availability;
+   the optional spot/futures feed delays are additional per-feed delays.
+2. `paired_decision_delay_seconds` delays processing of a frozen input snapshot.
+   A quote arriving during this delay cannot retrospectively alter that
+   decision's observations.
+3. `paired_order_delay_seconds` delays order arrival at the market. If omitted,
+   the existing Bitcoin `execution_delay_seconds` supplies this stage; an
+   explicit paired value overrides it, rather than adding a second transport
+   delay.
+
+`paired_response_delay_seconds` separately delays knowledge of an actual fill.
+Each adaptive replacement and economic cancellation follows the decision and
+order-transport clocks too. A replacement request does
+not change the live order: the previous limit remains effective until the
+replacement arrives. A later actual print is required for a fill, even when
+all configured delays are zero. Stale replacement instructions cannot restore
+quantity already filled or revive a stopped source order.
+
+Both legs filling does not, by itself, prove the target lease was obtained.
+The strategy observes asynchronous markets, and fills or new prices may occur
+while a replacement is in flight. Audit the matched executed quantities, prices,
+fees and resulting effective lease. Target and achieved rates are separate
+fields; unmatched inventory and failures remain visible. More adaptive limits
+can improve completion, but performance improvement requires the comparable
+backtest and is not implied by the execution rule.
 
 ## Commissions and expenses
 
@@ -215,6 +293,12 @@ fees, unmatched quantity and completion/partial/cancellation reasons. For
 spot/future transfers, observed lease and executed-price-only lease keep the
 decision maturity/yield fixed; completion-time lease is a separate measurement.
 Those price-based quantities are not realized net BTC returns.
+Adaptive audits additionally retain the target effective entry lease,
+replacement requests and market arrivals, their frozen decision timestamps,
+applied/rejected revisions and fee-adjusted matched entry diagnostics. The
+standalone `scripts/check-paired-replay-audit.py` applies a replacement only at
+its arrival event and independently reconstructs matched fill prices and fees
+when the new fields are present; older fixed-order archives remain readable.
 
 Ledger valuation fields expose free/posted/reserved cash, unsettled/pending
 variation, synthetic Treasury value, liabilities and BTC-quoted NAV. Paired-run
@@ -226,6 +310,10 @@ spendable cash; missing historical fields remain unknown. The GUI
 summarizes submitted, completed, partial, timed-out and unresolved instructions,
 so unsuccessful attempts remain in the denominator. Existing saved results are
 not assigned invented pair IDs or rerun with the new economics.
+When present, GUI diagnostics also show repricing mode, applied replacements,
+the three delay stages and separate per-feed/acknowledgement extras, and the
+latest pair's target versus matched-fill effective entry lease, matched quantity
+and rate shortfall. Historical results without these fields leave them absent.
 
 Selected-period XLSX exports retain Overview, Valuations, Events and Parameters,
 and add **Transfer decisions**, **Paired transfers** and **Horizon alternatives**

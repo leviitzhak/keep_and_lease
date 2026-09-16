@@ -27,12 +27,16 @@ scores and fixed/minimum-hold controls do not drive the paired policy.
 | `paired_min_gain_btc` | `0` | Additional required incremental BTC wealth. |
 | `paired_cash_reserve_fraction` | `0.01` | Capital reserve kept outside the transferred position; fraction in `[0,1)`. |
 | `paired_max_quote_skew_seconds` | `1` | Maximum source-time gap between the spot/source/target observations used together. |
-| `paired_spot_feed_delay_seconds` | `0` | Delay before spot observations become available to the strategy. |
-| `paired_futures_feed_delay_seconds` | `0` | Independent futures feed availability delay. |
+| `paired_repricing_mode` | `fixed` | `adaptive` derives spot-to-future limits from the net-BTC economic boundary and reprices against observable or acknowledged executed counterpart prices; reverse transfers and rolls retain fixed behavior. Missing values preserve old strategies. |
+| `paired_observation_delay_seconds` | `0` | Common delay before market observations become available, added to the applicable per-feed delay. |
+| `paired_decision_delay_seconds` | `0` | Processing time for a frozen observed snapshot, including adaptive replacement decisions. |
+| `paired_order_delay_seconds` | omitted | Order/replacement transport delay. Omitted or null inherits Bitcoin `execution_delay_seconds`; an explicit nonnegative value overrides it. |
+| `paired_spot_feed_delay_seconds` | `0` | Additional spot-specific observation delay. |
+| `paired_futures_feed_delay_seconds` | `0` | Additional futures-specific observation delay. |
 | `paired_response_delay_seconds` | `0` | Delay from actual exchange-side fill to the strategy's fill acknowledgement. Funding changes at the fill time. |
 | `paired_max_unpaired_btc` | `0.01` | Maximum unmatched source quantity newly introduced by a chunk. Missing liquidity can leave it unresolved; the audit retains it. |
 | `paired_max_legging_seconds` | `30` | Timeout for a pending transfer/unpaired chunk. Stops further source fills and retains funded recovery inventory/orders. |
-| `paired_price_limit_bps` | `10` | Adverse movement allowance from authorizing prices. Forecasts budget this in addition to configured half-spread and slippage. |
+| `paired_price_limit_bps` | `10` | Initial adverse movement allowance from authorizing prices, retained as the fixed-mode limit. Forecasts budget it with half-spread/slippage. Adaptive entry limits use the effective-lease/economic boundary and can move beyond this initial allowance. |
 | `paired_max_rate_age_days` | `7` | Maximum source-observation age for new discretionary transfers. Stale rates continue funding valuation. |
 | `paired_roll_lead_days` | `1` | Excludes near-expiry destination contracts and prioritizes funded attempts to exit/roll the entire held contract within this window, overriding the discretionary surplus requirement. Freshness, funding and execution constraints still apply; stale rates permit only an expiry exit to spot. |
 | `paired_spot_fixed_fee_usd` | `0` | Additive USD charge once per spot child-order ticket, across partial fills. |
