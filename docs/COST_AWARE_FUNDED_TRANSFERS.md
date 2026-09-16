@@ -202,6 +202,12 @@ replacement arrives. A later actual print is required for a fill, even when
 all configured delays are zero. Stale replacement instructions cannot restore
 quantity already filled or revive a stopped source order.
 
+Reservation releases caused by queued acknowledgements or cancellations carry
+the queued event's timestamp, even when processed at a later market print.
+Queued actions strictly before a scheduled variation settlement execute first;
+scheduled variation precedes queued actions at the exact same timestamp. This
+keeps the audit chronological across settlement boundaries.
+
 Both legs filling does not, by itself, prove the target lease was obtained.
 The strategy observes asynchronous markets, and fills or new prices may occur
 while a replacement is in flight. Audit the matched executed quantities, prices,

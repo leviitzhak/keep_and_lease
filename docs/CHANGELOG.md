@@ -13,6 +13,9 @@
   rates without treating a filled pair as atomic or its lease as realized profit.
 - Keep reverse transfers and futures rolls on their existing execution path.
   Performance and deployment evidence are recorded separately from this change.
+- Preserve queued acknowledgement/cancellation timestamps on reservation-release
+  audit rows and process earlier queued events before scheduled variation;
+  exact-time settlement wins ties. Regression cases preserve financial state.
 
 ## 2026-09-11 — Shared daily/replay plot suite
 

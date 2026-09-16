@@ -460,6 +460,72 @@ class AdaptivePairedTransferTests(unittest.TestCase):
         self.assertEqual(account.orders["F"].eligible_us, 2_000_002)
         self.assertLessEqual(len(account.command_queue), 1)
 
+    def test_delayed_completion_releases_reserve_at_ack_clock(self):
+        account, audit = self.account(response_delay_seconds=.2, max_unpaired_btc=10)
+        pair = account.decide(1)
+        account.on_trade(trade(10, side="sell", btc=pair.source_quantity_btc))
+        account.accrue(250_000)
+        account.on_trade(trade(300_000, "F", 98, btc=pair.target_quantity_btc))
+        self.assertGreater(pair.reserved_usd, 0)
+        account.accrue(1_000_000)
+        result = next(row for row in audit if row["kind"] == "paired_transfer_result")
+        releases = [row for row in audit if row["kind"] == "collateral_release"]
+        self.assertEqual(result["us"], 500_000)
+        self.assertEqual(releases[-1]["us"], result["us"])
+        self.assertGreater(releases[-1]["amount_usd"], 0)
+        self.assertEqual([row["us"] for row in audit], sorted(row["us"] for row in audit))
+        self.assertEqual(account._ledger_clock, 1_000_000)
+        self.assertEqual(account.units["F"], pair.target_quantity_btc)
+        self.assertAlmostEqual(account.reconstruction_error(), 0, places=8)
+
+    def test_delayed_economic_cancel_with_zero_ack_keeps_audit_chronological(self):
+        account, audit = self.account(decision_delay_seconds=.1, order_delay_seconds=.1)
+        account.decide(1)
+        account.on_trade(trade(300_000, side="sell", btc=.1))
+        account.on_trade(trade(600_000, "F", 98, btc=.1))
+        pair = account.pairs[account.active_pair_id]
+        self.assertAlmostEqual(pair.unpaired_btc, 0)
+        self.assertGreater(pair.reserved_usd, 0)
+        account.decide(650_000, rate_snapshot={"allows_new_transfers": False})
+        account.accrue(1_000_000)
+        result = next(row for row in audit if row["kind"] == "paired_transfer_result")
+        self.assertEqual(result["us"], 850_000)
+        self.assertEqual(result["status"], "partial")
+        self.assertEqual([row["us"] for row in audit], sorted(row["us"] for row in audit))
+        self.assertEqual(account._ledger_clock, 1_000_000)
+        self.assertAlmostEqual(account.units["F"], .1)
+        self.assertAlmostEqual(account.reconstruction_error(), 0, places=8)
+
+    def test_queued_completion_and_midnight_variation_follow_timestamp_order(self):
+        for ack_offset in (-100_000, 0):
+            with self.subTest(ack_offset=ack_offset):
+                account, audit = self.account(response_delay_seconds=.2, max_unpaired_btc=10)
+                start = DAY-1_000_000
+                account.on_trade(trade(start, "F", 98))
+                account.on_trade(trade(start+1))
+                pair = account.decide(start+2)
+                account.on_trade(trade(start+10, side="sell", btc=pair.source_quantity_btc))
+                account.accrue(start+250_000)
+                target_fill = DAY+ack_offset-200_000
+                account.on_trade(trade(target_fill, "F", 98, btc=pair.target_quantity_btc))
+                # Create actual variation before the still-pending target ack.
+                account.on_trade(trade(target_fill+100_000, "F", 99))
+                account.accrue(DAY+1_000_000)
+                kinds = [row["kind"] for row in audit]
+                result_index = kinds.index("paired_transfer_result")
+                variation_index = kinds.index("variation_accrual")
+                self.assertEqual(audit[result_index]["us"], DAY+ack_offset)
+                self.assertEqual(audit[variation_index]["us"], DAY)
+                if ack_offset < 0:
+                    self.assertLess(result_index, variation_index)
+                else:
+                    # A scheduled settlement takes precedence at an equal time.
+                    self.assertLess(variation_index, result_index)
+                self.assertEqual([row["us"] for row in audit], sorted(row["us"] for row in audit))
+                self.assertEqual(account._ledger_clock, DAY+1_000_000)
+                self.assertAlmostEqual(account.ledger.unrealized_pnl_usd(), 0)
+                self.assertAlmostEqual(account.reconstruction_error(), 0, places=8)
+
     def test_explicit_order_delay_overrides_legacy_and_config_round_trips(self):
         absent = PairedConfig.from_payload({"paired_repricing_mode": "adaptive"})
         legacy = PairedTransferAccount(1000, delay_us=4_000_000, config=absent)

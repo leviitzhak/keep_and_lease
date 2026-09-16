@@ -177,8 +177,9 @@ class PairedTransferAccount:
     actual fills before the target can be submitted. Each next source chunk waits
     until the preceding target and all relevant acknowledgements are complete.
     A timeout stops new source exposure; its funded target remains a recovery
-    order with the original price limit, and all unresolved quantities remain in
-    the audit. Missing liquidity cannot be made atomic by the simulator.
+    order, retaining its fixed limit or adapting to acknowledged execution costs
+    according to the configured mode. All unresolved quantities remain in the
+    audit. Missing liquidity cannot be made atomic by the simulator.
     """
     def __init__(self, capital, participation=1.0, delay_us=0, fee_bps=0,
                  sink=None, config=None, expiries=None):
@@ -325,6 +326,7 @@ class PairedTransferAccount:
         if self._draining:
             return
         self._draining = True
+        outer_ledger_clock = self._ledger_clock
         try:
             queues = (self.feed_queue, self.response_queue, self.decision_queue, self.command_queue)
             while True:
@@ -333,6 +335,9 @@ class PairedTransferAccount:
                 if next_event is None:
                     break
                 available, index = next_event
+                # Ledger reservations released by an acknowledgement/cancel
+                # belong to that queued event, not the later caller's clock.
+                self._ledger_clock = available
                 _, _, data = heapq.heappop(queues[index])
                 if index == 0:
                     trade = Trade(**data)
@@ -365,8 +370,10 @@ class PairedTransferAccount:
                 else:
                     self._apply_command(available, data)
                 self._maybe_complete(available)
+            self._ledger_clock = us
             self._maybe_complete(us)
         finally:
+            self._ledger_clock = outer_ledger_clock
             self._draining = False
 
     def _finish_decision(self, us, data):
@@ -485,6 +492,10 @@ class PairedTransferAccount:
             boundary = (self.last_us // interval + 1) * interval
             cursor = self.last_us
             while boundary <= us:
+                # Earlier observations, acknowledgements and commands must be
+                # audited before this settlement. At the exact same timestamp,
+                # scheduled variation settles before queued agent actions.
+                self._drain_queues(boundary - 1)
                 self._ledger_clock = boundary
                 self._accrue_interval((boundary - cursor) / 1e6)
                 self.plot_treasury_index *= math.exp(self.rate * (boundary - cursor) / YEAR_US)
