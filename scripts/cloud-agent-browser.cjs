@@ -521,7 +521,8 @@ with zipfile.ZipFile(sys.argv[1]) as z:
  assert 'Paired transfers' in names and 'Transfer decisions' in names, names
  for name in z.namelist(): E.fromstring(z.read(name))
 `, exportPath], {stdio:'inherit'});
-      verifiedDownloadPaths.add(new URL(download.url()).pathname);
+      // The GUI saves a Blob URL; qualify the verified server request itself.
+      verifiedDownloadPaths.add(exportPathname);
       fs.writeFileSync(path.join(outputDir, 'paired-smoke.json'), JSON.stringify({
         strategy: result.trade_replay.strategy, observations: result.summary.observations,
         submittedPairs: result.trade_replay.paired_transfer.submitted_pairs,
@@ -551,6 +552,7 @@ with zipfile.ZipFile(sys.argv[1]) as z:
       throw new Error(`GUI raised ${pageErrors.length} page error(s)`);
     }
     if (sameOriginFailures.length) {
+      console.error('Unverified same-origin requests: '+JSON.stringify(sameOriginFailures));
       throw new Error(`GUI had ${sameOriginFailures.length} failed same-origin request(s)`);
     }
   } catch (error) {

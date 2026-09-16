@@ -45,10 +45,14 @@ The corrected preview run (`35073156588`, commit
 spreadsheet checks: 30 valuations, no collateral breaches, and maximum NAV
 reconstruction error `1.4551915228366852e-11` USD. This short real-tape window
 selected KEEP (zero transfers); synthetic integration tests exercise funded
-partial transfers. The final browser assertion exposed a harness classification
-issue for the already-validated legacy CSV download. The smoke now records its
-original request path as well as its download URL, after validating all 600
-valuation rows. Final full-workflow verification is pending the next run.
+partial transfers. The final browser assertion exposed an attachment-request classification
+issue. A second corrected run (`35074508176`, commit
+`4c7fe35470ebedb7d584df6d3103e0a66e5fb375`) repeated the same successful paired
+results and verified workbook. The classifier had recorded the workbook's Blob
+URL instead of its API request. Both CSV and paired-workbook checks now register
+their exact original API paths only after validating the downloaded contents;
+unverified failed requests remain errors. Final full-workflow verification is
+pending the next run.
 
 This validates implementation and bounded research execution. It is not a
 full 90-day performance result, a calibrated expected-return model, measured
