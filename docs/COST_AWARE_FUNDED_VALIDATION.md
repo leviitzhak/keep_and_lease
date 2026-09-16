@@ -27,19 +27,28 @@ Local checks completed September 16, 2026.
 The preview workflow also checks the exact deployed commit, runs its existing
 multi-commodity and legacy BTC checks, and now runs a bounded **30-second BTC
 paired-policy GUI backtest** with mobile diagnostics and selected-period XLSX
-verification. Deployment outcome will be recorded after the workflow completes.
+verification. The final deployment outcome is recorded below.
 
 The first preview run (`35071453092`, implementation commit
 `a2c89a29b1a12a2c7ee9014c499146581f196fcd`) passed the deployed paired replay,
 30-valuation funding/reconciliation assertions and mobile diagnostics, then
 exposed a spreadsheet range-validation bug: the actual opening timestamp
 preceded the first scheduled audit valuation. The regression fix accepts the
-audited opening interval without inventing an opening valuation. Final preview
-verification is pending the corrected deployment.
+audited opening interval without inventing an opening valuation.
 The same verification sequence also exposed an existing replay-extension
 default-catalog issue (`KeyError: uri` in the prior master deployment). Extension
 seeding now uses the normal runner's default dataset URI when the catalog does
 not explicitly override it, with a focused regression check.
+
+The corrected preview run (`35073156588`, commit
+`495d8afcdc794347ca86aaa2450ef95cccf22400`) passed the paired GUI, mobile and
+spreadsheet checks: 30 valuations, no collateral breaches, and maximum NAV
+reconstruction error `1.4551915228366852e-11` USD. This short real-tape window
+selected KEEP (zero transfers); synthetic integration tests exercise funded
+partial transfers. The final browser assertion exposed a harness classification
+issue for the already-validated legacy CSV download. The smoke now records its
+original request path as well as its download URL, after validating all 600
+valuation rows. Final full-workflow verification is pending the next run.
 
 This validates implementation and bounded research execution. It is not a
 full 90-day performance result, a calibrated expected-return model, measured

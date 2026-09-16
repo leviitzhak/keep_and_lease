@@ -359,6 +359,7 @@ async function main() {
       }
       console.log('Shared replay adapter verified: books, market data, inspection, mobile, all families and bounded canvas lifecycle.');
       await page.waitForFunction(()=>!document.querySelector('#run').disabled);
+      const csvSourcePath = new URL(await page.locator('#tradeReplayCsv').getAttribute('href'), origin).pathname;
       const csvDownload = page.waitForEvent('download');
       await page.click('#tradeReplayCsv');
       const download = await csvDownload;
@@ -366,6 +367,8 @@ async function main() {
       await download.saveAs(csvPath);
       if (fs.readFileSync(csvPath,'utf8').trim().split('\n').length !== 601) throw Error('Valuation CSV lost rows');
       verifiedDownloadPaths.add(new URL(download.url()).pathname);
+      // Match Chromium's original attachment request after validating its bytes.
+      verifiedDownloadPaths.add(csvSourcePath);
       const entry=result.audit.datasets.btc_trade_events.chunks[0];
       const auditResponse=await page.evaluate(async url=>{const r=await fetch(url);return {status:r.status,body:await r.json()};},result.audit.base_url+'/btc_trade_events/'+entry.index);
       if(auditResponse.status!==200||auditResponse.body.rows.length!==entry.rows)throw Error('Trade audit chunk failed');
