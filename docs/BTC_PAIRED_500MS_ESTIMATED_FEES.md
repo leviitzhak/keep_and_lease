@@ -76,3 +76,34 @@ initial check. Completion and performance results have not yet been verified.
 This is one untuned full-period evaluation. It does not establish profitable or
 native executable performance, and the predeclared holdout is not used to tune
 the parameters.
+
+## Three-day validation preset
+
+[`research-btc-paired-3day-validation-500ms-fee-10bp.json`](../strategies/research-btc-paired-3day-validation-500ms-fee-10bp.json)
+uses the identical parameters with only `backtest_end` changed to
+`2026-06-09T00:00:00`. It covers the first three days and schedules 518,400
+valuation ticks; the terminal tick values the portfolio and cancels outstanding
+orders, so there are 518,399 strategy decisions when initialization precedes the
+first tick. This is an accounting and statistics check, not parameter tuning.
+
+Use the full audit ZIP for independent verification. The current valuation CSV
+does not include the paired ledger constituents. Headline returns and drawdown
+use every valuation; chart distributions use sampled observations. Terminal BTC
+wealth is marked rather than liquidated, and selected forecast horizons may
+extend beyond this shorter validation period.
+
+The standalone standard-library checker reads every compressed audit chunk,
+verifies its checksums and row counts, reconstructs paired balance identities,
+recomputes full-frequency statistics, and checks recorded fills and transfers:
+
+```sh
+python scripts/check-paired-replay-audit.py /path/to/full-audit.zip \
+  --capital 100000 --fee-bps 10 --interval-seconds 0.5 \
+  --output /path/to/validation-report.json
+```
+
+Its default participation, unmatched-quantity limit and economic hurdle match
+this preset. The report distinguishes independently recomputed quantities from
+recorded diagnostics and lists evidence limitations. Passing these checks does
+not independently verify omitted exchange marks, forecast accuracy or actual
+order-book liquidity.
