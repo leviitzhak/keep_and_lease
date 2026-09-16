@@ -99,8 +99,10 @@ block further execution, and target sizes are rechecked against actual
 affordability. Only one transfer is active at a time, preventing two instructions
 from promising the same cash or liquidity.
 
-The desired allocation is accumulated through bounded partial transfers. Each
-source slice releases cash, and its funded target slice consumes that cash. The
+The desired allocation is accumulated through bounded funded transfers. In
+`fixed` and `adaptive` modes, each source slice releases cash and its funded
+target slice consumes that cash. The empirical mode below instead completes one
+small approved source tranche before submitting its funded hedge. The
 target/source BTC ratio is fixed by the accepted quantity and can be below one
 because fees and the reserve reduce affordable exposure. This is not a sequence
 of three independent exchange orders: the third component is the cash-interest
@@ -129,8 +131,8 @@ tickets. If its economic surplus disappears, further source fills stop while
 already funded recovery quantities and reservations remain. Mandatory expiry
 instructions are not cancelled merely for losing discretionary economic appeal.
 
-A legging timeout stops additional source fills and retains the funded target
-recovery order and unmatched inventory. Missing liquidity cannot be made atomic:
+In `fixed` and `adaptive` modes, a legging timeout stops additional source fills
+and retains the funded target recovery order and unmatched inventory. Missing liquidity cannot be made atomic:
 unpaired exposure may remain after the timeout and at the end of the window,
 and it stays in the results. The roll lead time excludes near-expiry destination
 contracts and prioritizes attempts to exit/roll an entire held contract inside
@@ -215,6 +217,38 @@ fees and resulting effective lease. Target and achieved rates are separate
 fields; unmatched inventory and failures remain visible. More adaptive limits
 can improve completion, but performance improvement requires the comparable
 backtest and is not implied by the execution rule.
+
+## Empirical execution costs before fixing the transfer quantity
+
+`paired_repricing_mode="empirical"` adds an execution-cost model for funded
+spot-to-futures entries. It asks whether a source quantity can complete both
+legs inside `paired_waiting_seconds` at the requested empirical coverage, and
+uses the qualifying price budget before calculating the affordable futures
+quantity. The accepted amount is therefore funded at the anticipated execution
+cost rather than being sized at a favorable observation and later capped by an
+unaffordable hedge. Existing fixed and adaptive strategy files retain their
+previous behavior.
+
+The calibration model counts unfilled and partially filled attempts in its
+completion denominator. Expected terminal-BTC evaluation includes unsuccessful
+outcomes and modeled spot-restoration costs, in addition to successful fills.
+Missing support does not imply zero cost or certain liquidity. Actual order
+limits, partial fills, fees and cash constraints remain binding in the replay.
+
+The empirical instruction completes one small source tranche before its
+protected marketable futures hedge. It keeps the admitted entry price bounds
+fixed, subjects both entry legs to the decision-start waiting deadline, and
+records bounded spot-restoration recovery separately from successful pair
+completion. This is a different execution policy from the continuously
+repriced `adaptive` mode; the calibration applies to the studied empirical
+policy only.
+
+The empirical setting uses a frozen historical calibration interval preceding
+the scored run. The first declared test fits June 6–16 and scores June 16–26,
+2026 UTC, with ten scored days required before a new 90-day empirical run.
+Read [EMPIRICAL_LEASE_EXECUTION.md](EMPIRICAL_LEASE_EXECUTION.md) for the waiting,
+slippage, failure/recovery and data-proxy definitions. No live completion
+probability or performance improvement is implied by adding the model.
 
 ## Commissions and expenses
 

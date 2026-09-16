@@ -179,6 +179,65 @@ class PairedAuditCheckerTests(unittest.TestCase):
         self.assertGreater(self.checks.counts["executed_effective_lease_from_matched_fills"], 0)
         self.assertFalse(self.checks.failures, self.checks.report())
 
+    def empirical_events(self, complete):
+        from paired_transfer import PairedConfig, PairedTransferAccount
+        from trade_replay import Trade
+        rows=[]
+        account=PairedTransferAccount(1000,fee_bps=10,sink=rows.append,
+            config=PairedConfig(repricing_mode="empirical",waiting_seconds=1,max_unpaired_btc=.01),
+            expiries={"F":30*86400e6})
+        def trade(us,symbol="SPOT",price=100,quantity=.01,side="buy"):
+            return Trade(us,symbol,price,quantity,side,f"{symbol}:{us}",True)
+        account.marks["F"]=trade(0,"F",98)
+        account.initialize_spot(trade(0))
+        account.start_transfer(1,dict(accepted=True,source_symbol="SPOT",target_symbol="F",
+            source_quantity_btc=.01,target_quantity_btc=.01,cash_rate=.04,horizon_us=30*86400e6,
+            diagnostics=dict(source_sale_limit=99.9,target_buy_limit=99,
+                             execution_budget_bps=100,execution_joint_success_probability=.95)))
+        account.on_trade(trade(2,quantity=.01 if complete else .004,side="sell"))
+        account.on_trade(trade(3,"F",98))
+        account.accrue(1_000_001)
+        account.on_trade(trade(1_000_002))
+        account.cancel(2_000_001,"end_of_window")
+        return account,[row for row in rows if row["kind"] != "initial_holding"]
+
+    def test_empirical_completion_reconciles_exchange_fills(self):
+        account,rows=self.empirical_events(True)
+        for row in rows:self.audit.event(row)
+        self.assertEqual(self.audit.empirical_statuses["completed"],1)
+        self.assertEqual(self.audit.kinds["cash_restore_fill"],0)
+        self.assertAlmostEqual(self.audit.fees.value,account.fees)
+        self.assertFalse(self.checks.failures,self.checks.report())
+
+    def test_partial_instruction_restoration_counts_cash_units_fees_without_new_pair(self):
+        account,rows=self.empirical_events(False)
+        for row in rows:self.audit.event(row)
+        self.assertEqual(self.audit.kinds["cash_restore_fill"],1)
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM pairs").fetchone()[0],1)
+        self.assertAlmostEqual(self.audit.units["SPOT"],account.units["SPOT"])
+        self.assertAlmostEqual(self.audit.turnover.value,account.turnover)
+        self.assertAlmostEqual(self.audit.fees.value,account.fees)
+        self.assertFalse(self.checks.failures,self.checks.report())
+
+    def test_lossless_study_checks_cutoff_and_all_failures(self):
+        from dataclasses import asdict
+        from paired_execution_study import StudyConfig,runnerstudy
+        from tests.test_paired_execution_study import Store,seeds,t
+        rows=[]
+        cfg=StudyConfig(quantity_grid_btc=(.01,),waiting_seconds=(.5,1))
+        runnerstudy(Store(seeds()+[t(100_000,btc=.005)]),0,2_000_000,{"F":30*86400e6},cfg,sink=rows.append)
+        metadata=dict(label_cutoff_us=2_000_000,study_config=asdict(cfg))
+        for row in rows:self.audit.study_outcome(row,metadata)
+        self.assertEqual(self.audit.study_counts["partial"],2)
+        self.assertEqual(self.audit.study_counts["completed"],0)
+        for group in self.audit.study_groups.values():
+            self.assertEqual(group["histogram"][-1],group["samples"])
+        self.assertFalse(self.checks.failures,self.checks.report())
+        forged={**rows[0],"decision_us":60_000_000,"label_available_us":60_500_000}
+        self.audit.study_outcome(forged,metadata)
+        self.assertEqual(self.checks.failures["study_label_before_cutoff"],1)
+        self.assertEqual(self.checks.failures["study_complete_window_before_cutoff"],1)
+
 
 if __name__ == "__main__":
     unittest.main()

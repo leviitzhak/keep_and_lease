@@ -4,6 +4,7 @@ import test from 'node:test';
 import vm from 'node:vm';
 
 const html=readFileSync(new URL('../silver_strategy_gui.html',import.meta.url),'utf8');
+const empiricalDefaults={paired_execution_confidence:'0.95',paired_execution_min_samples:'100',paired_calibration_days:'10',paired_waiting_seconds:'30',paired_execution_size_grid_btc:'0.0001,0.001,0.01,0.1',paired_study_max_horizon_seconds:'60'};
 function source(name){
   const start=html.indexOf('function '+name+'(');
   assert.ok(start>=0,name);
@@ -45,6 +46,19 @@ test('import migrates the BTC transport delay without adding the legacy delay tw
   assert.equal(fields.get('paired_repricing_mode').value,'fixed');
   context.applyParameters({commodity_parameters:'invalid'});
   assert.equal(fields.get('paired_order_delay_seconds').value,'0');
+});
+
+test('empirical imports preserve study settings and older presets reset them without changing repricing mode',()=>{
+  const fields=new Map(['paired_repricing_mode',...Object.keys(empiricalDefaults)].map(name=>[name,{value:''}]));
+  const context={form:{elements:{namedItem:name=>fields.get(name)}},LEG_FIELDS:[],COMMODITIES:['btc'],loadCommodity(){}};
+  vm.runInNewContext(source('applyParameters'),context);
+  context.applyParameters({paired_repricing_mode:'empirical',paired_execution_confidence:'0.9',paired_waiting_seconds:'20'});
+  assert.equal(fields.get('paired_repricing_mode').value,'empirical');
+  assert.equal(fields.get('paired_execution_confidence').value,'0.9');
+  assert.equal(fields.get('paired_waiting_seconds').value,'20');
+  context.applyParameters({paired_repricing_mode:'adaptive'});
+  assert.equal(fields.get('paired_repricing_mode').value,'adaptive');
+  for(const [name,value] of Object.entries(empiricalDefaults))assert.equal(fields.get(name).value,value);
 });
 
 test('switching commodity editors cannot copy paired settings into a commodity profile',()=>{
@@ -89,7 +103,7 @@ test('paired mode disables irrelevant allocation controls and serialization pres
 });
 
 function validationContext(overrides={},profile={}){
-  const values={trade_strategy:'cost_aware_paired',btc_data_source:'trade_tape',weight_btc:'100',weight_silver:'0',weight_gold:'0',weight_sp500:'0',weight_treasury:'0',paired_horizon_days:'1,3,7,14,30',paired_max_horizon_days:'30',paired_repricing_mode:'fixed',paired_observation_delay_seconds:'0',paired_decision_delay_seconds:'0',paired_order_delay_seconds:'0',...overrides};
+  const values={trade_strategy:'cost_aware_paired',btc_data_source:'trade_tape',weight_btc:'100',weight_silver:'0',weight_gold:'0',weight_sp500:'0',weight_treasury:'0',paired_horizon_days:'1,3,7,14,30',paired_max_horizon_days:'30',paired_repricing_mode:'fixed',paired_observation_delay_seconds:'0',paired_decision_delay_seconds:'0',paired_order_delay_seconds:'0',...empiricalDefaults,...overrides};
   const context={form:{elements:{namedItem:name=>({value:values[name]})}},captureCommodity(){},commodityProfiles:{btc:{futures_contract_type:'regular',enable_short_book:'false',...profile}}};
   vm.runInNewContext(source('validatePairedForm'),context);
   return context;
@@ -120,12 +134,39 @@ test('repricing validates its mode and three independent nonnegative delays',()=
   }
 });
 
+test('empirical controls validate confidence, sample size, a covered deadline and ordered size buckets',()=>{
+  const validate=overrides=>validationContext({paired_repricing_mode:'empirical',...overrides}).validatePairedForm();
+  assert.doesNotThrow(()=>validate({}));
+  assert.doesNotThrow(()=>validate({paired_calibration_days:'0.5',paired_waiting_seconds:'60'}));
+  for(const value of ['0','1','NaN','Infinity',''])assert.throws(()=>validate({paired_execution_confidence:value}),/confidence/);
+  for(const value of ['0','1.5','NaN','Infinity',''])assert.throws(()=>validate({paired_execution_min_samples:value}),/positive integer/);
+  for(const overrides of [{paired_calibration_days:'0'},{paired_waiting_seconds:'0'},{paired_waiting_seconds:'61'},{paired_study_max_horizon_seconds:'NaN'}])assert.throws(()=>validate(overrides),/study wait/);
+  for(const value of ['','0,1','0.1,0.01','0.01,0.01','0.1,','0.1,Infinity'])assert.throws(()=>validate({paired_execution_size_grid_btc:value}),/strictly increasing/);
+  assert.doesNotThrow(()=>validationContext({paired_repricing_mode:'adaptive',paired_execution_confidence:'invalid unused value'}).validatePairedForm());
+});
+
+test('empirical settings appear only for the empirical policy and remain serializable when inactive',()=>{
+  const values={btc_data_source:'trade_tape',trade_strategy:'cost_aware_paired',paired_repricing_mode:'empirical',...empiricalDefaults};
+  const elements=Object.entries(values).map(([name,value])=>({name,value,disabled:false,closest:()=>null}));
+  elements.namedItem=name=>elements.find(field=>field.name===name);
+  const nodes=Object.fromEntries(['tradeReplayControls','pairedTransferControls','pairedLegacyNotice','pairedEmpiricalControls','previewLongScore','previewShortScore'].map(id=>[id,{}]));
+  const context={form:{elements},$:id=>nodes[id],captureCommodity(){},commodityProfiles:{btc:{}},FormData:class{constructor(form){this.form=form}entries(){return this.form.elements.filter(field=>!field.disabled).map(field=>[field.name,field.value])}}};
+  vm.runInNewContext(source('updateTradeControls')+'\n'+html.split('\n').find(line=>line.startsWith('function values(')),context);
+  context.updateTradeControls();
+  assert.equal(nodes.pairedEmpiricalControls.hidden,false);
+  assert.equal(elements.namedItem('paired_execution_confidence').disabled,false);
+  elements.namedItem('paired_repricing_mode').value='adaptive';context.updateTradeControls();
+  assert.equal(nodes.pairedEmpiricalControls.hidden,true);
+  assert.equal(elements.namedItem('paired_execution_confidence').disabled,true);
+  assert.equal(context.values().paired_execution_confidence,'0.95');
+});
+
 test('paired preset is bounded and every paired numeric default satisfies browser constraints',()=>{
   const preset=JSON.parse(readFileSync(new URL('../strategies/research-btc-cost-aware-paired.json',import.meta.url),'utf8'));
   assert.equal(preset.parameters.trade_strategy,'cost_aware_paired');
   assert.equal(preset.parameters.btc_data_source,'trade_tape');
   assert.equal(Date.parse(preset.parameters.backtest_end)-Date.parse(preset.parameters.backtest_start),300000);
-  const migrationDefaults={paired_observation_delay_seconds:'0',paired_decision_delay_seconds:'0',paired_order_delay_seconds:'0'};
+  const migrationDefaults={paired_observation_delay_seconds:'0',paired_decision_delay_seconds:'0',paired_order_delay_seconds:'0',...empiricalDefaults};
   for(const tag of html.matchAll(/<input\b[^>]*name="paired_[^>]*>/g)){
     const attrs=Object.fromEntries([...tag[0].matchAll(/([\w-]+)="([^"]*)"/g)].map(match=>[match[1],match[2]]));
     assert.equal(String(preset.parameters[attrs.name]??migrationDefaults[attrs.name]),attrs.value,attrs.name+' preset default');
@@ -146,6 +187,19 @@ test('adaptive comparison presets preserve the three-day baseline and isolate la
   assert.deepEqual(delayed,{...comparable,paired_observation_delay_seconds:'0.1',paired_decision_delay_seconds:'0.1',paired_order_delay_seconds:'0.1'});
   assert.equal(comparable.execution_interval_seconds,0.5);
   assert.equal(comparable.commodity_parameters.btc.trading_fee_bps,'10');
+});
+
+test('empirical ten-day preset preserves matched adaptive settings and strictly separates calibration from scoring',()=>{
+  const read=name=>JSON.parse(readFileSync(new URL('../strategies/'+name,import.meta.url),'utf8'));
+  const baseline=read('research-btc-paired-adaptive-10day-500ms-latency-100ms-fee-10bp.json');
+  const preset=read('research-btc-paired-empirical-10day-500ms-latency-100ms-fee-10bp.json');
+  assert.deepEqual(preset.parameters,{...baseline.parameters,paired_repricing_mode:'empirical',...empiricalDefaults});
+  assert.equal(Date.parse(preset.parameters.backtest_start+'Z'),Date.parse('2026-06-16T00:00:00Z'));
+  assert.equal(Date.parse(preset.parameters.backtest_end+'Z'),Date.parse('2026-06-26T00:00:00Z'));
+  assert.equal(preset.parameters.execution_interval_seconds,0.5);
+  assert.equal(preset.parameters.paired_observation_delay_seconds,'0.1');
+  assert.match(preset.research_assumptions.execution_study.calibration_period,/2026-06-06T00:00:00, 2026-06-16T00:00:00/);
+  assert.match(preset.research_assumptions.execution_study.causality,/No test-period refitting/);
 });
 
 test('diagnostics retain the full attempt denominator and distinguish forecasts from realized returns',()=>{
@@ -190,6 +244,49 @@ test('adaptive diagnostics expose saved latency and achieved lease without treat
   assert.ok(!unfilled.has('Entry lease shortfall (annualized bps)'));
   assert.ok(!new Map(context.pairedTransferSummaryRows({})).has('Limit replacements reaching the market'));
   assert.match(source('drawPairedTransferSummary'),/entry-basis diagnostic/);
+});
+
+test('empirical diagnostics preserve unsuccessful attempts and distinguish forecasts, waits and slippage units',()=>{
+  const context={fmt:(value,digits)=>value.toFixed(digits)};
+  vm.runInNewContext(source('pairedTransferSummaryRows'),context);
+  const paired={repricing_mode:'empirical',empirical_execution:{instructions:5,completed_by_deadline:2,deadline_failed:2,partial_at_deadline:1,unfilled_at_deadline:1,end_window_censored:1,completion_probability:0.5,completion_probability_denominator:4,predicted_completion_probability_mean:0.95,prediction_count:5,wait_seconds:{instruction:{count:2,mean:4,p50:3,p95:5,max:5}},actual_slippage_bps:{count:3,p95:2.5},annualized_slippage_bps:{count:3,p95:365},latest_instruction:{pair_id:'pair-5',status:'end_window_censored',predicted_completion_probability:0.93,actual_slippage_bps:null}},latest_decision:{diagnostics:{execution_model:{model_id:'frozen-1',scope:'maturity_bucket',samples:120},execution_joint_success_probability:0.94,execution_budget_bps:8,expected_edge_btc:0.0003,conservative_budget_edge_btc:0.0001}}};
+  const rows=new Map(context.pairedTransferSummaryRows(paired));
+  assert.equal(rows.get('Limit repricing'),'Empirical completion deadline');
+  assert.equal(rows.get('Empirical execution instructions'),'5');
+  assert.equal(rows.get('Missed execution deadline'),'2');
+  assert.equal(rows.get('Scored-window censored instructions'),'1');
+  assert.equal(rows.get('Actual completion by deadline (%)'),'50.00');
+  assert.equal(rows.get('Mean predicted completion by deadline (%)'),'95.00');
+  assert.equal(rows.get('Instructions with a completion prediction'),'5');
+  assert.equal(rows.get('Instruction elapsed wait sample count'),'2');
+  assert.equal(rows.get('Matched price-basis slippage p95 (bps)'),'2.5000');
+  assert.equal(rows.get('Matched annualized lease slippage p95 (bps)'),'365.0000');
+  assert.equal(rows.get('Latest empirical outcome'),'end window censored');
+  assert.ok(!rows.has('Latest actual price-basis slippage (bps)'));
+  assert.equal(rows.get('Modeled joint completion probability (%)'),'94.00');
+  assert.equal(rows.get('Scenario-weighted extra BTC vs KEEP'),'0.00030000');
+});
+
+test('study tables include nonfill counts and select quantity and maturity without inventing missing quantiles',()=>{
+  const context={fmt:(value,digits)=>value.toFixed(digits)};
+  vm.runInNewContext(source('executionStudySummaryRows')+'\n'+source('executionStudyGroupRows'),context);
+  const common={scope:'maturity_bucket',maturity_bucket:'near',quantity_btc:0.01,samples:100,raw_basis_slip_quantiles_bps:{p50:2,p95:10},annualized_slip_quantiles_bps:{p50:73,p95:365}};
+  const study={calibration_start_us:1780704000000000,calibration_end_us:1781568000000000,label_cutoff_us:1781568000000000,cohorts_started:101,cohorts_excluded_at_cutoff:1,labels:100,completed_labels:80,partial_labels:10,unfilled_labels:10,group_summaries:[{...common,wait_seconds:30,completion_probability:0.8,joint_budget_quantiles_bps:{p50:4,p75:7,p90:null,p95:null}},{...common,wait_seconds:10,completion_probability:0.5},{...common,quantity_btc:0.1,wait_seconds:30,completion_probability:0.2},{...common,maturity_bucket:'far',wait_seconds:30,completion_probability:0.99}]};
+  const summary=new Map(context.executionStudySummaryRows(study));
+  assert.equal(summary.get('Completed calibration labels'),'80');
+  assert.equal(summary.get('Unfilled calibration labels'),'10');
+  assert.equal(summary.get('Cohorts censored at calibration cutoff'),'1');
+  const rows=context.executionStudyGroupRows(study,'maturity_bucket|near','0.01');
+  assert.equal(rows.length,2);
+  assert.equal(rows[0][0],'10.000');
+  assert.equal(rows[1][1],'100');
+  assert.equal(rows[1][2],'80.00%');
+  assert.equal(rows[1][3],'4.0000 / 7.0000 / Unavailable / Unavailable');
+  assert.equal(rows[1][4],'2.0000 / Unavailable / Unavailable / 10.0000');
+  assert.equal(rows[1][5],'73.0000 / Unavailable / Unavailable / 365.0000');
+  assert.equal(context.executionStudyGroupRows(study,'maturity_bucket|near',0.1)[0][2],'20.00%');
+  assert.equal(context.executionStudyGroupRows(study,'maturity_bucket|missing',0.01).length,0);
+  assert.match(source('drawExecutionStudy'),/original maturity, not its waiting time/);
 });
 
 test('switching from benchmark export bounds resets the paired period and preserves microsecond endpoints',()=>{

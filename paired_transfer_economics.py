@@ -716,3 +716,334 @@ def evaluate_transfer(now_us, source, target, spot, *, cash_rate, fees=None,
     return TransferDecision(**{**asdict(decision),
         "diagnostics": {**decision.diagnostics, "alternatives": alternatives,
                         "evaluated_sizes": len(config.size_fractions), "evaluated_horizons": len(horizons)}})
+
+
+def _execution_outcome_forecast(now_us, horizon_us, source, target, spot, *,
+                                target_quantity, outcome, deadline_seconds,
+                                budget_bps, cash_rate, fees, config):
+    """Value a sampled joint path and its bounded spot-restoration fallback.
+
+    Study representatives retain VWAPs and quantity-weighted fill times, not
+    individual fills. Entry cash flows therefore occur at those mean times;
+    pre-deadline variation is carried to the deadline. This approximation is
+    explicit in the caller's audit. A path exceeding the authorized print-price
+    budget cannot be treated as a fill outside the limit: use the adverse funded
+    source-sale/no-hedge/restoration branch instead.
+    """
+    quantity = source.quantity_btc
+    source_fraction = float(outcome.get("source_fill_fraction", 0))
+    target_fraction = float(outcome.get("target_fill_fraction", 0))
+    if not all(math.isfinite(v) and 0 <= v <= 1 for v in (source_fraction, target_fraction)):
+        raise ValueError("Execution fill fractions must be in [0, 1]")
+    limit = budget_bps / 10000
+    # The study records modeled execution prices, including configured spread
+    # and slippage. Applying those adjustments here again would double-charge.
+    administrative_censor = outcome.get("administratively_censored", bool(outcome.get("censored"))
+        and outcome.get("censor_reason") not in ("waiting_deadline", "contract_expired"))
+    tail = bool(administrative_censor) or float(outcome.get("max_adverse_budget_bps") or 0) > budget_bps + 1e-9
+    if tail:
+        source_fraction, target_fraction = 1.0, 0.0
+        source_price = spot.price * (1 - limit)
+    else:
+        source_ratio = float(outcome.get("source_vwap_ratio") or 1.0)
+        target_ratio = float(outcome.get("target_vwap_ratio") or 1.0)
+        if not all(math.isfinite(v) and v > 0 for v in (source_ratio, target_ratio)):
+            raise ValueError("Execution price ratios must be positive and finite")
+        source_price = spot.price * source_ratio
+    sold = quantity * source_fraction
+    # Historical target capacity is measured against the study's SAME source
+    # quantity; the new funded target quantity is often smaller. Never claim
+    # more fill capacity than observed, or hedge unfilled source inventory.
+    hedged = (min(target_quantity, quantity * target_fraction)
+              if source_fraction >= 1 - 1e-10 else 0.0)
+    target_price = target.price * (float(outcome.get("target_vwap_ratio") or 1.0))
+    target_prefix_bound = hedged > EPS and hedged < quantity * target_fraction - EPS
+    if target_prefix_bound:
+        # A smaller funded hedge consumes an unknown prefix of the study's
+        # larger hedge. Its full VWAP can be cheaper than that prefix. The worst
+        # observed target price (or authorized cap) is a conservative cost bound.
+        worst = outcome.get("worst_future_adverse_bps")
+        worst = budget_bps if worst is None else max(0.0, float(worst))
+        target_price = target.price * (1 + worst / 10000)
+    if not tail and (source_price + EPS < spot.price * (1 - limit) or
+                     target_price > target.price * (1 + limit) + EPS):
+        raise ValueError("Execution outcome contradicts its within-budget label")
+    deadline_us = now_us + round(deadline_seconds * 1e6)
+    if deadline_us >= horizon_us:
+        raise ValueError("Execution deadline must precede the holding horizon")
+    growth = lambda seconds: math.exp(cash_rate * seconds / (365 * 86400))
+    elapsed = (horizon_us - now_us) / YEAR_US
+    if sold <= EPS:
+        keep = _forecast(now_us, horizon_us, source.quote, quantity, source.cash_usd,
+                         source.unsettled_pnl_usd, spot.price, cash_rate, fees, config)
+        return dict(terminal_btc=keep.terminal_btc, funding_feasible=keep.funding_feasible,
+                    source_filled_btc=0.0, target_filled_btc=0.0, restored_spot_btc=0.0,
+                    entry_and_restore_fees_usd=0.0, tail_fallback=tail)
+    source_delay = min(deadline_seconds, max(0.0, float(outcome.get("source_fill_delay_seconds") or 0)))
+    if tail:
+        source_delay = deadline_seconds if cash_rate >= 0 else 0.0
+    target_delay = min(deadline_seconds, max(source_delay, float(outcome.get("target_fill_delay_seconds") or source_delay)))
+    source_fee = _fee(fees, "spot", sold, sold * source_price)
+    net_proceeds = max(0.0, sold * source_price - source_fee)
+    # A representative path must still respect full funding at its own prices.
+    affordable, _ = funded_quantity(net_proceeds * (1 - config.cash_reserve_fraction),
+                                     target_price, fees, "futures")
+    hedged = min(hedged, affordable)
+    target_fee = _fee(fees, "futures", hedged, hedged * target_price)
+    cash = (source.cash_usd * growth(deadline_seconds)
+            + net_proceeds * growth(deadline_seconds - source_delay)
+            - target_fee * growth(deadline_seconds - target_delay))
+    matched_source = hedged / (target_quantity / quantity) if target_quantity > 0 else 0.0
+    unmatched = max(0.0, sold - matched_source)
+    # Spot restoration uses only unmatched net sale proceeds and actual free
+    # funds; it may buy fewer BTC after price movement and another commission.
+    restoration_budget = min(max(0.0, cash - hedged * target_price),
+                             net_proceeds * unmatched / sold)
+    restore_ratio = float(outcome.get("deadline_spot_ratio") or 1.0)
+    if not math.isfinite(restore_ratio) or restore_ratio <= 0:
+        raise ValueError("Deadline spot ratio must be positive and finite")
+    restore_pad = max(budget_bps, config.price_limit_bps) / 10000
+    restore_price = spot.price * restore_ratio * (1 + restore_pad)
+    restored, restore_fee = funded_quantity(restoration_budget, restore_price, fees, "spot")
+    restored = min(restored, unmatched)
+    restore_fee = _fee(fees, "spot", restored, restored * restore_price)
+    cash_without_restoration = cash
+    cash -= restored * restore_price + restore_fee
+    at_deadline = replace(target, price=_projected_price(target, spot.price, deadline_us, now_us, config),
+                          source_us=deadline_us, available_us=deadline_us)
+    remaining_spot = ((quantity - sold) * math.exp(-config.proxy_expense_rate * elapsed)
+                      + restored * math.exp(-config.proxy_expense_rate * (horizon_us - deadline_us) / YEAR_US))
+    if hedged > EPS:
+        after = _forecast(deadline_us, horizon_us, at_deadline, hedged, cash, 0.0,
+                          spot.price, cash_rate, fees, config, entry_reference=target_price)
+    else:
+        after = _forecast(deadline_us, horizon_us, spot, 0.0, cash, 0.0,
+                          spot.price, cash_rate, fees, config)
+    terminal = remaining_spot + after.terminal_btc
+    if unmatched > EPS:
+        # Restoration has no measured second-stage liquidity distribution yet.
+        # Do not credit BTC gains that depend on an assumed cheap repurchase:
+        # use the lower wealth of cap-priced restoration and retained cash.
+        no_restore = _forecast(deadline_us, horizon_us, at_deadline if hedged > EPS else spot,
+            hedged if hedged > EPS else 0.0, cash_without_restoration, 0.0,
+            spot.price, cash_rate, fees, config,
+            **({"entry_reference": target_price} if hedged > EPS else {}))
+        without_restore = ((quantity - sold) * math.exp(-config.proxy_expense_rate * elapsed)
+                           + no_restore.terminal_btc)
+        if without_restore < terminal:
+            terminal, restored, restore_fee = without_restore, 0.0, 0.0
+    if tail:
+        # A clipped historical path does not reveal the exact limit-order
+        # prefix. Its conservative proxy cannot earn a profit from a fictitious
+        # full sale followed by a cheaper repurchase on a path that never filled.
+        keep = _forecast(now_us, horizon_us, source.quote, quantity, source.cash_usd,
+                         source.unsettled_pnl_usd, spot.price, cash_rate, fees, config)
+        terminal = min(terminal, keep.terminal_btc)
+    return dict(terminal_btc=terminal,
+                funding_feasible=after.funding_feasible,
+                source_filled_btc=sold, target_filled_btc=hedged,
+                restored_spot_btc=restored,
+                entry_and_restore_fees_usd=source_fee + target_fee + restore_fee,
+                tail_fallback=tail, target_prefix_cost_bound=target_prefix_bound)
+
+
+def evaluate_transfer_with_execution(now_us, source, target, spot, *, cash_rate,
+                                     execution_model, fees=None, config=None,
+                                     deadline_seconds=30.0, required_joint_probability=.95,
+                                     candidate_quantities_btc=(.0001, .001, .01, .1),
+                                     min_samples=30, horizon_limit_us=None,
+                                     comparison_horizon_us=None, entry_fees=None,
+                                     target_quantity_btc=None):
+    """Select a calibrated small transfer using ALL empirical execution outcomes.
+
+    Empirical adverse-price allowance affects entry prices only. Size the target
+    at those funded prices BEFORE fixing its source/target ratio; keep reserve,
+    commissions and terminal execution costs separate. ``edge_btc`` is the
+    weighted expected edge including misses and bounded restoration; diagnostics
+    retain the distinct conservative all-filled budget edge. Model labels must
+    be available strictly before this decision. Other routes fail closed.
+    """
+    config = config or EconomicsConfig()
+    base = dict(source_symbol=source.quote.symbol, target_symbol=target.symbol)
+    reject = lambda reason, **extra: TransferDecision(False, reason, **base, **extra)
+    if source.quote.symbol != "SPOT" or target.symbol == "SPOT":
+        return reject("empirical_execution_route_unsupported")
+    if (not math.isfinite(deadline_seconds) or deadline_seconds <= 0 or
+            not math.isfinite(required_joint_probability) or not 0 < required_joint_probability <= 1):
+        return reject("invalid_execution_forecast_settings")
+    if entry_fees:
+        # Existing tickets are rechecked by the execution controller at their
+        # approved ratio/caps; fresh-study sizing must not erase sunk fills.
+        return reject("empirical_forecast_requires_new_ticket")
+    for product in ("spot", "futures"):
+        schedule = (fees or {}).get(product)
+        if schedule is not None and any(getattr(schedule, key, 0) for key in ("fixed", "minimum", "per_unit")):
+            return reject("empirical_nonproportional_fees_unsupported")
+    if isinstance(execution_model, dict):
+        from paired_execution_study import FrozenExecutionModel
+        execution_model = FrozenExecutionModel.from_dict(execution_model)
+    if execution_model is None or not hasattr(execution_model, "forecast"):
+        return reject("execution_model_unavailable")
+    maximum = source.quantity_btc * config.max_transfer_fraction
+    if source.quote.size_btc is not None:
+        maximum = min(maximum, source.quote.size_btc)
+    if target.size_btc is not None:
+        maximum = min(maximum, target.size_btc)
+    quantities = sorted({float(q) for q in candidate_quantities_btc
+                         if math.isfinite(float(q)) and 0 < float(q) <= maximum + EPS})
+    if not quantities:
+        return reject("no_calibrated_execution_size")
+    cfg = replace(config, max_transfer_fraction=1.0, size_fractions=(1.0,))
+    candidates, failures = [], []
+    for quantity in quantities:
+        model = execution_model.forecast(target.symbol, target.expiry_us, now_us,
+            quantity, deadline_seconds, required_joint_probability, min_samples)
+        if not model.get("available", False):
+            failures.append(dict(quantity_btc=quantity, reason=model.get("reason", "execution_forecast_unavailable")))
+            continue
+        cutoff = model.get("label_cutoff_us")
+        if not isinstance(cutoff, int) or cutoff >= now_us:
+            failures.append(dict(quantity_btc=quantity, reason="execution_model_not_causal"))
+            continue
+        budget = float(model.get("budget_bps", math.nan))
+        probability = float(model.get("all_outcome_probability", 0))
+        if (not math.isfinite(budget) or not 0 <= budget < 10000 or
+                not math.isfinite(probability) or not required_joint_probability <= probability <= 1):
+            failures.append(dict(quantity_btc=quantity, reason="execution_joint_confidence_unattainable"))
+            continue
+        outcomes = model.get("outcomes", [])
+        weights = [float(row.get("weight", 0)) for row in outcomes]
+        if (not outcomes or any(not math.isfinite(w) or w < 0 for w in weights) or
+                not math.isclose(sum(weights), 1.0, rel_tol=0, abs_tol=1e-8)):
+            failures.append(dict(quantity_btc=quantity, reason="invalid_execution_outcome_weights"))
+            continue
+        if any(not math.isclose(float(row.get("requested_source_btc", quantity)), quantity,
+                                rel_tol=1e-9, abs_tol=1e-12) for row in outcomes):
+            failures.append(dict(quantity_btc=quantity, reason="execution_quantity_not_calibrated"))
+            continue
+        source_floor = source.quote.price * (1 - budget / 10000)
+        target_cap = target.price * (1 + budget / 10000)
+        fraction = quantity / source.quantity_btc
+        slice_ = replace(source, quantity_btc=quantity, cash_usd=source.cash_usd * fraction,
+                         unsettled_pnl_usd=source.unsettled_pnl_usd * fraction)
+        initial = evaluate_transfer(now_us, slice_, target, spot, cash_rate=cash_rate,
+            fees=fees, config=cfg, horizon_limit_us=horizon_limit_us,
+            target_quantity_btc=(target_quantity_btc * fraction if target_quantity_btc is not None else None),
+            execution_price_overrides={"source": source_floor, "target": target_cap},
+            comparison_horizon_us=comparison_horizon_us)
+        metadata = {**{key: model.get(key) for key in ("model_id", "calibration_end_us", "label_cutoff_us",
+            "samples", "scope", "scenario_approximation")}, **model.get("metadata", {})}
+
+        def skipped_expected(conservative):
+            """A failed mandatory gate cannot be rescued by expected outcomes."""
+            feasible = (conservative.diagnostics.get("keep", {}).get("funding_feasible", False)
+                        and conservative.diagnostics.get("swap", {}).get("funding_feasible", False))
+            return replace(conservative, accepted=False, source_fraction=fraction,
+                reason=("empirical_conservative_gain_below_buffer" if feasible
+                        else "empirical_forecast_funding_shortfall"),
+                diagnostics={**conservative.diagnostics,
+                    "execution_model": metadata, "execution_budget_bps": budget,
+                    "execution_deadline_seconds": deadline_seconds,
+                    "execution_joint_success_probability": probability,
+                    "execution_completion_probability": model.get("completion_probability"),
+                    "execution_scenario_count": len(outcomes),
+                    "execution_expected_evaluation": "skipped_conservative_rejection",
+                    "execution_expected_value_kind": "not_evaluated",
+                    "execution_decision_edge_kind": "conservative_budget_edge",
+                    "expected_edge_btc": None, "expected_swap_btc": None,
+                    "conservative_budget_edge_btc": conservative.edge_btc,
+                    "conservative_budget_swap_btc": conservative.swap_btc,
+                    "calibrated_source_quantity_btc": quantity,
+                    "residual_source_quantity_btc": source.quantity_btc - quantity,
+                    "execution_budget_applied_to": "entry_only",
+                    "execution_price_adjustments_included": True})
+
+        # evaluate_transfer ranks acceptance before gain, so a rejected best
+        # candidate proves EVERY horizon at this exact size failed the required
+        # conservative gate. No empirical scenario can change that decision.
+        alternatives = initial.diagnostics.get("alternatives", [])
+        all_horizons = {row["horizon_us"] for row in alternatives if "horizon_us" in row}
+        horizons = sorted(h for h in all_horizons if h > now_us + round(deadline_seconds * 1e6))
+        if not horizons:
+            failures.append(dict(quantity_btc=quantity,
+                reason="no_feasible_execution_horizon" if all_horizons else initial.reason))
+            continue
+        if not initial.accepted:
+            if initial.horizon_us not in horizons:
+                selected_horizon = max((row for row in alternatives if row.get("horizon_us") in horizons),
+                                       key=lambda row: row.get("edge_btc", -math.inf))["horizon_us"]
+                initial = evaluate_transfer(now_us, slice_, target, spot, cash_rate=cash_rate,
+                    fees=fees, config=cfg, horizon_limit_us=horizon_limit_us,
+                    target_quantity_btc=initial.target_quantity_btc,
+                    execution_price_overrides={"source": source_floor, "target": target_cap},
+                    comparison_horizon_us=selected_horizon)
+            if initial.horizon_us is not None:
+                candidates.append(skipped_expected(initial))
+            else:
+                failures.append(dict(quantity_btc=quantity, reason=initial.reason))
+            continue
+        for horizon in horizons:
+            if horizon <= now_us + round(deadline_seconds * 1e6):
+                continue
+            conservative = initial if initial.horizon_us == horizon else evaluate_transfer(
+                now_us, slice_, target, spot, cash_rate=cash_rate, fees=fees, config=cfg,
+                horizon_limit_us=horizon_limit_us,
+                target_quantity_btc=initial.target_quantity_btc,
+                execution_price_overrides={"source": source_floor, "target": target_cap},
+                comparison_horizon_us=horizon)
+            if not conservative.accepted:
+                candidates.append(skipped_expected(conservative))
+                continue
+            forecast_rows = []
+            try:
+                for row in outcomes:
+                    forecast_rows.append(_execution_outcome_forecast(now_us, horizon, slice_, target, spot,
+                        target_quantity=conservative.target_quantity_btc, outcome=row,
+                        deadline_seconds=deadline_seconds, budget_bps=budget,
+                        cash_rate=cash_rate, fees=fees, config=cfg))
+            except (ValueError, TypeError, OverflowError):
+                failures.append(dict(quantity_btc=quantity, reason="invalid_execution_outcome"))
+                continue
+            expected = sum(w * row["terminal_btc"] for w, row in zip(weights, forecast_rows))
+            edge = expected - conservative.keep_btc
+            feasible = (conservative.diagnostics.get("keep", {}).get("funding_feasible", False)
+                        and conservative.diagnostics.get("swap", {}).get("funding_feasible", False)
+                        and all(row["funding_feasible"] for row in forecast_rows))
+            accepted = (feasible and conservative.accepted and
+                        edge > conservative.required_edge_btc + EPS * max(1.0, conservative.diagnostics.get("initial_btc", 0)))
+            diagnostics = {**conservative.diagnostics,
+                "execution_model": metadata, "execution_budget_bps": budget,
+                "execution_deadline_seconds": deadline_seconds,
+                "execution_joint_success_probability": probability,
+                "execution_completion_probability": model.get("completion_probability"),
+                "execution_scenario_count": len(outcomes),
+                "execution_scenario_approximation": "weighted_source_VWAP_mean_fill_time; smaller_hedge_prefix_at_worst_fill_price; pre_deadline_variation_at_deadline; min_restore_or_cash_wealth; adverse_tail_capped_at_KEEP",
+                "execution_expected_value_kind": "conservative_weighted_empirical_estimate",
+                "execution_expected_evaluation": "evaluated",
+                "execution_decision_edge_kind": "conservative_weighted_empirical_estimate",
+                "execution_target_prefix_bound_probability": sum(w for w, row in zip(weights, forecast_rows) if row.get("target_prefix_cost_bound")),
+                "expected_edge_btc": edge, "expected_swap_btc": expected,
+                "conservative_budget_edge_btc": conservative.edge_btc,
+                "conservative_budget_swap_btc": conservative.swap_btc,
+                "expected_entry_and_restore_fees_usd": sum(w * row["entry_and_restore_fees_usd"] for w, row in zip(weights, forecast_rows)),
+                "expected_source_filled_btc": sum(w * row["source_filled_btc"] for w, row in zip(weights, forecast_rows)),
+                "expected_target_filled_btc": sum(w * row["target_filled_btc"] for w, row in zip(weights, forecast_rows)),
+                "expected_restored_spot_btc": sum(w * row["restored_spot_btc"] for w, row in zip(weights, forecast_rows)),
+                "execution_tail_fallback_probability": sum(w for w, row in zip(weights, forecast_rows) if row["tail_fallback"]),
+                "calibrated_source_quantity_btc": quantity,
+                "residual_source_quantity_btc": source.quantity_btc - quantity,
+                "execution_budget_applied_to": "entry_only", "source_sale_limit": source_floor,
+                "execution_price_adjustments_included": True,
+                "target_buy_limit": target_cap}
+            reason = ("empirical_expected_net_gain_exceeds_buffer" if accepted else
+                      "empirical_forecast_funding_shortfall" if not feasible else
+                      "empirical_conservative_gain_below_buffer" if not conservative.accepted else
+                      "empirical_expected_gain_below_buffer")
+            candidates.append(replace(conservative, accepted=accepted, reason=reason,
+                swap_btc=expected, edge_btc=edge, source_fraction=fraction, diagnostics=diagnostics))
+    if not candidates:
+        return reject(failures[-1]["reason"] if failures else "no_feasible_execution_horizon",
+                      diagnostics={"execution_candidate_failures": failures})
+    best = max(candidates, key=lambda item: (item.accepted, item.edge_btc))
+    return replace(best, diagnostics={**best.diagnostics, "execution_candidate_failures": failures,
+        "execution_candidates_evaluated": len(candidates)})

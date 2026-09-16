@@ -21,6 +21,13 @@ Build an interactive research and backtesting application for strategies that al
   decision and market-arrival delays. Old files retain fixed limits. Actual
   acknowledged source fills inform recovery prices; replacement arrivals and
   achieved matched rates remain auditable, without an atomic-fill guarantee.
+  The empirical execution extension estimates joint slippage/completion before
+  sizing a funded entry, retaining noncompletion in its economics and deadline
+  statistics. Its declared ten-day calibration and separate ten-day scored test
+  precede any new 90-day empirical run; see
+  [EMPIRICAL_LEASE_EXECUTION.md](EMPIRICAL_LEASE_EXECUTION.md). Prior adaptive
+  three-day results validated accounting but completed no pair, so they do not
+  certify this new model's completion coverage or profitability.
 
 - Optional bounded BTC trade replay: June 25 uploaded data, millisecond decision
   clocks, GCS worker audit, charts and full valuation CSV. See

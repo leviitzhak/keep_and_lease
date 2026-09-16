@@ -47,6 +47,18 @@ def timestamp_us(value):
     return (delta.days * 86400 + delta.seconds) * 1000000 + delta.microseconds
 
 
+STUDY_BUDGET_EDGES = (0,.1,.25,.5,1,2,3,5,7.5,10,15,20,30,50,75,100,150,200,300,500,750,1000,1500,2000,3000,5000,10000)
+
+
+def study_maturity_bucket(expiry, decision):
+    days, prior = (expiry-decision)/86400e6, 0
+    for bound in (1,3,7,14,30,90,365):
+        if days <= bound:
+            return f"{prior}-{bound}d"
+        prior = bound
+    return "365d+"
+
+
 class Checks:
     def __init__(self):
         self.counts = Counter()
@@ -198,6 +210,9 @@ class Audit:
             CREATE TABLE replacements(order_id TEXT, revision INTEGER, data TEXT,
                                       PRIMARY KEY(order_id,revision));
             CREATE TABLE cancellations(id TEXT PRIMARY KEY, data TEXT);
+            CREATE TABLE restorations(id TEXT PRIMARY KEY, data TEXT);
+            CREATE TABLE study_labels(symbol TEXT, decision_us INTEGER, quantity REAL, wait REAL,
+                                      PRIMARY KEY(symbol,decision_us,quantity,wait));
         """)
         self.kinds, self.reasons, self.statuses = Counter(), Counter(), Counter()
         self.decisions = defaultdict(Moments)
@@ -218,6 +233,9 @@ class Audit:
         self.collateral_breaches = 0
         self.maximum_reported_reconstruction_error = 0.0
         self.day_closes = []
+        self.empirical_statuses, self.study_counts = Counter(), Counter()
+        self.study_groups = {}
+        self.study_cutoff = None
 
     def replacement(self, row):
         """A request is evidence only; the live limit changes at its arrival."""
@@ -348,15 +366,40 @@ class Audit:
                      "source_lots": [], "source_value": 0.0, "target_value": 0.0,
                      "source_fees": 0.0, "target_fees": 0.0,
                      "matched_source_value": 0.0, "matched_source_fees": 0.0,
-                     "fill_revision": 0,
+                     "fill_revision": 0, "empirical": row.get("empirical", False),
+                     "deadline_us": row.get("deadline_us"), "first_source_fill_us": None,
+                     "first_target_fill_us": None, "last_target_fill_us": None,
                      "decision": row.get("decision", {}),
                      "target_effective_lease": row.get("target_effective_lease"),
                      "fees": 0.0, "result": None})
             started = row.get("decision", {}).get("decision_started_us", us)
             for quote in row.get("decision", {}).get("quote_snapshots", {}).values():
                 self.c.check("decision_quotes_causal", quote["source_us"] <= started and quote["available_us"] <= started, us)
+            model = row.get("decision", {}).get("diagnostics", {}).get("execution_model", {})
+            if model:
+                cutoff = model.get("label_cutoff_us")
+                self.c.check("execution_model_cutoff_causal", isinstance(cutoff, int) and cutoff <= started, row["pair_id"])
+                if self.study_cutoff is not None:
+                    self.c.check("execution_model_matches_audited_cutoff", cutoff == self.study_cutoff, row["pair_id"])
+                    details = row["decision"]["diagnostics"]
+                    scope,bucket = model.get("scope"),model.get("maturity_bucket")
+                    key = (scope,row["target_symbol"] if scope == "contract" else bucket,bucket,
+                           row["source_quantity_btc"],details.get("execution_deadline_seconds"))
+                    group = self.study_groups.get(key)
+                    self.c.check("execution_admission_has_calibrated_cell",group is not None,row["pair_id"])
+                    if group:
+                        covered = sum(count for bound,count in zip(STUDY_BUDGET_EDGES,group["histogram"])
+                                      if bound <= details["execution_budget_bps"]+1e-12)
+                        self.c.equal("execution_admission_all_outcome_probability",details["execution_joint_success_probability"],
+                                     covered/group["samples"],row["pair_id"],atol=1e-12)
+                        self.c.equal("execution_admission_sample_count",model.get("sample_count",model.get("samples")),
+                                     group["samples"],row["pair_id"],atol=0,rtol=0)
         elif kind == "fill":
             self.fill(row)
+        elif kind.startswith("cash_restore_"):
+            self.restoration(row)
+        elif kind == "empirical_instruction_result":
+            self.empirical_result(row)
         elif kind == "fill_acknowledgement":
             self.c.check("acknowledgement_after_exchange_fill", row["exchange_fill_us"] <= us, us)
             order = self.get("orders", row["order_id"])
@@ -471,12 +514,11 @@ class Audit:
             self.c.equal("effective_lease_shortfall", row["effective_lease_shortfall"],
                          max(0.0, target - expected), context, atol=1e-9)
 
-    def fill(self, row):
+    def record_market_fill(self, row):
+        """Shared tape capacity and cost ledger, including spot restoration."""
         us, quantity, symbol = row["us"], row["signed_btc"], row["symbol"]
         value = abs(quantity) * row["price"]
         self.c.equal("fill_fee_10bps_or_cli_rate", row["fee_usd"], value * self.args.fee_bps / 10000, us, atol=1e-8)
-        self.c.check("fill_side", row["side"] == ("buy" if quantity > 0 else "sell"), us)
-        self.c.check("fill_role_direction", (quantity < 0 if row["role"] == "source" else quantity > 0), us)
         self.c.check("fill_reported_time_causal", row.get("reported_us", us) <= us, us)
         self.c.check("fill_acknowledgement_not_early", row.get("acknowledgement_us", us) >= us, us)
         try:
@@ -493,11 +535,24 @@ class Audit:
             self.c.equal("print_capacity_consistent", capacity, printed[1], us, atol=1e-12)
         self.c.check("observed_print_capacity", cumulative <= capacity + 1e-10, us)
         self.db.execute("INSERT OR REPLACE INTO prints VALUES(?,?,?,?)", (symbol, str(row["trade_id"]), cumulative, capacity))
+        self.units[symbol] += quantity
+        self.c.check("fill_no_short_inventory", self.units[symbol] >= -1e-10, us)
+        self.fees.add(row["fee_usd"])
+        self.turnover.add(value)
+
+    def fill(self, row):
+        us, quantity, symbol = row["us"], row["signed_btc"], row["symbol"]
+        value = abs(quantity) * row["price"]
+        self.record_market_fill(row)
+        self.c.check("fill_side", row["side"] == ("buy" if quantity > 0 else "sell"), us)
+        self.c.check("fill_role_direction", (quantity < 0 if row["role"] == "source" else quantity > 0), us)
         order = self.get("orders", row["order_id"])
         self.c.check("fill_has_order", order is not None, us)
         if order:
             self.c.check("fill_after_eligibility", us > order["eligible_after_us"], us)
             self.c.check("fill_order_active", order["active"], us)
+            if order.get("deadline_us") is not None:
+                self.c.check("fill_before_exchange_deadline", us < order["deadline_us"], us)
             self.c.check("fill_order_identity", row["pair_id"] == order["pair_id"] and
                          symbol == order["symbol"] and row["role"] == order["role"], us)
             self.c.check("fill_order_direction", quantity * order["signed_btc"] > 0, us)
@@ -515,6 +570,11 @@ class Audit:
         pair = self.get("pairs", row["pair_id"])
         self.c.check("fill_has_pair", pair is not None, us)
         if pair:
+            name = "first_" + row["role"] + "_fill_us"
+            if pair.get(name) is None:
+                pair[name] = us
+            if row["role"] == "target":
+                pair["last_target_fill_us"] = us
             pair[row["role"] + "_filled"] += abs(quantity)
             pair["fill_revision"] += 1
             pair["fees"] += row["fee_usd"]
@@ -524,6 +584,9 @@ class Audit:
             self.c.check("target_funded_by_prior_source", pair["target_filled"] <= pair["source_filled"] * ratio + 1e-10, us)
             if row["role"] == "target":
                 self.c.check("target_after_source_acknowledgement", pair["target_filled"] <= pair["source_acknowledged"] * ratio + 1e-10, us)
+                if pair.get("empirical"):
+                    self.c.check("empirical_full_source_ack_before_hedge",
+                                 pair["source_acknowledged"] >= pair["source_quantity_btc"]-1e-10, us)
                 remaining = abs(quantity) / ratio
                 while remaining > 1e-12 and pair["source_lots"]:
                     lot = pair["source_lots"][0]
@@ -547,10 +610,144 @@ class Audit:
             self.c.check("unpaired_inventory_limit", unpaired <= self.args.max_unpaired_btc + 1e-10, us)
             self.max_unpaired = max(self.max_unpaired, unpaired)
             self.put("pairs", row["pair_id"], pair)
-        self.units[symbol] += quantity
-        self.c.check("fill_no_short_inventory", self.units[symbol] >= -1e-10, us)
-        self.fees.add(row["fee_usd"])
-        self.turnover.add(value)
+
+    def restoration(self, row):
+        kind, us = row["kind"], row["us"]
+        identifier = row.get("identifier", row.get("recovery_id"))
+        saved = self.get("restorations", identifier)
+        if kind == "cash_restore_pending":
+            self.c.check("unique_cash_restoration", saved is None, identifier)
+            self.c.check("restore_decision_after_pending", row["decision_started_us"] >= us, identifier)
+            self.put("restorations", identifier, {**row, "recorded_filled": 0.0,
+                     "recorded_value": 0.0, "recorded_fees": 0.0, "arrived": False, "finished": False})
+            return
+        self.c.check("restore_has_pending", saved is not None, identifier)
+        if saved is None:
+            return
+        self.c.check("restore_pair_identity", row["pair_id"] == saved["pair_id"], identifier)
+        if kind == "cash_restore_order":
+            self.c.check("restore_clocks_causal", row["observation_us"] <= row["decision_started_us"] <=
+                         row["decision_ready_us"] <= row["eligible_after_us"], identifier)
+            self.c.check("restore_request_at_decision", us == row["decision_started_us"], identifier)
+            self.c.check("restore_positive_limit", row["limit_price"] > 0, identifier)
+            saved.update(limit_price=row["limit_price"], requested_btc=row["requested_btc"],
+                         eligible_after_us=row["eligible_after_us"])
+            # ACK evidence may refer to this order, but it is not another pair.
+            self.put("orders", identifier, dict(role="restore", pair_id=row["pair_id"]))
+        elif kind == "cash_restore_arrival":
+            self.c.check("restore_arrival_after_transport", us == saved.get("eligible_after_us"), identifier)
+            self.c.check("restore_arrival_before_deadline", us < saved["deadline_us"], identifier)
+            self.c.check("restore_arrival_unique", not saved["arrived"], identifier)
+            saved["arrived"] = True
+        elif kind == "cash_restore_fill":
+            self.c.check("restore_fill_active", saved["arrived"] and not saved["finished"], identifier)
+            self.c.check("restore_fill_direction", row["symbol"] == "SPOT" and row["signed_btc"] > 0, identifier)
+            self.c.check("restore_fill_after_arrival", us > saved.get("eligible_after_us", us), identifier)
+            self.c.check("restore_fill_before_deadline", us < saved["deadline_us"], identifier)
+            self.c.check("restore_fill_limit", row["price"] <= saved["limit_price"]+1e-8, identifier)
+            saved["recorded_filled"] += row["signed_btc"]
+            saved["recorded_value"] += row["signed_btc"]*row["price"]
+            saved["recorded_fees"] += row["fee_usd"]
+            remaining = saved["budget_usd"]-saved["recorded_value"]-saved["recorded_fees"]
+            self.c.check("restore_cash_funded", remaining >= -1e-8, identifier)
+            self.c.check("restore_quantity_capacity", saved["recorded_filled"] <= saved["requested_btc"]+1e-10, identifier)
+            self.c.equal("restore_remaining_cash", row["remaining_cash_usd"], max(0,remaining), identifier, atol=1e-8)
+            self.record_market_fill({**row,"order_id":identifier})
+        elif kind == "cash_restore_result":
+            self.c.check("restore_result_unique", not saved["finished"], identifier)
+            for name, expected in (("filled_btc",saved["recorded_filled"]),("filled_value",saved["recorded_value"]),
+                                   ("fee_usd",saved["recorded_fees"]),
+                                   ("remaining_cash_usd",saved["budget_usd"]-saved["recorded_value"]-saved["recorded_fees"])):
+                self.c.equal("restore_result_"+name,row[name],expected,identifier,atol=1e-8)
+            if row["reason"] == "filled":
+                self.c.equal("restore_completed_quantity",row["filled_btc"],saved["requested_btc"],identifier,atol=1e-10)
+            saved["finished"] = True
+        self.put("restorations", identifier, saved)
+
+    def empirical_result(self, row):
+        pair = self.get("pairs",row["pair_id"])
+        self.c.check("empirical_result_has_pair",pair is not None,row["pair_id"])
+        if not pair:
+            return
+        self.c.check("empirical_result_unique",not pair.get("empirical_result"),row["pair_id"])
+        ratio = pair["target_quantity_btc"]/pair["source_quantity_btc"]
+        unmatched = max(0,pair["source_filled"]-pair["target_filled"]/ratio)
+        complete = (pair["source_filled"] >= pair["source_quantity_btc"]-1e-12 and unmatched <= 1e-12
+                    and pair["last_target_fill_us"] is not None and pair["last_target_fill_us"] < row["deadline_us"])
+        self.c.check("empirical_completion_from_exchange_fills",row["completed_by_deadline"] == complete,row["pair_id"])
+        for name, expected in (("actual_source_btc",pair["source_filled"]),("actual_target_btc",pair["target_filled"]),
+                               ("unmatched_source_btc",unmatched),("requested_source_btc",pair["source_quantity_btc"]),
+                               ("requested_target_btc",pair["target_quantity_btc"])):
+            self.c.equal("empirical_result_"+name,row[name],expected,row["pair_id"],atol=1e-10)
+        for name in ("first_source_fill_us","first_target_fill_us","last_target_fill_us"):
+            self.c.check("empirical_result_"+name,row[name] == pair[name],row["pair_id"])
+        if row["actual_slippage_bps"] is not None and pair["target_filled"] > 0:
+            snapshots = pair["decision"]["quote_snapshots"]
+            matched = pair["target_filled"]/ratio
+            basis = 10000*((pair["target_value"]/pair["target_filled"])/(pair["matched_source_value"]/matched)
+                          -snapshots[pair["target_symbol"]]["price"]/snapshots[pair["source_symbol"]]["price"])
+            self.c.equal("empirical_actual_basis_from_fills",row["actual_slippage_bps"],basis,row["pair_id"],atol=1e-8)
+        self.empirical_statuses[row["status"]] += 1
+        pair["empirical_result"] = row
+        self.put("pairs",row["pair_id"],pair)
+
+    def study_outcome(self, row, metadata):
+        """Rebuild all-label coverage from lossless rows, not retained scenarios."""
+        config = metadata.get("study_config", {})
+        cutoff = metadata["label_cutoff_us"]
+        self.study_cutoff = cutoff
+        if row["kind"] == "cohort_excluded":
+            self.study_counts["excluded_cohorts"] += len(config.get("quantity_grid_btc", []))
+            self.c.check("study_cutoff_exclusion_reason",row["reason"] == "label_window_crosses_cutoff",row["decision_us"])
+            return
+        self.c.check("study_known_row_kind",row["kind"] == "execution_outcome",row["kind"])
+        if row["kind"] != "execution_outcome":
+            return
+        start, wait, quantity = row["decision_us"],row["wait_seconds"],row["requested_source_btc"]
+        deadline = start+round(wait*1e6)
+        ack = round(config.get("response_delay_seconds",0)*1e6)
+        self.c.check("study_label_before_cutoff",row["label_available_us"] <= cutoff,row["symbol"])
+        self.c.check("study_label_after_full_deadline_ack",row["label_available_us"] == deadline+ack,row["symbol"])
+        if config:
+            self.c.check("study_complete_window_before_cutoff",start+round(max(config["waiting_seconds"])*1e6)+ack <= cutoff,start)
+            self.c.check("study_grid_membership",quantity in config["quantity_grid_btc"] and wait in config["waiting_seconds"],start)
+            self.c.check("study_deterministic_cohort_clock",start % round(config["cohort_interval_seconds"]*1e6) == 0,start)
+        try:
+            self.db.execute("INSERT INTO study_labels VALUES(?,?,?,?)",(row["symbol"],start,quantity,wait))
+            unique = True
+        except sqlite3.IntegrityError:
+            unique = False
+        self.c.check("study_unique_label",unique,start)
+        for leg in ("source","target"):
+            if leg+"_quote_us" in row:
+                self.c.check("study_anchor_causal",row[leg+"_quote_us"] <= row[leg+"_available_us"] <= start,start)
+            fraction = row[leg+"_fill_fraction"]
+            self.c.check("study_fill_fraction_bounded",0 <= fraction <= 1+1e-10,start)
+            fill = row[leg+"_completed_seconds"]
+            self.c.check("study_missing_fill_is_not_zero_slippage",(fraction > 1e-12) == (row[leg+"_vwap"] is not None),start)
+            if fill is not None:
+                self.c.check("study_fill_before_deadline",0 < fill < wait,start)
+        source, target = row["source_fill_fraction"],row["target_fill_fraction"]
+        self.c.check("study_source_first_quantity",target <= source+1e-10 and (target <= 1e-12 or source >= 1-1e-10),start)
+        complete = target >= 1-1e-10
+        self.c.check("study_completion_from_fractions",row["completed"] == complete,start)
+        if row.get("source_observed_price") and source > 0 and target > 0:
+            basis = 10000*(row["target_vwap"]/row["source_vwap"]-row["target_observed_price"]/row["source_observed_price"])
+            self.c.equal("study_basis_from_vwaps",row["raw_basis_slip_bps"],basis,start,atol=1e-8)
+            self.c.equal("study_annualization_original_maturity",row["annualized_slip_bps"],basis/((row["expiry_us"]-start)/(365*86400e6)),start,atol=1e-7)
+        self.study_counts["labels"] += 1
+        self.study_counts["completed" if complete else "unfilled" if source <= 1e-12 else "partial"] += 1
+        budget = row["max_adverse_budget_bps"]
+        index = len(STUDY_BUDGET_EDGES)
+        if complete and budget is not None:
+            index = next((i for i,bound in enumerate(STUDY_BUDGET_EDGES) if budget <= bound+1e-12),index)
+        bucket = study_maturity_bucket(row["expiry_us"],start)
+        for scope,identity in (("contract",row["symbol"]),("maturity_bucket",bucket)):
+            key = (scope,identity,bucket,quantity,wait)
+            group = self.study_groups.setdefault(key,dict(samples=0,completed=0,histogram=[0]*(len(STUDY_BUDGET_EDGES)+1)))
+            group["samples"] += 1
+            group["completed"] += int(complete)
+            group["histogram"][index] += 1
 
     def valuation(self, row):
         us = row["us"]
@@ -637,6 +834,16 @@ class Audit:
         self.previous_nav, self.last = nav, row
 
     def run(self):
+        if "btc_execution_study" in self.archive.manifest["datasets"]:
+            metadata = self.archive.manifest["datasets"]["btc_execution_study"]
+            for row in self.archive.rows("btc_execution_study"):
+                self.study_outcome(row,metadata)
+            provenance = self.archive.manifest.get("provenance",{}).get("execution_study",{})
+            for source,target in (("labels","labels"),("completed_labels","completed"),
+                                  ("partial_labels","partial"),("unfilled_labels","unfilled"),
+                                  ("cohorts_excluded_at_cutoff","excluded_cohorts")):
+                if source in provenance:
+                    self.c.equal("study_summary_"+source,provenance[source],self.study_counts[target],atol=0,rtol=0)
         event_rows = iter(self.archive.rows("btc_trade_events"))
         event = next(event_rows, None)
         for row in self.archive.rows("btc_trade_valuations"):
@@ -648,7 +855,7 @@ class Audit:
             self.event(event)
             event = next(event_rows, None)
         for dataset in self.archive.manifest["datasets"]:
-            if dataset not in ("btc_trade_events", "btc_trade_valuations"):
+            if dataset not in ("btc_trade_events", "btc_trade_valuations", "btc_execution_study"):
                 for _ in self.archive.rows(dataset):
                     pass
         if self.last is None:
@@ -686,7 +893,8 @@ class Audit:
             "max_drawdown": 100 * self.drawdown, "direct_holding_max_drawdown": 100 * self.direct_drawdown,
             "commodity_max_drawdown_pct": 100 * self.commodity_drawdown,
             "fees_usd": self.fees.value + self.delivery_fees.value, "turnover_usd": self.turnover.value,
-            "fills": self.kinds["fill"], "orders": self.kinds["order"],
+            "fills": self.kinds["fill"]+self.kinds["cash_restore_fill"],
+            "orders": self.kinds["order"]+self.kinds["cash_restore_order"],
             "min_collateralization_ratio": self.min_ratio if math.isfinite(self.min_ratio) else None,
             "collateral_breach_count": self.collateral_breaches,
             "max_reported_nav_reconstruction_error_usd": self.maximum_reported_reconstruction_error,
@@ -709,6 +917,8 @@ class Audit:
             "event_kinds": dict(self.kinds), "decision_and_risk_reasons": dict(self.reasons),
             "forecast_summaries": {k: v.report() for k, v in self.decisions.items()},
             "transfers": pair_summary, "daily_last_valuations": self.day_closes,
+            "empirical_instruction_statuses":dict(self.empirical_statuses),
+            "execution_study_counts":dict(self.study_counts),
             **self.c.report(), "caveats": [
                 "Prices are audited internal observations; the underlying exchange tape is not independently fetched or authenticated.",
                 "Spot is derived from direct_nav and the initial holding price. Futures mark prices and lots are absent from valuation rows, so futures notional and unrealized P&L cannot be independently repriced here.",

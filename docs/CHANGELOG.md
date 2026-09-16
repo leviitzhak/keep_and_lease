@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-09-16 — Empirical execution cost and waiting-time research
+
+- Add opt-in `paired_repricing_mode="empirical"` alongside the preserved fixed
+  and adaptive behavior. Study joint spot/futures completion by waiting time and
+  BTC size, retaining nonfills and partials in the opportunity denominator.
+- Distinguish adverse price-basis movement from lease-rate slippage annualized
+  at the original observation's maturity. Use frozen historical calibration;
+  unsupported estimates remain KEEP.
+- Budget anticipated execution cost before fixing the affordable futures
+  quantity, and include unsuccessful execution/restoration outcomes in the
+  expected terminal-BTC comparison. Require both expected and conservative
+  budget-priced gains. One small approved source tranche precedes a protected
+  hedge; entry GTD and bounded cash-to-spot recovery replace indefinite locking
+  for empirical instructions. The model applies to this fixed-budget policy,
+  not continually changing limits. Nonproportional entry fees fail closed.
+- Add empirical controls, calibration/distribution inspection and predicted
+  versus actual completion/waiting/slippage diagnostics. Preserve old-result
+  missing values and explicitly label tape-volume, Treasury-cash and confidence
+  assumptions.
+- Declare June 6–16 calibration and June 16–26 scored ten-day comparison presets
+  at 0.5-second decisions, three 100-ms delays and estimated 10-bp fees. A new
+  90-day empirical run follows inspection of the short run; deployment and
+  realized acceptance evidence are separate from implementation.
+
 ## 2026-09-16 — Adaptive funded BTC entry limits
 
 - Add optional adaptive spot-to-future entry limits tied to the accepted

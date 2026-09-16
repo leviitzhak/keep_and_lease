@@ -110,6 +110,16 @@ decision and order-transport delays apply to both initial and replacement
 instructions; a live limit changes only when its replacement arrives. The
 existing observed-allocation behavior described below remains its own policy.
 
+The optional empirical execution model studies joint spot/futures completion
+and adverse execution movement at specified deadlines and BTC sizes. A frozen
+historical calibration prefix precedes the scored window; later outcomes must
+not enter the fitted model. Empirical cost enters funded target sizing and the
+KEEP/SWAP evaluation before the approved quantities are fixed. Expected failure
+and spot-restoration outcomes remain in the comparison, while realized replay
+fills still require subsequent compatible tape volume. Full details and the
+predeclared ten-day calibration/ten-day scored test are in
+[EMPIRICAL_LEASE_EXECUTION.md](EMPIRICAL_LEASE_EXECUTION.md).
+
 The user-approved regular BTC test is saved in
 `strategies/full-btc-long-gradual-1m-regular.json`. GUI/API `execution_model=auto`
 selects observed execution for regular intraday data. Raw `Parameters` defaults

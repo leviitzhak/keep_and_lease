@@ -51,9 +51,23 @@ implementation is not full-period or native-market acceptance.
   funded source-first staging. Separate common observation, frozen-snapshot
   decision and order-arrival delays for initial and replacement instructions.
   Preserve in-flight limits and replacement revisions through checkpoints.
-- [ ] Compare adaptive and fixed execution over the same short tape window,
-  opening state, costs and allocation parameters; inspect actual matched lease,
-  completion, unmatched exposure and net BTC before claiming improvement.
+- [x] Compare adaptive and fixed execution over the same three-day tape window,
+  opening state, costs and allocation parameters. Full audits passed, but no
+  futures leg filled: smaller losses reflect lower unmatched exposure and fees,
+  not completed profitable transfers. Preview revision
+  `663e60c5b10bb98675baf7785b66b64d18ea6b34` passed workflow `35140804706`.
+- [x] Add opt-in empirical waiting/slippage calibration with nonfill-aware
+  completion denominators, causal frozen historical labels, funded target sizing
+  at the admitted price budget, and expected/conservative KEEP comparisons.
+  Use one small complete source tranche then a protected hedge, an explicit
+  entry deadline and bounded restoration with retained failure diagnostics.
+  Surface model assumptions and predicted/actual waiting/slippage statistics.
+- [ ] Complete the new empirical execution acceptance: freeze ten calibration
+  days, score a separate ten-day window, compare slippage and waiting-time
+  distributions with their predictions, and count missed deadlines, partial
+  transfers, recovery costs and unresolved inventory. Inspect this short run
+  before starting a new 90-day empirical strategy run. See
+  `EMPIRICAL_LEASE_EXECUTION.md` for the declared windows and limitations.
 - [ ] Extend adaptive effective-lease pricing to reverse transfers and futures
   rolls, with appropriate economic direction and funding constraints.
 - [x] Emit decision forecasts, rate/quote provenance, matched-fill pair IDs,

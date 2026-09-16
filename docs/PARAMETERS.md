@@ -27,15 +27,21 @@ scores and fixed/minimum-hold controls do not drive the paired policy.
 | `paired_min_gain_btc` | `0` | Additional required incremental BTC wealth. |
 | `paired_cash_reserve_fraction` | `0.01` | Capital reserve kept outside the transferred position; fraction in `[0,1)`. |
 | `paired_max_quote_skew_seconds` | `1` | Maximum source-time gap between the spot/source/target observations used together. |
-| `paired_repricing_mode` | `fixed` | `adaptive` derives spot-to-future limits from the net-BTC economic boundary and reprices against observable or acknowledged executed counterpart prices; reverse transfers and rolls retain fixed behavior. Missing values preserve old strategies. |
+| `paired_repricing_mode` | `fixed` | `adaptive` derives spot-to-future limits from the net-BTC economic boundary. `empirical` estimates joint completion and price cost at a waiting deadline, then budgets that cost before funded quantity selection. Missing values preserve old strategies. |
 | `paired_observation_delay_seconds` | `0` | Common delay before market observations become available, added to the applicable per-feed delay. |
 | `paired_decision_delay_seconds` | `0` | Processing time for a frozen observed snapshot, including adaptive replacement decisions. |
 | `paired_order_delay_seconds` | omitted | Order/replacement transport delay. Omitted or null inherits Bitcoin `execution_delay_seconds`; an explicit nonnegative value overrides it. |
+| `paired_execution_confidence` | `0.95` | Empirical target fraction of all sampled opportunities that complete both legs within the waiting time and price allowance; includes nonfills in the denominator. Not a statistical confidence interval or guarantee. |
+| `paired_execution_min_samples` | `100` | Minimum calibration support required for an empirical execution estimate. Unsupported candidates remain KEEP. |
+| `paired_calibration_days` | `10` | Historical calibration length preceding the scored empirical replay; the fitted model is frozen for the scored window. |
+| `paired_waiting_seconds` | `30` | Empirical pair execution deadline measured from the decision start. Decision and transport consume this budget. Deadline handling retains misses and recovery outcomes. |
+| `paired_execution_size_grid_btc` | `0.0001,0.001,0.01,0.1` | Positive source-BTC quantities considered by the empirical execution study and candidate evaluation, subject to position and transfer-fraction limits. |
+| `paired_study_max_horizon_seconds` | `60` | Maximum execution waiting horizon studied from the calibration tape. It is an execution-time limit, distinct from forecast holding horizons in days. |
 | `paired_spot_feed_delay_seconds` | `0` | Additional spot-specific observation delay. |
 | `paired_futures_feed_delay_seconds` | `0` | Additional futures-specific observation delay. |
 | `paired_response_delay_seconds` | `0` | Delay from actual exchange-side fill to the strategy's fill acknowledgement. Funding changes at the fill time. |
-| `paired_max_unpaired_btc` | `0.01` | Maximum unmatched source quantity newly introduced by a chunk. Missing liquidity can leave it unresolved; the audit retains it. |
-| `paired_max_legging_seconds` | `30` | Timeout for a pending transfer/unpaired chunk. Stops further source fills and retains funded recovery inventory/orders. |
+| `paired_max_unpaired_btc` | `0.01` | Maximum unmatched source quantity newly introduced by a chunk; also caps the entire source tranche of one empirical instruction. Larger size-grid rows can remain diagnostic-only. Missing liquidity can leave residual exposure; the audit retains it. |
+| `paired_max_legging_seconds` | `30` | Fixed/adaptive timeout for a pending transfer/unpaired chunk: stops further source fills and retains funded recovery inventory/orders. Empirical entries instead use the explicit waiting deadline and bounded recovery behavior. |
 | `paired_price_limit_bps` | `10` | Initial adverse movement allowance from authorizing prices, retained as the fixed-mode limit. Forecasts budget it with half-spread/slippage. Adaptive entry limits use the effective-lease/economic boundary and can move beyond this initial allowance. |
 | `paired_max_rate_age_days` | `7` | Maximum source-observation age for new discretionary transfers. Stale rates continue funding valuation. |
 | `paired_roll_lead_days` | `1` | Excludes near-expiry destination contracts and prioritizes funded attempts to exit/roll the entire held contract within this window, overriding the discretionary surplus requirement. Freshness, funding and execution constraints still apply; stale rates permit only an expiry exit to spot. |
@@ -46,6 +52,16 @@ scores and fixed/minimum-hold controls do not drive the paired policy.
 | `paired_futures_per_contract_fee_usd` | `0` | USD per modeled one-BTC linear contract unit; not an actual venue fee schedule. |
 | `paired_settlement_interval_seconds` | `86400` | JSON/API research setting: fixed UTC interval for last-trade-mark variation settlement. Not a verified exchange settlement calendar. |
 | `paired_settlement_basis_bps` | `0` | JSON/API forecast assumption for expiry reference relative to flat spot. Does not replace recorded final delivery metadata. |
+
+The empirical waiting time cannot exceed its study horizon. The replay must
+have the configured calibration history available before its scored start;
+that history does not become part of the scored portfolio. Confidence is
+strictly between zero and one, minimum samples is a positive integer, and the
+calibration days, waiting time and size-grid values must be positive.
+
+Empirical discretionary entries currently support proportional fees only.
+Nonzero fixed, minimum-ticket or per-contract commissions leave those empirical
+entries unavailable; the fixed/adaptive modes retain their ticket-fee support.
 
 In the new mode only, `slv_expense` means optional annual BTC custody/proxy expense
 (GUI percentage, engine decimal) and decreases directly held BTC over elapsed
@@ -59,6 +75,8 @@ next US federal business release day and following UTC midnight. Publication
 times are assumed rather than historically verified. See
 [COST_AWARE_FUNDED_TRANSFERS.md](COST_AWARE_FUNDED_TRANSFERS.md) for economic
 formulas, funding/execution rules, export diagnostics and acceptance limits.
+[EMPIRICAL_LEASE_EXECUTION.md](EMPIRICAL_LEASE_EXECUTION.md) describes the joint
+slippage/completion model, causal calibration and separate ten-day test.
 
 ## Global
 

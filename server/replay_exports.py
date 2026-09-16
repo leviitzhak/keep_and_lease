@@ -64,6 +64,24 @@ TRANSFER_FIELDS = [
     'effective_lease_expiry_us', 'effective_lease_rate_time_us', 'effective_lease_cash_rate',
     'decision.horizon_us', 'decision.keep_btc', 'decision.swap_btc',
     'decision.edge_btc', 'decision.required_edge_btc',
+    'empirical', 'deadline_us', 'first_source_fill_us', 'last_source_fill_us',
+    'first_target_fill_us', 'last_target_fill_us',
+]
+EXECUTION_OUTCOME_FIELDS = [
+    'pair_id', 'status', 'decision_started_us', 'deadline_us',
+    'completed_by_deadline', 'requested_source_btc', 'requested_target_btc',
+    'actual_source_btc', 'actual_target_btc', 'unmatched_source_btc',
+    'residual_cash_usd', 'source_wait_seconds', 'instruction_wait_seconds',
+    'hedge_wait_seconds', 'actual_slippage_bps', 'annualized_slippage_bps',
+    'predicted_completion_probability', 'maturity_reference_us',
+    'first_source_fill_us', 'first_target_fill_us', 'last_target_fill_us',
+]
+STUDY_SUMMARY_FIELDS = [
+    'scope', 'symbol', 'maturity_bucket', 'quantity_btc', 'wait_seconds',
+    'samples', 'completed', 'completion_probability',
+    *[f'{measure}.{quantile}' for measure in ('joint_budget_quantiles_bps',
+          'raw_basis_slip_quantiles_bps', 'annualized_slip_quantiles_bps')
+      for quantile in ('p50', 'p75', 'p90', 'p95', 'p99')],
 ]
 HORIZON_FIELDS = [
     'source_fraction', 'horizon_us', 'keep_btc', 'swap_btc', 'edge_btc',
@@ -258,6 +276,10 @@ def replay_workbook(store, manifest, result, start, end):
                 yield [row['date'], row['kind'], timestamp_text(stored_value(row, 'decision.horizon_us')),
                        timestamp_text(row.get('submitted_us')), timestamp_text(row.get('completed_us')),
                        *[stored_value(row, k) for k in TRANSFER_FIELDS]]
+    def execution_rows():
+        for row in selected_rows(store, manifest, 'btc_trade_events', start, end):
+            if row.get('kind') == 'empirical_instruction_result':
+                yield [row['date'], *[stored_value(row, k) for k in EXECUTION_OUTCOME_FIELDS], row]
     def decision_rows(alternatives=False):
         for row in selected_rows(store, manifest, 'btc_trade_events', start, end):
             if row.get('kind') != 'paired_decision':
@@ -315,4 +337,18 @@ def replay_workbook(store, manifest, result, start, end):
             ('Horizon alternatives', ['date', 'decision_id', 'pair_id', 'selected', 'source_symbol',
                                       'target_symbol', 'horizon_utc', *HORIZON_FIELDS], decision_rows(alternatives=True)),
         ])
+        if result['trade_replay'].get('execution_study'):
+            study = result['trade_replay']['execution_study']
+            overview.extend([
+                ['Execution calibration start UTC', timestamp_text(study.get('calibration_start_us'))],
+                ['Execution calibration cutoff UTC', timestamp_text(study.get('label_cutoff_us'))],
+                ['Execution calibration', 'Execution study contains frozen historical cohort statistics, preceding the scored portfolio; it is not filtered to the selected portfolio period. Full individual calibration outcomes are in the audit archive. Failures remain in completion and joint-budget denominators.'],
+                ['Execution deadlines', 'Execution outcomes contains actual instruction results in the selected period. A failed instruction and its later bounded cash-restoration attempt are separate events; restoration does not turn a missed deadline into a successful paired execution.'],
+            ])
+            sheets.extend([
+                ('Execution study', STUDY_SUMMARY_FIELDS,
+                 ([stored_value(row, k) for k in STUDY_SUMMARY_FIELDS]
+                  for row in study.get('group_summaries', []))),
+                ('Execution outcomes', ['date', *EXECUTION_OUTCOME_FIELDS, 'Complete event record'], execution_rows()),
+            ])
     yield from workbook(sheets)

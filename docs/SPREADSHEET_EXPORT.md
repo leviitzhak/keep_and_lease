@@ -60,3 +60,34 @@ npm run test:workbook-regression
 
 An intentional workbook change requires review of the generated workbook and its
 `Checks` sheet before replacing the golden fixture.
+
+
+## Funded BTC tape-replay workbooks
+
+Completed BTC replay exports use the stored audit through
+`server/replay_exports.py`, separately from the daily workbook above. They
+retain full-resolution selected-period valuations, events and saved parameters,
+with paired-transfer, decision and evaluated-horizon sheets when that policy
+recorded those rows. Exporting does not rerun the strategy or infer missing
+historical pair IDs.
+
+Empirical replay results add two sheets:
+
+- `Execution study` contains the frozen calibration group statistics, including
+  quantity, waiting horizon, completion support and budget/price/lease quantiles.
+  Calibration precedes the scored portfolio. These historical statistics are
+  intentionally not filtered to the selected scored-portfolio export period;
+  the Overview states the calibration bounds and cutoff.
+- `Execution outcomes` contains actual instruction results within the selected
+  UTC period: accepted quantities, deadline, completion state, matched price
+  slippage, waits, prediction and residual exposure. The complete stored event
+  accompanies the selected columns.
+
+A failed instruction and a later cash-to-spot restoration remain separate
+Events rows. Recovery does not retroactively make the pair meet its deadline.
+The archive's `btc_execution_study` stream retains individual historical cohort
+outcomes and exclusions; the worksheet is its compact group summary. Missing
+fields stay blank, and completed-path quantiles must be read with the all-attempt
+completion/failure counts. See
+[EMPIRICAL_LEASE_EXECUTION.md](EMPIRICAL_LEASE_EXECUTION.md) for definitions and
+approximation limits.

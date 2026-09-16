@@ -1,6 +1,6 @@
 # Current work
 
-## Cost-aware funded BTC paired transfers — 2026-09-16
+## Empirical execution costs for funded BTC transfers — 2026-09-16
 
 The owner requested implementation of feasible funded transfers and holding
 horizons evaluated by expected net BTC wealth versus keeping the current
@@ -8,8 +8,14 @@ position. The opt-in `trade_strategy="cost_aware_paired"` path is implemented
 beside the preserved default allocation policy. The GUI provides a strategy
 selector, economics/funding/latency/fee controls and a bounded example.
 
-Read [COST_AWARE_FUNDED_TRANSFERS.md](COST_AWARE_FUNDED_TRANSFERS.md) for exact
-behavior and assumptions. Key components are `funded_ledger.py`,
+The current extension studies joint spot/futures completion and execution-price
+slippage at explicit waiting deadlines, then budgets that cost before approving
+and sizing a transfer. The research setting is opt-in
+`paired_repricing_mode="empirical"`; `fixed` and `adaptive` retain their existing
+meaning. Read [EMPIRICAL_LEASE_EXECUTION.md](EMPIRICAL_LEASE_EXECUTION.md) for the
+calibration, deadline and evaluation protocol, and
+[COST_AWARE_FUNDED_TRANSFERS.md](COST_AWARE_FUNDED_TRANSFERS.md) for the underlying
+funding and economics. Key components are `funded_ledger.py`,
 `paired_transfer_economics.py`, `paired_transfer.py` and
 `paired_transfer_rates.py`; `btc_trade_backtest.py` connects them to the
 existing durable worker, charts, audit and export flow.
@@ -53,9 +59,25 @@ workbook checks, and replay extension passed for commit
 [COST_AWARE_FUNDED_VALIDATION.md](COST_AWARE_FUNDED_VALIDATION.md) for the workflow,
 preview URL, exact results and research limitations.
 
-That deployment evidence predates adaptive repricing. New adaptive test,
-deployment and comparable-backtest evidence must be recorded separately; it
-does not establish an improvement simply because orders can now be repriced.
+The adaptive extension passed 257 Python and 37 relevant JavaScript checks.
+Preview workflow `35140804706` passed for
+`663e60c5b10bb98675baf7785b66b64d18ea6b34`. Its three-day fixed/zero-delay
+adaptive/100-ms-per-stage comparison completed on `[2026-06-06, 2026-06-09)`.
+All three full audits passed, but none completed a pair. Their ending differences
+from direct holding were respectively −$0.68229, −$0.07773 and −$0.00555;
+remaining unmatched spot quantities were 0.01, 0.00114 and 0.00008 BTC. Smaller
+losses came from less unmatched selling and lower fees, not demonstrated lease
+income. The original fixed target quantity made the funding cap bind despite
+repricing. The empirical extension therefore evaluates execution cost before
+fixing its funded target quantity.
+
+That evidence predates the empirical extension. Its frozen calibration window is
+`[2026-06-06, 2026-06-16)` and its first scored window is
+`[2026-06-16, 2026-06-26)`, both UTC. The scored ten days must be inspected before
+starting a new 90-day empirical run. Deployment, empirical completion and
+out-of-sample coverage remain pending until recorded with exact job IDs and
+engine/data revisions; implementation or synthetic tests alone do not establish
+the requested completion probability.
 
 The mode remains a BTC tape-participation, USD-linear research proxy with
 cash-interest accrual. Native inverse settlement, historical quote depth,

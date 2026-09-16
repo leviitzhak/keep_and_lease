@@ -67,6 +67,7 @@ def milliseconds(value, name, minimum=0):
 
 
 def validate(payload, *, coverage=None):
+    paired_config = None
     policy = payload.get("trade_strategy", "legacy")
     if policy not in ("legacy", "cost_aware_paired"):
         raise ValueError("Unknown trade strategy")
@@ -99,7 +100,7 @@ def validate(payload, *, coverage=None):
         raise ValueError("Trade replay requires same-day reactivity; use execution delay for latency")
     if policy == "cost_aware_paired":
         from paired_transfer import PairedConfig
-        PairedConfig.from_payload(payload, merged=merged, p=p)
+        paired_config = PairedConfig.from_payload(payload, merged=merged, p=p)
     elif p.slv_expense or p.half_spread_bps or p.slippage_bps:
         raise ValueError("Trade replay requires zero proxy expense, half spread and slippage; trading fees are supported")
     if p.max_volume_participation <= 0:
@@ -113,10 +114,52 @@ def validate(payload, *, coverage=None):
     start, end = us_time(lo.isoformat() if lo else coverage["start"]), us_time(hi.isoformat() if hi else coverage["end"])
     if start < us_time(coverage["start"]) or end > us_time(coverage["end"]) or start >= end:
         raise ValueError(f"Trade data covers only [{coverage['start']}, {coverage['end']}) UTC; choose a window inside it")
+    if paired_config and paired_config.repricing_mode == "empirical":
+        calibration_start = start - round(paired_config.calibration_days * 86400e6)
+        if calibration_start < us_time(coverage["start"]):
+            raise ValueError("Empirical execution requires the configured calibration days before the backtest start; "
+                             "choose a later start inside the available trade history")
     limit = coverage["maximum_decisions"]
     if math.ceil((end - start) / interval) > limit:
         raise ValueError(f"Trade replay permits at most {limit:,} decisions; shorten the period to at most {limit * interval / 1e6:g} seconds or increase the interval")
     return p, start, end, interval, delay, capital, plot_max_points
+
+
+def calibrate_execution(store, config, start, participation, legacy_delay_us, audit, notify, expiries):
+    """Freeze a separate historical study before opening the scored portfolio."""
+    from dataclasses import asdict
+    from paired_execution_study import StudyConfig, runnerstudy
+    lower = start - round(config.calibration_days * 86400e6)
+    maximum = config.study_max_horizon_seconds
+    waits = tuple(sorted({config.waiting_seconds, maximum} |
+                         {v for v in (.5, 1, 2, 5, 10, 30, 60) if v <= maximum}))
+    study_config = StudyConfig(
+        quantity_grid_btc=tuple(config.execution_size_grid_btc), waiting_seconds=waits,
+        max_quote_age_seconds=config.max_quote_age_seconds,
+        max_quote_skew_seconds=config.max_quote_skew_seconds,
+        max_slice_btc=config.max_unpaired_btc, participation=participation,
+        observation_delay_seconds=config.observation_delay_seconds,
+        decision_delay_seconds=config.decision_delay_seconds,
+        order_delay_seconds=(config.order_delay_seconds if config.order_delay_seconds is not None
+                             else legacy_delay_us / 1e6),
+        response_delay_seconds=config.response_delay_seconds,
+        spot_feed_delay_seconds=config.spot_feed_delay_seconds,
+        futures_feed_delay_seconds=config.futures_feed_delay_seconds,
+        half_spread_bps=config.half_spread_bps, slippage_bps=config.slippage_bps)
+    rows = audit.writer("btc_execution_study")
+    rows.row_limit = 4096
+    rows.metadata.update(calibration_start=iso_time(lower), calibration_end=iso_time(start),
+                         independent_hypothetical_cohorts=True, scored_portfolio=False,
+                         study_config=asdict(study_config))
+    def emit(row):
+        us = row.get("label_available_us", row.get("decision_us"))
+        rows.emit({**row, "us": us, "date": iso_time(us)})
+    notify("execution_calibration", f"Calibrating on [{iso_time(lower)}, {iso_time(start)}) UTC; "
+           "all labels precede the scored portfolio")
+    result = runnerstudy(store, lower, start, expiries, study_config, progress=notify, sink=emit)
+    rows.metadata.update(model_id=result["model"]["model_id"],
+                         label_cutoff_us=result["model"]["label_cutoff_us"])
+    return result
 
 
 def run(payload, data_root, audit_collection, progress=None, *, store=None, coverage=None):
@@ -185,8 +228,16 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
         event = next(tape, None)
         notify("resuming_trade_replay", f"Resuming after {iso_time(previous_tick)} UTC")
     else:
+        execution_study = None
+        if paired and paired_config.repricing_mode == "empirical":
+            execution_study = calibrate_execution(store, paired_config, start,
+                p.max_volume_participation, delay, audit_collection, notify, expiries)
         account = account_type(capital, p.max_volume_participation, delay, p.trading_fee_bps, emit,
-                               **({"config": paired_config, "expiries": expiries} if paired else {}))
+                               **({"config": paired_config, "expiries": expiries,
+                                   **({"empirical_model": execution_study["model"]} if execution_study else {})}
+                                  if paired else {}))
+        if execution_study:
+            account.execution_study_summary = execution_study["summary"]
         expiries = {s: us_time(info["expiry"]) for s, info in manifest["futures"].items()}
         for symbol, info in manifest["futures"].items():
             seed = info.get("seed")
@@ -459,6 +510,9 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
     audit_collection.provenance['trade_data'] = provenance
     if paired:
         audit_collection.provenance['treasury_rate_model'] = rate_model.provenance()
+        if getattr(account, "execution_study_summary", None):
+            audit_collection.provenance['execution_study'] = {
+                k: v for k, v in account.execution_study_summary.items() if k != "group_summaries"}
     audit = audit_collection.finish()
     measured = {**getattr(store, "timings", {}), **audit_collection.timings}
     measured["ordering_preparation"] = store.preparation_seconds
@@ -478,6 +532,8 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
                                   delay_seconds=(account.delay_us if paired else delay)/1e6,
                                   strategy=payload.get("trade_strategy", "legacy"),
                                   **(dict(paired_transfer=account.diagnostics(),
+                                          **({"execution_study": account.execution_study_summary}
+                                             if getattr(account, "execution_study_summary", None) else {}),
                                           treasury_rate_model=rate_model.provenance(),
                                           ending_commodity_nav_btc=account.nav/account.marks["SPOT"].price,
                                           commodity_return_pct=100*((account.nav/account.marks["SPOT"].price)/(capital/initial_price)-1)) if paired else {}),
