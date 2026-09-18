@@ -6,6 +6,38 @@ The September 11 small batch completes four items and partially improves full-au
 progress. Scope and validation are recorded in `TODO_SMALL_BATCH_VALIDATION.md`;
 remaining items below are not implicitly completed by that batch.
 
+## cost-aware strategy
+
+- the direct/proxy holding is the starting point and the default position
+- the lease rate of every instrument is either updated by a time-weighted moving average of the spot and the future prices, or implied from sufficiently close obeservations of both prices. we also discount it for a conservative estimate of the possible lease rate that can be executed (the choice and values may be implied by a data analysis, and evaluating what can be executed from what can be observed).
+  
+- each available instrument is given an 'amortized return' in the following way : we take into account its lease rate, and its expected entry and exit costs, using expiry as the exit date (to get the maximum possible amortization). an extra exit costs of the alternative to exit should also be accounted for. this creates an updated lease rate (diminished by the amortized costs in the remaining lifetime)
+
+- the direct proxy holding can considered a candidate instrument with no expiry and and a negative lease rate of the expense ratio. this negative lease rate can be considered as the amortized-cost lease rate (since the holding period is not constrained) (that allows the exit of other instruments which updated amortized-cost lease rate became negative).
+
+- we do normalize the possible amortized returns (including lease and costs) to a daily or annual return for comparison
+
+- every instrument where a position is taken is also given a 'keep amortized return' (also normalized in the same way), where the entry cost is not accounted for in the costs
+
+(- no need to check predetermined discrete holding horizons)
+
+then the allocation is as follows (it is not anymore according to the allocation rules defined by the entry rates and the rates curves) :
+
+- define a maximum delta change for any position change
+- sort the possible new positions by their amortized lease rates from best to worst in descending order  
+- sort the existing positions in descending order from their worst keep values to their best keep values
+- check if there is a possible transfer from the worst existing position to best new possible position that will increase from the 'keep amortized return' of the existing position to the new 'amortized return' of the possible new position, by a sufficient amount (allowing some slippage in the executed lease rate). the transfer is limited by the maximum delta change, and by the existing position.
+- if the existing position size is less than the maximum delta change, consider the next worst exisitng position, reducing available transfer amount by the already accounted for amount of the previous existing position.
+
+- given an observed lease rate and possible transfer, the execution should be as follows : 
+	- keep continuously observing both worst existing instrument and best possible instrument 
+   	- update continuously a limit order of the worst existing instrument from the best possible instrument quote and the observed/desired lease rate
+   	- optionally, increase the lease rate used for the limit order by the fees of the transaction, instead of counting them as in the amortized lease rate.
+   	- limit the quantity of this limit order by the observed quantity in the order book of the best possible instrument (such when the limit order is hit we know we can, in theory and if we are fast enough, execute a market order on the best possible instrument - at least we are more conservative, even if we don't expect instant execution)
+   	-  when the limit order is hit, execute a market order (or maybe a limit order sufficiently expected to be filled) on the opposite direction of the existing instrument.
+   	-  do the exact same thing, with the possible instrument being the limit order, being updated from quotes of the existing instrument,  
+	
+
 ## Next implementation — cost-aware, funded paired-transfer strategy
 
 This is the single next development workstream, to be implemented in a new
