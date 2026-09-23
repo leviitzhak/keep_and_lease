@@ -60,6 +60,11 @@ bucket accessible to the deployment identity for workload state only.
 | Workloads | `infra/gcp/workloads/` | `gs://keep-and-lease-terraform-workloads/cloud-run` state |
 | Deployment | `.github/workflows/deploy-google-cloud.yml` | any branch push or manual OIDC build/push/plan/apply/GUI and strategy smoke test; `master` maps to stable and every other branch maps to preview |
 
+Both Cloud Run Dockerfiles pin the Python 3.13 slim base by digest. Update that
+digest deliberately only after a preview rollout verifies container startup and
+the deployment smoke tests; a moving base tag must not silently change runtime
+bytes between otherwise identical application deployments.
+
 The web service exposes `/api/v1/health` without constructing Firestore, Cloud
 Storage, or Cloud Run API clients. Those clients initialize lazily on the first
 job operation, so credential discovery or control-plane latency cannot prevent
