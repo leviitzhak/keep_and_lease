@@ -70,7 +70,9 @@ serves `/api/v1/health` directly from immutable build metadata. The full API is
 loaded on the first non-health request, and Firestore, Cloud Storage, and Cloud
 Run clients initialize lazily on the first job operation. Application imports,
 credential discovery, and control-plane latency therefore cannot block the
-Cloud Run startup probe. The probe allows up to 120 seconds for a cold instance;
+Cloud Run startup probe. Terraform explicitly declares the web container's
+`python -m uvicorn server_main:app` command and port instead of depending on
+implicit image-launch metadata. The probe allows up to 120 seconds for a cold instance;
 each individual probe still has a two-second timeout and runs every two seconds.
 On a failed rollout, the deployment workflow resolves the newest revision,
 briefly allows container logs to flush, and reports up to 200 revision-specific

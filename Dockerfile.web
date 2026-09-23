@@ -27,4 +27,4 @@ COPY public/silver_strategy_gui.html public/backtest-runs.js public/shared-run-p
 
 USER app
 EXPOSE 8080
-CMD ["python", "server_main.py"]
+CMD ["python", "-m", "uvicorn", "server_main:app", "--host", "0.0.0.0", "--port", "8080"]
