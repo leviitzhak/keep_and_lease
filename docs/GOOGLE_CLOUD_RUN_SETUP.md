@@ -60,12 +60,14 @@ bucket accessible to the deployment identity for workload state only.
 | Workloads | `infra/gcp/workloads/` | `gs://keep-and-lease-terraform-workloads/cloud-run` state |
 | Deployment | `.github/workflows/deploy-google-cloud.yml` | any branch push or manual OIDC build/push/plan/apply/GUI and strategy smoke test; `master` maps to stable and every other branch maps to preview |
 
-The web service startup probe allows up to 120 seconds for a cold instance to
-import the cloud adapters, initialize Google clients and begin serving
-`/api/v1/health`; each individual probe still has a two-second timeout and runs
-every two seconds. On a failed rollout, the deployment workflow resolves the
-newest revision, briefly allows container logs to flush, and reports up to 200
-revision-specific entries so Python startup errors are not hidden behind only
+The web service exposes `/api/v1/health` without constructing Firestore, Cloud
+Storage, or Cloud Run API clients. Those clients initialize lazily on the first
+job operation, so credential discovery or control-plane latency cannot prevent
+the container from binding its HTTP port. The startup probe allows up to 120
+seconds for a cold instance; each individual probe still has a two-second timeout
+and runs every two seconds. On a failed rollout, the deployment workflow resolves
+the newest revision, briefly allows container logs to flush, and reports up to
+200 revision-specific entries so Python startup errors are not hidden behind only
 the Cloud Run platform event.
 
 The local and Render modes retain `JobStore`, the existing in-process queue. Cloud

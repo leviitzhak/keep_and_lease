@@ -10,6 +10,8 @@ from server.app import create_app
 from server.cloud import (
     CloudJobService,
     CloudRunJobLauncher,
+    CloudSettings,
+    DeferredCloudJobService,
     FirestoreJobRepository,
     GcsResultStore,
     parameter_hash,
@@ -174,6 +176,21 @@ class FakeEngine:
 
     def provenance(self):
         return {"engine_commit": "commit", "data_manifest_hash": "manifest"}
+
+
+class DeferredCloudJobServiceTests(unittest.TestCase):
+    def test_health_capabilities_do_not_initialize_google_clients(self):
+        settings = CloudSettings("project", "region", "job", "results")
+        created = []
+
+        def factory(_settings):
+            created.append(True)
+            raise AssertionError("health must not initialize Google clients")
+
+        service = DeferredCloudJobService(settings, factory=factory)
+
+        self.assertEqual(service.capabilities()["execution_backend"], "cloud-run-job")
+        self.assertEqual(created, [])
 
 
 class FakeBlob:

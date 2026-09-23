@@ -809,13 +809,52 @@ class CloudJobService:
         }
 
 
-def create_cloud_job_service(settings: CloudSettings | None = None) -> CloudJobService:
-    resolved = settings or CloudSettings.from_env()
+class DeferredCloudJobService:
+    """Expose health metadata without blocking startup on Google clients."""
+
+    def __init__(
+        self,
+        settings: CloudSettings,
+        factory: Callable[[CloudSettings], CloudJobService] | None = None,
+    ) -> None:
+        self.settings = settings
+        self.provenance = runtime_provenance()
+        self._factory = factory or _create_cloud_job_service
+        self._service: CloudJobService | None = None
+        self._lock = threading.Lock()
+
+    def capabilities(self) -> dict[str, Any]:
+        return {
+            "schema_version": 1,
+            "loaded": False,
+            "execution_backend": "cloud-run-job",
+            "products": {},
+            **self.provenance,
+        }
+
+    def _resolve(self) -> CloudJobService:
+        if self._service is None:
+            with self._lock:
+                if self._service is None:
+                    self._service = self._factory(self.settings)
+        return self._service
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._resolve(), name)
+
+
+def _create_cloud_job_service(settings: CloudSettings) -> CloudJobService:
     return CloudJobService(
-        FirestoreJobRepository.from_settings(resolved),
-        GcsResultStore.from_settings(resolved),
-        CloudRunJobLauncher.from_settings(resolved),
+        FirestoreJobRepository.from_settings(settings),
+        GcsResultStore.from_settings(settings),
+        CloudRunJobLauncher.from_settings(settings),
     )
+
+
+def create_cloud_job_service(
+    settings: CloudSettings | None = None,
+) -> DeferredCloudJobService:
+    return DeferredCloudJobService(settings or CloudSettings.from_env())
 
 
 class Heartbeat:
