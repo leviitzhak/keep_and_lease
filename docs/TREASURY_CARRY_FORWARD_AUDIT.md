@@ -5,6 +5,12 @@ study package. Their SHA-256 hashes match the original diagnostic provenance.
 This is an explanation of existing behavior, not a refresh of historical yields
 or a claim that these were the actual later market rates.
 
+The opt-in cost-aware paired policy implemented on 2026-09-16 now uses a
+separate refreshed snapshot, normalized 91-day investment yield, rate-age gate
+and a later modeled publication delay. Those changes do not rewrite this retained
+vintage or its results. See
+[COST_AWARE_FUNDED_TRANSFERS.md](COST_AWARE_FUNDED_TRANSFERS.md#versioned-treasury-inputs).
+
 ## Last observations
 
 | Series | Code tenor (days) | Last observation | Raw rate (%) |

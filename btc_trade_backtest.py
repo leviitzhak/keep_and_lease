@@ -67,10 +67,16 @@ def milliseconds(value, name, minimum=0):
 
 
 def validate(payload, *, coverage=None):
+    paired_config = None
+    policy = payload.get("trade_strategy", "legacy")
+    if policy not in ("legacy", "cost_aware_paired"):
+        raise ValueError("Unknown trade strategy")
     source = payload.get("btc_data_source", "minute")
     if source not in ("minute", "trade_tape"):
         raise ValueError("Unknown BTC data source")
     if source != "trade_tape":
+        if policy != "legacy":
+            raise ValueError("Cost-aware funded transfers currently require BTC trade-tape data")
         return None
     from trade_ordering import POLICIES
     if payload.get('trade_ordering', 'sequence') not in POLICIES:
@@ -92,7 +98,10 @@ def validate(payload, *, coverage=None):
         raise ValueError("Trade replay requires matched-maturity Treasury accrual with shortest rolling allocation")
     if payload.get("reactivity", "same_day") != "same_day":
         raise ValueError("Trade replay requires same-day reactivity; use execution delay for latency")
-    if p.slv_expense or p.half_spread_bps or p.slippage_bps:
+    if policy == "cost_aware_paired":
+        from paired_transfer import PairedConfig
+        paired_config = PairedConfig.from_payload(payload, merged=merged, p=p)
+    elif p.slv_expense or p.half_spread_bps or p.slippage_bps:
         raise ValueError("Trade replay requires zero proxy expense, half spread and slippage; trading fees are supported")
     if p.max_volume_participation <= 0:
         raise ValueError("Trade participation must be greater than zero")
@@ -105,14 +114,66 @@ def validate(payload, *, coverage=None):
     start, end = us_time(lo.isoformat() if lo else coverage["start"]), us_time(hi.isoformat() if hi else coverage["end"])
     if start < us_time(coverage["start"]) or end > us_time(coverage["end"]) or start >= end:
         raise ValueError(f"Trade data covers only [{coverage['start']}, {coverage['end']}) UTC; choose a window inside it")
+    if paired_config and paired_config.repricing_mode == "empirical":
+        calibration_start = start - round(paired_config.calibration_days * 86400e6)
+        if calibration_start < us_time(coverage["start"]):
+            raise ValueError("Empirical execution requires the configured calibration days before the backtest start; "
+                             "choose a later start inside the available trade history")
     limit = coverage["maximum_decisions"]
     if math.ceil((end - start) / interval) > limit:
         raise ValueError(f"Trade replay permits at most {limit:,} decisions; shorten the period to at most {limit * interval / 1e6:g} seconds or increase the interval")
     return p, start, end, interval, delay, capital, plot_max_points
 
 
+def calibrate_execution(store, config, start, participation, legacy_delay_us, audit, notify, expiries):
+    """Freeze a separate historical study before opening the scored portfolio."""
+    from dataclasses import asdict
+    from paired_execution_study import StudyConfig, runnerstudy
+    lower = start - round(config.calibration_days * 86400e6)
+    maximum = config.study_max_horizon_seconds
+    waits = tuple(sorted({config.waiting_seconds, maximum} |
+                         {v for v in (.5, 1, 2, 5, 10, 30, 60) if v <= maximum}))
+    study_config = StudyConfig(
+        quantity_grid_btc=tuple(config.execution_size_grid_btc), waiting_seconds=waits,
+        max_quote_age_seconds=config.max_quote_age_seconds,
+        max_quote_skew_seconds=config.max_quote_skew_seconds,
+        max_slice_btc=config.max_unpaired_btc, participation=participation,
+        observation_delay_seconds=config.observation_delay_seconds,
+        decision_delay_seconds=config.decision_delay_seconds,
+        order_delay_seconds=(config.order_delay_seconds if config.order_delay_seconds is not None
+                             else legacy_delay_us / 1e6),
+        response_delay_seconds=config.response_delay_seconds,
+        spot_feed_delay_seconds=config.spot_feed_delay_seconds,
+        futures_feed_delay_seconds=config.futures_feed_delay_seconds,
+        half_spread_bps=config.half_spread_bps, slippage_bps=config.slippage_bps)
+    rows = audit.writer("btc_execution_study")
+    rows.row_limit = 4096
+    rows.metadata.update(calibration_start=iso_time(lower), calibration_end=iso_time(start),
+                         independent_hypothetical_cohorts=True, scored_portfolio=False,
+                         study_config=asdict(study_config))
+    def emit(row):
+        us = row.get("label_available_us", row.get("decision_us"))
+        rows.emit({**row, "us": us, "date": iso_time(us)})
+    notify("execution_calibration", f"Calibrating on [{iso_time(lower)}, {iso_time(start)}) UTC; "
+           "all labels precede the scored portfolio")
+    result = runnerstudy(store, lower, start, expiries, study_config, progress=notify, sink=emit)
+    rows.metadata.update(model_id=result["model"]["model_id"],
+                         label_cutoff_us=result["model"]["label_cutoff_us"])
+    return result
+
+
 def run(payload, data_root, audit_collection, progress=None, *, store=None, coverage=None):
     p, start, end, interval, delay, capital, plot_max_points = validate(payload, coverage=coverage)
+    paired = payload.get("trade_strategy", "legacy") == "cost_aware_paired"
+    paired_config = rate_model = None
+    account_type = TapeAccount
+    if paired:
+        from paired_transfer import PairedConfig, PairedTransferAccount
+        from paired_transfer_rates import CausalTreasuryRates
+        paired_config = PairedConfig.from_payload(payload, merged=gui.product_payload(payload, "btc"), p=p)
+        account_type = PairedTransferAccount
+        rate_model = CausalTreasuryRates.from_root(
+            data_root, max_age_days=float(payload.get("paired_max_rate_age_days", 7)))
     notify = progress or (lambda *_: None)
     planned_decisions = math.ceil((end - start) / interval)
     notify("trade_plan", f"Planned {planned_decisions:,} decision ticks · up to {plot_max_points:,} chart samples · {(end-start)/86400e6:.2f} days")
@@ -147,7 +208,7 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
         writer.emit({**row, "date": iso_time(row["us"])})
     expiries = {s: us_time(info["expiry"]) for s, info in manifest["futures"].items()}
     if restored:
-        account = TapeAccount.restore(restored["account"], emit)
+        account = account_type.restore(restored["account"], emit)
         audit_collection.restore(restored["audit"])
         state = restored["state"]
         if hasattr(store, "accessed_partitions"):
@@ -167,7 +228,16 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
         event = next(tape, None)
         notify("resuming_trade_replay", f"Resuming after {iso_time(previous_tick)} UTC")
     else:
-        account = TapeAccount(capital, p.max_volume_participation, delay, p.trading_fee_bps, emit)
+        execution_study = None
+        if paired and paired_config.repricing_mode == "empirical":
+            execution_study = calibrate_execution(store, paired_config, start,
+                p.max_volume_participation, delay, audit_collection, notify, expiries)
+        account = account_type(capital, p.max_volume_participation, delay, p.trading_fee_bps, emit,
+                               **({"config": paired_config, "expiries": expiries,
+                                   **({"empirical_model": execution_study["model"]} if execution_study else {})}
+                                  if paired else {}))
+        if execution_study:
+            account.execution_study_summary = execution_study["summary"]
         expiries = {s: us_time(info["expiry"]) for s, info in manifest["futures"].items()}
         for symbol, info in manifest["futures"].items():
             seed = info.get("seed")
@@ -195,9 +265,13 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
             raise ValueError("No spot trades in the selected window")
         initial_us, initial_price = event.us, event.price
         account.initialize_spot(event)
+        if paired:
+            account.bootstrap_observations()
         count += 1
         event = next(tape, None)
-        account.rate = strategy.usd_rate(rates, EPOCH + timedelta(microseconds=initial_us), strategy.TENORS[0][0])
+        rate_quote = rate_model.rate_at(initial_us) if paired else None
+        account.rate = (rate_quote.annual_rate if rate_quote else None) if paired else strategy.usd_rate(
+            rates, EPOCH + timedelta(microseconds=initial_us), strategy.TENORS[0][0])
         if account.rate is None:
             raise ValueError("No observable Treasury yield at the selected start")
         decisions = no_fresh = 0
@@ -207,6 +281,9 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
         min_collateralization_ratio, collateral_breach_count = math.inf, 0
         series = []
         sample_every = max(1, math.ceil((end - start) / interval / plot_max_points))
+    # The opening holding interval precedes the first scheduled valuation tick.
+    # Keep its exact bounds so selected-period exports include opening events.
+    valuations.metadata.update(replay_start=iso_time(initial_us), replay_end=iso_time(end))
     fields = ["date", "nav", "direct_nav", "cash_usd", "spot_value_usd", "futures_notional_usd",
               "target_futures_notional_usd", "free_collateral_usd", "collateralization_ratio",
               "turnover_usd", "fees_usd", "max_mark_age_seconds",
@@ -214,6 +291,10 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
               "long_weighted_lease_rate_pct", "long_weighted_maturity_days", "treasury_yield_pct",
               "treasury_accrual_index", "market_pnl_usd", "spot_pnl_usd", "futures_pnl_usd",
               "treasury_interest_usd", "reconstruction_error_usd", "held_futures"]
+    if paired:
+        fields.extend(["commodity_nav_btc", "free_cash_usd", "posted_cash_usd",
+                       "reserved_cash_usd", "unsettled_pnl_usd", "liabilities_usd",
+                       "pending_variation_usd", "treasury_value_usd", "available_cash_usd"])
     def point(tick, target_notional=None):
         # Only sampled display rows retain instruments and diagnostic scalars.
         # Last-observed marks are used; stale held marks are not new fill evidence.
@@ -225,22 +306,24 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
                 continue
             mark = account.marks[symbol]
             days = (expiries[symbol] - tick) / 86400e6
-            rate = strategy.usd_rate(rates, day, days) if days > 0 else None
+            rate = account.rate if paired and days > 0 else strategy.usd_rate(rates, day, days) if days > 0 else None
             premium = mark.price / spot - 1
             held.append(dict(symbol=symbol, side="long", price=mark.price,
                 quantity=quantity, weight_pct=100*quantity*mark.price/account.nav,
                 maturity_days=days, premium_pct=100*premium,
                 lease_pct=100*(rate-premium*365/days) if rate is not None and days > 0 else None,
-                quote_age_seconds=(tick-mark.us)/1e6))
+                quote_age_seconds=(tick-(mark.reported_us if paired and mark.reported_us is not None else mark.us))/1e6))
         def weighted(key):
             eligible = [h for h in held if h[key] is not None]
             total = sum(h["weight_pct"] for h in eligible)
             return sum(h[key]*h["weight_pct"] for h in eligible)/total if total else None
-        held_ages = [(tick - account.marks[s].us) / 1e6 for s, q in account.units.items() if q > 0]
+        held_ages = [(tick - (account.marks[s].reported_us if paired and account.marks[s].reported_us is not None
+                              else account.marks[s].us)) / 1e6 for s, q in account.units.items() if q > 0]
         futures_notional = account.collateral
-        free_collateral = account.cash - abs(futures_notional)
-        collateral_ratio = account.cash / abs(futures_notional) if abs(futures_notional) > 1e-14 else None
-        return [iso_time(tick), account.nav / capital, account.marks["SPOT"].price / initial_price,
+        funding_equity = account.funding_equity if paired else account.cash
+        free_collateral = funding_equity - abs(futures_notional)
+        collateral_ratio = funding_equity / abs(futures_notional) if abs(futures_notional) > 1e-14 else None
+        values = [iso_time(tick), account.nav / capital, account.marks["SPOT"].price / initial_price,
                 account.cash, account.units.get("SPOT", 0) * account.marks["SPOT"].price,
                 futures_notional, futures_notional if target_notional is None else target_notional,
                 free_collateral, collateral_ratio, account.turnover, account.fees,
@@ -248,6 +331,10 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
                 weighted("lease_pct"), weighted("maturity_days"), 100*account.rate,
                 account.plot_treasury_index, account.market_pnl, account.plot_spot_pnl,
                 account.plot_futures_pnl, account.interest, account.reconstruction_error(), held]
+        if paired:
+            state = account.valuation_state()
+            values.extend(state.get(name) for name in fields[25:])
+        return values
     if not restored:
         series.append(point(initial_us, 0.0))
     last_progress = time.monotonic()
@@ -258,7 +345,7 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
     next_expiry = next(pending_expiries, None)
     # Daily closing yields become observable on the next UTC midnight; explicit
     # timestamped yields retain that time. These boundaries need not be clock ticks.
-    rate_times = sorted({us_time(strategy._rate_available_at(day, EPOCH).isoformat())
+    rate_times = rate_model.boundaries_us(account.last_us, end) if paired else sorted({us_time(strategy._rate_available_at(day, EPOCH).isoformat())
                          for observations in rates.values() for day, _ in observations})
     rate_updates = iter(t for t in rate_times if account.last_us < t <= end)
     next_rate = next(rate_updates, None)
@@ -267,7 +354,9 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
         while (next_expiry and next_expiry[0] <= us) or (next_rate is not None and next_rate <= us):
             if next_rate is not None and next_rate <= us and (not next_expiry or next_rate <= next_expiry[0]):
                 account.accrue(next_rate)
-                account.rate = strategy.usd_rate(rates, EPOCH+timedelta(microseconds=next_rate), strategy.TENORS[0][0])
+                quote = rate_model.rate_at(next_rate) if paired else None
+                account.rate = (quote.annual_rate if quote else None) if paired else strategy.usd_rate(
+                    rates, EPOCH+timedelta(microseconds=next_rate), strategy.TENORS[0][0])
                 if account.rate is None:
                     raise ValueError("No observable Treasury yield")
                 next_rate = next(rate_updates, None)
@@ -299,7 +388,9 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
         settle_through(tick)
         account.accrue(tick)
         day = EPOCH + timedelta(microseconds=tick)
-        account.rate = strategy.usd_rate(rates, day, strategy.TENORS[0][0])
+        rate_quote = rate_model.rate_at(tick) if paired else None
+        account.rate = (rate_quote.annual_rate if rate_quote else None) if paired else strategy.usd_rate(
+            rates, day, strategy.TENORS[0][0])
         if account.rate is None or account.nav <= 0:
             raise ValueError("Missing Treasury yield or insolvent trade replay account")
         for symbol, quantity in account.units.items():
@@ -307,7 +398,7 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
                 raise ValueError("Held futures reached expiry without a verified settlement price")
         spot = account.marks["SPOT"].price
         candidates = []
-        for symbol, expiry in expiries.items():
+        for symbol, expiry in (() if paired else expiries.items()):
             mark = account.marks.get(symbol)
             days = (expiry - tick) / 86400e6
             if mark is None or not mark.executable or days <= 0 or tick - mark.us > p.max_quote_age_seconds * 1e6:
@@ -322,12 +413,25 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
                                    for s, q in account.units.items() if s != "SPOT" and q > 0}, "shorts": {}}
         if previous_allocation is not None:
             previous["base_treasury"] = previous_allocation
-        desired = strategy.positions_for_day(candidates, p, previous, elapsed_days=(tick-previous_tick)/86400e6)
+        desired = None if paired else strategy.positions_for_day(candidates, p, previous, elapsed_days=(tick-previous_tick)/86400e6)
         targets = None
         target_futures_notional = account.collateral
         if tick < end:
             decisions += 1
-            if desired and tick-account.marks["SPOT"].us <= p.max_quote_age_seconds*1e6:
+            if paired:
+                account.decide(tick, expiries=expiries, rate_snapshot=rate_quote)
+                target_futures_notional = account.collateral
+                pending_pair = account.pairs.get(account.active_pair_id)
+                if pending_pair:
+                    for symbol, delta in (
+                        (pending_pair.source_symbol, -(pending_pair.source_quantity_btc-pending_pair.source_filled_btc)),
+                        (pending_pair.target_symbol, pending_pair.target_quantity_btc-pending_pair.target_filled_btc)):
+                        if symbol != "SPOT":
+                            target_futures_notional += delta*account.marks[symbol].price
+                    target_futures_notional = max(0.0, target_futures_notional)
+                if account.last_reason in ("stale_observation", "observation_skew", "missing_observation", "missing_spot_observation"):
+                    no_fresh += 1
+            elif desired and tick-account.marks["SPOT"].us <= p.max_quote_age_seconds*1e6:
                 previous_allocation = desired["base_treasury"]
                 target_futures_notional = account.nav * sum(desired["base_longs"].values())
                 targets = {s: w*account.nav/account.marks[s].price for s, w in desired["base_longs"].items()}
@@ -349,8 +453,9 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
         direct_peak = max(direct_peak, direct)
         direct_drawdown = min(direct_drawdown, direct/direct_peak-1)
         futures_notional = account.collateral
-        free_collateral = account.cash - abs(futures_notional)
-        collateral_ratio = account.cash / abs(futures_notional) if abs(futures_notional) > 1e-14 else None
+        funding_equity = account.funding_equity if paired else account.cash
+        free_collateral = funding_equity - abs(futures_notional)
+        collateral_ratio = funding_equity / abs(futures_notional) if abs(futures_notional) > 1e-14 else None
         if collateral_ratio is not None:
             min_collateralization_ratio = min(min_collateralization_ratio, collateral_ratio)
             collateral_breach_count += int(collateral_ratio < 1 - 1e-9)
@@ -365,6 +470,9 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
                    target_futures_notional_usd=target_futures_notional,
                    free_collateral_usd=free_collateral, collateralization_ratio=collateral_ratio,
                    turnover_usd=account.turnover, fees_usd=account.fees)
+        if paired:
+            row.update(account.valuation_state())
+            row["treasury_rate"] = rate_quote.as_dict()
         valuations.emit(row)
         if decisions % sample_every == 0 or tick == end:
             series.append(point(tick, target_futures_notional))
@@ -400,6 +508,11 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
         dict(instrument=symbol, **info['discrepancy'], evidence_files=info.get('evidence_files', []))
         for symbol,info in manifest['futures'].items() if 'discrepancy' in info])
     audit_collection.provenance['trade_data'] = provenance
+    if paired:
+        audit_collection.provenance['treasury_rate_model'] = rate_model.provenance()
+        if getattr(account, "execution_study_summary", None):
+            audit_collection.provenance['execution_study'] = {
+                k: v for k, v in account.execution_study_summary.items() if k != "group_summaries"}
     audit = audit_collection.finish()
     measured = {**getattr(store, "timings", {}), **audit_collection.timings}
     measured["ordering_preparation"] = store.preparation_seconds
@@ -415,7 +528,15 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
                              direct_holding_return=100*(direct-1), simple_return=100*simple,
                              max_drawdown=100*max_drawdown, direct_holding_max_drawdown=100*direct_drawdown,
                              observations=valuations.count, missing_intervals=0),
-                trade_replay=dict(**provenance, interval_seconds=interval/1e6, delay_seconds=delay/1e6,
+                trade_replay=dict(**provenance, interval_seconds=interval/1e6,
+                                  delay_seconds=(account.delay_us if paired else delay)/1e6,
+                                  strategy=payload.get("trade_strategy", "legacy"),
+                                  **(dict(paired_transfer=account.diagnostics(),
+                                          **({"execution_study": account.execution_study_summary}
+                                             if getattr(account, "execution_study_summary", None) else {}),
+                                          treasury_rate_model=rate_model.provenance(),
+                                          ending_commodity_nav_btc=account.nav/account.marks["SPOT"].price,
+                                          commodity_return_pct=100*((account.nav/account.marks["SPOT"].price)/(capital/initial_price)-1)) if paired else {}),
                                   capital_usd=capital, participation=p.max_volume_participation,
                                   decisions=decisions, planned_decisions=planned_decisions,
                                   market_events=count, fills=account.fill_count,
@@ -430,10 +551,21 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
                                   resumed_after_us=restored["source_cursor_exclusive_us"] if restored else None,
                                   timings_seconds=measured,
                                   end_mark_age_seconds={s: (end-m.us)/1e6 for s,m in account.marks.items()},
-                                  assumptions=["Research ordering: "+store.policy+" ("+POLICY_VERSION+"); historical arrival times are unknown",
+                                  assumptions=(["Cost-aware funded paired transfers; forecasts are conditional and not guaranteed returns",
+                                               "KEEP and SWAP compare equal current capital in BTC over the same feasible horizon, after future costs",
+                                               "Deribit inverse-price observations modeled as linear USD futures; Binance USDT/USD parity proxy",
+                                               "Subsequent trade participation is simulated liquidity, not order-book depth or guaranteed fills",
+                                               "Durable staged pairs retain incomplete exposure and reservations through delayed acknowledgments and checkpoints",
+                                               "Observation, decision and order-delivery delays apply to adaptive limit updates; exchange arrivals and executed prices are audited",
+                                               "Adaptive effective-lease limits currently apply to spot-to-futures entries; reverse transfers and rolls retain fixed limits",
+                                               "Funding and the approved exposure ratio constrain repricing; two separate child fills are not atomic or guaranteed",
+                                               "Long only; leverage and borrowing disabled; explicit cash variation and 100% economic funding",
+                                               "Cash accrues normalized 91-day bill benchmark investment yield; no actual Treasury security is held in this policy",
+                                               "Stale rate/quote evidence blocks discretionary transfers without silently liquidating held positions",
+                                               "First spot print initializes owned BTC; final NAV is marked, without liquidation"] if paired else ["Research ordering: "+store.policy+" ("+POLICY_VERSION+"); historical arrival times are unknown",
                                                "Deribit inverse quotes as regular USD futures proxy; Binance USDT/USD assumed 1",
                                                "Same-side subsequent prints; strict later timestamp after delay; cancel/replace each decision",
                                                "Long only; 100% USD collateral; fractional lots; causal Treasury accrual",
                                                "Target futures notional records the desired exposure before observed partial-fill constraints; actual futures notional records filled exposure",
                                                "Stale marks value holdings but cannot create fresh signals; no order-book or synchronized latency model",
-                                               "First spot print initializes owned BTC; final NAV is marked, without liquidation"]))
+                                               "First spot print initializes owned BTC; final NAV is marked, without liquidation"])))

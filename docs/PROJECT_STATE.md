@@ -1,12 +1,53 @@
 # Keep & Lease — Project State
 
-_Last updated: 2026-09-07_
+_Last updated: 2026-09-16_
 
 ## Purpose
 
 Build an interactive research and backtesting application for strategies that allocate among commodity ETFs, commodity futures across maturities, and Treasury/cash instruments. The application should expose all economically meaningful parameters in a GUI and make the daily decisions auditable.
 
 ## Current scope
+
+- Opt-in **cost-aware funded paired transfers** for BTC trade replay compare
+  feasible incremental sizes/horizons with KEEP using expected net BTC wealth.
+  A separate funded USD-linear ledger, durable pair IDs/reservations, causal
+  feed/response latency, ticket fees, refreshed versioned Treasury inputs and
+  detailed audit/export paths are implemented. This remains a tape-participation
+  and cash-interest research proxy; new 90-day/holdout, native-venue and depth
+  acceptance are not implied. Existing saved strategies default to the original
+  policy. See [COST_AWARE_FUNDED_TRANSFERS.md](COST_AWARE_FUNDED_TRANSFERS.md).
+  Optional adaptive spot-to-future entries target a fee-adjusted effective lease
+  constrained by the original net-BTC forecast, with separate observation,
+  decision and market-arrival delays. Old files retain fixed limits. Actual
+  acknowledged source fills inform recovery prices; replacement arrivals and
+  achieved matched rates remain auditable, without an atomic-fill guarantee.
+  The empirical execution extension estimates joint slippage/completion before
+  sizing a funded entry, retaining noncompletion in its economics and deadline
+  statistics. Its declared ten-day calibration and separate ten-day scored test
+  precede any longer empirical run; see
+  [EMPIRICAL_LEASE_EXECUTION.md](EMPIRICAL_LEASE_EXECUTION.md). Prior adaptive
+  three-day results validated accounting but completed no pair, so they do not
+  certify this new model's completion coverage or profitability.
+  Verified preview revision `e02934abf0505da478af9c552983a25dd37dcd18` passed
+  workflow `35155749804`, including artifact upload and all application checks;
+  authenticated exact-SHA/ready-engine and restored-result checks also passed. Local validation
+  includes 34 GUI tests; the latest deployment replay gate passed 315 Python
+  tests. Simulation behavior matches empirical
+  engine `6fd1ae2a4fa24b28a8a5972e8445975a2f5a8fd2`; the later change fixes only
+  the audit checker and documentation. The prior workflow's artifact-upload
+  failure remains documented in `CURRENT_WORK.md`.
+  The ten-day adaptive baseline audit passed, with five fills and no fully
+  completed instruction. The empirical test completed with no attempts, fills
+  or fees: none of its sufficiently sampled calibration groups supported the
+  requested 95% joint coverage. All 67,452 raw labels and 219,165 scored events
+  passed verification. After the documented numerical checker correction, all
+  1,728,000 valuations and checksums passed the independent full audit with zero
+  findings. Ending BTC equaled the initial BTC quantity. Actual empirical
+  execution coverage and slippage have no admitted-instruction sample, so
+  execution performance is not certified. Ten calibration days within the
+  current 90-day archive leave at most 80 scored days; a 90-day scored empirical run
+  requires additional preceding data. See `CURRENT_WORK.md` for job IDs and
+  immutable engine revisions.
 
 - Optional bounded BTC trade replay: June 25 uploaded data, millisecond decision
   clocks, GCS worker audit, charts and full valuation CSV. See

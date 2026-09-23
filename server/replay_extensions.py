@@ -96,11 +96,13 @@ def seed_extension(job, repository, results, engine, audit, progress) -> dict[st
     if parent_checkpoint is None:
         raise ValueError("Extension parent has no durable checkpoint")
 
-    from btc_trade_backtest import catalog
+    from btc_trade_backtest import DATASET_URI, catalog
     from replay_extension import extend_checkpoint
     from trade_data_store import ParquetTradeStore
 
-    trade_store = ParquetTradeStore(catalog()["uri"])
+    # Match ordinary replay's default catalog handling. The bundled catalog
+    # exposes metadata without a URI; its immutable dataset URI is the constant.
+    trade_store = ParquetTradeStore(catalog().get("uri", DATASET_URI))
     progress("extension_seed", "Verifying parent checkpoint and audited prefix")
     extend_checkpoint(
         parent_checkpoint,

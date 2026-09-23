@@ -143,18 +143,25 @@ class CurrentRuntimeImprovementsTests(unittest.TestCase):
         results.audit_store.return_value = parent_audit
         audit = SimpleNamespace(checkpoints=child_checkpoints, store=child_audit)
         engine = SimpleNamespace(data_root='root')
-        progress = Mock()
         trade_store = SimpleNamespace(manifest_bytes=b'manifest')
-        with patch('btc_trade_backtest.catalog', return_value={'uri': 'fixture'}), \
-             patch('trade_data_store.ParquetTradeStore', return_value=trade_store), \
-             patch('replay_extension.extend_checkpoint') as extend:
-            calculated = seed_extension(child, repository, results, engine, audit, progress)
-        self.assertEqual(calculated, new)
-        extend.assert_called_once_with(
-            {'identity': 'parent'}, old, new, b'manifest', 'root',
-            parent_audit, child_audit, child_checkpoints,
-        )
-        self.assertEqual(progress.call_count, 2)
+        with patch.dict('os.environ', {}, clear=True):
+            default_catalog = replay.catalog()
+        self.assertNotIn('uri', default_catalog)
+        for catalog, expected_uri in (({'uri': 'fixture'}, 'fixture'),
+                                      (default_catalog, replay.DATASET_URI)):
+            with self.subTest(dataset_uri=expected_uri):
+                progress = Mock()
+                with patch('btc_trade_backtest.catalog', return_value=catalog), \
+                     patch('trade_data_store.ParquetTradeStore', return_value=trade_store) as store, \
+                     patch('replay_extension.extend_checkpoint') as extend:
+                    calculated = seed_extension(child, repository, results, engine, audit, progress)
+                self.assertEqual(calculated, new)
+                store.assert_called_once_with(expected_uri)
+                extend.assert_called_once_with(
+                    {'identity': 'parent'}, old, new, b'manifest', 'root',
+                    parent_audit, child_audit, child_checkpoints,
+                )
+                self.assertEqual(progress.call_count, 2)
 
 
 if __name__ == '__main__':

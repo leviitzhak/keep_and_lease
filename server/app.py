@@ -387,7 +387,7 @@ def create_app(
     @app.get("/api/v1/backtests/{job_id}/spreadsheet")
     @app.get("/api/v1/benchmarks/{job_id}/spreadsheet")
     def trade_spreadsheet(job_id: str, request: Request, start: str, end: str):
-        from .replay_exports import period, replay_workbook
+        from .replay_exports import period, replay_workbook, stored_replay_period
         store, manifest = completed_audit(job_id, request)
         if request.url.path.startswith("/api/v1/benchmarks/"):
             result = benchmark_data(job_id)[0]
@@ -396,7 +396,7 @@ def create_app(
             entries = manifest["datasets"].get("btc_trade_valuations", {}).get("chunks", [])
             if not entries:
                 raise HTTPException(404, "No trade replay valuations for this run")
-            result = {"parameters": job.parameters, "summary": {"start": entries[0]["start"], "end": entries[-1]["end"]},
+            result = {"parameters": job.parameters, "summary": stored_replay_period(manifest),
                       "trade_replay": {"capital_usd": float(job.parameters.get("trade_initial_capital_usd", 100000))}}
         try:
             start, end = period(start, end, result["summary"])

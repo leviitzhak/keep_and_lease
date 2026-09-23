@@ -62,13 +62,20 @@ def fingerprint(payload, manifest_bytes, data_root=None):
     digest.update(manifest_bytes)
     for name in ("btc_trade_backtest.py", "trade_replay.py", "backtest_audit.py",
                  "trade_data_store.py", "trade_ordering.py", "backtest_silver_lease_strategy.py", "maturity_scoring.py",
-                 "silver_strategy_gui.py"):
+                 "silver_strategy_gui.py", "funded_ledger.py", "paired_transfer.py",
+                 "paired_transfer_economics.py", "paired_transfer_rates.py", "paired_execution_study.py"):
         digest.update((Path(__file__).parent / name).read_bytes())
     if data_root is not None:
         for name in ("DTB3", "DTB6", "DGS1", "DGS2", "DGS3", "DGS5"):
             path = Path(data_root) / (name+".csv")
             if path.exists():
                 digest.update(path.read_bytes())
+        if payload.get("trade_strategy") == "cost_aware_paired":
+            from paired_transfer_rates import CausalTreasuryRates
+            # The new policy may use a separately versioned refreshed snapshot.
+            # Fingerprint its checked source bytes and normalization/availability
+            # identity, not only the preserved legacy CSVs.
+            digest.update(CausalTreasuryRates.from_root(data_root).data_version.encode())
     return digest.hexdigest()
 
 

@@ -13,6 +13,7 @@ Start with [PROJECT_STATE.md](PROJECT_STATE.md).
 - [Strategy](STRATEGY.md) — portfolio construction and trading rules.
 - [Scoring](SCORING.md) — contract ranking formulas.
 - [Parameters](PARAMETERS.md) — configuration reference.
+- [Empirical BTC lease execution](EMPIRICAL_LEASE_EXECUTION.md) — waiting-time/slippage calibration, funded execution budgets and the separate ten-day evaluation.
 - [GUI specification](GUI_SPECIFICATION.md) — views and interaction.
 - [Backtest engine](BACKTEST_ENGINE.md) — timing and accounting.
 - [Data sources](DATA_SOURCES.md) — required inputs and derived fields.

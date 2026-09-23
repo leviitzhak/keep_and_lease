@@ -21,6 +21,57 @@ test('replay books reconcile in underlying equivalents and short books stay disa
  assert.equal(JSON.stringify(source),before);
  assert.ok(Math.abs(r.directReturn-10)<1e-12);assert.equal(m.rows[0].returnPct,null);
 });
+function pairedReplay(overrides={}){
+ const source=replay(),extra={free_cash_usd:10000,posted_cash_usd:70000,reserved_cash_usd:3000,available_cash_usd:6000,unsettled_pnl_usd:5000,pending_variation_usd:-1500,treasury_value_usd:10000,liabilities_usd:2000,commodity_nav_btc:1.315,...overrides};
+ source.trade_replay.strategy='cost_aware_paired';source.trade_replay.paired_transfer={};
+ source.fields.push(...Object.keys(extra));
+ source.series=[source.series[1].concat(...Object.values(extra))];
+ source.series[0][source.fields.indexOf('nav')]=(80000+40000+extra.unsettled_pnl_usd+extra.pending_variation_usd+extra.treasury_value_usd-extra.liabilities_usd)/100000;
+ return source;
+}
+test('paired reconstruction includes every funding asset and liability without adding reservations twice',()=>{
+ const source=pairedReplay(),before=JSON.stringify(source),model=api.replayModel(source),row=model.rows[0];
+ assert.equal(model.paired,true);assert.equal(row.cash,80000);
+ assert.equal(row.freeCash+row.postedCash,row.cash);
+ assert.equal(row.fundingEquity,91500);assert.equal(row.balanceNav,1.315);
+ assert.equal(row.balanceNav,row.nav);assert.equal(row.free,31500);assert.equal(row.ratio,91500/60000);
+ assert.equal(row.availableCash,6000);assert.equal(row.reservedCash,3000);
+ assert.ok(Math.abs(row.futureUnderlying-91500/110000)<1e-12);
+ assert.ok(Math.abs(row.directUnderlying+row.futureUnderlying-row.leaseValue)<1e-12);
+ assert.equal(JSON.stringify(source),before);
+ assert.match(model.note,/Immediately available cash is shown separately/);
+});
+test('settling paired P&L between unrealized, pending and cash leaves book NAV invariant',()=>{
+ const points=[];
+ for(const [unsettled,pending,cash] of [[1000,0,80000],[0,1000,80000],[0,0,81000]]){
+  const source=pairedReplay({unsettled_pnl_usd:unsettled,pending_variation_usd:pending,treasury_value_usd:0,liabilities_usd:0});
+  source.series[0][source.fields.indexOf('cash_usd')]=cash;
+  source.series[0][source.fields.indexOf('nav')]=1.21;
+  points.push(api.replayModel(source).rows[0]);
+ }
+ for(const row of points){assert.equal(row.balanceNav,1.21);assert.equal(row.fundingEquity,81000);assert.ok(Math.abs(row.leaseValue-row.directUnderlying-row.futureUnderlying)<1e-12);}
+});
+test('missing or null paired ledger constituents stay unknown instead of using legacy cash-only identity',()=>{
+ for(const field of ['unsettled_pnl_usd','pending_variation_usd','treasury_value_usd','liabilities_usd'])for(const absent of [true,false]){
+  const source=pairedReplay(),index=source.fields.indexOf(field);
+  if(absent){source.fields.splice(index,1);source.series[0].splice(index,1);}else source.series[0][index]=null;
+  const row=api.replayModel(source).rows[0];
+  for(const key of ['balanceNav','futureUnderlying','fundingEquity','free','ratio'])assert.equal(row[key],null,field+' '+key);
+  assert.equal(row.cash,80000);assert.equal(row.availableCash,6000);
+ }
+});
+test('paired chart labels distinguish cash liquidity from economic funding while legacy schema stays unchanged',()=>{
+ const defs=new Map(api.catalog.map(def=>[def.id,def]));
+ assert.equal(defs.get('reconstruction').series.at(-1)[1],'Cash + spot identity');
+ assert.equal(defs.get('reconstruction').pairedView.series.at(-1)[1],'Asset/liability identity');
+ assert.match(defs.get('holdings').pairedView.series[1][1],/^Cash/);
+ assert.equal(defs.get('cash-availability').pairedOnly,true);
+ assert.equal(defs.get('funding-components').pairedOnly,true);
+ const legacy=api.replayModel(replay()).rows[1];
+ assert.ok(!('fundingEquity' in legacy));assert.ok(!('availableCash' in legacy));
+ assert.equal(legacy.balanceNav,1.2);assert.equal(legacy.free,20000);
+ assert.ok(Math.abs(legacy.futureUnderlying-80000/110000)<1e-12);
+});
 test('schema names, not numeric indexes, locate collateral, costs and mark age',()=>{
  const source=replay(),fields=[...source.fields].reverse(),series=source.series.map(r=>[...r].reverse());
  // Date remains the first field by the public wire contract.

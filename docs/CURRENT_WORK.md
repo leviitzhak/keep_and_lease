@@ -1,44 +1,167 @@
 # Current work
 
-## Next implementation handoff — cost-aware, funded paired transfers
+## Empirical execution costs for funded BTC transfers — 2026-09-16
 
-The owner has authorized merging the documentation plan in PR #49 and will
-start implementation in a NEW thread. Begin from current GitHub master after
-that merge and create a fresh feature branch; no implementation is made here.
+The owner requested implementation of feasible funded transfers and holding
+horizons evaluated by expected net BTC wealth versus keeping the current
+position. The opt-in `trade_strategy="cost_aware_paired"` path is implemented
+beside the preserved default allocation policy. The GUI provides a strategy
+selector, economics/funding/latency/fee controls and a bounded example.
 
-Read [NEXT_STRATEGY_IMPLEMENTATION.md](NEXT_STRATEGY_IMPLEMENTATION.md) first.
-It groups all next changes in one ordered workstream; [TODO.md](TODO.md) contains
-the primary checklist. The existing detailed paired-transfer, quote-latency,
-cost-aware decision and preliminary-study documents remain linked specifications.
+The current extension studies joint spot/futures completion and execution-price
+slippage at explicit waiting deadlines, then budgets that cost before approving
+and sizing a transfer. The research setting is opt-in
+`paired_repricing_mode="empirical"`; `fixed` and `adaptive` retain their existing
+meaning. Read [EMPIRICAL_LEASE_EXECUTION.md](EMPIRICAL_LEASE_EXECUTION.md) for the
+calibration, deadline and evaluation protocol, and
+[COST_AWARE_FUNDED_TRANSFERS.md](COST_AWARE_FUNDED_TRANSFERS.md) for the underlying
+funding and economics. Key components are `funded_ledger.py`,
+`paired_transfer_economics.py`, `paired_transfer.py` and
+`paired_transfer_rates.py`; `btc_trade_backtest.py` connects them to the
+existing durable worker, charts, audit and export flow.
 
-Next scope: rate-data/convention audit; separate source/receipt/decision/fill
-clocks; size-aware paired transfers and reservation states; venue-aware futures
-mark-to-market and cash settlement/Treasury funding; optional fixed and minimum
-commissions; expected incremental NET BTC wealth versus KEEPING the current
-position; executable exits and risk overrides; observed-versus-executed and
-realized-return diagnostics; bounded then full-period and holdout acceptance.
+The new ledger separates marks, unsettled P&L and cash settlement, tracks full
+funding/reservations and charges fixed/minimum/per-unit/proportional commissions
+by durable child-order ticket. Transfers share one pair ID and bounded source-
+first funding through partial fills and delayed responses. Economics compare
+equal-capital KEEP/SWAP candidates over feasible sizes and common horizons,
+including prospective costs and uncertainty allowances. Forecasts assume flat
+spot, residual basis converging toward a configured settlement reference and
+current normalized cash-proxy yield; they do not guarantee profitable exits.
 
-[FUTURES_MTM_AND_COMMISSION_PLAN.md](FUTURES_MTM_AND_COMMISSION_PLAN.md)
-explains how to replace the existing immediate futures-P&L-to-cash shortcut
-without double counting. Signed quantities/margin tests prepare for later
-leverage; this merge does not enable it. All new engine work remains pending.
+The adaptive-entry extension adds `paired_repricing_mode="adaptive"` for
+spot-to-future transfers. The desired effective entry lease comes from the
+existing net-BTC economic hurdle; target limits incorporate acknowledged source
+fill prices and fees. Explicit observation, frozen-snapshot decision and
+order-arrival delays also apply to repricing. Replacements take effect on
+arrival, and durable audit records preserve requested versus applied limits.
+Old presets remain fixed, while reverse transfers and rolls retain their
+existing funded execution. Partial slices accumulate the requested delta using
+the accepted funding ratio; cash accrual is the third component, with no actual
+Treasury-security fill or atomic cross-venue guarantee.
 
-[TREASURY_CARRY_FORWARD_AUDIT.md](TREASURY_CARRY_FORWARD_AUDIT.md) records the
-exact July 14 rate vector, next-UTC-day availability, flat node extrapolation,
-shortest-rate tape accrual and separate synthetic matched-bond prices. The
-preliminary holding study omits intra-horizon VM financing and its Treasury data
-freeze after that date; it remains research, not accepted strategy performance.
+Six FRED series were retrieved as an immutable NEW snapshot covering June
+1–September 4, 2026, under `public/data/paired-rates/`. The overlap matches the
+retained source observations. DTB3 discount quotes are normalized through a
+91-day benchmark price into an ACT/365 investment yield. The new availability
+model waits for the next federal business release day and following UTC
+midnight; actual historical publication timestamps remain unverified. Source
+hashes, retrieved times, normalization version and rate-age gating are audited.
 
-## Baseline and delivery boundary
+## Validation and limits
 
-The existing tested engine, strategies and saved results are unchanged. No
-backtest rerun, application deployment, new data vintage or IAM change belongs
-to this documentation patch. Coherent future application changes should use the
-single authoritative GCP preview, with the usual tests, not local Sites.
+The original fixed-limit implementation includes focused tests for economics, funding and fee
+accounting, causal Treasury normalization/availability, paired execution and
+checkpoint continuity, runner integration and detailed exports. All 219 Python
+and 33 JavaScript checks passed. The complete preview deployment, paired GUI and
+workbook checks, and replay extension passed for commit
+`d1fb73487e1f9aee42064d57799d55edd8445dd8`. See
+[COST_AWARE_FUNDED_VALIDATION.md](COST_AWARE_FUNDED_VALIDATION.md) for the workflow,
+preview URL, exact results and research limitations.
 
-The complete previous current-work document is preserved unchanged in
+The adaptive extension passed 257 Python and 37 relevant JavaScript checks.
+Preview workflow `35140804706` passed for
+`663e60c5b10bb98675baf7785b66b64d18ea6b34`. Its three-day fixed/zero-delay
+adaptive/100-ms-per-stage comparison completed on `[2026-06-06, 2026-06-09)`.
+All three full audits passed, but none completed a pair. Their ending differences
+from direct holding were respectively −$0.68229, −$0.07773 and −$0.00555;
+remaining unmatched spot quantities were 0.01, 0.00114 and 0.00008 BTC. Smaller
+losses came from less unmatched selling and lower fees, not demonstrated lease
+income. The original fixed target quantity made the funding cap bind despite
+repricing. The empirical extension therefore evaluates execution cost before
+fixing its funded target quantity.
+
+The verified preview on `agent/cost-aware-funded-transfers` is
+`e02934abf0505da478af9c552983a25dd37dcd18`.
+[Workflow 35155749804](https://github.com/leviitzhak/keep_and_lease/actions/runs/35155749804)
+**succeeded**, including artifact upload and all application health,
+rendered-GUI/multi-commodity, subsecond, paired-export and replay-extension
+checks. An authenticated browser check independently verified the exact SHA,
+ready server engine and restored completed empirical result at the
+[GCP preview](https://keep-and-lease-preview-web-vfk2j2rgoq-zf.a.run.app/).
+The latest deployment replay gate passed 315 Python tests; 34 local GUI tests
+also passed. The earlier focused zero-fill, pending-decision censoring checker correction passed 14 checks.
+
+The empirical engine was introduced at
+`6fd1ae2a4fa24b28a8a5972e8445975a2f5a8fd2`; the later preview revision changes only
+the audit checker and documentation, not simulation behavior. Its earlier
+workflow `35147345496` passed all application checks but failed overall solely
+on final artifact-evidence upload with `403 Forbidden`. That historical failure
+remains distinct from the successful replacement workflow.
+
+Empirical job `69d512c2e4da4cd8b1fa27a9870c0769` started at 20:40 UTC on
+September 16 on immutable engine `6fd1ae2a4fa24b28a8a5972e8445975a2f5a8fd2`. It
+froze 67,452 execution labels from `[2026-06-06, 2026-06-16)` and completed
+`[2026-06-16, 2026-06-26)`, both UTC. All 1,727,999 scheduled decisions were KEEP:
+zero submitted attempts, fills and fees. Raw-label/event verification passed
+for all 67,452 study rows and 219,165 scored events. The corrected independent
+full audit also passed all 1,728,000 valuations and dataset checksums with zero
+findings. Ending wealth was $90,147.95094856317 or 1.5076420869746658 BTC, exactly
+the initial BTC quantity; maximum drawdown was −13.2318505541%. There are no
+actual empirical execution-coverage or slippage observations because no
+instruction was admitted. The first full valuation audit identified ten near-expiry floating-point comparison discrepancies in a
+single June 12 07:56 calibration cohort repeated across size/wait alternatives.
+The largest annualized difference was about 3.0716e-7 bp and the independently
+recomputed raw-basis difference about 1e-12 bp. Stored annualization exactly
+matches stored raw basis divided by original maturity. A checker-only numerical
+correction is implemented and reviewed; it retains the independent raw-basis
+assertion and tests that stored relation separately. All 17 focused tests pass,
+including rejection of a +0.01-bp annualization corruption and forged raw basis.
+The original failed audit is preserved. The corrected full-archive audit passed
+with zero findings: NAV reconstruction and stored annualization relation errors
+were zero, and maximum independent raw-basis error was 4.0714e-12 bp. The
+checker/docs patch is pushed at `e02934abf0505da478af9c552983a25dd37dcd18`;
+workflow `35155749804` succeeded, including its 315-test replay gate in 21.076
+seconds, application checks, replay extension and artifact upload. The exact
+new preview SHA, ready engine and restored completed empirical result were
+also verified in the authenticated browser. Simulation and historical job
+results are unchanged.
+
+No calibrated group with at least 100 observations supports the requested 95%
+joint-completion target at any studied size/wait combination: this holds across
+252 contract/maturity groups and 196 pooled maturity groups. The strongest
+qualifying contract cell completed 269/387 (69.51%) within 60 seconds; the
+strongest pooled cell completed 277/425 (65.18%). All 219,143 emitted paired
+candidate decisions rejected with `joint_confidence_unattainable` (657,429 size
+rejections over three executable sizes). The policy kept the position because
+the requested execution coverage was unsupported, not because its realized
+trades achieved 95% coverage. Exact distribution examples are recorded in
+`EMPIRICAL_LEASE_EXECUTION.md`. Extending scored dates with the same frozen
+model and 95% setting cannot create a supported discretionary entry; none of
+its sufficiently sampled groups has a finite qualifying budget. A longer-wait
+sensitivity study or other explicit change to model support/acceptance is
+needed before a longer portfolio replay can answer the execution question.
+
+The same-period adaptive baseline `d1da8ce988ec49d890d61e89aa8fe040` completed on
+engine `663e60c5b10bb98675baf7785b66b64d18ea6b34`. Its independent full audit
+passed with zero findings across 1,728,000 valuations and 208,501 events. It
+ended at $90,147.987215 (−9.852013%), about $0.036266 or 0.000000606523 BTC above
+direct holding, after $0.026677 in fees. Eleven attempts produced five fills,
+zero complete instructions, two partial, seven timed-out and two cancelled
+instructions. The two matched legs took 165.571 and 199.631 seconds; 0.00009 BTC
+remained unmatched. This validates accounting, not completion within the desired
+30-second waiting time or profitable fully completed transfers.
+
+The ten-day empirical test must be reviewed before any longer empirical run.
+The current archive has 90 total days; reserving ten preceding days for causal
+calibration leaves at most 80 scored days. A 90-day scored empirical run would
+require at least 100 days of suitable data. None is being started as part of
+this short-test acceptance, and no calibration or coverage requirement is
+relaxed to force trades.
+
+The mode remains a BTC tape-participation, USD-linear research proxy with
+cash-interest accrual. Native inverse settlement, historical quote depth,
+security-level Treasury prices, verified venue margin/payment calendars,
+full-period holdout acceptance and complete realized-versus-KEEP attribution
+are not certified. Synthetic Treasury facilities in the ledger are separate
+from the GUI's cash proxy. Timeouts preserve unresolved inventory instead of
+assuming liquidity existed. No leverage or live trading is enabled.
+
+[NEXT_STRATEGY_IMPLEMENTATION.md](NEXT_STRATEGY_IMPLEMENTATION.md) retains the
+complete acceptance specification; [TODO.md](TODO.md) distinguishes implemented
+research behavior from remaining venue/data/validation work. The previous
+current-work history remains in
 [CURRENT_WORK_HISTORY_2026-09-15_PRE_STRATEGY_PLAN.md](CURRENT_WORK_HISTORY_2026-09-15_PRE_STRATEGY_PLAN.md).
-It records PR #48's prior integration, the verified shared-plots baseline and
-completed full-history market extraction. Those milestones are not reset by the
-new strategy plan. The completed old 90-day computations remain marked done;
-a NEW cost-aware/funded strategy still needs its own acceptance run.
+Earlier completed 90-day legacy computations stay completed; this new strategy
+requires its own performance and holdout assessment. The single GCP preview is
+the authoritative deployment target; local Sites remains deferred.

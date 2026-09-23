@@ -12,6 +12,98 @@ from backtest_audit import read_chunk
 MAX_SHEET_ROWS = 1_048_576
 NS = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'
 
+# These columns expose stored evidence only. In particular an older independent
+# order/fill audit must never acquire a reconstructed transfer ID during export.
+PAIRED_VALUATION_FIELDS = [
+    'commodity_nav_btc', 'free_cash_usd', 'posted_cash_usd',
+    'unsettled_pnl_usd', 'pending_variation_usd', 'reserved_cash_usd',
+    'available_cash_usd', 'treasury_value_usd', 'liabilities_usd',
+    'active_pair_id', 'transfer_status', 'unpaired_btc',
+]
+PAIRED_EVENT_FIELDS = [
+    'pair_id', 'role', 'ticket_id', 'status', 'source_symbol', 'target_symbol',
+    'source_quantity_btc', 'target_quantity_btc', 'source_filled_btc',
+    'target_filled_btc', 'matched_source_btc', 'unpaired_btc', 'paired_fill_ratio',
+    'fees_usd', 'reserved_usd', 'free_cash_usd', 'posted_cash_usd',
+    'unsettled_pnl_usd', 'amount_usd', 'reservation_id', 'payment_id',
+    'acknowledgement_us', 'limit_price',
+    'revision', 'order_revision', 'fill_revision', 'observation_us', 'decision_started_us',
+    'decision_ready_us', 'submitted_us', 'previous_limit_price', 'applied',
+    'rejection_reason', 'counterpart_price', 'counterpart_fee_usd',
+    'target_effective_lease', 'binding_constraint',
+]
+DECISION_FIELDS = [
+    'accepted', 'reason', 'source_symbol', 'target_symbol',
+    'source_quantity_btc', 'target_quantity_btc', 'source_cash_usd',
+    'source_fraction', 'horizon_us', 'keep_btc', 'swap_btc', 'edge_btc',
+    'required_edge_btc', 'entry_cost_usd',
+    'diagnostics.initial_capital_usd', 'diagnostics.initial_btc',
+    'diagnostics.source_sale_limit', 'diagnostics.target_buy_limit',
+    'diagnostics.target_cash_usd', 'diagnostics.cash_reserve_usd',
+    'diagnostics.exposure_quantity_change_btc',
+    'diagnostics.keep.interest_usd', 'diagnostics.swap.interest_usd',
+    'diagnostics.keep.futures_pnl_usd', 'diagnostics.swap.futures_pnl_usd',
+    'diagnostics.keep.exit_cost_usd', 'diagnostics.swap.exit_cost_usd',
+    'diagnostics.keep.minimum_cash_usd', 'diagnostics.swap.minimum_cash_usd',
+    'diagnostics.keep.funding_feasible', 'diagnostics.swap.funding_feasible',
+    'diagnostics.projected_break_even_days', 'diagnostics.cash_rate',
+    'diagnostics.forecast_model', 'diagnostics.liquidity_assumption',
+    'rate_snapshot.age_days', 'rate_snapshot.data_version',
+]
+TRANSFER_FIELDS = [
+    'pair_id', 'status', 'reason', 'source_symbol', 'target_symbol',
+    'source_quantity_btc', 'target_quantity_btc', 'source_filled_btc',
+    'target_filled_btc', 'matched_source_btc', 'unpaired_btc', 'paired_fill_ratio',
+    'source_value_usd', 'target_value_usd', 'fees_usd', 'reserved_usd',
+    'submitted_us', 'completed_us', 'max_unpaired_btc', 'max_legging_seconds',
+    'observed_lease', 'executed_price_only_lease', 'lease_price_deviation',
+    'direction_adjusted_lease_deviation', 'completion_lease',
+    'repricing_supported', 'target_effective_lease', 'executed_effective_lease',
+    'effective_lease_shortfall',
+    'source_vwap', 'target_vwap', 'matched_source_fees_usd', 'target_fees_usd',
+    'effective_lease_expiry_us', 'effective_lease_rate_time_us', 'effective_lease_cash_rate',
+    'decision.horizon_us', 'decision.keep_btc', 'decision.swap_btc',
+    'decision.edge_btc', 'decision.required_edge_btc',
+    'empirical', 'deadline_us', 'first_source_fill_us', 'last_source_fill_us',
+    'first_target_fill_us', 'last_target_fill_us',
+]
+EXECUTION_OUTCOME_FIELDS = [
+    'pair_id', 'status', 'decision_started_us', 'deadline_us',
+    'completed_by_deadline', 'requested_source_btc', 'requested_target_btc',
+    'actual_source_btc', 'actual_target_btc', 'unmatched_source_btc',
+    'residual_cash_usd', 'source_wait_seconds', 'instruction_wait_seconds',
+    'hedge_wait_seconds', 'actual_slippage_bps', 'annualized_slippage_bps',
+    'predicted_completion_probability', 'maturity_reference_us',
+    'first_source_fill_us', 'first_target_fill_us', 'last_target_fill_us',
+]
+STUDY_SUMMARY_FIELDS = [
+    'scope', 'symbol', 'maturity_bucket', 'quantity_btc', 'wait_seconds',
+    'samples', 'completed', 'completion_probability',
+    *[f'{measure}.{quantile}' for measure in ('joint_budget_quantiles_bps',
+          'raw_basis_slip_quantiles_bps', 'annualized_slip_quantiles_bps')
+      for quantile in ('p50', 'p75', 'p90', 'p95', 'p99')],
+]
+HORIZON_FIELDS = [
+    'source_fraction', 'horizon_us', 'keep_btc', 'swap_btc', 'edge_btc',
+    'required_edge_btc', 'reason',
+]
+
+
+def stored_value(row, path):
+    """Read an explicit nested audit field without estimating missing values."""
+    value = row
+    for key in path.split('.'):
+        if not isinstance(value, dict):
+            return None
+        value = value.get(key)
+    return value
+
+
+def timestamp_text(value):
+    if value is None:
+        return None
+    return (datetime(1970, 1, 1) + timedelta(microseconds=value)).isoformat(timespec='microseconds')
+
 
 def utc(value):
     dt = datetime.fromisoformat(value.replace('Z', '+00:00'))
@@ -25,6 +117,29 @@ def period(start, end, summary):
     if not utc(summary['start']) <= start < end <= utc(summary['end']):
         raise ValueError('Choose an increasing UTC period inside the completed backtest')
     return start, end
+
+
+def stored_replay_period(manifest):
+    """Include the owned opening position before the first valuation tick.
+
+    The replay's first spot observation initializes its endowment immediately;
+    its first valuation is only written at the next decision-clock boundary.
+    New audits record the exact replay bounds as dataset metadata. Historical
+    replay audits instead begin their event dataset with the initialization
+    event, so its first chunk supplies the compatible opening bound. Do not
+    take the minimum over every event: later bootstrap records can contain
+    pre-window quote timestamps.
+    """
+    dataset = manifest['datasets']['btc_trade_valuations']
+    entries = dataset['chunks']
+    start = dataset.get('replay_start')
+    if start is None:
+        start = utc(entries[0]['start'])
+        events = manifest['datasets'].get('btc_trade_events', {}).get('chunks', [])
+        if events:
+            start = min(start, utc(events[0]['start']))
+    end = dataset.get('replay_end', entries[-1]['end'])
+    return {'start': utc(start), 'end': utc(end)}
 
 
 def selected_rows(store, manifest, product, start, end):
@@ -121,6 +236,8 @@ def workbook(sheets):
 
 def replay_workbook(store, manifest, result, start, end):
     capital = float(result['trade_replay']['capital_usd'])
+    paired = (result['trade_replay'].get('strategy') == 'cost_aware_paired' or
+              result.get('parameters', {}).get('trade_strategy') == 'cost_aware_paired')
     symbols = sorted(set(result['trade_replay'].get('end_mark_age_seconds', {})) | {'SPOT'})
     def valuations():
         for row in selected_rows(store, manifest, 'btc_trade_valuations', start, end):
@@ -133,18 +250,52 @@ def replay_workbook(store, manifest, result, start, end):
                 ratio = r.get('collateralization_ratio')
                 if ratio is None and abs(futures) > 1e-14:
                     ratio = float(r.get('cash_usd', 0) or 0) / abs(futures)
-                return [r['date'], r['nav_usd'], r['cash_usd'], (f'B{n}-C{n}', r['nav_usd']-r['cash_usd']),
+                # Funded NAV also includes unsettled futures P&L. Subtracting
+                # cash would mislabel that P&L as direct BTC, so use the stored
+                # spot value for that versioned policy.
+                direct_value = (r.get('direct_btc_value_usd') if paired else
+                                (f'B{n}-C{n}', r['nav_usd']-r['cash_usd']))
+                return [r['date'], r['nav_usd'], r['cash_usd'], direct_value,
                         futures, r.get('target_futures_notional_usd'), free, ratio,
                         r.get('turnover_usd'), r['direct_nav'], r['fees_usd'], r['return_fraction'],
                         r['reconstruction_error_usd'], opening, (f'B{n}/N{n}-1', r['nav_usd']/opening-1),
-                        r['units'], r['targets'], r['mark_us'], r['mark_ids'], *[r['units'].get(s,0) for s in symbols]]
+                        r['units'], r['targets'], r['mark_us'], r['mark_ids'], *[r['units'].get(s,0) for s in symbols],
+                        *([stored_value(r, k) for k in PAIRED_VALUATION_FIELDS] if paired else [])]
             yield values
     event_fields = ['date', 'kind', 'symbol', 'order_id', 'trade_id', 'side', 'signed_btc', 'price',
                     'observed_btc', 'fee_usd', 'cash_usd', 'nav_usd', 'reported_us', 'eligible_after_us',
                     'source_sequence', 'requested_btc', 'filled_btc', 'remainder_btc', 'reason']
+    if paired:
+        event_fields += PAIRED_EVENT_FIELDS
     def events():
         for row in selected_rows(store, manifest, 'btc_trade_events', start, end):
             yield [row.get(k) for k in event_fields] + [row]
+    def transfer_rows():
+        for row in selected_rows(store, manifest, 'btc_trade_events', start, end):
+            if row.get('kind') in ('paired_transfer', 'paired_transfer_result'):
+                yield [row['date'], row['kind'], timestamp_text(stored_value(row, 'decision.horizon_us')),
+                       timestamp_text(row.get('submitted_us')), timestamp_text(row.get('completed_us')),
+                       *[stored_value(row, k) for k in TRANSFER_FIELDS]]
+    def execution_rows():
+        for row in selected_rows(store, manifest, 'btc_trade_events', start, end):
+            if row.get('kind') == 'empirical_instruction_result':
+                yield [row['date'], *[stored_value(row, k) for k in EXECUTION_OUTCOME_FIELDS], row]
+    def decision_rows(alternatives=False):
+        for row in selected_rows(store, manifest, 'btc_trade_events', start, end):
+            if row.get('kind') != 'paired_decision':
+                continue
+            decision = row.get('decision')
+            if not isinstance(decision, dict):
+                continue
+            identity = [row['date'], row.get('decision_id'), row.get('pair_id'), row.get('selected')]
+            if alternatives:
+                for candidate in stored_value(decision, 'diagnostics.alternatives') or []:
+                    yield [*identity, decision.get('source_symbol'), decision.get('target_symbol'),
+                           timestamp_text(candidate.get('horizon_us')),
+                           *[stored_value(candidate, k) for k in HORIZON_FIELDS]]
+            else:
+                yield [*identity, timestamp_text(decision.get('horizon_us')),
+                       *[stored_value(decision, k) for k in DECISION_FIELDS]]
     overview = [['Selected start UTC', start], ['Selected end UTC', end], ['Initial capital USD', capital],
                 ['Rows', 'All stored valuations and order/fill events within the inclusive UTC bounds; no resimulation or chart sampling.'],
                 ['Opening NAV', 'Value immediately before each valuation interval; the first selected interval can start before the selected bound.'],
@@ -155,13 +306,49 @@ def replay_workbook(store, manifest, result, start, end):
                 ['Run identity', result.get('benchmark', {}).get('report_uri', manifest.get('base_url', 'Stored server backtest'))],
                 ['Full-run start', result['summary']['start']], ['Full-run end', result['summary']['end']],
                 *[['Assumption', a] for a in result['trade_replay'].get('assumptions', [])]]
-    yield from workbook([
+    if paired:
+        overview.extend([
+            ['Funded NAV', 'Direct BTC value uses the stored spot value. NAV also includes free and posted cash, Treasury value, unsettled and pending variation, less liabilities; futures notional is not an asset.'],
+            ['Funded collateral', 'The paired policy tests economic funding and immediately available cash separately. Posted cash and reserved cash are existing assets, never additions to NAV. Free collateral is funding equity less marked futures notional.'],
+            ['Transfers', 'Paired transfers contains stored submission and result snapshots, including incomplete, cancelled and timed-out transfers. Do not sum these snapshots as separate transfers. pair_id links actual child fills, fees, reservations and funding in Events. Empty fields mean the source event did not report them.'],
+            ['Decision forecasts', 'Transfer decisions shows recorded KEEP/SWAP forecasts in BTC at the same stored horizon. Horizon alternatives includes evaluated sizes/horizons and rejection reasons. These conditional forecasts are not realized returns. No historical entry cost is charged again by the exporter.'],
+            ['Transfer periods', 'Every sheet contains only events inside the selected inclusive UTC period. A pair can start earlier or finish later; absence of a completion inside this export is not evidence of failure.'],
+            ['Rate and fill measures', 'Observed, executed-price-only and completion lease measures are distinct from realized BTC return. All source quotes, clocks, model assumptions and raw event details remain on Events.'],
+            ['Adaptive limits', 'For supported spot-to-futures entries, replacement requests record frozen observations and computation clocks. A limit changes only on an applied order_replace_arrival. The previous limit remains in force during transport; a rejected arrival does not change it.'],
+            ['Effective lease', 'The entry lease includes matched spot-sale and futures-buy fees before annualization. It is distinct from the full-horizon net BTC forecast and from realized portfolio returns. Funding can bind before the economic price limit; separate child orders cannot guarantee an atomic paired fill.'],
+            ['Legacy evidence', 'Transfer IDs are exported only when explicitly present in the stored audit. No pairs are inferred from unrelated historical fills.'],
+        ])
+        overview = [row for row in overview if row[0] != 'Collateral']
+    sheets = [
         ('Overview', ['Description', 'Value'], overview),
         ('Valuations', ['UTC timestamp', 'NAV USD', 'Cash / Treasury USD', 'Direct BTC value USD',
                         'Actual long futures notional USD', 'Target long futures notional USD', 'Free collateral USD',
                         'Cash / futures collateral ratio', 'Cumulative filled turnover USD', 'Direct holding index',
                         'Cumulative fees USD', 'Interval return fraction', 'NAV reconstruction error USD',
                         'Opening NAV USD', 'Return from NAV fraction', 'Units by instrument', 'Target units by instrument',
-                        'Mark timestamps (microseconds)', 'Mark trade IDs', *['Units: '+s for s in symbols]], valuations()),
+                        'Mark timestamps (microseconds)', 'Mark trade IDs', *['Units: '+s for s in symbols],
+                        *(PAIRED_VALUATION_FIELDS if paired else [])], valuations()),
         ('Events', event_fields + ['Complete event record'], events()),
-        ('Parameters', ['Parameter', 'Saved value'], result['parameters'].items())])
+        ('Parameters', ['Parameter', 'Saved value'], result['parameters'].items())]
+    if paired:
+        sheets.extend([
+            ('Transfer decisions', ['date', 'decision_id', 'pair_id', 'selected', 'horizon_utc', *DECISION_FIELDS], decision_rows()),
+            ('Paired transfers', ['date', 'kind', 'horizon_utc', 'submitted_utc', 'completed_utc', *TRANSFER_FIELDS], transfer_rows()),
+            ('Horizon alternatives', ['date', 'decision_id', 'pair_id', 'selected', 'source_symbol',
+                                      'target_symbol', 'horizon_utc', *HORIZON_FIELDS], decision_rows(alternatives=True)),
+        ])
+        if result['trade_replay'].get('execution_study'):
+            study = result['trade_replay']['execution_study']
+            overview.extend([
+                ['Execution calibration start UTC', timestamp_text(study.get('calibration_start_us'))],
+                ['Execution calibration cutoff UTC', timestamp_text(study.get('label_cutoff_us'))],
+                ['Execution calibration', 'Execution study contains frozen historical cohort statistics, preceding the scored portfolio; it is not filtered to the selected portfolio period. Full individual calibration outcomes are in the audit archive. Failures remain in completion and joint-budget denominators.'],
+                ['Execution deadlines', 'Execution outcomes contains actual instruction results in the selected period. A failed instruction and its later bounded cash-restoration attempt are separate events; restoration does not turn a missed deadline into a successful paired execution.'],
+            ])
+            sheets.extend([
+                ('Execution study', STUDY_SUMMARY_FIELDS,
+                 ([stored_value(row, k) for k in STUDY_SUMMARY_FIELDS]
+                  for row in study.get('group_summaries', []))),
+                ('Execution outcomes', ['date', *EXECUTION_OUTCOME_FIELDS, 'Complete event record'], execution_rows()),
+            ])
+    yield from workbook(sheets)

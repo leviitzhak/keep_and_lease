@@ -1,5 +1,88 @@
 # Changelog
 
+## 2026-09-16 — Empirical execution cost and waiting-time research
+
+- Add opt-in `paired_repricing_mode="empirical"` alongside the preserved fixed
+  and adaptive behavior. Study joint spot/futures completion by waiting time and
+  BTC size, retaining nonfills and partials in the opportunity denominator.
+- Distinguish adverse price-basis movement from lease-rate slippage annualized
+  at the original observation's maturity. Use frozen historical calibration;
+  unsupported estimates remain KEEP.
+- Budget anticipated execution cost before fixing the affordable futures
+  quantity, and include unsuccessful execution/restoration outcomes in the
+  expected terminal-BTC comparison. Require both expected and conservative
+  budget-priced gains. One small approved source tranche precedes a protected
+  hedge; entry GTD and bounded cash-to-spot recovery replace indefinite locking
+  for empirical instructions. The model applies to this fixed-budget policy,
+  not continually changing limits. Nonproportional entry fees fail closed.
+- Add empirical controls, calibration/distribution inspection and predicted
+  versus actual completion/waiting/slippage diagnostics. Preserve old-result
+  missing values and explicitly label tape-volume, Treasury-cash and confidence
+  assumptions.
+- Declare June 6–16 calibration and June 16–26 scored ten-day comparison presets
+  at 0.5-second decisions, three 100-ms delays and estimated 10-bp fees. A new
+  longer empirical run requires inspection of the short run. The available
+  90-day tape supports at most 80 scored days after ten calibration days; a
+  90-day scored run requires additional preceding data.
+
+- Deploy empirical revision `6fd1ae2a4fa24b28a8a5972e8445975a2f5a8fd2` after
+  311 Python and 34 GUI checks. Workflow `35147345496` passed all application
+  checks, including health, GUI, subsecond replay, paired exports and replay
+  extension, but **failed overall** solely on final artifact-evidence upload
+  with `403 Forbidden`. Independent authenticated browser inspection confirmed
+  the exact SHA and ready engine.
+- Start empirical job `69d512c2e4da4cd8b1fa27a9870c0769` at 20:40 UTC; freeze
+  67,452 June 6–16 calibration labels and score June 16–26. Adaptive comparison
+  job `d1da8ce988ec49d890d61e89aa8fe040` uses prior engine
+  `663e60c5b10bb98675baf7785b66b64d18ea6b34` for the same scored window. Results
+  were pending at submission; no new 90-day empirical test is claimed.
+- Keep the pending-initial-decision, zero-fill censoring audit-checker fix
+  separate from simulation behavior. Its 14 focused checks passed; preview
+  `203ef2b10ff0afbbe821028180507978ce03c7a3` and workflow `35149632543` passed
+  including artifact upload. This did not alter the engines of the historical
+  comparison jobs.
+
+- Preserve the first empirical full-audit failure: ten near-expiry numerical
+  comparisons differ by at most about 3.0716e-7 annualized bp after amplifying an
+  approximately 1e-12-bp raw-basis rounding discrepancy. Stored annualization
+  matches stored raw basis/original maturity exactly. The implemented and
+  reviewed checker-only correction retains independent raw-basis validation and
+  tests that relation separately. All 17 focused tests pass, including rejection
+  of +0.01-bp annualization corruption and forged raw basis. The corrected full
+  archive audit passed with zero findings across 67,452 study rows, 219,165
+  scored events and 1,728,000 valuations/checksums. NAV reconstruction and stored
+  annualization relation errors were zero. Checker/docs revision
+  `e02934abf0505da478af9c552983a25dd37dcd18` is pushed; workflow `35155749804`
+  succeeded, including its 315-test replay gate in 21.076 seconds, all
+  application checks, replay extension and artifact upload. Authenticated
+  browser inspection verified the exact new SHA, ready engine and restored
+  completed empirical result. No simulation behavior or historical outcomes
+  changed; immutable comparison-job engines remain recorded separately.
+- Complete both ten-day comparison audits. The adaptive baseline has five fills,
+  zero complete instructions and 0.00009 BTC unmatched at the end; its matched
+  legs exceeded the desired 30-second wait. The empirical policy took no trades:
+  none of the sufficiently sampled calibration groups supported 95% joint
+  completion. Ending empirical wealth was $90,147.95094856317 and
+  1.5076420869746658 BTC, exactly the initial BTC quantity. This does not supply
+  actual execution-coverage or slippage observations.
+
+## 2026-09-16 — Adaptive funded BTC entry limits
+
+- Add optional adaptive spot-to-future entry limits tied to the accepted
+  net-BTC forecast and a fee-adjusted effective entry lease, using acknowledged
+  executed source prices for funded target recovery.
+- Separate observation, frozen-snapshot decision and order-arrival delays;
+  apply them to repricing, preserve live limits until replacement arrival and
+  keep fill acknowledgements on their own clock.
+- Preserve fixed-limit presets, bounded partial funding and unsuccessful
+  transfer diagnostics. Audit replacement requests/arrivals and matched entry
+  rates without treating a filled pair as atomic or its lease as realized profit.
+- Keep reverse transfers and futures rolls on their existing execution path.
+  Performance and deployment evidence are recorded separately from this change.
+- Preserve queued acknowledgement/cancellation timestamps on reservation-release
+  audit rows and process earlier queued events before scheduled variation;
+  exact-time settlement wins ties. Regression cases preserve financial state.
+
 ## 2026-09-11 — Shared daily/replay plot suite
 
 - Add one field-name-based plot catalog for both result types, with commodity

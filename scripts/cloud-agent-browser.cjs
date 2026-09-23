@@ -359,6 +359,7 @@ async function main() {
       }
       console.log('Shared replay adapter verified: books, market data, inspection, mobile, all families and bounded canvas lifecycle.');
       await page.waitForFunction(()=>!document.querySelector('#run').disabled);
+      const csvSourcePath = new URL(await page.locator('#tradeReplayCsv').getAttribute('href'), origin).pathname;
       const csvDownload = page.waitForEvent('download');
       await page.click('#tradeReplayCsv');
       const download = await csvDownload;
@@ -366,6 +367,8 @@ async function main() {
       await download.saveAs(csvPath);
       if (fs.readFileSync(csvPath,'utf8').trim().split('\n').length !== 601) throw Error('Valuation CSV lost rows');
       verifiedDownloadPaths.add(new URL(download.url()).pathname);
+      // Match Chromium's original attachment request after validating its bytes.
+      verifiedDownloadPaths.add(csvSourcePath);
       const entry=result.audit.datasets.btc_trade_events.chunks[0];
       const auditResponse=await page.evaluate(async url=>{const r=await fetch(url);return {status:r.status,body:await r.json()};},result.audit.base_url+'/btc_trade_events/'+entry.index);
       if(auditResponse.status!==200||auditResponse.body.rows.length!==entry.rows)throw Error('Trade audit chunk failed');
@@ -446,6 +449,92 @@ print('Published benchmark period workbook verified: 11 exact valuations, valid 
       verifiedDownloadPaths.add('/api/v1/benchmarks/timestamp/spreadsheet');
     }
 
+    if (process.env.KEEP_AND_LEASE_RUN_PAIRED === 'true') {
+      await page.selectOption('[name="btc_data_source"]', 'trade_tape');
+      await page.selectOption('[name="trade_strategy"]', 'cost_aware_paired');
+      await page.click('#loadPairedExample');
+      // A short immutable-data smoke checks the complete new path; it is not a
+      // profitability or full-period acceptance test.
+      await page.fill('[name="backtest_end"]', '2026-06-25T00:00:30');
+      const pairedResults = new Map();
+      const observePairedResult = candidate => {
+        const target = new URL(candidate.url());
+        if (target.origin === origin && /^\/api\/v1\/backtests\/[0-9a-f]{32}\/result$/.test(target.pathname)) pairedResults.set(target.pathname, candidate);
+      };
+      page.on('response', observePairedResult);
+      let response;
+      try {
+        const submissionPromise = page.waitForResponse(candidate => new URL(candidate.url()).pathname === '/api/v1/backtests' && candidate.request().method() === 'POST', {timeout:60000});
+        await page.click('#run');
+        const submitted = await submissionPromise, job = await submitted.json();
+        if (![200,202].includes(submitted.status()) || !job.job_id) throw Error('Funded paired submission HTTP '+submitted.status()+': '+(job.detail||'Missing job ID'));
+        console.log('Funded paired replay submitted: '+job.job_id+' · '+job.status);
+        const resultPath = '/api/v1/backtests/'+job.job_id+'/result';
+        response = pairedResults.get(resultPath) || await page.waitForResponse(candidate => new URL(candidate.url()).origin === origin && new URL(candidate.url()).pathname === resultPath, {timeout:10*60*1000});
+      } finally { page.off('response', observePairedResult); }
+      if (!response.ok()) throw Error('Funded paired replay result HTTP '+response.status());
+      const result = await response.json();
+      if (result.trade_replay?.strategy !== 'cost_aware_paired' || !result.trade_replay.paired_transfer ||
+          result.summary.observations !== 30 || result.trade_replay.collateral_breach_count !== 0 ||
+          result.trade_replay.max_nav_reconstruction_error_usd > 1e-5 ||
+          result.fields.length !== result.series.at(-1).length ||
+          !Number.isFinite(result.trade_replay.ending_commodity_nav_btc)) {
+        throw Error('Funded paired replay reconciliation or schema failed');
+      }
+      await page.waitForSelector('#pairedTransferSummary', {state:'visible'});
+      await page.waitForFunction(() => !document.querySelector('#run').disabled);
+      console.log('Funded paired replay validated before export: '+JSON.stringify({
+        jobId:new URL(response.url()).pathname.split('/')[4],observations:result.summary.observations,
+        start:result.summary.start,end:result.summary.end,
+        submittedPairs:result.trade_replay.paired_transfer.submitted_pairs,
+        collateralBreaches:result.trade_replay.collateral_breach_count,
+        reconstructionError:result.trade_replay.max_nav_reconstruction_error_usd,
+        guiExportBounds:await page.evaluate(()=>tradePeriod())
+      }));
+      await page.setViewportSize({width:390,height:844});
+      if (!(await page.locator('#pairedTransferSummary').isVisible())) throw Error('Mobile paired diagnostics missing');
+      await page.setViewportSize({width:1440,height:1000});
+      const downloadPromise = page.waitForEvent('download', {timeout:120000});
+      // If the API rejects the period, report that response immediately instead
+      // of hiding it behind a two-minute download-event timeout.
+      downloadPromise.catch(()=>{});
+      const exportPathname = new URL(response.url()).pathname.replace(/\/result$/, '/spreadsheet');
+      const exportResponsePromise = page.waitForResponse(candidate => new URL(candidate.url()).origin === origin && new URL(candidate.url()).pathname === exportPathname, {timeout:120000});
+      const checkedExportPromise = exportResponsePromise.then(async exportResponse => {
+        if (!exportResponse.ok()) throw Error('Funded paired spreadsheet HTTP '+exportResponse.status()+' at '+exportResponse.url()+': '+(await exportResponse.text()).slice(0,2000));
+        return downloadPromise;
+      });
+      // Chromium may hand an attachment directly to its download manager,
+      // without emitting an ordinary page response event.
+      checkedExportPromise.catch(()=>{});
+      await page.click('#tradeSpreadsheet');
+      const download = await Promise.race([downloadPromise, checkedExportPromise]);
+      const exportPath = path.join(outputDir, 'paired-period.xlsx');
+      await download.saveAs(exportPath);
+      require('child_process').execFileSync('python', ['-c', `
+import zipfile,xml.etree.ElementTree as E,sys
+with zipfile.ZipFile(sys.argv[1]) as z:
+ assert z.testzip() is None
+ root=E.fromstring(z.read('xl/workbook.xml'))
+ ns={'m':'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
+ names={s.attrib['name'] for s in root.findall('m:sheets/m:sheet',ns)}
+ assert 'Paired transfers' in names and 'Transfer decisions' in names, names
+ for name in z.namelist(): E.fromstring(z.read(name))
+`, exportPath], {stdio:'inherit'});
+      // The GUI saves a Blob URL; qualify the verified server request itself.
+      verifiedDownloadPaths.add(exportPathname);
+      fs.writeFileSync(path.join(outputDir, 'paired-smoke.json'), JSON.stringify({
+        strategy: result.trade_replay.strategy, observations: result.summary.observations,
+        submittedPairs: result.trade_replay.paired_transfer.submitted_pairs,
+        completedPairs: result.trade_replay.paired_transfer.completed,
+        collateralBreaches: result.trade_replay.collateral_breach_count,
+        reconstructionError: result.trade_replay.max_nav_reconstruction_error_usd,
+        rateDataVersion: result.trade_replay.treasury_rate_model.data_version,
+        workbookVerified: true, mobileDiagnosticsVerified: true
+      }, null, 2));
+      console.log('Funded paired GUI smoke passed: immutable tape, rates, funding, audit, mobile diagnostics and period workbook.');
+    }
+
     const sameOriginFailures = failedRequests.filter((request) => {
       try {
         const target = new URL(request.url);
@@ -463,6 +552,7 @@ print('Published benchmark period workbook verified: 11 exact valuations, valid 
       throw new Error(`GUI raised ${pageErrors.length} page error(s)`);
     }
     if (sameOriginFailures.length) {
+      console.error('Unverified same-origin requests: '+JSON.stringify(sameOriginFailures));
       throw new Error(`GUI had ${sameOriginFailures.length} failed same-origin request(s)`);
     }
   } catch (error) {

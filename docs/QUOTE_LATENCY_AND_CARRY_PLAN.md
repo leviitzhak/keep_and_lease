@@ -1,7 +1,13 @@
 # Quote availability, executed lease quality and longer holding periods
 
-Status: planned implementation and research requirements, recorded 2026-09-15.
-This document does not implement an execution change or certify a new strategy.
+Status: broader implementation and research requirements, recorded 2026-09-15.
+The current BTC research engine implements deterministic feed, frozen-snapshot
+decision, order-arrival and fill-response clocks, durable queues and matched
+execution diagnostics, with optional adaptive spot-to-future limits. See
+[COST_AWARE_FUNDED_TRANSFERS.md](COST_AWARE_FUNDED_TRANSFERS.md) and `TODO.md` for
+implemented scope. The composite checkboxes below retain additional depth,
+measured-receipt, variable-latency and attribution requirements; an unchecked
+item does not mean none of its research components exists.
 It extends [PAIRED_TRANSFER_DESIGN.md](PAIRED_TRANSFER_DESIGN.md); the same transfer
 instruction continues to govern spot <-> (cash/Treasuries + futures).
 
@@ -149,7 +155,8 @@ ordinary futures trades to the latest preceding spot within one second. The
 50 ms chart is a filter of those same pairs, not a feed-latency simulation or a
 new both-sided matching method. Trade amounts do not establish remaining quote
 size; book-side depth is required to certify quantity-aware executable carry.
-All new implementation checkboxes above remain open.
+The complete requirements represented by the composite checkboxes above remain
+open; the current research subset is documented separately.
 
 ## Primary implementation references
 

@@ -1,7 +1,11 @@
 # Paired-transfer execution requirements
 
-Status: owner-approved specification, pending engine implementation. Recorded
-in the repository on 2026-09-14; see the matching open items in [TODO.md](TODO.md).
+Status: owner-approved specification recorded on 2026-09-14. The BTC research
+implementation now covers funded staged execution and optional adaptive
+spot-to-future entry limits; see
+[COST_AWARE_FUNDED_TRANSFERS.md](COST_AWARE_FUNDED_TRANSFERS.md) for its precise
+scope and [TODO.md](TODO.md) for remaining acceptance. Requirements below retain
+the broader native-market design, including depth that the tape does not supply.
 
 The **same transfer instruction** applies to both spot-to-futures and
 futures-to-spot transfers, including the cash/Treasury funding movements.
@@ -18,7 +22,9 @@ The unit of discretionary reallocation is a funded transfer between direct BTC a
 
 The uploaded files contain no book-side depth or available quote quantity. Historical trade amount, even where present in original raw data, is already executed volume and is not a guarantee of remaining quoted size. A tape-only model can test explicitly labeled participation assumptions without knowing future prints at the decision; it cannot certify depth-aware executability.
 
-No new parameter values or performance improvement are claimed. These are the proposed rules for a separately tested execution change, while retaining the current strategy/result for comparison.
+This specification does not establish parameter optimality or performance
+improvement. The implementation retains fixed-limit strategies/results for
+comparison with adaptive entry behavior.
 
 ## Acceptance and audit contract
 
@@ -58,7 +64,10 @@ open implementation checklist and acceptance criteria:
   portfolio, separating horizon, smoothing and maturity and retaining the
   residual-basis, funding, settlement and liquidity risks.
 
-These are planned changes, not implemented behavior or new backtest results.
+The research implementation now covers deterministic observation/decision/order
+delays, staged fills and matched-price diagnostics. Depth, native venue behavior
+and subsequent realized-outcome acceptance remain broader requirements; consult
+the current guide before treating any item as implemented.
 
 ## Next analysis: cost-aware transfers versus keeping current positions
 
@@ -69,5 +78,5 @@ versus keeping the current position, all spot/futures/Treasury costs, feasible
 break-even horizons, profit-taking or compensated-switch exits with risk
 exceptions, settlement-reference comparisons, the preliminary holding-horizon
 study, and acceptance for a complete causal funded paired-transfer backtest.
-The new analysis/implementation checklist remains pending; no engine rule is
-changed by this documentation update.
+The implementation checklist is tracked in `TODO.md`; this retained design
+document is not evidence of completed full-period or native-market acceptance.

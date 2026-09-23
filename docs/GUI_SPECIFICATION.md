@@ -33,6 +33,42 @@ with their shipped defaults. Invalid or temporarily incomplete numeric input
 is not persisted or submitted; the interface highlights the field instead of
 sending an invalid value to the calculation engine.
 
+For the BTC-only funded-pair policy, the execution controls expose fixed,
+adaptive or empirical repricing and separate observation, decision and order-to-market
+delays. Common observation delay adds to the advanced per-feed delays; fill
+acknowledgement remains separate. A blank order-delay value inherits the
+Bitcoin execution delay. Loading an old preset without these new settings
+preserves fixed repricing and zero observation/decision delay.
+
+Paired-run diagnostics display the recorded repricing mode, applied replacements
+and delay assumptions. When available, the latest pair shows target and
+matched-fill effective entry lease, matched BTC and annualized rate shortfall.
+These are entry-basis diagnostics, not realized net BTC returns. Missing fields
+in older saved results are not invented or inferred from unrelated fills.
+
+Empirical mode exposes its confidence target, minimum sample count, calibration
+days, waiting deadline, BTC size grid and maximum study horizon in a compact
+mode-specific group. The ten-day research preset uses June 6–16 calibration and
+June 16–26 scored replay with 0.5-second decisions, three 100-ms delays and 10 bp
+estimated fees. It is paired with an adaptive comparison preset for the same
+scored period.
+
+The execution-study panel shows the frozen calibration bounds and complete,
+partial, unfilled and censored observations. Its expandable distribution view
+selects scope/maturity and BTC quantity, then compares waiting horizons,
+completion fractions, joint price budgets and raw-basis/annualized-lease
+quantiles. Annualized rates retain the original observation's maturity; they
+are not obtained by dividing a pooled price quantile by an arbitrary maturity.
+
+Empirical execution diagnostics retain all instruction outcomes, deadline
+misses, residual cash, restoration counts, and predicted versus achieved
+completion. Waiting/slippage summaries include their sample counts, mean,
+median, p90, p95, p99 and maximum where available. Matched-fill slippage
+statistics can include partial instructions and must be read alongside the
+noncompletion counts; study price quantiles use completed shadow paths only. Missing historical
+fields remain unavailable. A 95% requested empirical coverage is labeled as a
+model target, not guaranteed execution or a statistical confidence interval.
+
 ## Plot rendering and point inspection
 
 Common portfolio plots are rebuilt from the filtered portfolio series without
