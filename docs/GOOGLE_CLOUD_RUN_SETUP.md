@@ -74,8 +74,8 @@ loaded on the first non-health request, and Firestore, Cloud Storage, and Cloud
 Run clients initialize lazily on the first job operation. Application imports,
 credential discovery, and control-plane latency therefore cannot block the
 Cloud Run startup probe. Terraform explicitly declares the web container's
-`python -m uvicorn server_main:app` command and port instead of depending on
-implicit image-launch metadata. The startup probe checks TCP port 8080, while
+absolute `/usr/local/bin/python server_main.py` command instead of depending on
+PATH resolution or implicit image-launch metadata. The startup probe checks TCP port 8080, while
 the workflow separately requires an authenticated `200` response from
 `/api/v1/health` before running GUI smoke tests. The probe allows up to 120
 seconds for a cold instance; each individual probe still has a two-second

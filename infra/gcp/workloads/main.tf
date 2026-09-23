@@ -127,12 +127,8 @@ resource "google_cloud_run_v2_service" "web" {
     containers {
       name    = "web"
       image   = var.web_image
-      command = ["python"]
-      args = [
-        "-m", "uvicorn", "server_main:app",
-        "--host", "0.0.0.0",
-        "--port", "8080",
-      ]
+      command = ["/usr/local/bin/python"]
+      args    = ["server_main.py"]
 
       ports {
         container_port = 8080

@@ -24,4 +24,4 @@ COPY --chown=app:app public/silver_strategy_gui.html public/backtest-runs.js pub
 
 USER app
 EXPOSE 8080
-CMD ["python", "-m", "uvicorn", "server_main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["/usr/local/bin/python", "server_main.py"]
