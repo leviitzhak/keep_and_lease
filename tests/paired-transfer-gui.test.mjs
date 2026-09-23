@@ -13,11 +13,12 @@ function source(name){
 }
 
 test('old parameter imports reset paired policy and costs while preserving explicit paired imports',()=>{
-  const fields=new Map(['trade_strategy','paired_horizon_days','paired_spot_fixed_fee_usd','paired_max_unpaired_btc','paired_repricing_mode','paired_observation_delay_seconds','paired_decision_delay_seconds','paired_order_delay_seconds'].map(key=>[key,{value:'prior paired run'}]));
+  const fields=new Map(['trade_strategy','paired_selection_mode','paired_horizon_days','paired_spot_fixed_fee_usd','paired_max_unpaired_btc','paired_repricing_mode','paired_observation_delay_seconds','paired_decision_delay_seconds','paired_order_delay_seconds'].map(key=>[key,{value:'prior paired run'}]));
   const context={form:{elements:{namedItem:name=>fields.get(name)}},LEG_FIELDS:[],COMMODITIES:['btc'],loadCommodity(){}};
   vm.runInNewContext(source('applyParameters'),context);
   context.applyParameters({});
   assert.equal(fields.get('trade_strategy').value,'legacy');
+  assert.equal(fields.get('paired_selection_mode').value,'amortized_rank');
   assert.equal(fields.get('paired_horizon_days').value,'1,3,7,14,30');
   assert.equal(fields.get('paired_spot_fixed_fee_usd').value,'0');
   assert.equal(fields.get('paired_max_unpaired_btc').value,'0.01');
@@ -27,6 +28,9 @@ test('old parameter imports reset paired policy and costs while preserving expli
   assert.equal(fields.get('trade_strategy').value,'cost_aware_paired');
   assert.equal(fields.get('paired_spot_fixed_fee_usd').value,'1.75');
   assert.equal(fields.get('paired_horizon_days').value,'0.25,1,3');
+  assert.equal(fields.get('paired_selection_mode').value,'horizon_wealth');
+  context.applyParameters({trade_strategy:'cost_aware_paired',paired_selection_mode:'amortized_rank'});
+  assert.equal(fields.get('paired_selection_mode').value,'amortized_rank');
 });
 
 test('import migrates the BTC transport delay without adding the legacy delay twice',()=>{
@@ -103,7 +107,7 @@ test('paired mode disables irrelevant allocation controls and serialization pres
 });
 
 function validationContext(overrides={},profile={}){
-  const values={trade_strategy:'cost_aware_paired',btc_data_source:'trade_tape',weight_btc:'100',weight_silver:'0',weight_gold:'0',weight_sp500:'0',weight_treasury:'0',paired_horizon_days:'1,3,7,14,30',paired_max_horizon_days:'30',paired_repricing_mode:'fixed',paired_observation_delay_seconds:'0',paired_decision_delay_seconds:'0',paired_order_delay_seconds:'0',...empiricalDefaults,...overrides};
+  const values={trade_strategy:'cost_aware_paired',btc_data_source:'trade_tape',weight_btc:'100',weight_silver:'0',weight_gold:'0',weight_sp500:'0',weight_treasury:'0',paired_selection_mode:'horizon_wealth',paired_horizon_days:'1,3,7,14,30',paired_max_horizon_days:'30',paired_max_transfer_fraction:'0.25',paired_max_delta_btc:'0.01',paired_min_improvement_bps:'5',paired_conservative_lease_bps:'0',paired_repricing_mode:'fixed',paired_observation_delay_seconds:'0',paired_decision_delay_seconds:'0',paired_order_delay_seconds:'0',...empiricalDefaults,...overrides};
   const context={form:{elements:{namedItem:name=>({value:values[name]})}},captureCommodity(){},commodityProfiles:{btc:{futures_contract_type:'regular',enable_short_book:'false',...profile}}};
   vm.runInNewContext(source('validatePairedForm'),context);
   return context;
@@ -124,6 +128,14 @@ test('holding horizons reject malformed and nonfinite forecasts',()=>{
     assert.throws(()=>validationContext({paired_horizon_days:value}).validatePairedForm(),/positive comma-separated/);
   }
   assert.doesNotThrow(()=>validationContext({paired_horizon_days:'0.25, 1, 3'}).validatePairedForm());
+});
+
+test('amortized ranking ignores horizon grids and rejects empirical execution',()=>{
+  assert.doesNotThrow(()=>validationContext({paired_selection_mode:'amortized_rank',paired_horizon_days:'not used'}).validatePairedForm());
+  assert.throws(()=>validationContext({paired_selection_mode:'amortized_rank',paired_repricing_mode:'empirical'}).validatePairedForm(),/calibrated only/);
+  for(const [name,value] of [['paired_max_delta_btc','0'],['paired_min_improvement_bps','-1'],['paired_conservative_lease_bps','NaN']]){
+    assert.throws(()=>validationContext({paired_selection_mode:'amortized_rank',[name]:value}).validatePairedForm(),/must be|buffers/);
+  }
 });
 
 test('repricing validates its mode and three independent nonnegative delays',()=>{

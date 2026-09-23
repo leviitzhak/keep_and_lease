@@ -83,6 +83,27 @@ class PairedBacktestIntegrationTests(unittest.TestCase):
                                     row['futures_notional_usd'] - 1e-7)
             self.assertAlmostEqual(row['commodity_nav_btc'], row['nav_usd']/100)
 
+    def test_amortized_ranking_starts_in_spot_and_executes_best_future(self):
+        p, store, coverage = scenario()
+        p.update(paired_selection_mode='amortized_rank',
+                 paired_repricing_mode='adaptive', paired_max_delta_btc=.2,
+                 paired_min_improvement_bps=5,
+                 paired_conservative_lease_bps=0)
+        result, rows, _ = run_case(p, store, coverage)
+        paired = result['trade_replay']['paired_transfer']
+        self.assertEqual(paired['selection_mode'], 'amortized_rank')
+        self.assertGreater(result['trade_replay']['fills'], 0)
+        selected = [row['decision'] for row in rows['btc_trade_events']
+                    if row['kind'] == 'paired_decision' and row.get('selected')]
+        self.assertTrue(selected)
+        self.assertEqual(selected[0]['source_symbol'], 'SPOT')
+        self.assertEqual(selected[0]['target_symbol'], 'F')
+        self.assertEqual(selected[0]['diagnostics']['selection_model'],
+                         'expiry_amortized_return_ranking')
+        self.assertLessEqual(selected[0]['source_quantity_btc'], .2)
+        self.assertEqual(result['trade_replay']['collateral_breach_count'], 0)
+        self.assertLess(result['trade_replay']['max_nav_reconstruction_error_usd'], 1e-7)
+
     def test_legacy_remains_the_default(self):
         p = payload()
         self.assertNotIn('trade_strategy', p)

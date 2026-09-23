@@ -103,9 +103,14 @@ Benchmarks must use the same date range and return convention. Any benchmark exp
 
 The separate opt-in `cost_aware_paired` trade-tape policy uses the funded ledger
 and partial-transfer model in
-[COST_AWARE_FUNDED_TRANSFERS.md](COST_AWARE_FUNDED_TRANSFERS.md). Its optional
-adaptive spot-to-future entry limits preserve a fee-adjusted lease target
-constrained by expected net BTC versus KEEP. Observation, frozen-snapshot
+[COST_AWARE_FUNDED_TRANSFERS.md](COST_AWARE_FUNDED_TRANSFERS.md).
+`paired_selection_mode="amortized_rank"` ranks expiry-normalized destination
+lease returns after all remaining costs against each held source's KEEP return;
+it does not use the discrete forecast-horizon grid. The preserved
+`horizon_wealth` mode retains that earlier expected-net-BTC comparison.
+Adaptive ranked limits are symmetric across spot/future and future/future
+routes; earlier horizon-wealth adaptive limits remain spot-to-future specific.
+Observation, frozen-snapshot
 decision and order-transport delays apply to both initial and replacement
 instructions; a live limit changes only when its replacement arrives. The
 existing observed-allocation behavior described below remains its own policy.

@@ -19,6 +19,10 @@ scores and fixed/minimum-hold controls do not drive the paired policy.
 
 | Parameter | Default | Meaning |
 |---|---|---|
+| `paired_selection_mode` | `amortized_rank` for new GUI setups; `horizon_wealth` when loading an old paired preset without the field | Selects current expiry-amortized ranking or preserves the earlier discrete-horizon forecast. |
+| `paired_max_delta_btc` | `0.01` | Absolute BTC-equivalent cap for one ranked transfer instruction. |
+| `paired_min_improvement_bps` | `5` | Minimum annualized destination-minus-KEEP improvement after costs. |
+| `paired_conservative_lease_bps` | `0` | Annual lease discount applied before ranking. |
 | `paired_horizon_days` | `1,3,7,14,30` | Positive calendar-day holding horizons, comma-separated or a JSON array. Both alternatives use the same future time; expiry and maximum forecast length constrain it. |
 | `paired_max_horizon_days` | `30` | Maximum credible forecast length. |
 | `paired_max_transfer_fraction` | `0.25` | Maximum fraction of each held source position considered per instruction. A grid also evaluates 25%, 50% and 75% of that maximum. |
@@ -195,3 +199,19 @@ parameter document, and subsequent edits are marked as modifications of that
 repository strategy. Saved server-backtest visibility is separately curated in
 the browser so selected runs stay in the default list across sessions while
 **Show all runs** remains available.
+### Expiry-amortized cost-aware selector
+
+- `paired_selection_mode`: `amortized_rank` uses expiry-normalized destination
+  and KEEP returns; `horizon_wealth` preserves the earlier discrete-horizon
+  forecast. Missing values in old paired presets mean `horizon_wealth`.
+- `paired_max_delta_btc`: absolute BTC-equivalent cap for one position transfer.
+- `paired_min_improvement_bps`: minimum annualized candidate-minus-KEEP return
+  required after modeled costs.
+- `paired_conservative_lease_bps`: annual lease-rate discount applied before
+  ranking to allow for signal/execution uncertainty.
+
+In `amortized_rank`, `paired_horizon_days`, `paired_max_horizon_days`,
+`paired_uncertainty_bps`, `paired_cost_buffer_multiplier` and
+`paired_min_gain_btc` do not select allocations. They remain stored so earlier
+presets and results are reproducible. Empirical repricing is not accepted with
+the new selector; fixed and adaptive paired execution are available.

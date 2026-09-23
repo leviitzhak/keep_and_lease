@@ -6,6 +6,32 @@ execution path. `legacy` remains the default; old saved strategies without this
 field load the legacy policy. The new mode requires a 100% BTC trade-tape
 portfolio, regular/linear futures and no short book. No live orders are sent.
 
+`paired_selection_mode="amortized_rank"` selects the current allocation design.
+Fresh portfolios still start entirely in direct BTC. At every eligible decision
+it ranks destinations by annual lease return after source-exit, entry,
+expiry/delivery and return-to-direct-holding costs, and ranks held inventory by
+its KEEP return after only costs that remain in the future. Historical entry
+fees are sunk. A transfer is admitted only when the best destination exceeds
+the worst held KEEP return by `paired_min_improvement_bps`; its size is capped by
+the source holding, `paired_max_transfer_fraction`, `paired_max_delta_btc` and
+actual funding. Futures use expiry as their amortization boundary, so this mode
+does not inspect a predetermined holding-horizon grid. Direct BTC is perpetual
+and its KEEP return is the negative proxy/custody expense rate.
+
+Lease is currently inferred from sufficiently close causal spot/future
+observations and reduced by `paired_conservative_lease_bps`. A time-weighted
+moving-average estimator is not yet mixed into the signal. Adaptive execution
+derives both source-sale and target-buy limits from the other leg's observed or
+acknowledged price while preserving the annual improvement hurdle. The existing
+source-first reservation, partial-fill, latency and unmatched-exposure rules
+remain binding. Historical trade size is still only a participation proxy, not
+measured bid/ask depth.
+
+`paired_selection_mode="horizon_wealth"` preserves the earlier conditional
+discrete-horizon implementation and all saved validation results below. Old
+paired presets without a selector load this earlier mode. The empirical
+execution calibration currently applies only to `horizon_wealth`.
+
 In the GUI select **BTC market data → Trade replay → Transfer strategy →
 Cost-aware funded pairs (research)**. The bounded paired example loads June 25,
 00:00–00:05 UTC, $100,000, one-second decisions and 10% participation. Its purpose

@@ -551,13 +551,19 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
                                   resumed_after_us=restored["source_cursor_exclusive_us"] if restored else None,
                                   timings_seconds=measured,
                                   end_mark_age_seconds={s: (end-m.us)/1e6 for s,m in account.marks.items()},
-                                  assumptions=(["Cost-aware funded paired transfers; forecasts are conditional and not guaranteed returns",
-                                               "KEEP and SWAP compare equal current capital in BTC over the same feasible horizon, after future costs",
+                                  assumptions=([("Cost-aware funded paired transfers; expiry-amortized ranking is active"
+                                                 if paired_config.selection_mode == "amortized_rank" else
+                                                 "Cost-aware funded paired transfers; forecasts are conditional and not guaranteed returns"),
+                                               ("Destinations rank by annual lease after remaining transfer/expiry costs; held KEEP returns exclude sunk entry cost and use no discrete holding horizons"
+                                                 if paired_config.selection_mode == "amortized_rank" else
+                                                 "KEEP and SWAP compare equal current capital in BTC over the same feasible horizon, after future costs"),
                                                "Deribit inverse-price observations modeled as linear USD futures; Binance USDT/USD parity proxy",
                                                "Subsequent trade participation is simulated liquidity, not order-book depth or guaranteed fills",
                                                "Durable staged pairs retain incomplete exposure and reservations through delayed acknowledgments and checkpoints",
                                                "Observation, decision and order-delivery delays apply to adaptive limit updates; exchange arrivals and executed prices are audited",
-                                               "Adaptive effective-lease limits currently apply to spot-to-futures entries; reverse transfers and rolls retain fixed limits",
+                                               ("Adaptive limits symmetrically preserve the accepted amortized-return hurdle"
+                                                 if paired_config.selection_mode == "amortized_rank" else
+                                                 "Adaptive effective-lease limits currently apply to spot-to-futures entries; reverse transfers and rolls retain fixed limits"),
                                                "Funding and the approved exposure ratio constrain repricing; two separate child fills are not atomic or guaranteed",
                                                "Long only; leverage and borrowing disabled; explicit cash variation and 100% economic funding",
                                                "Cash accrues normalized 91-day bill benchmark investment yield; no actual Treasury security is held in this policy",

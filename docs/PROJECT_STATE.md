@@ -1,6 +1,6 @@
 # Keep & Lease — Project State
 
-_Last updated: 2026-09-16_
+_Last updated: 2026-09-22_
 
 ## Purpose
 
@@ -8,8 +8,18 @@ Build an interactive research and backtesting application for strategies that al
 
 ## Current scope
 
+- The current cost-aware allocation selector is
+  `paired_selection_mode="amortized_rank"`: direct BTC is the opening/default
+  position; future destinations are ranked by annual lease after all remaining
+  transfer and expiry costs; held sources are ranked by KEEP return without sunk
+  entry charges. Transfers require a configurable annual improvement and obey
+  source, funding, fractional and absolute BTC-delta limits. Adaptive paired
+  limits are symmetric. The first three-day real-tape result is not yet an
+  accepted result until its deployed job and full audit are inspected.
+
 - Opt-in **cost-aware funded paired transfers** for BTC trade replay compare
-  feasible incremental sizes/horizons with KEEP using expected net BTC wealth.
+  feasible incremental sizes/horizons with KEEP using expected net BTC wealth
+  under the preserved `horizon_wealth` selector.
   A separate funded USD-linear ledger, durable pair IDs/reservations, causal
   feed/response latency, ticket fees, refreshed versioned Treasury inputs and
   detailed audit/export paths are implemented. This remains a tape-participation

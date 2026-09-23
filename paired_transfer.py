@@ -19,7 +19,11 @@ EPS = 1e-12
 
 @dataclass
 class PairedConfig:
+    selection_mode: str = "horizon_wealth"
     max_transfer_fraction: float = .25
+    max_delta_btc: float = .01
+    min_improvement_bps: float = 5
+    conservative_lease_bps: float = 0
     cash_reserve_fraction: float = .01
     max_legging_seconds: float = 30
     max_unpaired_btc: float = .01
@@ -54,12 +58,16 @@ class PairedConfig:
 
     def __post_init__(self):
         for name, value in asdict(self).items():
-            if name in ("economics_payload", "repricing_mode", "execution_size_grid_btc") or (name == "order_delay_seconds" and value is None):
+            if name in ("economics_payload", "repricing_mode", "selection_mode", "execution_size_grid_btc") or (name == "order_delay_seconds" and value is None):
                 continue
             if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0:
                 raise ValueError(f"paired_{name} must be finite and nonnegative")
         if self.repricing_mode not in ("fixed", "adaptive", "empirical"):
             raise ValueError("paired_repricing_mode must be fixed, adaptive or empirical")
+        if self.selection_mode not in ("horizon_wealth", "amortized_rank"):
+            raise ValueError("paired_selection_mode must be horizon_wealth or amortized_rank")
+        if self.selection_mode == "amortized_rank" and self.repricing_mode == "empirical":
+            raise ValueError("Empirical execution is calibrated for the horizon-wealth selector only")
         grid = self.execution_size_grid_btc
         if isinstance(grid, str):
             grid = tuple(float(item.strip()) for item in grid.split(",") if item.strip())
@@ -78,7 +86,7 @@ class PairedConfig:
         if self.repricing_mode == "empirical" and any((self.spot_fixed_fee_usd, self.spot_min_fee_usd,
                 self.futures_fixed_fee_usd, self.futures_min_fee_usd, self.futures_per_contract_fee_usd)):
             raise ValueError("Empirical execution currently supports proportional fees only")
-        for name in ("max_transfer_fraction", "max_legging_seconds", "max_unpaired_btc",
+        for name in ("max_transfer_fraction", "max_delta_btc", "max_legging_seconds", "max_unpaired_btc",
                      "max_quote_age_seconds", "settlement_interval_seconds", "max_rate_age_days"):
             if getattr(self, name) <= 0:
                 raise ValueError(f"paired_{name} must be positive")
@@ -96,7 +104,7 @@ class PairedConfig:
         unknown = {k for k in source if k.startswith("paired_") and k[7:] not in allowed | economic_keys}
         if unknown:
             raise ValueError("Unsupported paired setting: " + ", ".join(sorted(unknown)))
-        values = {key: (source["paired_" + key] if key in ("repricing_mode", "execution_size_grid_btc") or source["paired_" + key] is None
+        values = {key: (source["paired_" + key] if key in ("repricing_mode", "selection_mode", "execution_size_grid_btc") or source["paired_" + key] is None
                         else float(source["paired_" + key]))
                   for key in allowed if "paired_" + key in source}
         if "max_quote_age_seconds" not in values:
@@ -618,6 +626,7 @@ class PairedTransferAccount:
         if candidate is not None:
             return self.start_transfer(us, candidate)
         from paired_transfer_economics import PositionSlice, evaluate_transfer
+        from paired_amortized_strategy import evaluate_amortized_transfer, rank_amortized_decisions
         quotes = self.observed_quotes()
         spot = quotes.get("SPOT")
         if spot is None:
@@ -652,7 +661,10 @@ class PairedTransferAccount:
                     continue
                 if target_symbol != "SPOT" and target.expiry_us - us <= self.config.roll_lead_days * 86400e6:
                     continue
-                if self.config.repricing_mode == "empirical" and not risk_exit:
+                if self.config.selection_mode == "amortized_rank":
+                    decision = evaluate_amortized_transfer(us, source, target, spot,
+                        cash_rate=self.rate, fees=self.fee_schedules, config=config)
+                elif self.config.repricing_mode == "empirical" and not risk_exit:
                     decision = self._evaluate_empirical(us, source, target, spot, config)
                 else:
                     risk_fraction = (min(1.0, self.config.max_unpaired_btc/quantity)
@@ -670,17 +682,24 @@ class PairedTransferAccount:
                     data["reason"] = "forced_expiry_exit"
                     data["diagnostics"]["risk_override"] = "configured_roll_lead"
                 candidates.append(data)
+        if self.config.selection_mode == "amortized_rank":
+            candidates = [d.to_dict() if hasattr(d, "to_dict") else d for d in
+                          rank_amortized_decisions(candidates)]
         accepted = [d for d in candidates if d.get("accepted")]
         if not accepted:
             self.no_trade_count += 1
-            self.last_reason = "no_net_gain" if candidates else self.last_reason
-            self.latest_decision = max(candidates, key=lambda x: x.get("edge_btc", -math.inf), default=None)
+            self.last_reason = ("no_amortized_improvement" if self.config.selection_mode == "amortized_rank"
+                                else "no_net_gain") if candidates else self.last_reason
+            self.latest_decision = ((candidates[0] if candidates else None)
+                if self.config.selection_mode == "amortized_rank" else
+                max(candidates, key=lambda x: x.get("edge_btc", -math.inf), default=None))
             if self.latest_decision:
                 self.sink(dict(kind="paired_decision", us=us, selected=False,
                                candidates_evaluated=len(candidates), decision=self.latest_decision))
             return None
         forced = [d for d in accepted if d.get("reason") == "forced_expiry_exit"]
-        selected = max(forced or accepted, key=lambda d: (d["edge_btc"], -d["horizon_us"], d["target_symbol"]))
+        selected = ((forced or accepted)[0] if self.config.selection_mode == "amortized_rank" else
+                    max(forced or accepted, key=lambda d: (d["edge_btc"], -d["horizon_us"], d["target_symbol"])))
         self.latest_decision = selected
         self.sink(dict(kind="paired_decision", us=us, selected=True,
                        candidates_evaluated=len(candidates), decision=selected))
@@ -732,15 +751,28 @@ class PairedTransferAccount:
             product = "spot" if symbol == "SPOT" else "futures"
             entry_fees[role] = IncrementalFeeSchedule(self.fee_schedules[product], order.filled_btc,
                                                       order.filled_value, order.fee_usd)
-        data = evaluate_transfer(us, PositionSlice(source_quote, remaining, source_cash, unsettled),
-            quotes[pair.target_symbol], quotes["SPOT"], cash_rate=self.rate,
-            fees=self.fee_schedules, entry_fees=entry_fees,
-            config=replace(self.config.economics_config(), max_transfer_fraction=1, size_fractions=(1,)),
-            target_quantity_btc=remaining*pair.ratio,
-            execution_price_overrides={"source": self.orders[pair.source_symbol].limit_price,
-                                       "target": self.orders[pair.target_symbol].limit_price},
-            comparison_horizon_us=pair.decision.get("horizon_us"),
-            horizon_limit_us=pair.decision.get("horizon_us")).to_dict()
+        if self.config.selection_mode == "amortized_rank":
+            from paired_amortized_strategy import evaluate_amortized_transfer
+            data = evaluate_amortized_transfer(us,
+                PositionSlice(source_quote, remaining, source_cash, unsettled),
+                quotes[pair.target_symbol], quotes["SPOT"], cash_rate=self.rate,
+                fees=self.fee_schedules,
+                source_entry_fees=entry_fees["source"],
+                target_entry_fees=entry_fees["target"],
+                config=replace(self.config.economics_config(), max_transfer_fraction=1,
+                               max_delta_btc=remaining),
+                source_price=self.orders[pair.source_symbol].limit_price,
+                target_price=self.orders[pair.target_symbol].limit_price).to_dict()
+        else:
+            data = evaluate_transfer(us, PositionSlice(source_quote, remaining, source_cash, unsettled),
+                quotes[pair.target_symbol], quotes["SPOT"], cash_rate=self.rate,
+                fees=self.fee_schedules, entry_fees=entry_fees,
+                config=replace(self.config.economics_config(), max_transfer_fraction=1, size_fractions=(1,)),
+                target_quantity_btc=remaining*pair.ratio,
+                execution_price_overrides={"source": self.orders[pair.source_symbol].limit_price,
+                                           "target": self.orders[pair.target_symbol].limit_price},
+                comparison_horizon_us=pair.decision.get("horizon_us"),
+                horizon_limit_us=pair.decision.get("horizon_us")).to_dict()
         self.sink(dict(kind="paired_decision", us=us, pair_id=pair.pair_id,
                        selected=data["accepted"], remaining_quantity=True, decision=data))
         if not data["accepted"]:
@@ -875,6 +907,8 @@ class PairedTransferAccount:
         Roll/reverse routes retain their original limits: this lease convention
         specifically describes selling spot and buying a long future.
         """
+        if self.config.selection_mode == "amortized_rank" and self.config.repricing_mode == "adaptive":
+            return self._initialize_amortized_adaptive(pair, observations, source_limit, target_limit)
         if (self.config.repricing_mode != "adaptive" or pair.source_symbol != "SPOT"
                 or pair.target_symbol == "SPOT" or pair.reason == "forced_expiry_exit"):
             return source_limit, target_limit
@@ -915,6 +949,157 @@ class PairedTransferAccount:
             return source_limit, cap
         return source_limit, target_limit
 
+    def _initialize_amortized_adaptive(self, pair, observations, source_limit, target_limit):
+        """Set symmetric fee-aware boundaries for the ranked transfer."""
+        from paired_transfer_economics import PositionSlice, QuoteSnapshot
+        from paired_amortized_strategy import solve_amortized_price_limit
+        now = pair.decision["decision_started_us"]
+        snapshots = pair.decision["quote_snapshots"]
+        quotes = {symbol: QuoteSnapshot(symbol, mark.price, self._source_us(mark),
+                    snapshots[symbol]["available_us"], self.expiries.get(symbol))
+                  for symbol, mark in observations.items() if symbol in snapshots}
+        held = self.units.get(pair.source_symbol, 0)
+        reference = (0.0 if pair.source_symbol == "SPOT" else
+                     sum(lot.quantity * lot.reference_price
+                         for lot in self.ledger.lots.get(pair.source_symbol, [])))
+        source_cash = 0.0 if pair.source_symbol == "SPOT" or held <= EPS else min(
+            self.cash, reference * pair.source_quantity_btc / held)
+        unsettled = (0.0 if pair.source_symbol == "SPOT" or held <= EPS else
+                     pair.source_quantity_btc * quotes[pair.source_symbol].price -
+                     reference * pair.source_quantity_btc / held)
+        source = PositionSlice(quotes[pair.source_symbol], pair.source_quantity_btc,
+                               source_cash, unsettled)
+        config = replace(self.config.economics_config(), max_transfer_fraction=1,
+                         max_delta_btc=pair.source_quantity_btc)
+        floor, source_boundary = solve_amortized_price_limit(now, source,
+            quotes[pair.target_symbol], quotes["SPOT"], price_role="source",
+            counterpart_price=target_limit, cash_rate=self.rate,
+            fees=self.fee_schedules, config=config,
+            target_quantity_btc=pair.target_quantity_btc)
+        if floor is None:
+            pair.decision["adaptive_limit_reason"] = "no_amortized_source_boundary"
+            return source_limit, target_limit
+        cap, target_boundary = solve_amortized_price_limit(now, source,
+            quotes[pair.target_symbol], quotes["SPOT"], price_role="target",
+            counterpart_price=floor, cash_rate=self.rate,
+            fees=self.fee_schedules, config=config,
+            target_quantity_btc=pair.target_quantity_btc)
+        if cap is None:
+            pair.decision["adaptive_limit_reason"] = "no_amortized_target_boundary"
+            return source_limit, target_limit
+        candidate = target_boundary.diagnostics["target_candidate"]
+        pair.target_effective_lease = candidate["amortized_rate"]
+        pair.repricing_supported = True
+        pair.decision["adaptive_source_boundary"] = source_boundary.diagnostics.get(
+            "amortized_price_boundary")
+        pair.decision["adaptive_target_boundary"] = target_boundary.diagnostics.get(
+            "amortized_price_boundary")
+        pair.decision["target_amortized_return"] = pair.target_effective_lease
+        pair.decision["adaptive_limit_reason"] = "amortized_return_and_funding_boundary"
+        return max(source_limit, floor), min(target_limit, cap)
+
+    def _schedule_amortized_reprice(self, us, pair):
+        """Continuously derive either leg's limit from its observed counterpart."""
+        if pair.reprice_pending or pair.transport_pending or pair.cancel_pending:
+            pair.reprice_dirty = True
+            return
+        fresh, _ = self._fresh_pair(us, pair.source_symbol, pair.target_symbol)
+        if not fresh:
+            return
+        from paired_transfer_economics import PositionSlice
+        from paired_amortized_strategy import solve_amortized_price_limit
+        quotes = self.observed_quotes()
+        source_order, target_order = self.orders[pair.source_symbol], self.orders[pair.target_symbol]
+        remaining_source = abs(source_order.signed_btc) - source_order.filled_btc
+        remaining_target = abs(target_order.signed_btc) - target_order.filled_btc
+        if remaining_target <= EPS:
+            return
+        held = self.units.get(pair.source_symbol, 0)
+        reference = (0.0 if pair.source_symbol == "SPOT" else
+                     sum(lot.quantity * lot.reference_price
+                         for lot in self.ledger.lots.get(pair.source_symbol, [])))
+        source_cash = 0.0 if pair.source_symbol == "SPOT" or held <= EPS else min(
+            self.cash, reference * max(remaining_source, pair.unpaired_btc) / held)
+        unsettled = (0.0 if pair.source_symbol == "SPOT" or held <= EPS else
+                     max(remaining_source, pair.unpaired_btc) * quotes[pair.source_symbol].price -
+                     reference * max(remaining_source, pair.unpaired_btc) / held)
+        quantity = max(remaining_source, pair.unpaired_btc)
+        if quantity <= EPS:
+            return
+        source = PositionSlice(quotes[pair.source_symbol], quantity, source_cash, unsettled)
+        config = replace(self.config.economics_config(), max_transfer_fraction=1,
+                         max_delta_btc=quantity)
+        source_fee = self._incremental_fee(source_order)
+        target_fee = self._incremental_fee(target_order)
+        entry_fees = {"source": source_fee, "target": target_fee}
+        pad = (self.config.half_spread_bps + self.config.slippage_bps) / 10000
+        commands = []
+        if pair.unpaired_btc > EPS and pair.unmatched_source_lots:
+            lot = pair.unmatched_source_lots[0]
+            anchor = lot[1]
+            cap, boundary = solve_amortized_price_limit(us, source,
+                quotes[pair.target_symbol], quotes["SPOT"], price_role="target",
+                counterpart_price=anchor, cash_rate=self.rate, fees=self.fee_schedules,
+                config=config, target_quantity_btc=remaining_target,
+                entry_fees=entry_fees)
+            if cap is None:
+                self._request_source_cancel(us, "remaining_amortized_improvement_below_buffer")
+                return
+            # Never exceed the cash actually released by the first leg.
+            fee = target_fee.total_fee(remaining_target, remaining_target * cap)
+            funding_cap = max(0.0, pair.reserved_usd - fee) / remaining_target
+            cap = min(cap, funding_cap)
+            if cap > EPS:
+                commands.append((target_order, cap, anchor, lot[2] * lot[3],
+                                 "amortized_return_and_released_cash"))
+        else:
+            observed_target = quotes[pair.target_symbol].price * (1 + pad)
+            floor, _ = solve_amortized_price_limit(us, source,
+                quotes[pair.target_symbol], quotes["SPOT"], price_role="source",
+                counterpart_price=observed_target, cash_rate=self.rate,
+                fees=self.fee_schedules, config=config,
+                target_quantity_btc=remaining_target, entry_fees=entry_fees)
+            if floor is None:
+                self._request_source_cancel(us, "remaining_amortized_improvement_below_buffer")
+                return
+            commands.append((source_order, floor, observed_target,
+                             target_fee.total_fee(remaining_target,
+                                                  remaining_target * observed_target),
+                             "amortized_return"))
+            observed_source = quotes[pair.source_symbol].price * (1 - pad)
+            cap, _ = solve_amortized_price_limit(us, source,
+                quotes[pair.target_symbol], quotes["SPOT"], price_role="target",
+                counterpart_price=observed_source, cash_rate=self.rate,
+                fees=self.fee_schedules, config=config,
+                target_quantity_btc=remaining_target, entry_fees=entry_fees)
+            if cap is not None:
+                commands.append((target_order, cap, observed_source,
+                                 source_fee.total_fee(remaining_source,
+                                                      remaining_source * observed_source),
+                                 "conditional_observed_counterpart"))
+        packed = []
+        observation = max(self.observed_available_us.get(pair.source_symbol, 0),
+                          self.observed_available_us.get(pair.target_symbol, 0))
+        for order, limit, anchor, anchor_fee, binding in commands:
+            needs_activation = order.role == "target" and pair.unpaired_btc > EPS and not order.active
+            tolerance = max(1e-8, abs(order.limit_price) * 1e-10)
+            if not needs_activation and abs(limit - order.limit_price) <= tolerance:
+                continue
+            self.queue_sequence += 1
+            packed.append(dict(action="replace", pair_id=pair.pair_id,
+                order_id=order.identifier, symbol=order.symbol, role=order.role,
+                revision=self.queue_sequence, limit_price=limit,
+                counterpart_price=anchor, counterpart_fee_usd=anchor_fee,
+                target_effective_lease=pair.target_effective_lease,
+                binding_constraint=binding, observation_us=observation,
+                decision_started_us=us, fill_revision=pair.fill_revision))
+        if packed:
+            pair.reprice_pending = True
+            pair.reprice_dirty = False
+            self._push_event(self.decision_queue,
+                us + round(self.config.decision_delay_seconds * 1e6),
+                dict(action="reprice", pair_id=pair.pair_id, commands=packed))
+
     def _schedule_reprice(self, us):
         pair = self.pairs.get(self.active_pair_id)
         if not pair or not pair.repricing_supported or self._pair_has_responses(pair.pair_id):
@@ -926,6 +1111,8 @@ class PairedTransferAccount:
             return
         if pair.reason in ("end_of_window", "expiry"):
             return
+        if self.config.selection_mode == "amortized_rank":
+            return self._schedule_amortized_reprice(us, pair)
         from paired_transfer_economics import counterpart_price_limit
         source, target = self.orders[pair.source_symbol], self.orders[pair.target_symbol]
         remaining_years = (self.expiries[pair.target_symbol] - us) / YEAR_US
@@ -1718,7 +1905,8 @@ class PairedTransferAccount:
     def summary(self):
         pairs = list(self.pairs.values())
         totals = self.finalized
-        return dict(strategy="cost_aware_paired", submitted_pairs=totals["count"]+len(pairs),
+        return dict(strategy="cost_aware_paired", selection_mode=self.config.selection_mode,
+                    submitted_pairs=totals["count"]+len(pairs),
                     completed=totals["completed"]+sum(p.status == "completed" for p in pairs),
                     partial=totals["partial"]+sum(p.status == "partial" for p in pairs),
                     cancelled=totals["cancelled"]+sum(p.status == "cancelled" for p in pairs),

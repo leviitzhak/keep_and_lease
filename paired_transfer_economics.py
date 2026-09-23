@@ -42,6 +42,9 @@ class EconomicsConfig:
     cost_buffer_multiplier: float = 1.0
     min_gain_btc: float = 0.0
     max_transfer_fraction: float = 0.25
+    max_delta_btc: float = 0.01
+    min_improvement_bps: float = 5.0
+    conservative_lease_bps: float = 0.0
     size_fractions: tuple[float, ...] = (0.25, 0.5, 0.75, 1.0)
     cash_reserve_fraction: float = 0.01
     price_limit_bps: float = 10.0
@@ -55,6 +58,7 @@ class EconomicsConfig:
 
     def __post_init__(self):
         nonnegative = (self.uncertainty_bps, self.min_gain_btc, self.price_limit_bps,
+                       self.min_improvement_bps, self.conservative_lease_bps,
                        self.max_quote_age_seconds, self.max_quote_skew_seconds,
                        self.half_spread_bps, self.slippage_bps, self.proxy_expense_rate)
         if any(not math.isfinite(x) or x < 0 for x in nonnegative):
@@ -67,6 +71,8 @@ class EconomicsConfig:
             raise ValueError("Forecast horizons must be positive and finite")
         if not math.isfinite(self.max_transfer_fraction) or not 0 < self.max_transfer_fraction <= 1:
             raise ValueError("Maximum transfer fraction must be in (0, 1]")
+        if not math.isfinite(self.max_delta_btc) or self.max_delta_btc <= 0:
+            raise ValueError("Maximum position delta must be positive BTC")
         if not self.size_fractions or any(not math.isfinite(x) or not 0 < x <= 1 for x in self.size_fractions):
             raise ValueError("Candidate size fractions must be in (0, 1]")
         if not math.isfinite(self.cash_reserve_fraction) or not 0 <= self.cash_reserve_fraction < 1:
@@ -101,6 +107,9 @@ class EconomicsConfig:
             "cost_buffer_multiplier": "paired_cost_buffer_multiplier",
             "min_gain_btc": "paired_min_gain_btc",
             "max_transfer_fraction": "paired_max_transfer_fraction",
+            "max_delta_btc": "paired_max_delta_btc",
+            "min_improvement_bps": "paired_min_improvement_bps",
+            "conservative_lease_bps": "paired_conservative_lease_bps",
             "cash_reserve_fraction": "paired_cash_reserve_fraction",
             "price_limit_bps": "paired_price_limit_bps",
             "settlement_interval_seconds": "paired_settlement_interval_seconds",

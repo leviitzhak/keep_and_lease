@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-22 — Expiry-amortized cost-aware ranking
+
+- Add backward-compatible `paired_selection_mode="amortized_rank"`. Fresh runs
+  begin entirely in direct BTC, compare every destination's annualized lease
+  after source-exit, entry, expiry and return-to-direct costs with each held
+  instrument's KEEP return, and never recharge sunk entry fees.
+- Remove arbitrary holding-horizon grids from the new selector. Futures
+  amortize through expiry; direct BTC is the perpetual default with negative
+  proxy/custody expense. Add configurable conservative lease discount, annual
+  improvement hurdle and absolute BTC delta cap.
+- Rank worst held KEEP return against best candidate amortized return and reuse
+  the funded source-first pair executor. Adaptive mode now derives symmetric
+  source and target limits for the ranked route while retaining cash reserves,
+  partial-fill state, latency and unmatched-exposure bounds.
+- Preserve `horizon_wealth` for all earlier paired presets/results and keep the
+  empirical calibration restricted to that earlier policy. Add a declared
+  June 6–9 three-day ranked preset; real-tape results remain to be recorded.
+
 ## 2026-09-16 — Empirical execution cost and waiting-time research
 
 - Add opt-in `paired_repricing_mode="empirical"` alongside the preserved fixed

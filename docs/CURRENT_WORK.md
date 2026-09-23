@@ -1,5 +1,23 @@
 # Current work
 
+## Expiry-amortized cost-aware ranking — 2026-09-22
+
+The active branch `agent/cost-aware-amortized-ranking` implements the revised
+allocation design on top of the funded paired-transfer foundation. The new
+`amortized_rank` selector starts in direct BTC, compares destination returns
+after every remaining transfer/expiry cost with held KEEP returns that exclude
+sunk entry cost, and admits only a buffered annualized improvement. It uses
+expiry rather than an arbitrary holding-horizon list, an absolute BTC delta cap,
+and symmetric adaptive paired limits. `horizon_wealth` preserves earlier saved
+runs and remains the only selector accepted by the empirical calibration.
+
+The declared first real-tape test is `[2026-06-06, 2026-06-09)` at 500-ms
+decisions, 10-bp proportional fees, 100-ms observation/decision/order delays,
+0.01-BTC maximum delta and 5-bp minimum annual improvement. Its preset is
+`strategies/research-btc-amortized-rank-3day-500ms-fee-10bp.json`. Local focused
+economic/execution tests and the complete browser suite pass. Deployed job and
+audit results are pending and must be recorded here before TODO acceptance.
+
 ## Empirical execution costs for funded BTC transfers — 2026-09-16
 
 The owner requested implementation of feasible funded transfers and holding
