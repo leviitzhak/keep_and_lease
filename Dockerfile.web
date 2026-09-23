@@ -1,5 +1,7 @@
-# Keep Cloud Run on the base image verified by the successful 2026-09-16 rollout.
-FROM python:3.13-slim@sha256:9d2e5553305c7c7b0097999bb17187c69b921ccd6bc9d40e4bb5ebe652c00285
+# Recovery base: the exact web runtime verified by the successful 2026-09-16
+# preview rollout. Current application files are layered over these known-good
+# Python and dependency bytes.
+FROM me-west1-docker.pkg.dev/keep-and-lease/keep-and-lease/web@sha256:c683538a62ee2bbd9b76e685e2b77259230e536fda269a0a3c40438872c6d70e
 
 ARG ENGINE_COMMIT=unknown
 ARG DATA_MANIFEST_HASH=unknown
@@ -13,17 +15,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     KEEP_AND_LEASE_IMAGE_REF=${IMAGE_REF}
 
 WORKDIR /app
-COPY requirements.txt requirements-cloud.txt ./
-RUN pip install --no-cache-dir -r requirements-cloud.txt \
-    && addgroup --system app \
-    && adduser --system --ingroup app app
-
-COPY VERSION ./
-COPY backtest_silver_lease_strategy.py silver_strategy_gui.py maturity_scoring.py rate_change_attribution.py market_data_store.py observed_execution.py backtest_audit.py btc_trade_backtest.py trade_replay.py funded_ledger.py paired_transfer.py paired_transfer_economics.py paired_amortized_strategy.py paired_transfer_rates.py paired_execution_study.py trade_data_store.py trade_ordering.py replay_checkpoints.py ./
-COPY server ./server
-COPY server_main.py ./
-COPY strategies ./strategies
-COPY public/silver_strategy_gui.html public/backtest-runs.js public/shared-run-plots.js public/backtest-worker-v13.js public/backtest-workbook-v1.js public/fflate.js ./public/
+COPY --chown=app:app VERSION ./
+COPY --chown=app:app backtest_silver_lease_strategy.py silver_strategy_gui.py maturity_scoring.py rate_change_attribution.py market_data_store.py observed_execution.py backtest_audit.py btc_trade_backtest.py trade_replay.py funded_ledger.py paired_transfer.py paired_transfer_economics.py paired_amortized_strategy.py paired_transfer_rates.py paired_execution_study.py trade_data_store.py trade_ordering.py replay_checkpoints.py ./
+COPY --chown=app:app server ./server
+COPY --chown=app:app server_main.py ./
+COPY --chown=app:app strategies ./strategies
+COPY --chown=app:app public/silver_strategy_gui.html public/backtest-runs.js public/shared-run-plots.js public/backtest-worker-v13.js public/backtest-workbook-v1.js public/fflate.js ./public/
 
 USER app
 EXPOSE 8080

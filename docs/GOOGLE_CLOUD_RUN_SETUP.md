@@ -60,10 +60,13 @@ bucket accessible to the deployment identity for workload state only.
 | Workloads | `infra/gcp/workloads/` | `gs://keep-and-lease-terraform-workloads/cloud-run` state |
 | Deployment | `.github/workflows/deploy-google-cloud.yml` | any branch push or manual OIDC build/push/plan/apply/GUI and strategy smoke test; `master` maps to stable and every other branch maps to preview |
 
-Both Cloud Run Dockerfiles pin the Python 3.13 slim base by digest. Update that
-digest deliberately only after a preview rollout verifies container startup and
-the deployment smoke tests; a moving base tag must not silently change runtime
-bytes between otherwise identical application deployments.
+The worker Dockerfile pins the Python 3.13 slim base by digest. Following the
+September 23 startup regression, the web Dockerfile uses the exact successful
+September 16 web image as a recovery base and layers the current source/assets
+over its verified Python dependencies. Replace that recovery base only after a
+preview rollout verifies container startup and all deployment smoke tests; a
+moving base tag must not silently change runtime bytes between otherwise
+identical application deployments.
 
 The container entry point binds Uvicorn before importing the calculation API and
 serves `/api/v1/health` directly from immutable build metadata. The full API is
