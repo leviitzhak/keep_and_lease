@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-23 — Cloud Run cold-start diagnostics
+
+- Increase the web revision's startup-probe allowance from 30 to 120 seconds
+  while retaining the two-second health-request timeout and cadence.
+- Make deployment failures report the newest revision specifically after a
+  short log-flush delay, with a larger log limit that includes delayed container
+  stdout/stderr instead of only the immediate platform audit event.
+
 ## 2026-09-22 — Expiry-amortized cost-aware ranking
 
 - Add backward-compatible `paired_selection_mode="amortized_rank"`. Fresh runs

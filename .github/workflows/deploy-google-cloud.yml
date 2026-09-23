@@ -198,11 +198,21 @@ jobs:
           if [[ "$DEPLOYMENT_TARGET" == "preview" ]]; then
             service_name="keep-and-lease-preview-web"
           fi
+          revision_name="$(
+            gcloud run revisions list \
+              --service="$service_name" \
+              --region="$REGION" \
+              --project="$PROJECT_ID" \
+              --sort-by='~metadata.creationTimestamp' \
+              --limit=1 \
+              --format='value(metadata.name)'
+          )"
+          sleep 10
           gcloud logging read \
-            "resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"${service_name}\"" \
+            "resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"${service_name}\" AND resource.labels.revision_name=\"${revision_name}\"" \
             --project="$PROJECT_ID" \
             --freshness=30m \
-            --limit=100 \
+            --limit=200 \
             --order=desc \
             --format=json
 
