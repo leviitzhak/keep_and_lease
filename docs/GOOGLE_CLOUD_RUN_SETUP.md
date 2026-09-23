@@ -65,15 +65,17 @@ digest deliberately only after a preview rollout verifies container startup and
 the deployment smoke tests; a moving base tag must not silently change runtime
 bytes between otherwise identical application deployments.
 
-The web service exposes `/api/v1/health` without constructing Firestore, Cloud
-Storage, or Cloud Run API clients. Those clients initialize lazily on the first
-job operation, so credential discovery or control-plane latency cannot prevent
-the container from binding its HTTP port. The startup probe allows up to 120
-seconds for a cold instance; each individual probe still has a two-second timeout
-and runs every two seconds. On a failed rollout, the deployment workflow resolves
-the newest revision, briefly allows container logs to flush, and reports up to
-200 revision-specific entries so Python startup errors are not hidden behind only
-the Cloud Run platform event.
+The container entry point binds Uvicorn before importing the calculation API and
+serves `/api/v1/health` directly from immutable build metadata. The full API is
+loaded on the first non-health request, and Firestore, Cloud Storage, and Cloud
+Run clients initialize lazily on the first job operation. Application imports,
+credential discovery, and control-plane latency therefore cannot block the
+Cloud Run startup probe. The probe allows up to 120 seconds for a cold instance;
+each individual probe still has a two-second timeout and runs every two seconds.
+On a failed rollout, the deployment workflow resolves the newest revision,
+briefly allows container logs to flush, and reports up to 200 revision-specific
+entries so Python startup errors are not hidden behind only the Cloud Run
+platform event.
 
 The local and Render modes retain `JobStore`, the existing in-process queue. Cloud
 mode is selected with `KEEP_AND_LEASE_JOB_BACKEND=cloud`; it never starts the
