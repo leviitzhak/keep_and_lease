@@ -75,12 +75,14 @@ Run clients initialize lazily on the first job operation. Application imports,
 credential discovery, and control-plane latency therefore cannot block the
 Cloud Run startup probe. Terraform explicitly declares the web container's
 `python -m uvicorn server_main:app` command and port instead of depending on
-implicit image-launch metadata. The probe allows up to 120 seconds for a cold instance;
-each individual probe still has a two-second timeout and runs every two seconds.
-On a failed rollout, the deployment workflow resolves the newest revision,
-briefly allows container logs to flush, and reports up to 200 revision-specific
-entries so Python startup errors are not hidden behind only the Cloud Run
-platform event.
+implicit image-launch metadata. The startup probe checks TCP port 8080, while
+the workflow separately requires an authenticated `200` response from
+`/api/v1/health` before running GUI smoke tests. The probe allows up to 120
+seconds for a cold instance; each individual probe still has a two-second
+timeout and runs every two seconds. On a failed rollout, the deployment workflow
+resolves the newest revision, briefly allows container logs to flush, and
+reports up to 200 revision-specific entries so Python startup errors are not
+hidden behind only the Cloud Run platform event.
 
 The local and Render modes retain `JobStore`, the existing in-process queue. Cloud
 mode is selected with `KEEP_AND_LEASE_JOB_BACKEND=cloud`; it never starts the
