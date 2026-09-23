@@ -187,8 +187,8 @@ resource "google_cloud_run_v2_service" "web" {
       }
 
       startup_probe {
-        timeout_seconds   = 2
-        period_seconds    = 2
+        timeout_seconds = 2
+        period_seconds  = 2
         # Importing the cloud job adapters and initializing Google clients can
         # exceed 30 seconds on a cold Cloud Run instance. Keep the probe strict
         # once it runs, but allow the process up to two minutes to bind and
