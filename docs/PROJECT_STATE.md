@@ -1,12 +1,19 @@
 # Keep & Lease — Project State
 
-_Last updated: 2026-09-22_
+_Last updated: 2026-09-24_
 
 ## Purpose
 
 Build an interactive research and backtesting application for strategies that allocate among commodity ETFs, commodity futures across maturities, and Treasury/cash instruments. The application should expose all economically meaningful parameters in a GUI and make the daily decisions auditable.
 
 ## Current scope
+
+- Optional rolling worst-lease execution for amortized ranking is implemented
+  on `agent/rolling-worst-lease-execution`: trailing observed price-pair bounds,
+  signed adverse delta, expected market-hedge cost, funded either-leg-first
+  execution and per-revision/matched-tranche spreadsheet audit. Historical
+  performance improvement is not yet measured. See
+  [ROLLING_LEASE_EXECUTION.md](ROLLING_LEASE_EXECUTION.md).
 
 - The current cost-aware allocation selector is
   `paired_selection_mode="amortized_rank"`: direct BTC is the opening/default
@@ -187,3 +194,6 @@ IAM; use the foundation delta or `scripts/grant-benchmark-read-access.sh`.
 The owner applied the grant. Live checks confirmed both benchmark NAVs and
 a five-second XLSX with 11 exact valuation rows; final smoke verification also
 covers native date-input precision and the validated attachment request.
+
+Rolling execution now offers both `relative_price` (default) and `spot` limit
+anchors via `paired_limit_anchor`; both are retained in saved audit contexts.

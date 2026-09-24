@@ -138,7 +138,10 @@
     "paired_spot_min_fee_usd": "0",
     "paired_futures_fixed_fee_usd": "0",
     "paired_futures_min_fee_usd": "0",
-    "paired_futures_per_contract_fee_usd": "0"
+    "paired_futures_per_contract_fee_usd": "0",
+    "paired_lease_window_seconds": "5",
+    "paired_lease_execution_delta_bps": "5",
+    "paired_expected_hedge_slippage_bps": "1"
   },
   "research_assumptions": {
     "status": "Untuned implementation example; not an accepted strategy or a performance claim.",

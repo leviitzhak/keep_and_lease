@@ -18,7 +18,7 @@ actual funding. Futures use expiry as their amortization boundary, so this mode
 does not inspect a predetermined holding-horizon grid. Direct BTC is perpetual
 and its KEEP return is the negative proxy/custody expense rate.
 
-Lease is currently inferred from sufficiently close causal spot/future
+In the fixed/adaptive modes, lease is inferred from sufficiently close causal spot/future
 observations and reduced by `paired_conservative_lease_bps`. A time-weighted
 moving-average estimator is not yet mixed into the signal. Adaptive execution
 derives both source-sale and target-buy limits from the other leg's observed or
@@ -26,6 +26,15 @@ acknowledged price while preserving the annual improvement hurdle. The existing
 source-first reservation, partial-fill, latency and unmatched-exposure rules
 remain binding. Historical trade size is still only a participation proxy, not
 measured bid/ask depth.
+
+The optional `paired_repricing_mode="rolling_worst"` instead uses all price
+pairs in a trailing observed window, with a signed adverse lease delta and one
+expected market-hedge slippage budget. It supports entries, exits and rolls.
+Either first leg is allowed when already funded; the opposite leg becomes a
+market instruction after response/decision/transport delays. A full-BTC opening
+has no cash for a target-first buy. Detailed per-revision and matched-tranche
+comparisons appear in the period workbook. See
+[ROLLING_LEASE_EXECUTION.md](ROLLING_LEASE_EXECUTION.md).
 
 `paired_selection_mode="horizon_wealth"` preserves the earlier conditional
 discrete-horizon implementation and all saved validation results below. Old

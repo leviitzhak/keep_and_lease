@@ -11,6 +11,7 @@ import heapq
 import math
 
 from trade_replay import Trade
+from rolling_lease_execution import RollingLeaseExecutionMixin, RollingPriceWindow
 from funded_ledger import ContractSpec, FeeSchedule, FundedLedger, FundingError
 
 YEAR_US = 365 * 86400 * 1_000_000
@@ -31,6 +32,10 @@ class PairedConfig:
     max_quote_skew_seconds: float = 1
     price_limit_bps: float = 10
     repricing_mode: str = "fixed"
+    limit_anchor: str = "relative_price"
+    lease_window_seconds: float = 5
+    lease_execution_delta_bps: float = 5
+    expected_hedge_slippage_bps: float = 1
     execution_confidence: float = .95
     execution_min_samples: int = 100
     calibration_days: float = 10
@@ -58,16 +63,22 @@ class PairedConfig:
 
     def __post_init__(self):
         for name, value in asdict(self).items():
-            if name in ("economics_payload", "repricing_mode", "selection_mode", "execution_size_grid_btc") or (name == "order_delay_seconds" and value is None):
+            if name in ("economics_payload", "repricing_mode", "selection_mode", "limit_anchor", "execution_size_grid_btc") or (name == "order_delay_seconds" and value is None):
                 continue
             if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0:
                 raise ValueError(f"paired_{name} must be finite and nonnegative")
-        if self.repricing_mode not in ("fixed", "adaptive", "empirical"):
-            raise ValueError("paired_repricing_mode must be fixed, adaptive or empirical")
+        if self.limit_anchor not in ("relative_price", "spot"):
+            raise ValueError("paired_limit_anchor must be relative_price or spot")
+        if self.repricing_mode not in ("fixed", "adaptive", "empirical", "rolling_worst"):
+            raise ValueError("paired_repricing_mode must be fixed, adaptive, empirical or rolling_worst")
         if self.selection_mode not in ("horizon_wealth", "amortized_rank"):
             raise ValueError("paired_selection_mode must be horizon_wealth or amortized_rank")
         if self.selection_mode == "amortized_rank" and self.repricing_mode == "empirical":
             raise ValueError("Empirical execution is calibrated for the horizon-wealth selector only")
+        if self.repricing_mode == "rolling_worst" and self.selection_mode != "amortized_rank":
+            raise ValueError("Rolling worst lease execution requires amortized_rank")
+        if self.lease_window_seconds < .000001 or self.expected_hedge_slippage_bps >= 10000:
+            raise ValueError("Lease window must be positive and expected hedge slippage below 10000 bps")
         grid = self.execution_size_grid_btc
         if isinstance(grid, str):
             grid = tuple(float(item.strip()) for item in grid.split(",") if item.strip())
@@ -104,7 +115,7 @@ class PairedConfig:
         unknown = {k for k in source if k.startswith("paired_") and k[7:] not in allowed | economic_keys}
         if unknown:
             raise ValueError("Unsupported paired setting: " + ", ".join(sorted(unknown)))
-        values = {key: (source["paired_" + key] if key in ("repricing_mode", "selection_mode", "execution_size_grid_btc") or source["paired_" + key] is None
+        values = {key: (source["paired_" + key] if key in ("repricing_mode", "selection_mode", "limit_anchor", "execution_size_grid_btc") or source["paired_" + key] is None
                         else float(source["paired_" + key]))
                   for key in allowed if "paired_" + key in source}
         if "max_quote_age_seconds" not in values:
@@ -124,6 +135,9 @@ class PairedConfig:
         from paired_transfer_economics import EconomicsConfig
         parsed = EconomicsConfig.from_payload({**self.economics_payload,
             "paired_max_transfer_fraction": self.max_transfer_fraction,
+            "paired_max_delta_btc": self.max_delta_btc,
+            "paired_min_improvement_bps": self.min_improvement_bps,
+            "paired_conservative_lease_bps": self.conservative_lease_bps,
             "paired_cash_reserve_fraction": self.cash_reserve_fraction,
             "paired_price_limit_bps": self.price_limit_bps,
             "paired_settlement_interval_seconds": self.settlement_interval_seconds})
@@ -151,6 +165,8 @@ class PairedOrder:
     decision_started_us: int | None = None
     decision_ready_us: int | None = None
     observation_us: int | None = None
+    market_order: bool = False
+    lease_context: dict = field(default_factory=dict)
 
 
 @dataclass
@@ -194,6 +210,10 @@ class Transfer:
     first_target_fill_us: int | None = None
     last_target_fill_us: int | None = None
     outcome_recorded: bool = False
+    rolling: bool = False
+    rolling_lots: list = field(default_factory=list)
+    matched_target_value_usd: float = 0
+    matched_target_fee_usd: float = 0
 
     @property
     def ratio(self):
@@ -205,14 +225,17 @@ class Transfer:
 
     @property
     def unpaired_btc(self):
+        if self.rolling:
+            return abs(self.source_filled_btc - self.target_filled_btc/self.ratio)
         return max(0, self.source_filled_btc - self.matched_source_btc)
 
 
-class PairedTransferAccount:
+class PairedTransferAccount(RollingLeaseExecutionMixin):
     """TapeAccount-compatible adapter with a separate self-financing ledger.
 
-    Only one transfer may reserve resources at once. Source sales/closures are
-    actual fills before the target can be submitted. Each next source chunk waits
+    Only one transfer may reserve resources at once. In the original modes,
+    source sales/closures are actual fills before the target can be submitted.
+    Rolling-worst execution also permits an already-funded target to lead. Each next source chunk waits
     until the preceding target and all relevant acknowledgements are complete.
     A timeout stops new source exposure; its funded target remains a recovery
     order, retaining its fixed limit or adapting to acknowledged execution costs
@@ -239,6 +262,8 @@ class PairedTransferAccount:
             from paired_execution_study import FrozenExecutionModel
             empirical_model = FrozenExecutionModel.from_dict(empirical_model)
         self.empirical_model = empirical_model
+        self.lease_window = RollingPriceWindow(self.config.lease_window_seconds)
+        self.latest_lease_execution = None
         self.cash_recovery = None
         self.recovery_sequence = 0
         self.empirical_stats = dict(instructions=0, completed_by_deadline=0, deadline_failed=0,
@@ -394,8 +419,11 @@ class PairedTransferAccount:
                     if previous is None or (self._source_us(trade), trade.us) >= (self._source_us(previous), previous.us):
                         self.observed_marks[trade.symbol] = trade
                         self.observed_available_us[trade.symbol] = available
+                        if self.rolling_execution:
+                            self.lease_window.observe(trade.symbol, trade.price, self._source_us(trade), available)
                         pair = self.pairs.get(self.active_pair_id)
-                        if pair and trade.symbol in (pair.source_symbol, pair.target_symbol):
+                        if pair and (trade.symbol in (pair.source_symbol, pair.target_symbol)
+                                     or pair.rolling and trade.symbol == "SPOT"):
                             self._schedule_reprice(available)
                 elif index == 1:
                     symbol = data["symbol"]
@@ -490,13 +518,13 @@ class PairedTransferAccount:
             reason = "fills_changed_during_latency"
         elif pair.reason in ("end_of_window", "expiry"):
             reason = "window_or_contract_closed"
-        elif order.role == "source" and pair.status != "pending":
+        elif order.role == "source" and pair.status != "pending" and not (pair.rolling and data.get("market_order")):
             reason = "source_halted"
         elif data["revision"] <= order.revision:
             reason = "superseded_revision"
         elif self._pair_has_responses(pair.pair_id):
             reason = "awaiting_fill_acknowledgement"
-        elif (abs(data["limit_price"]-order.limit_price) <= max(1e-8, abs(order.limit_price)*1e-10)
+        elif (not pair.rolling and abs(data["limit_price"]-order.limit_price) <= max(1e-8, abs(order.limit_price)*1e-10)
                 and not (order.role == "target" and pair.unpaired_btc > EPS and not order.active)):
             reason = "unchanged_limit"
             order.revision = data["revision"]
@@ -508,6 +536,10 @@ class PairedTransferAccount:
             order.decision_started_us = data["decision_started_us"]
             order.decision_ready_us = data["decision_ready_us"]
             order.observation_us = data["observation_us"]
+            if pair.rolling:
+                order.market_order = data.get("market_order", False)
+                order.lease_context = copy.deepcopy(data.get("lease_context", {}))
+                order.active = True
             if order.role == "target" and pair.unpaired_btc > EPS:
                 order.active = True
             self.replacement_count += 1
@@ -606,6 +638,8 @@ class PairedTransferAccount:
         if expiries is not None:
             self.expiries.update(expiries)
         self.decision_count += 1
+        if self.rolling_execution:
+            self._rolling_state(us)
         if self.cash_recovery is not None:
             self.last_reason = "bounded_cash_restoration"
             return None
@@ -662,8 +696,9 @@ class PairedTransferAccount:
                 if target_symbol != "SPOT" and target.expiry_us - us <= self.config.roll_lead_days * 86400e6:
                     continue
                 if self.config.selection_mode == "amortized_rank":
-                    decision = evaluate_amortized_transfer(us, source, target, spot,
-                        cash_rate=self.rate, fees=self.fee_schedules, config=config)
+                    decision = (self._rolling_evaluate(us, source, target, spot, config)
+                        if self.rolling_execution else evaluate_amortized_transfer(us, source, target, spot,
+                            cash_rate=self.rate, fees=self.fee_schedules, config=config))
                 elif self.config.repricing_mode == "empirical" and not risk_exit:
                     decision = self._evaluate_empirical(us, source, target, spot, config)
                 else:
@@ -813,6 +848,10 @@ class PairedTransferAccount:
         if not data.get("accepted", True):
             self.last_reason = data.get("reason", "economic_rejection")
             return None
+        if self.rolling_execution and not data.get("diagnostics", {}).get("rolling_lease"):
+            self.last_reason = "missing_rolling_price_window"
+            self.rejected_count += 1
+            return None
         source, target = data["source_symbol"], data["target_symbol"]
         source_qty = float(data["source_quantity_btc"])
         target_qty = float(data["target_quantity_btc"])
@@ -865,7 +904,9 @@ class PairedTransferAccount:
         self.pairs[pair_id] = pair
         self.active_pair_id = pair_id
         pad = (self.config.price_limit_bps+self.config.half_spread_bps+self.config.slippage_bps) / 10000
-        if pair.empirical:
+        if self.rolling_execution:
+            source_limit, target_limit = self._initialize_rolling(pair, observations)
+        elif pair.empirical:
             details = data.get("diagnostics", {})
             source_limit = details.get("source_sale_limit", observations[source].price*(1-pad))
             target_limit = details.get("target_buy_limit", observations[target].price*(1+pad))
@@ -879,9 +920,13 @@ class PairedTransferAccount:
             decision_started_us=data["decision_started_us"], decision_ready_us=us,
             observation_us=observation_us)
         self.orders[target] = PairedOrder(target_order_id, pair_id, "target", target,
-            target_qty, us, us + self.delay_us, target_limit, active=False,
+            target_qty, us, us + self.delay_us, target_limit, active=pair.rolling,
             decision_started_us=data["decision_started_us"], decision_ready_us=us,
             observation_us=observation_us)
+        if pair.rolling:
+            for order in self.orders.values():
+                order.lease_context = self._rolling_order_context(data["diagnostics"]["rolling_lease"],
+                    order.role, source_limit, target_limit, source, target, observations)
         self.order_count += 2
         self.sink(dict(kind="paired_transfer", us=us, **asdict(pair)))
         for order in self.orders.values():
@@ -889,6 +934,7 @@ class PairedTransferAccount:
                            symbol=order.symbol, signed_btc=order.signed_btc,
                            eligible_after_us=order.eligible_us, role=order.role,
                            limit_price=order.limit_price, conditional=not order.active, revision=0,
+                           lease_context=copy.deepcopy(order.lease_context), market_order=False,
                            decision_started_us=order.decision_started_us, decision_ready_us=us,
                            observation_us=observation_us, target_effective_lease=pair.target_effective_lease,
                            deadline_us=pair.deadline_us, execution_policy="empirical" if pair.empirical else self.config.repricing_mode))
@@ -1111,6 +1157,8 @@ class PairedTransferAccount:
             return
         if pair.reason in ("end_of_window", "expiry"):
             return
+        if pair.rolling:
+            return self._schedule_rolling_reprice(us, pair)
         if self.config.selection_mode == "amortized_rank":
             return self._schedule_amortized_reprice(us, pair)
         from paired_transfer_economics import counterpart_price_limit
@@ -1519,6 +1567,8 @@ class PairedTransferAccount:
             self.empirical_stats["restoration_deadline_failed"] += 1
         self.sink(dict(kind="cash_restore_result", us=us, reason=reason, **recovery))
         self.ledger.fee_engine.tickets.pop(recovery["identifier"], None)
+        self.lease_window = RollingPriceWindow(self.config.lease_window_seconds)
+        self.latest_lease_execution = None
         self.cash_recovery = None
         self.command_queue[:] = [row for row in self.command_queue if row[2].get("recovery_id") != recovery["identifier"]]
         heapq.heapify(self.command_queue)
@@ -1579,8 +1629,10 @@ class PairedTransferAccount:
             return
         source = self.orders.get(pair.source_symbol)
         if source and source.active:
-            source.active = False
+            source.active = bool(pair.rolling and pair.target_filled_btc/pair.ratio > pair.source_filled_btc+EPS)
             self.cancellation_count += int(abs(source.signed_btc)-source.filled_btc > EPS)
+        if pair.rolling and pair.target_filled_btc/pair.ratio <= pair.source_filled_btc+EPS and pair.unpaired_btc <= EPS:
+            self.orders[pair.target_symbol].active = False
         pair.reason = reason
         pair.status = "timed_out" if reason in ("legging_timeout", "unfilled_timeout") else "cancelled"
         self.sink(dict(kind="pair_risk_limit", us=us, pair_id=pair.pair_id, reason=reason,
@@ -1631,9 +1683,10 @@ class PairedTransferAccount:
                     max_legging_seconds=pair.max_legging_us/1e6)
         if pair.matched_source_btc > EPS:
             source_vwap = pair.matched_source_value_usd / pair.matched_source_btc
-            target_vwap = pair.target_value_usd / pair.target_filled_btc
+            matched_target = pair.matched_source_btc*pair.ratio if pair.rolling else pair.target_filled_btc
+            target_vwap = (pair.matched_target_value_usd if pair.rolling else pair.target_value_usd) / matched_target
             target_order = self.orders.get(pair.target_symbol)
-            target_fees = target_order.fee_usd if target_order else 0.0
+            target_fees = pair.matched_target_fee_usd if pair.rolling else target_order.fee_usd if target_order else 0.0
             data.update(source_vwap=source_vwap, target_vwap=target_vwap,
                         matched_source_fees_usd=pair.matched_source_fee_usd, target_fees_usd=target_fees)
             if pair.source_symbol == "SPOT" and pair.target_symbol != "SPOT" and self.rate is not None:
@@ -1641,7 +1694,7 @@ class PairedTransferAccount:
                 years = (self.expiries.get(pair.target_symbol, us)-us)/YEAR_US
                 effective = effective_lease_rate(source_vwap, target_vwap, cash_rate=self.rate,
                     remaining_years=years, spot_quantity_btc=pair.matched_source_btc,
-                    futures_quantity_btc=pair.target_filled_btc,
+                    futures_quantity_btc=matched_target,
                     spot_fee_usd=pair.matched_source_fee_usd, futures_fee_usd=target_fees)
                 data.update(executed_effective_lease=effective, effective_lease_rate_time_us=us,
                             effective_lease_expiry_us=self.expiries.get(pair.target_symbol),
@@ -1687,15 +1740,17 @@ class PairedTransferAccount:
             self.plot_futures_pnl += pnl
         self.marks[trade.symbol] = trade
         self.ledger.mark(trade.symbol, trade.price, timestamp_us=trade.us)
-        if self.config.repricing_mode in ("adaptive", "empirical"):
+        if self.config.repricing_mode in ("adaptive", "empirical", "rolling_worst"):
             self._execute(trade)
             self._execute_restore(trade)
         self._queue_observation(trade)
         self._drain_queues(trade.us)
-        if self.config.repricing_mode not in ("adaptive", "empirical"):
+        if self.config.repricing_mode not in ("adaptive", "empirical", "rolling_worst"):
             self._execute(trade)
 
     def _execute(self, trade):
+        if self.rolling_execution:
+            return self._execute_rolling(trade)
         pair = self.pairs.get(self.active_pair_id)
         order = self.orders.get(trade.symbol)
         if not pair or not order or not order.active or not trade.executable or trade.us <= order.eligible_us:
@@ -1919,6 +1974,11 @@ class PairedTransferAccount:
                     max_unpaired_btc=max([totals["max_unpaired_btc"]]+[p.max_unpaired_btc for p in pairs]),
                     max_legging_seconds=max([totals["max_legging_seconds"]]+[p.max_legging_us/1e6 for p in pairs]),
                     latest_decision=self.latest_decision, latest_pair_result=self.latest_pair_result,
+                    latest_lease_execution=self.latest_lease_execution,
+                    limit_anchor=self.config.limit_anchor,
+                    lease_window_seconds=self.config.lease_window_seconds,
+                    lease_execution_delta_bps=self.config.lease_execution_delta_bps,
+                    expected_hedge_slippage_bps=self.config.expected_hedge_slippage_bps,
                     actual_units=dict(self.units), known_units=dict(self.known_units),
                     pending_feed_records=len(self.feed_queue), pending_responses=len(self.response_queue),
                     pending_decisions=len(self.decision_queue), pending_order_commands=len(self.command_queue),
@@ -1930,15 +1990,17 @@ class PairedTransferAccount:
                     futures_feed_delay_seconds=self.config.futures_feed_delay_seconds,
                     response_delay_seconds=self.config.response_delay_seconds,
                     reserved_usd=sum(p.reserved_usd for p in pairs),
-                    execution_model="tape participation; bounded staged source-first transfers",
+                    execution_model=("tape participation; either funded limit first, then market hedge" if self.rolling_execution else
+                                     "tape participation; bounded staged source-first transfers"),
                     settlement_model="scheduled last-trade USD linear-proxy variation; not official venue marks")
 
     diagnostics = summary
 
     def snapshot(self):
         state = {k: v for k, v in vars(self).items()
-                 if k not in ("sink", "ledger", "config", "fee_schedules", "marks", "observed_marks", "orders", "pairs", "empirical_model")}
+                 if k not in ("sink", "ledger", "config", "fee_schedules", "marks", "observed_marks", "orders", "pairs", "empirical_model", "lease_window")}
         state.update(schema_version=1, config=asdict(self.config), ledger=self.ledger.snapshot(),
+                     lease_window=self.lease_window.snapshot(),
                      empirical_model=(self.empirical_model.snapshot() if hasattr(self.empirical_model, "snapshot")
                                       else self.empirical_model.to_dict() if self.empirical_model is not None else None),
                      marks={s: asdict(t) for s, t in self.marks.items()},
@@ -1955,10 +2017,11 @@ class PairedTransferAccount:
         account = cls(state["initial"], state["participation"], state["delay_us"],
                       state["fee"]*10000, sink, PairedConfig(**state["config"]), state["expiries"], state.get("empirical_model"))
         for key, value in state.items():
-            if key in ("schema_version", "config", "ledger", "empirical_model"):
+            if key in ("schema_version", "config", "ledger", "empirical_model", "lease_window"):
                 continue
             constructor = {"marks": Trade, "observed_marks": Trade, "orders": PairedOrder, "pairs": Transfer}.get(key)
             setattr(account, key, {s: constructor(**v) for s, v in value.items()} if constructor else value)
+        account.lease_window = RollingPriceWindow.restore(account.config.lease_window_seconds, state.get("lease_window", {}))
         account.feed_queue = [tuple(row) for row in account.feed_queue]
         account.response_queue = [tuple(row) for row in account.response_queue]
         account.decision_queue = [tuple(row) for row in account.decision_queue]

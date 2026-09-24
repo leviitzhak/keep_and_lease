@@ -30,7 +30,7 @@ PAIRED_EVENT_FIELDS = [
     'revision', 'order_revision', 'fill_revision', 'observation_us', 'decision_started_us',
     'decision_ready_us', 'submitted_us', 'previous_limit_price', 'applied',
     'rejection_reason', 'counterpart_price', 'counterpart_fee_usd',
-    'target_effective_lease', 'binding_constraint',
+    'target_effective_lease', 'binding_constraint', 'market_order', 'lease_context',
 ]
 DECISION_FIELDS = [
     'accepted', 'reason', 'source_symbol', 'target_symbol',
@@ -49,6 +49,10 @@ DECISION_FIELDS = [
     'diagnostics.projected_break_even_days', 'diagnostics.cash_rate',
     'diagnostics.forecast_model', 'diagnostics.liquidity_assumption',
     'rate_snapshot.age_days', 'rate_snapshot.data_version',
+    'diagnostics.source_keep.amortized_rate', 'diagnostics.target_candidate.amortized_rate',
+    'diagnostics.target_candidate.execution_price_cost_usd',
+    'diagnostics.target_candidate.expected_hedge_slippage_cost_usd',
+    'diagnostics.rolling_lease',
 ]
 TRANSFER_FIELDS = [
     'pair_id', 'status', 'reason', 'source_symbol', 'target_symbol',
@@ -67,6 +71,21 @@ TRANSFER_FIELDS = [
     'empirical', 'deadline_us', 'first_source_fill_us', 'last_source_fill_us',
     'first_target_fill_us', 'last_target_fill_us',
 ]
+LEASE_EXECUTION_FIELDS = [
+    'pair_id', 'symbol', 'direction', 'first_role', 'hit_order_id', 'hit_order_revision',
+    'hit_limit_price', 'first_fill_us', 'matched_source_btc', 'source_fill_price',
+    'target_fill_price', 'worst_observed_lease', 'execution_delta', 'target_lease',
+    'set_lease', 'executed_lease', 'executed_minus_set_lease', 'adverse_lease_slippage',
+    'expected_hedge_slippage_bps', 'hedge_wait_seconds', 'reference_us', 'years', 'cash_rate',
+]
+LEASE_LIMIT_FIELDS = ['date', 'kind', 'pair_id', 'symbol', 'role', 'order_id',
+    'order_revision', 'revision', 'limit_price', 'market_order', 'active', 'applied',
+    'rejection_reason', 'eligible_after_us', 'decision_started_us', 'decision_ready_us']
+LEASE_RATE_FIELDS = ['direction', 'min_lease', 'max_lease', 'worst_observed_lease',
+    'execution_delta', 'target_lease', 'set_lease', 'reference_us', 'years', 'cash_rate',
+    'window_start_us', 'window_end_us', 'spot_extrema', 'future_extrema']
+
+
 EXECUTION_OUTCOME_FIELDS = [
     'pair_id', 'status', 'decision_started_us', 'deadline_us',
     'completed_by_deadline', 'requested_source_btc', 'requested_target_btc',
@@ -280,6 +299,20 @@ def replay_workbook(store, manifest, result, start, end):
         for row in selected_rows(store, manifest, 'btc_trade_events', start, end):
             if row.get('kind') == 'empirical_instruction_result':
                 yield [row['date'], *[stored_value(row, k) for k in EXECUTION_OUTCOME_FIELDS], row]
+    def lease_limits():
+        for row in selected_rows(store, manifest, 'btc_trade_events', start, end):
+            context = row.get('lease_context') or {}
+            if row.get('kind') == 'lease_execution':
+                continue
+            for symbol, bound in context.get('rates', {}).items():
+                current = (row.get('current_rolling_lease') or {}).get('rates', {}).get(symbol, {})
+                yield [*[row.get(k) for k in LEASE_LIMIT_FIELDS], symbol,
+                       *[bound.get(k) for k in LEASE_RATE_FIELDS],
+                       current.get('worst_observed_lease'), context.get('expected_hedge_slippage_bps'), context.get('limit_anchor')]
+    def lease_executions():
+        for row in selected_rows(store, manifest, 'btc_trade_events', start, end):
+            if row.get('kind') == 'lease_execution':
+                yield [row['date'], *[row.get(k) for k in LEASE_EXECUTION_FIELDS]]
     def decision_rows(alternatives=False):
         for row in selected_rows(store, manifest, 'btc_trade_events', start, end):
             if row.get('kind') != 'paired_decision':
@@ -331,11 +364,16 @@ def replay_workbook(store, manifest, result, start, end):
         ('Events', event_fields + ['Complete event record'], events()),
         ('Parameters', ['Parameter', 'Saved value'], result['parameters'].items())]
     if paired:
+        overview.append(['Rolling lease audit', 'Lease limits records submitted, requested, applied and rejected revisions, fills, and live state at strategy decisions. Current worst lease is separate from the bound frozen at limit setting. Lease executions matches each filled tranche to the exact first-hit limit revision, using that revision’s cash rate and maturity. Lease rates are decimal annual rates, before fees. Market hedges can execute worse than the estimate; target-first fills require existing free cash.'])
         sheets.extend([
             ('Transfer decisions', ['date', 'decision_id', 'pair_id', 'selected', 'horizon_utc', *DECISION_FIELDS], decision_rows()),
             ('Paired transfers', ['date', 'kind', 'horizon_utc', 'submitted_utc', 'completed_utc', *TRANSFER_FIELDS], transfer_rows()),
             ('Horizon alternatives', ['date', 'decision_id', 'pair_id', 'selected', 'source_symbol',
                                       'target_symbol', 'horizon_utc', *HORIZON_FIELDS], decision_rows(alternatives=True)),
+        ])
+        sheets.extend([
+            ('Lease limits', [*LEASE_LIMIT_FIELDS, 'lease_instrument', *LEASE_RATE_FIELDS, 'current_worst_observed_lease', 'expected_hedge_slippage_bps', 'limit_anchor'], lease_limits()),
+            ('Lease executions', ['date', *LEASE_EXECUTION_FIELDS], lease_executions()),
         ])
         if result['trade_replay'].get('execution_study'):
             study = result['trade_replay']['execution_study']

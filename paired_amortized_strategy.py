@@ -82,7 +82,8 @@ def _released_cash(source, quantity, source_price, fees):
 def evaluate_amortized_transfer(now_us, source, target, spot, *, cash_rate,
                                 fees=None, config, source_price=None,
                                 target_price=None, source_entry_fees=None,
-                                target_entry_fees=None):
+                                target_entry_fees=None, account_execution_price_costs=False,
+                                expected_hedge_slippage_bps=0):
     """Compare a destination's fee-amortized return with the source KEEP rate.
 
     The comparison horizon is always the relevant expiry: target expiry for a
@@ -148,7 +149,14 @@ def evaluate_amortized_transfer(now_us, source, target, spot, *, cash_rate,
         horizon_us = target.expiry_us
 
     capital = max(EPS, target_quantity * spot.price)
-    transfer_cost = source_exit_fee + target_entry_fee + future_cost
+    # The rolling selector prices source-sale shortfall and (for a spot
+    # destination) spot repurchase premium explicitly. Future entry basis is
+    # already in gross: charging that price movement again would double count.
+    execution_price_cost = (quantity*(source.quote.price-source_price)
+        + (target_quantity*(target_price-spot.price) if target.symbol == "SPOT" else 0)
+        if account_execution_price_costs else 0.0)
+    expected_hedge_cost = max(quantity*source_price, target_quantity*target_price) * expected_hedge_slippage_bps/10000
+    transfer_cost = source_exit_fee + target_entry_fee + future_cost + execution_price_cost + expected_hedge_cost
     annualized_cost = transfer_cost / capital / years
     candidate_rate = (gross - config.conservative_lease_bps / 10000
                       - annualized_cost)
@@ -170,6 +178,9 @@ def evaluate_amortized_transfer(now_us, source, target, spot, *, cash_rate,
             amortized_rate=candidate_rate, years=years,
             conservative_lease_discount_bps=config.conservative_lease_bps,
             source_exit_fee_usd=source_exit_fee,
+            execution_price_cost_usd=execution_price_cost,
+            expected_hedge_slippage_cost_usd=expected_hedge_cost,
+            expected_hedge_slippage_bps=expected_hedge_slippage_bps,
             target_entry_fee_usd=target_entry_fee,
             target_expiry_and_default_position_cost_usd=future_cost,
             annualized_cost_rate=annualized_cost),

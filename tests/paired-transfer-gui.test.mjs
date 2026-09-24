@@ -138,6 +138,32 @@ test('amortized ranking ignores horizon grids and rejects empirical execution',(
   }
 });
 
+test('rolling worst lease validates its selector, time window and distinct slippage units',()=>{
+  const rolling={paired_selection_mode:'amortized_rank',paired_repricing_mode:'rolling_worst',
+    paired_lease_window_seconds:'5',paired_lease_execution_delta_bps:'5',paired_expected_hedge_slippage_bps:'1'};
+  assert.doesNotThrow(()=>validationContext(rolling).validatePairedForm());
+  assert.doesNotThrow(()=>validationContext({...rolling,paired_limit_anchor:'spot'}).validatePairedForm());
+  assert.throws(()=>validationContext({...rolling,paired_limit_anchor:'unknown'}).validatePairedForm(),/limit anchor/);
+  assert.throws(()=>validationContext({...rolling,paired_selection_mode:'horizon_wealth'}).validatePairedForm(),/requires expiry/);
+  for(const override of [{paired_lease_window_seconds:'0'},{paired_lease_execution_delta_bps:'-1'},
+    {paired_expected_hedge_slippage_bps:'10000'},{paired_expected_hedge_slippage_bps:'NaN'}]){
+    assert.throws(()=>validationContext({...rolling,...override}).validatePairedForm(),/Rolling window/);
+  }
+});
+
+test('rolling imports preserve explicit values and reset missing settings',()=>{
+  const fields=new Map(['paired_repricing_mode','paired_lease_window_seconds','paired_lease_execution_delta_bps','paired_expected_hedge_slippage_bps'].map(name=>[name,{value:''}]));
+  const context={form:{elements:{namedItem:name=>fields.get(name)}},LEG_FIELDS:[],COMMODITIES:['btc'],loadCommodity(){}};
+  vm.runInNewContext(source('applyParameters'),context);
+  context.applyParameters({paired_repricing_mode:'rolling_worst',paired_lease_window_seconds:'15',paired_lease_execution_delta_bps:'25',paired_expected_hedge_slippage_bps:'3'});
+  assert.equal(fields.get('paired_lease_window_seconds').value,'15');
+  assert.equal(fields.get('paired_lease_execution_delta_bps').value,'25');
+  assert.equal(fields.get('paired_expected_hedge_slippage_bps').value,'3');
+  context.applyParameters({});
+  assert.equal(fields.get('paired_repricing_mode').value,'fixed');
+  assert.equal(fields.get('paired_lease_window_seconds').value,'5');
+});
+
 test('repricing validates its mode and three independent nonnegative delays',()=>{
   assert.doesNotThrow(()=>validationContext({paired_repricing_mode:'adaptive',paired_observation_delay_seconds:'0.2',paired_decision_delay_seconds:'0.1',paired_order_delay_seconds:'0.3'}).validatePairedForm());
   assert.throws(()=>validationContext({paired_repricing_mode:'market'}).validatePairedForm(),/repricing/);

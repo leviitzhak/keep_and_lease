@@ -8,6 +8,12 @@ remaining items below are not implicitly completed by that batch.
 
 ## Cost-aware expiry-amortized ranking strategy
 
+- [x] Add opt-in rolling observed worst-price-pair lease bounds, signed execution
+  delta, explicit expected hedge cost, funded either-leg-first limits and market
+  hedging, with exact limit revision and matched execution audit/export.
+- [ ] Compare `rolling_worst` against the same historical amortized adaptive run
+  on completion quantity, waits, realized lease slippage, fees and net BTC value.
+
 This is the current allocation design. It reuses the funded ledger, causal feeds
 and durable paired execution recorded below, but replaces the earlier
 discrete-horizon KEEP-versus-SWAP selector.

@@ -63,7 +63,7 @@ def fingerprint(payload, manifest_bytes, data_root=None):
     for name in ("btc_trade_backtest.py", "trade_replay.py", "backtest_audit.py",
                  "trade_data_store.py", "trade_ordering.py", "backtest_silver_lease_strategy.py", "maturity_scoring.py",
                  "silver_strategy_gui.py", "funded_ledger.py", "paired_transfer.py",
-                 "paired_transfer_economics.py", "paired_transfer_rates.py", "paired_execution_study.py"):
+                 "paired_transfer_economics.py", "paired_amortized_strategy.py", "rolling_lease_execution.py", "paired_transfer_rates.py", "paired_execution_study.py"):
         digest.update((Path(__file__).parent / name).read_bytes())
     if data_root is not None:
         for name in ("DTB3", "DTB6", "DGS1", "DGS2", "DGS3", "DGS5"):

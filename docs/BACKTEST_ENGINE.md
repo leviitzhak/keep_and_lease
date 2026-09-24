@@ -163,3 +163,21 @@ only lightweight summary/statistic inputs remain in memory. The chosen selection
 comparison reuses the main run; alternatives stream into summary accumulators.
 Chunk boundaries change storage only and never reset position quantities or NAV.
 See `GOOGLE_CLOUD_RUN_SETUP.md` for API routes, provenance, ownership and downloads.
+
+### Rolling worst lease executor
+
+`rolling_lease_execution.py` supplies the rolling extrema and the optional
+`rolling_worst` executor for amortized ranking. Observation delivery updates
+source-time extrema; a trade tests already-arrived orders before it can change
+its own limit. Replacements keep frozen contexts through decision and transport
+queues. The first filled tranche pins its limit revision until matching is
+complete; the opposite leg may fill an existing limit during acknowledgement
+latency, then becomes a market instruction after acknowledgement. Existing
+free cash is required for target-first execution. Both imbalance directions
+are bounded and survive checkpoints. All three server/worker images include the
+module; checkpoint identity includes this executor and the amortized selector.
+The GUI and stored-period workbook expose limits and lease comparisons; no live
+quote/order adapter is implemented. See [ROLLING_LEASE_EXECUTION.md](ROLLING_LEASE_EXECUTION.md).
+
+Rolling execution now offers both `relative_price` (default) and `spot` limit
+anchors via `paired_limit_anchor`; both are retained in saved audit contexts.

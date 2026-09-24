@@ -1,8 +1,19 @@
 # Current work
 
+## Rolling worst lease execution — 2026-09-24
+
+Branch `agent/rolling-worst-lease-execution` is based on GitHub master
+`ed070c30602a68d54cbb67fb36f301b67946cca9`. The opt-in rolling mode adds causal
+price-window bounds, signed execution allowances, expected hedge cost, either
+already-funded first leg, market recovery and exact per-limit/per-tranche audit.
+Local focused tests cover timing, restart, both directions, rolls, funding,
+exports and independent audit checking. Historical completion improvement and
+deployed-preview validation remain unverified for this change. See
+[ROLLING_LEASE_EXECUTION.md](ROLLING_LEASE_EXECUTION.md).
+
 ## Expiry-amortized cost-aware ranking — 2026-09-22
 
-The active branch `agent/cost-aware-amortized-ranking` implements the revised
+The prior branch `agent/cost-aware-amortized-ranking` implemented the revised
 allocation design on top of the funded paired-transfer foundation. The new
 `amortized_rank` selector starts in direct BTC, compares destination returns
 after every remaining transfer/expiry cost with held KEEP returns that exclude
@@ -183,3 +194,6 @@ current-work history remains in
 Earlier completed 90-day legacy computations stay completed; this new strategy
 requires its own performance and holdout assessment. The single GCP preview is
 the authoritative deployment target; local Sites remains deferred.
+
+Rolling execution now offers both `relative_price` (default) and `spot` limit
+anchors via `paired_limit_anchor`; both are retained in saved audit contexts.

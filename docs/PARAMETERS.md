@@ -214,4 +214,22 @@ In `amortized_rank`, `paired_horizon_days`, `paired_max_horizon_days`,
 `paired_uncertainty_bps`, `paired_cost_buffer_multiplier` and
 `paired_min_gain_btc` do not select allocations. They remain stored so earlier
 presets and results are reproducible. Empirical repricing is not accepted with
-the new selector; fixed and adaptive paired execution are available.
+the new selector; fixed, adaptive and rolling worst-lease paired execution are available.
+
+### Rolling worst lease execution (amortized ranking only)
+
+Select `paired_repricing_mode="rolling_worst"` to use observed trailing bounds,
+continuously replaced limits, and a market hedge after the first fill.
+
+| Parameter | Default | Meaning |
+| --- | --- | --- |
+| `paired_limit_anchor` | `relative_price` | `relative_price` uses the counterpart price and target factor ratio with expected slippage compensation; `spot` sets futures limits to observed spot times their factor, with inverse pricing for a spot leg. |
+| `paired_lease_window_seconds` | 5 | Positive trailing source-time window; only already received observations enter. All spot/future price combinations in the window define the bounds. |
+| `paired_lease_execution_delta_bps` | 5 | Nonnegative annual lease allowance. Subtracted on entry, added on exit; included in admission. |
+| `paired_expected_hedge_slippage_bps` | 1 | Nonnegative adverse price-bps estimate on the market hedge, budgeted once and compensated in first-leg limits. Below 10,000. |
+
+These defaults are research inputs, not fitted estimates. Actual replay price
+slippage remains the separate `slippage_bps` setting. `paired_price_limit_bps`
+does not set rolling-mode execution limits. Missing repricing mode retains
+`fixed`; existing saved adaptive policies remain adaptive. See
+[ROLLING_LEASE_EXECUTION.md](ROLLING_LEASE_EXECUTION.md) for formulas and audit.

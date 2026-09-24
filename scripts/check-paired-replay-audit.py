@@ -267,7 +267,8 @@ class Audit:
         if stored:
             request = loads(stored[0])
             self.c.check("unique_replacement_arrival", not request.get("arrived", False), context)
-            for name in ("pair_id", "symbol", "role", "limit_price", *clocks):
+            for name in ("pair_id", "symbol", "role", "limit_price", *clocks,
+                         *(["market_order", "lease_context"] if "market_order" in row else [])):
                 self.c.check("replacement_arrival_matches_request", row[name] == request[name],
                              {**context, "field": name})
             request["arrived"] = True
@@ -286,6 +287,9 @@ class Audit:
                 pair = self.get("pairs", row["pair_id"])
                 if pair and "fill_revision" in row:
                     self.c.check("replacement_based_on_current_fills", row["fill_revision"] == pair["fill_revision"], context)
+                if pair and pair.get("rolling"):
+                    order.update(active=True, market_order=row.get("market_order", False),
+                                 lease_context=row.get("lease_context", {}))
                 if order["role"] == "target" and pair:
                     ratio = pair["target_quantity_btc"] / pair["source_quantity_btc"]
                     if pair["source_filled"] - pair["target_filled"] / ratio > 1e-12:
@@ -360,12 +364,14 @@ class Audit:
             self.c.check("unique_pair", self.get("pairs", row["pair_id"]) is None, row["pair_id"])
             self.put("pairs", row["pair_id"], {"source_quantity_btc": row["source_quantity_btc"],
                      "target_quantity_btc": row["target_quantity_btc"], "source_filled": 0.0,
-                     "target_filled": 0.0, "source_acknowledged": 0.0,
+                     "target_filled": 0.0, "source_acknowledged": 0.0, "target_acknowledged": 0.0,
+                     "rolling": row.get("rolling", False), "rolling_lots": [],
                      "source_order_id": row["source_order_id"], "target_order_id": row["target_order_id"],
                      "source_symbol": row["source_symbol"], "target_symbol": row["target_symbol"],
                      "source_lots": [], "source_value": 0.0, "target_value": 0.0,
                      "source_fees": 0.0, "target_fees": 0.0,
                      "matched_source_value": 0.0, "matched_source_fees": 0.0,
+                     "matched_target_value": 0.0, "matched_target_fees": 0.0,
                      "fill_revision": 0, "empirical": row.get("empirical", False),
                      "deadline_us": row.get("deadline_us"), "first_source_fill_us": None,
                      "first_target_fill_us": None, "last_target_fill_us": None,
@@ -405,9 +411,10 @@ class Audit:
             order = self.get("orders", row["order_id"])
             pair = self.get("pairs", row["pair_id"])
             self.c.check("acknowledgement_has_order_and_pair", order is not None and pair is not None, us)
-            if order and pair and order["role"] == "source":
-                pair["source_acknowledged"] += abs(row["signed_btc"])
-                self.c.check("source_acknowledgement_capacity", pair["source_acknowledged"] <= pair["source_filled"] + 1e-10, us)
+            if order and pair and order["role"] in ("source", "target"):
+                role = order["role"]
+                pair[role+"_acknowledged"] += abs(row["signed_btc"])
+                self.c.check(role+"_acknowledgement_capacity", pair[role+"_acknowledged"] <= pair[role+"_filled"] + 1e-10, us)
                 self.put("pairs", row["pair_id"], pair)
         elif kind == "delivery":
             self.units[row["symbol"]] += row["signed_quantity"]
@@ -436,7 +443,7 @@ class Audit:
             pair = self.get("pairs", row["pair_id"])
             order = self.get("orders", pair["source_order_id"]) if pair else None
             if order:
-                order["active"] = False
+                order["active"] = bool(pair.get("rolling") and pair["target_filled"]*pair["source_quantity_btc"]/pair["target_quantity_btc"] > pair["source_filled"]+1e-12)
                 self.put("orders", pair["source_order_id"], order)
         elif kind == "paired_decision":
             decision = row["decision"]
@@ -466,7 +473,7 @@ class Audit:
                 for name, expected in (("source_filled_btc", pair["source_filled"]),
                                        ("target_filled_btc", pair["target_filled"]),
                                        ("matched_source_btc", matched),
-                                       ("unpaired_btc", pair["source_filled"] - matched),
+                                       ("unpaired_btc", abs(pair["source_filled"]-pair["target_filled"]/ratio) if pair.get("rolling") else pair["source_filled"] - matched),
                                        ("fees_usd", pair["fees"]),
                                        ("paired_fill_ratio", matched / pair["source_quantity_btc"])):
                     self.c.equal("pair_result_" + name, row[name], expected, row["pair_id"], atol=1e-8)
@@ -482,12 +489,14 @@ class Audit:
         if pair["source_symbol"] != "SPOT" or pair["target_symbol"] == "SPOT" or matched <= 1e-12:
             self.c.check("effective_lease_only_for_matched_entry", row["executed_effective_lease"] is None, context)
             return
-        target_quantity = pair["target_filled"]
+        target_quantity = matched*pair["target_quantity_btc"]/pair["source_quantity_btc"] if pair.get("rolling") else pair["target_filled"]
+        target_value = pair["matched_target_value"] if pair.get("rolling") else pair["target_value"]
+        target_fees = pair["matched_target_fees"] if pair.get("rolling") else pair["target_fees"]
         source_vwap = pair["matched_source_value"] / matched
-        target_vwap = pair["target_value"] / target_quantity
+        target_vwap = target_value / target_quantity
         for name, expected in (("source_vwap", source_vwap), ("target_vwap", target_vwap),
                                ("matched_source_fees_usd", pair["matched_source_fees"]),
-                               ("target_fees_usd", pair["target_fees"])):
+                               ("target_fees_usd", target_fees)):
             if name in row:
                 self.c.equal("matched_entry_" + name, row[name], expected, context, atol=1e-8)
         # The explicit clock/yield provenance prevents guessing between decision-
@@ -505,7 +514,7 @@ class Audit:
         if years <= 0 or net_spot <= 0:
             self.c.check("effective_lease_undefined_boundary", row["executed_effective_lease"] is None, context)
             return
-        cost_future = target_vwap + pair["target_fees"] / target_quantity
+        cost_future = target_vwap + target_fees / target_quantity
         expected = cash_rate - (cost_future / net_spot - 1) / years
         self.c.equal("executed_effective_lease_from_matched_fills", row["executed_effective_lease"],
                      expected, context, atol=1e-9)
@@ -558,8 +567,12 @@ class Audit:
             self.c.check("fill_order_direction", quantity * order["signed_btc"] > 0, us)
             order["filled"] += abs(quantity)
             self.c.check("fill_order_capacity", order["filled"] <= abs(order["signed_btc"]) + 1e-10, us)
-            self.c.check("fill_limit", row["price"] <= order["limit_price"] + 1e-8 if quantity > 0
-                         else row["price"] >= order["limit_price"] - 1e-8, us)
+            self.c.check("fill_market_flag", row.get("market_order", False) == order.get("market_order", False), us)
+            if not order.get("market_order"):
+                self.c.check("fill_limit", row["price"] <= order["limit_price"] + 1e-8 if quantity > 0
+                             else row["price"] >= order["limit_price"] - 1e-8, us)
+            if order.get("lease_context"):
+                self.c.check("fill_frozen_lease_context", row.get("lease_context") == order["lease_context"], us)
             if "limit_price" in row:
                 self.c.equal("fill_reported_live_limit", row["limit_price"], order["limit_price"], us, atol=1e-8)
             if "order_revision" in row:
@@ -581,31 +594,63 @@ class Audit:
             pair[row["role"] + "_value"] += value
             pair[row["role"] + "_fees"] += row["fee_usd"]
             ratio = pair["target_quantity_btc"] / pair["source_quantity_btc"]
-            self.c.check("target_funded_by_prior_source", pair["target_filled"] <= pair["source_filled"] * ratio + 1e-10, us)
-            if row["role"] == "target":
-                self.c.check("target_after_source_acknowledgement", pair["target_filled"] <= pair["source_acknowledged"] * ratio + 1e-10, us)
-                if pair.get("empirical"):
-                    self.c.check("empirical_full_source_ack_before_hedge",
-                                 pair["source_acknowledged"] >= pair["source_quantity_btc"]-1e-10, us)
-                remaining = abs(quantity) / ratio
-                while remaining > 1e-12 and pair["source_lots"]:
-                    lot = pair["source_lots"][0]
+            if pair.get("rolling"):
+                before_source = pair["source_filled"] - (abs(quantity) if row["role"] == "source" else 0)
+                before_target = pair["target_filled"] - (abs(quantity) if row["role"] == "target" else 0)
+                if row.get("market_order"):
+                    recovery = before_source-before_target/ratio
+                    self.c.check("market_hedge_has_opposite_fill", recovery > 1e-12 if quantity > 0 else recovery < -1e-12, us)
+                    opposite = "source" if quantity > 0 else "target"
+                    self.c.check("market_hedge_after_ack", pair[opposite+"_acknowledged"] >= pair[opposite+"_filled"]-1e-10, us)
+                if quantity > 0:
+                    self.c.check("rolling_target_has_existing_funding", value+row["fee_usd"] <= row.get("available_funding_before_usd", -1)+1e-8, us)
+                remaining = abs(quantity)/ratio if quantity > 0 else abs(quantity)
+                while remaining > 1e-12 and pair["rolling_lots"] and pair["rolling_lots"][0]["role"] != row["role"]:
+                    lot = pair["rolling_lots"][0]
                     take = min(remaining, lot["quantity"])
-                    pair["matched_source_value"] += take * lot["price"]
-                    pair["matched_source_fees"] += take * lot["fee_per_btc"]
+                    pair["matched_source_value"] += take*(row["price"] if quantity < 0 else lot["price"])
+                    pair["matched_source_fees"] += take*(row["fee_usd"]/abs(quantity) if quantity < 0 else lot["fee_per_btc"])
+                    pair["matched_target_value"] += take*ratio*(row["price"] if quantity > 0 else lot["price"])
+                    pair["matched_target_fees"] += take*ratio*(row["fee_usd"]/abs(quantity) if quantity > 0 else lot["fee_per_btc"])
                     remaining -= take
                     lot["quantity"] -= take
                     if lot["quantity"] <= 1e-12:
-                        pair["source_lots"].pop(0)
-                self.c.check("matched_source_lots_cover_target", remaining <= 1e-10, us)
+                        pair["rolling_lots"].pop(0)
+                if remaining > 1e-12:
+                    pair["rolling_lots"].append(dict(quantity=remaining, role=row["role"],
+                        price=row["price"], fee_per_btc=row["fee_usd"]/abs(quantity)))
+                unpaired = abs(pair["source_filled"]-pair["target_filled"]/ratio)
+                if unpaired <= 1e-12:
+                    for identifier in (pair["source_order_id"], pair["target_order_id"]):
+                        child = self.get("orders", identifier)
+                        child["active"] = False
+                        self.put("orders", identifier, child)
             else:
-                pair["source_lots"].append({"quantity": abs(quantity), "price": row["price"],
-                                            "fee_per_btc": row["fee_usd"] / abs(quantity)})
-                target_order = self.get("orders", pair["target_order_id"])
-                if target_order:
-                    target_order["active"] = False
-                    self.put("orders", pair["target_order_id"], target_order)
-            unpaired = max(0.0, pair["source_filled"] - pair["target_filled"] / ratio)
+                self.c.check("target_funded_by_prior_source", pair["target_filled"] <= pair["source_filled"] * ratio + 1e-10, us)
+                if row["role"] == "target":
+                    self.c.check("target_after_source_acknowledgement", pair["target_filled"] <= pair["source_acknowledged"] * ratio + 1e-10, us)
+                    if pair.get("empirical"):
+                        self.c.check("empirical_full_source_ack_before_hedge",
+                                     pair["source_acknowledged"] >= pair["source_quantity_btc"]-1e-10, us)
+                    remaining = abs(quantity) / ratio
+                    while remaining > 1e-12 and pair["source_lots"]:
+                        lot = pair["source_lots"][0]
+                        take = min(remaining, lot["quantity"])
+                        pair["matched_source_value"] += take * lot["price"]
+                        pair["matched_source_fees"] += take * lot["fee_per_btc"]
+                        remaining -= take
+                        lot["quantity"] -= take
+                        if lot["quantity"] <= 1e-12:
+                            pair["source_lots"].pop(0)
+                    self.c.check("matched_source_lots_cover_target", remaining <= 1e-10, us)
+                else:
+                    pair["source_lots"].append({"quantity": abs(quantity), "price": row["price"],
+                                                "fee_per_btc": row["fee_usd"] / abs(quantity)})
+                    target_order = self.get("orders", pair["target_order_id"])
+                    if target_order:
+                        target_order["active"] = False
+                        self.put("orders", pair["target_order_id"], target_order)
+                unpaired = max(0.0, pair["source_filled"] - pair["target_filled"] / ratio)
             self.c.equal("fill_unpaired_quantity", row["unpaired_btc"], unpaired, us, atol=1e-10)
             self.c.check("unpaired_inventory_limit", unpaired <= self.args.max_unpaired_btc + 1e-10, us)
             self.max_unpaired = max(self.max_unpaired, unpaired)
