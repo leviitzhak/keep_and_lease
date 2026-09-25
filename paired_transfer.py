@@ -12,6 +12,7 @@ import math
 
 from trade_replay import Trade
 from rolling_lease_execution import RollingLeaseExecutionMixin, RollingPriceWindow
+from rolling_lease_distribution import RollingLeaseDistributionWindow
 from funded_ledger import ContractSpec, FeeSchedule, FundedLedger, FundingError
 
 YEAR_US = 365 * 86400 * 1_000_000
@@ -35,6 +36,8 @@ class PairedConfig:
     limit_anchor: str = "relative_price"
     lease_window_seconds: float = 5
     lease_execution_delta_bps: float = 5
+    lease_target_alpha: float = .5
+    lease_target_combine: str = "mean"
     expected_hedge_slippage_bps: float = 1
     execution_confidence: float = .95
     execution_min_samples: int = 100
@@ -63,20 +66,24 @@ class PairedConfig:
 
     def __post_init__(self):
         for name, value in asdict(self).items():
-            if name in ("economics_payload", "repricing_mode", "selection_mode", "limit_anchor", "execution_size_grid_btc") or (name == "order_delay_seconds" and value is None):
+            if name in ("economics_payload", "repricing_mode", "selection_mode", "limit_anchor", "execution_size_grid_btc", "lease_target_combine") or (name == "order_delay_seconds" and value is None):
                 continue
             if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0:
                 raise ValueError(f"paired_{name} must be finite and nonnegative")
         if self.limit_anchor not in ("relative_price", "spot"):
             raise ValueError("paired_limit_anchor must be relative_price or spot")
-        if self.repricing_mode not in ("fixed", "adaptive", "empirical", "rolling_worst"):
-            raise ValueError("paired_repricing_mode must be fixed, adaptive, empirical or rolling_worst")
+        if self.repricing_mode not in ("fixed", "adaptive", "empirical", "rolling_worst", "rolling_distribution"):
+            raise ValueError("paired_repricing_mode must be fixed, adaptive, empirical, rolling_worst or rolling_distribution")
+        if self.lease_target_alpha > 1:
+            raise ValueError("paired_lease_target_alpha must be between 0 and 1")
+        if self.lease_target_combine not in ("min", "max", "mean"):
+            raise ValueError("paired_lease_target_combine must be min, max or mean")
         if self.selection_mode not in ("horizon_wealth", "amortized_rank"):
             raise ValueError("paired_selection_mode must be horizon_wealth or amortized_rank")
         if self.selection_mode == "amortized_rank" and self.repricing_mode == "empirical":
             raise ValueError("Empirical execution is calibrated for the horizon-wealth selector only")
-        if self.repricing_mode == "rolling_worst" and self.selection_mode != "amortized_rank":
-            raise ValueError("Rolling worst lease execution requires amortized_rank")
+        if self.repricing_mode in ("rolling_worst", "rolling_distribution") and self.selection_mode != "amortized_rank":
+            raise ValueError("Rolling lease execution requires amortized_rank")
         if self.lease_window_seconds < .000001 or self.expected_hedge_slippage_bps >= 10000:
             raise ValueError("Lease window must be positive and expected hedge slippage below 10000 bps")
         grid = self.execution_size_grid_btc
@@ -115,7 +122,7 @@ class PairedConfig:
         unknown = {k for k in source if k.startswith("paired_") and k[7:] not in allowed | economic_keys}
         if unknown:
             raise ValueError("Unsupported paired setting: " + ", ".join(sorted(unknown)))
-        values = {key: (source["paired_" + key] if key in ("repricing_mode", "selection_mode", "limit_anchor", "execution_size_grid_btc") or source["paired_" + key] is None
+        values = {key: (source["paired_" + key] if key in ("repricing_mode", "selection_mode", "limit_anchor", "execution_size_grid_btc", "lease_target_combine") or source["paired_" + key] is None
                         else float(source["paired_" + key]))
                   for key in allowed if "paired_" + key in source}
         if "max_quote_age_seconds" not in values:
@@ -262,7 +269,7 @@ class PairedTransferAccount(RollingLeaseExecutionMixin):
             from paired_execution_study import FrozenExecutionModel
             empirical_model = FrozenExecutionModel.from_dict(empirical_model)
         self.empirical_model = empirical_model
-        self.lease_window = RollingPriceWindow(self.config.lease_window_seconds)
+        self.lease_window = self._lease_window_class()(self.config.lease_window_seconds)
         self.latest_lease_execution = None
         self.cash_recovery = None
         self.recovery_sequence = 0
@@ -1567,7 +1574,7 @@ class PairedTransferAccount(RollingLeaseExecutionMixin):
             self.empirical_stats["restoration_deadline_failed"] += 1
         self.sink(dict(kind="cash_restore_result", us=us, reason=reason, **recovery))
         self.ledger.fee_engine.tickets.pop(recovery["identifier"], None)
-        self.lease_window = RollingPriceWindow(self.config.lease_window_seconds)
+        self.lease_window = self._lease_window_class()(self.config.lease_window_seconds)
         self.latest_lease_execution = None
         self.cash_recovery = None
         self.command_queue[:] = [row for row in self.command_queue if row[2].get("recovery_id") != recovery["identifier"]]
@@ -1740,12 +1747,12 @@ class PairedTransferAccount(RollingLeaseExecutionMixin):
             self.plot_futures_pnl += pnl
         self.marks[trade.symbol] = trade
         self.ledger.mark(trade.symbol, trade.price, timestamp_us=trade.us)
-        if self.config.repricing_mode in ("adaptive", "empirical", "rolling_worst"):
+        if self.config.repricing_mode in ("adaptive", "empirical", "rolling_worst", "rolling_distribution"):
             self._execute(trade)
             self._execute_restore(trade)
         self._queue_observation(trade)
         self._drain_queues(trade.us)
-        if self.config.repricing_mode not in ("adaptive", "empirical", "rolling_worst"):
+        if self.config.repricing_mode not in ("adaptive", "empirical", "rolling_worst", "rolling_distribution"):
             self._execute(trade)
 
     def _execute(self, trade):
@@ -1978,6 +1985,9 @@ class PairedTransferAccount(RollingLeaseExecutionMixin):
                     limit_anchor=self.config.limit_anchor,
                     lease_window_seconds=self.config.lease_window_seconds,
                     lease_execution_delta_bps=self.config.lease_execution_delta_bps,
+                    lease_target_alpha=self.config.lease_target_alpha,
+                    lease_target_combine=self.config.lease_target_combine,
+                    lease_median_weighting="observed_trades" if self.config.repricing_mode == "rolling_distribution" else None,
                     expected_hedge_slippage_bps=self.config.expected_hedge_slippage_bps,
                     actual_units=dict(self.units), known_units=dict(self.known_units),
                     pending_feed_records=len(self.feed_queue), pending_responses=len(self.response_queue),
@@ -1995,6 +2005,9 @@ class PairedTransferAccount(RollingLeaseExecutionMixin):
                     settlement_model="scheduled last-trade USD linear-proxy variation; not official venue marks")
 
     diagnostics = summary
+
+    def _lease_window_class(self):
+        return RollingLeaseDistributionWindow if self.config.repricing_mode == "rolling_distribution" else RollingPriceWindow
 
     def snapshot(self):
         state = {k: v for k, v in vars(self).items()
@@ -2021,7 +2034,7 @@ class PairedTransferAccount(RollingLeaseExecutionMixin):
                 continue
             constructor = {"marks": Trade, "observed_marks": Trade, "orders": PairedOrder, "pairs": Transfer}.get(key)
             setattr(account, key, {s: constructor(**v) for s, v in value.items()} if constructor else value)
-        account.lease_window = RollingPriceWindow.restore(account.config.lease_window_seconds, state.get("lease_window", {}))
+        account.lease_window = account._lease_window_class().restore(account.config.lease_window_seconds, state.get("lease_window", {}))
         account.feed_queue = [tuple(row) for row in account.feed_queue]
         account.response_queue = [tuple(row) for row in account.response_queue]
         account.decision_queue = [tuple(row) for row in account.decision_queue]

@@ -35,14 +35,19 @@
 <label>Cost safety multiplier<input name="paired_cost_buffer_multiplier" type="number" value="1" min="1" step="any"></label>
 <label>Minimum extra gain (BTC)<input name="paired_min_gain_btc" type="number" value="0" min="0" step="any"></label>
 <p class="statistics-note">Expiry-amortized ranking uses no predetermined holding horizons. It infers lease from sufficiently close causal spot/future observations, subtracts entry, source-exit, expiry and return-to-direct-holding costs, and compares that candidate with the held instrument’s KEEP return (without sunk entry cost). The older selector alone uses the horizon fields.</p>
-<label>Limit repricing<select name="paired_repricing_mode"><option value="fixed">Fixed limits</option><option value="adaptive">Adaptive effective lease</option><option value="empirical">Empirical completion deadline</option><option value="rolling_worst">Rolling worst lease → market hedge</option></select></label>
+<label>Limit repricing<select name="paired_repricing_mode"><option value="fixed">Fixed limits</option><option value="adaptive">Adaptive effective lease</option><option value="empirical">Empirical completion deadline</option><option value="rolling_worst">Rolling worst lease → market hedge</option><option value="rolling_distribution">Rolling median/high targets → market hedge</option></select></label>
 <div id="rollingLeaseControls" hidden>
 <label>Limit price anchor<select name="paired_limit_anchor"><option value="relative_price">Relative source/destination price</option><option value="spot">Observed spot price</option></select></label>
 <p class="statistics-note">Relative mode preserves the source/destination price ratio and compensates limits for expected hedge slippage. Spot mode sets each futures limit from observed spot and its target lease; a spot-leg limit inverts the other future’s lease relation. Both include expected hedge slippage in transfer costs.</p>
 <label>Trailing price window (seconds)<input name="paired_lease_window_seconds" type="number" min="0.000001" step="any" value="5"></label>
-<label>Accepted adverse lease delta (bps/year)<input name="paired_lease_execution_delta_bps" type="number" min="0" step="any" value="5"></label>
+<label id="rollingDeltaControl">Accepted adverse lease delta (bps/year)<input name="paired_lease_execution_delta_bps" type="number" min="0" step="any" value="5"></label>
+<div id="rollingDistributionControls" hidden>
+<label>Median-to-high target fraction (0–1)<input name="paired_lease_target_alpha" type="number" min="0" max="1" step="any" value="0.5"></label>
+<label>Combine the two lease targets<select name="paired_lease_target_combine"><option value="min">Minimum</option><option value="max">Maximum</option><option value="mean" selected>Mean</option></select></label>
+<p class="statistics-note">Current future versus historical spot, and current spot versus historical future. Each distribution uses the median and maximum lease across received trades. Target = median + fraction × (maximum − median); combine the two targets with min, max or mean. Each observed trade has equal median weight. Both distributions use today's remaining maturity and cash rate. No additional adverse lease delta is applied in this mode.</p>
+</div>
 <label>Expected market hedge slippage (price bps)<input name="paired_expected_hedge_slippage_bps" type="number" min="0" max="9999" step="any" value="1"></label>
-<p class="statistics-note">Uses all already observed price pairs within the trailing window. The delta lowers entry lease and raises exit lease; both affect transfer valuation. Expected hedge slippage is included in transfer costs. Either funded leg may fill first, then the other becomes a market order after configured delays. Starting fully in BTC requires the spot sale first. Actual trade replay fills remain volume limited. The period spreadsheet includes Lease limits and Lease executions with the exact hit revision.</p>
+<p class="statistics-note">The earlier rolling-worst mode uses all observed price pairs and its adverse delta. The median/high mode uses the two separate distributions above. Expected hedge slippage is included in transfer costs. Either funded leg may fill first, then the other becomes a market order after configured delays. Starting fully in BTC requires the spot sale first. Actual trade replay fills remain volume limited. The period spreadsheet includes Lease limits and Lease executions with the exact hit revision.</p>
 </div>
 <p class="statistics-note">Adaptive mode continuously derives either leg’s limit from the opposite observed or acknowledged price while preserving the accepted amortized-return improvement and actual funding. The target waits for source funding. Tape volume remains a participation proxy, not observed order-book depth.</p>
 <label>Observation delay (seconds)<input name="paired_observation_delay_seconds" type="number" value="0" min="0" step="any"></label>
@@ -298,7 +303,9 @@ paired_conservative_lease_bps:'Annual lease-rate discount applied before ranking
 paired_uncertainty_bps:'Extra BTC-equivalent uncertainty allowance, in basis points of transferred capital. This is a research safety allowance, not a forecast confidence interval.',
 paired_cost_buffer_multiplier:'Safety multiplier applied to prospective transaction costs. One uses modeled costs; values above one demand an additional cost-recovery surplus. Past fees are sunk and are not charged again.',
 paired_min_gain_btc:'Minimum prospective additional BTC wealth required above KEEP, in addition to modeled future costs and safety allowances.',
-paired_lease_window_seconds:'Trailing source-time window containing only already received observations; all spot/future combinations determine the bounds.',
+paired_lease_window_seconds:'Trailing source-time window containing only already received trades. Median/high mode holds one current price fixed in each of two separate distributions.',
+paired_lease_target_alpha:'Zero targets the median lease; one targets the maximum lease. Intermediate values interpolate the two annualized rates.',
+paired_lease_target_combine:'Combine the provisional spot-history and future-history targets with their minimum, maximum or arithmetic mean.',
 paired_lease_execution_delta_bps:'Positive magnitude of the adverse annual lease adjustment: negative for entry, positive for exit. Included in admission.',
 paired_expected_hedge_slippage_bps:'Expected adverse price movement on the market hedge, budgeted once in admission and used to compensate limits. Separate from actual replay slippage.',
 paired_repricing_mode:'Rolling worst lease uses a trailing observed bound, an adverse delta and a market hedge. Fixed preserves original limits. Adaptive continuously recomputes symmetric source/target boundaries from the accepted economic hurdle and observed or acknowledged counterpart prices. Empirical is available only with the earlier selector.',
@@ -819,7 +826,10 @@ function updateTradeControls(){
  const active=form.elements.namedItem('btc_data_source').value==='trade_tape',paired=active&&form.elements.namedItem('trade_strategy').value==='cost_aware_paired';
  $('tradeReplayControls').hidden=!active;$('pairedTransferControls').hidden=!paired;$('pairedLegacyNotice').hidden=!paired;
  const ranked=paired&&form.elements.namedItem('paired_selection_mode')?.value==='amortized_rank';
- const rollingControls=$('rollingLeaseControls');if(rollingControls)rollingControls.hidden=!(paired&&form.elements.namedItem('paired_repricing_mode')?.value==='rolling_worst');
+ const rollingMode=form.elements.namedItem('paired_repricing_mode')?.value;
+ const rollingControls=$('rollingLeaseControls');if(rollingControls)rollingControls.hidden=!(paired&&['rolling_worst','rolling_distribution'].includes(rollingMode));
+ const distributionControls=$('rollingDistributionControls');if(distributionControls)distributionControls.hidden=rollingMode!=='rolling_distribution';
+ const deltaControl=$('rollingDeltaControl');if(deltaControl)deltaControl.hidden=rollingMode==='rolling_distribution';
  const empirical=paired&&!ranked&&form.elements.namedItem('paired_repricing_mode')?.value==='empirical';
  const empiricalControls=$('pairedEmpiricalControls');if(empiricalControls)empiricalControls.hidden=!empirical;
  for(const name of ['paired_execution_confidence','paired_execution_min_samples','paired_calibration_days','paired_waiting_seconds','paired_execution_size_grid_btc','paired_study_max_horizon_seconds']){const field=form.elements.namedItem(name);if(field)field.disabled=!empirical;}
@@ -838,13 +848,18 @@ function validatePairedForm(){
  if(!ranked){const parts=form.elements.namedItem('paired_horizon_days').value.split(','),horizons=parts.map(value=>Number(value.trim())),maximum=Number(form.elements.namedItem('paired_max_horizon_days').value);if(parts.some(value=>!value.trim())||horizons.some(value=>!Number.isFinite(value)||value<=0)||!Number.isFinite(maximum)||maximum<=0||!horizons.some(value=>value<=maximum))throw Error('Enter positive comma-separated holding horizons, with at least one within the maximum forecast horizon.');}
  for(const name of ['paired_max_delta_btc','paired_max_transfer_fraction']){const value=Number(form.elements.namedItem(name).value);if(!Number.isFinite(value)||value<=0)throw Error('Maximum transfer fraction and maximum BTC delta must be positive.');}
  for(const name of ['paired_min_improvement_bps','paired_conservative_lease_bps']){const value=Number(form.elements.namedItem(name).value);if(!Number.isFinite(value)||value<0)throw Error('Amortized-return buffers must be finite and nonnegative.');}
- if(!['fixed','adaptive','empirical','rolling_worst'].includes(form.elements.namedItem('paired_repricing_mode').value))throw Error('Choose fixed, adaptive, empirical or rolling worst lease repricing.');
+ if(!['fixed','adaptive','empirical','rolling_worst','rolling_distribution'].includes(form.elements.namedItem('paired_repricing_mode').value))throw Error('Choose fixed, adaptive, empirical or a rolling lease repricing mode.');
  for(const name of ['paired_observation_delay_seconds','paired_decision_delay_seconds','paired_order_delay_seconds']){const value=form.elements.namedItem(name).value;if(!String(value).trim()||!Number.isFinite(Number(value))||Number(value)<0)throw Error('Observation, decision and order-to-market delays must be finite, nonnegative seconds.');}
- if(form.elements.namedItem('paired_repricing_mode').value==='rolling_worst'){
-  if(!ranked)throw Error('Rolling worst lease requires expiry-amortized ranking.');
+ if(['rolling_worst','rolling_distribution'].includes(form.elements.namedItem('paired_repricing_mode').value)){
+  if(!ranked)throw Error('Rolling lease requires expiry-amortized ranking.');
   const anchor=form.elements.namedItem('paired_limit_anchor')?.value??'relative_price';if(!['relative_price','spot'].includes(anchor))throw Error('Choose relative price or observed spot as the limit anchor.');
-  const window=Number(form.elements.namedItem('paired_lease_window_seconds').value),delta=Number(form.elements.namedItem('paired_lease_execution_delta_bps').value),slip=Number(form.elements.namedItem('paired_expected_hedge_slippage_bps').value);
+  const window=Number(form.elements.namedItem('paired_lease_window_seconds').value),delta=form.elements.namedItem('paired_repricing_mode').value==='rolling_distribution'?0:Number(form.elements.namedItem('paired_lease_execution_delta_bps').value),slip=Number(form.elements.namedItem('paired_expected_hedge_slippage_bps').value);
   if(!Number.isFinite(window)||window<0.000001||!Number.isFinite(delta)||delta<0||!Number.isFinite(slip)||slip<0||slip>=10000)throw Error('Rolling window must be positive, lease delta nonnegative and hedge slippage between 0 and 10000 price bps.');
+ }
+ if(form.elements.namedItem('paired_repricing_mode').value==='rolling_distribution'){
+  const raw=form.elements.namedItem('paired_lease_target_alpha').value,alpha=Number(raw);
+  if(!String(raw).trim()||!Number.isFinite(alpha)||alpha<0||alpha>1)throw Error('Median-to-high target fraction must be between 0 and 1.');
+  if(!['min','max','mean'].includes(form.elements.namedItem('paired_lease_target_combine').value))throw Error('Combine targets with min, max or mean.');
  }
  if(ranked&&form.elements.namedItem('paired_repricing_mode').value==='empirical')throw Error('Empirical execution is calibrated only for the earlier discrete-horizon selector.');
  if(form.elements.namedItem('paired_repricing_mode').value==='empirical'){
@@ -917,7 +932,7 @@ async function downloadTradeSpreadsheet(){
 let minuteVisibility=null;
 function pairedTransferSummaryRows(paired,replay={}){
  const rows=[],number=(value,digits=0)=>Number.isFinite(value)?fmt(value,digits):'Unavailable';
- if(paired.repricing_mode)rows.push(['Limit repricing',({fixed:'Fixed limits',adaptive:'Adaptive effective lease',empirical:'Empirical completion deadline',rolling_worst:'Rolling worst lease → market hedge'})[paired.repricing_mode]||String(paired.repricing_mode)]);
+ if(paired.repricing_mode)rows.push(['Limit repricing',({fixed:'Fixed limits',adaptive:'Adaptive effective lease',empirical:'Empirical completion deadline',rolling_worst:'Rolling worst lease → market hedge',rolling_distribution:'Rolling median/high targets → market hedge'})[paired.repricing_mode]||String(paired.repricing_mode)]);
  for(const [key,label] of [['observation_delay_seconds','Common observation delay (seconds)'],['decision_delay_seconds','Decision delay (seconds)'],['order_delay_seconds','Order-to-market delay (seconds)'],['spot_feed_delay_seconds','Extra spot feed delay (seconds)'],['futures_feed_delay_seconds','Extra futures feed delay (seconds)'],['response_delay_seconds','Fill response delay (seconds)']])if(paired[key]!=null)rows.push([label,number(paired[key],3)]);
  if(paired.replacement_count!=null)rows.push(['Limit replacements reaching the market',number(paired.replacement_count)]);
  for(const [key,label,digits] of [['ending_commodity_nav_btc','Ending portfolio wealth (BTC)',8],['commodity_return_pct','Portfolio BTC wealth change (%)',4]])if(replay[key]!=null)rows.push([label,number(replay[key],digits)]);
@@ -941,7 +956,8 @@ function pairedTransferSummaryRows(paired,replay={}){
    for(const [key,label] of [['instruction_wait_seconds','Latest instruction wait (seconds)'],['source_wait_seconds','Latest source wait (seconds)'],['hedge_wait_seconds','Latest hedge wait (seconds)'],['actual_slippage_bps','Latest actual price-basis slippage (bps)'],['annualized_slippage_bps','Latest actual annualized lease slippage (bps)']])if(latest[key]!=null)rows.push([label,number(latest[key],4)]);
   }
  }
- if(paired.repricing_mode==='rolling_worst')rows.push(['Limit price anchor',paired.limit_anchor==='spot'?'Observed spot price':'Relative source/destination price']);
+ if(['rolling_worst','rolling_distribution'].includes(paired.repricing_mode))rows.push(['Limit price anchor',paired.limit_anchor==='spot'?'Observed spot price':'Relative source/destination price']);
+ if(paired.repricing_mode==='rolling_distribution')rows.push(['Median-to-high fraction',number(paired.lease_target_alpha,3)],['Target combination',paired.lease_target_combine],['Median weighting','Observed trades']);
  const execution=paired.latest_lease_execution;
  if(execution){rows.push(['Latest matched lease instrument',String(execution.symbol)],['Hit limit revision',String(execution.hit_order_revision)]);for(const [key,label] of [['worst_observed_lease','Worst observed lease at hit limit setting'],['set_lease','Lease used to set hit limit'],['executed_lease','Executed lease (same rate and maturity reference)']])if(execution[key]!=null)rows.push([label,number(100*execution[key],4)+'%']);}
  const lease=paired.latest_pair_result;

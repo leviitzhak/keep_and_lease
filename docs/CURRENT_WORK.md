@@ -1,5 +1,19 @@
 # Current work
 
+## Separate rolling lease distributions — 2026-09-25
+
+`agent/rolling-lease-distributions`, based on master `4dfab8c3f4fb`, adds the
+owner's current-future/historical-spot and current-spot/historical-future
+distributions. Each target interpolates median to maximum with alpha; min, max
+or mean combines the targets before cost-aware expiry ranking and funded
+limit/market-hedge execution. The initial 90-day preset uses alpha 0.5 and mean,
+5-second trade windows and 500-ms decisions. Old modes are preserved. Local
+verification covers transformed medians, duplicates, causal latency, checkpoint
+continuity, partial market hedges, funding, both anchors and GUI controls.
+Deployment and the requested 90-day run must be recorded after submission;
+results and calibration are not yet established. See
+[ROLLING_LEASE_EXECUTION.md](ROLLING_LEASE_EXECUTION.md).
+
 ## Rolling worst lease execution — 2026-09-24
 
 Branch `agent/rolling-worst-lease-execution` is based on GitHub master

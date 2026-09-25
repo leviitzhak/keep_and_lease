@@ -561,7 +561,9 @@ def run(payload, data_root, audit_collection, progress=None, *, store=None, cove
                                                "Subsequent trade participation is simulated liquidity, not order-book depth or guaranteed fills",
                                                "Durable staged pairs retain incomplete exposure and reservations through delayed acknowledgments and checkpoints",
                                                "Observation, decision and order-delivery delays apply to adaptive limit updates; exchange arrivals and executed prices are audited",
-                                               ("Rolling observed worst lease with adverse delta, expected hedge cost and funded limit-then-market execution"
+                                               ("Two separate rolling trade-lease distributions; median-to-maximum targets combined by min/max/mean; funded limit-then-market execution"
+                                                 if paired_config.repricing_mode == "rolling_distribution" else
+                                                 "Rolling observed worst lease with adverse delta, expected hedge cost and funded limit-then-market execution"
                                                  if paired_config.repricing_mode == "rolling_worst" else
                                                  "Adaptive limits symmetrically preserve the accepted amortized-return hurdle"
                                                  if paired_config.selection_mode == "amortized_rank" else
