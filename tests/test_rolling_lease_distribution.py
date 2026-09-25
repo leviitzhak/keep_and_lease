@@ -71,6 +71,15 @@ class DistributionWindowTests(unittest.TestCase):
 
 
 class DistributionExecutionTests(unittest.TestCase):
+    def test_repeated_bootstrap_does_not_double_count_seed_trades(self):
+        config=PairedConfig(selection_mode="amortized_rank",repricing_mode="rolling_distribution")
+        account=PairedTransferAccount(1000,config=config,expiries={"F":YEAR_US})
+        account.marks["F"]=trade(0,"F",90)
+        account.initialize_spot(trade(1))
+        account.bootstrap_observations()
+        self.assertEqual(account.lease_window.statistics("F",1)["count"],1)
+        self.assertEqual(account.lease_window.statistics("SPOT",1)["count"],1)
+
     def account(self, price=90, **settings):
         account, rows = legacy.RollingLeaseTests().account(price, **settings)
         account.config.repricing_mode = "rolling_distribution"

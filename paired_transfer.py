@@ -558,6 +558,7 @@ class PairedTransferAccount(RollingLeaseExecutionMixin):
     def bootstrap_observations(self):
         """Seed pre-window exchange marks into their original availability clocks."""
         self.feed_queue = []
+        self.lease_window = self._lease_window_class()(self.config.lease_window_seconds)
         self.observed_marks = {}
         self.observed_available_us = {}
         for mark in sorted(self.marks.values(), key=lambda t: (t.us, t.symbol)):
