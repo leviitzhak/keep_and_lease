@@ -1,0 +1,49 @@
+name: BTC first-day spreadsheet inputs (read only)
+on:
+  push:
+    branches: [agent/cloud-autonomous-access]
+    paths: [.cloud-agent/requests/first-day-spreadsheet.json]
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: btc-first-day-spreadsheet
+  cancel-in-progress: false
+jobs:
+  extract:
+    if: github.ref == 'refs/heads/agent/cloud-autonomous-access'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate fixed first-day public-market request
+        run: |
+          python -c "import json; from pathlib import Path; assert json.loads(Path('.cloud-agent/requests/first-day-spreadsheet.json').read_text()) == {'schema_version':1,'action':'btc-first-day-500ms-features','sequence':1}"
+      - uses: actions/checkout@v4
+        with:
+          ref: 207b803905a0e60b1387e2e896a49a18fb8dd9ce
+          path: source
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned project dependencies
+        run: python -m pip install -r source/requirements-cloud.txt -r source/requirements-trade-data.txt httpx
+      - name: Check rolling inputs and formula definitions
+        working-directory: source
+        run: python -m unittest tests.test_btc_first_day_features tests.test_rolling_lease_distribution -v
+      - uses: google-github-actions/auth@v2
+        with:
+          project_id: keep-and-lease
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com
+      - name: Read pinned June 6 trades and prepare subsecond inputs
+        working-directory: source
+        run: python scripts/export_btc_first_day_features.py --output ../first-day-inputs
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: btc-first-day-inputs
+          path: first-day-inputs/
+          retention-days: 3
+          if-no-files-found: error
