@@ -10,6 +10,8 @@ limit/market-hedge execution. The initial 90-day preset uses alpha 0.5 and mean,
 5-second trade windows and 500-ms decisions. Old modes are preserved. Local
 verification covers transformed medians, duplicates, causal latency, checkpoint
 continuity, partial market hedges, funding, both anchors and GUI controls.
+The first preview submission exposed a missing new module in the explicit Docker
+COPY lists. Both images now include it and run strategy imports during the build.
 Deployment and the requested 90-day run must be recorded after submission;
 results and calibration are not yet established. See
 [ROLLING_LEASE_EXECUTION.md](ROLLING_LEASE_EXECUTION.md).
