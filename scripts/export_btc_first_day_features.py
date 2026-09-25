@@ -27,7 +27,7 @@ from scripts.build_lease_maturity_history import Inputs, RANGE_SHA
 
 START, END = '2026-06-06T00:00:00', '2026-06-07T00:00:00'
 COLUMNS = ['tick_500ms', 'current_price', 'current_source_offset_us', 'sample_count',
-           'minimum_price', 'maximum_price', 'median_price', 'median_reciprocal_price']
+           'minimum_price', 'maximum_price', 'median_price', 'median_reciprocal_price', 'current_executable']
 
 
 def feature_rows(events, seeds, symbols, start, end, window_seconds=5, delay_us=100000):
@@ -41,7 +41,7 @@ def feature_rows(events, seeds, symbols, start, end, window_seconds=5, delay_us=
             source = event.us if event.reported_us is None else event.reported_us
             old = marks.get(event.symbol)
             if old is None or (source,event.us) >= (old[1],old[2]):
-                marks[event.symbol] = (event.price,source,event.us)
+                marks[event.symbol] = (event.price,source,event.us,event.executable)
                 window.observe(event.symbol,event.price,source,event.us+delay_us)
             event = next(tape, None)
         for symbol in symbols:
@@ -49,7 +49,8 @@ def feature_rows(events, seeds, symbols, start, end, window_seconds=5, delay_us=
             stats = window.statistics(symbol,now)
             state = ([mark[0],mark[1]-start] if mark else [None,None])+[
                 stats['count'] if stats else 0,
-                *([stats[k] for k in ('minimum','maximum','median','median_reciprocal')] if stats else [None]*4)]
+                *([stats[k] for k in ('minimum','maximum','median','median_reciprocal')] if stats else [None]*4),
+                int(mark[3]) if mark else 0]
             if state != previous.get(symbol):
                 previous[symbol] = state
                 yield symbol, [tick,*state]
@@ -84,7 +85,8 @@ def main():
             seed=v.get('seed')
             if seed:
                 assert seed['timestamp']*1000 < start
-                seeds.append(Trade(seed['timestamp']*1000,s,seed['price'],seed['amount']/seed['price'],seed['direction'],seed['trade_id']))
+                seeds.append(Trade(seed['timestamp']*1000,s,seed['price'],seed['amount']/seed['price'],seed['direction'],seed['trade_id'],
+                    not any(seed.get(k) for k in ('block_trade_id','block_rfq_id','combo_id'))))
         seeds.sort(key=lambda t:(t.us,t.symbol))
         events=(t for t in store.trades(start_us=start,end_us=end) if t.symbol=='SPOT' or t.us<expiries[t.symbol])
         handles={s:gzip.open(args.output/(s+'.jsonl.gz'),'wt',compresslevel=6) for s in symbols}
