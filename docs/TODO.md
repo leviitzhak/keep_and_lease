@@ -8,6 +8,22 @@ remaining items below are not implicitly completed by that batch.
 
 ## Cost-aware expiry-amortized ranking strategy
 
+- [ ] **Separate lease estimation from hedge execution policy** (2026-09-25).
+  Make the lease/target-rate estimator (rolling worst lease or another supported
+  estimator) independent of the second-leg order policy (retain/reprice a limit
+  or use a market hedge after the first fill). Allow each supported estimator
+  with either hedge policy; do not make selecting worst-lease estimation
+  implicitly select market hedging, or vice versa. Keep the spot/relative-price
+  limit anchor as a separate choice. Apply the chosen policy's expected
+  execution costs in transfer evaluation, including expected hedge slippage.
+  Preserve causal observations, funding constraints, partial-tranche sizing,
+  latency and recovery after cancellation under both policies. Expose and save
+  the independent choices in the GUI, presets, checkpoints and execution audit;
+  map existing combined modes explicitly to preserve saved-run reproducibility.
+  Validate the combinations on identical signals, costs and opening portfolios
+  so estimator effects can be distinguished from execution-policy effects.
+  Documentation TODO only: this separation is not implemented yet.
+
 - [x] Add opt-in rolling observed worst-price-pair lease bounds, signed execution
   delta, explicit expected hedge cost, funded either-leg-first limits and market
   hedging, with exact limit revision and matched execution audit/export.
