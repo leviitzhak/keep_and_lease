@@ -64,7 +64,7 @@ class RollingPriceWindow:
 class RollingLeaseExecutionMixin:
     @property
     def rolling_execution(self):
-        return self.config.repricing_mode == "rolling_worst"
+        return self.config.repricing_mode in ("rolling_worst", "rolling_distribution")
 
     def _rolling_context(self, us, source, target):
         spot = self.observed_marks.get("SPOT")
@@ -74,14 +74,22 @@ class RollingLeaseExecutionMixin:
         for symbol in (source, target):
             if symbol == "SPOT":
                 continue
-            bound = self.lease_window.bounds(symbol, us, self.expiries[symbol], self.rate)
+            distribution = self.config.repricing_mode == "rolling_distribution"
+            if distribution:
+                current = self.observed_marks.get(symbol)
+                if current is None:
+                    return None
+                bound = self.lease_window.distributions(symbol, us, self.expiries[symbol], self.rate,
+                    spot.price, current.price, self.config.lease_target_alpha, self.config.lease_target_combine)
+            else:
+                bound = self.lease_window.bounds(symbol, us, self.expiries[symbol], self.rate)
             if bound is None:
                 return None
             # Lower lease is adverse on entry; higher lease is adverse on exit.
             entry = symbol == target
-            delta = (-1 if entry else 1) * self.config.lease_execution_delta_bps / 10000
+            delta = 0 if distribution else (-1 if entry else 1) * self.config.lease_execution_delta_bps / 10000
             worst = bound["min_lease" if entry else "max_lease"]
-            target_rate = worst + delta
+            target_rate = bound["target_lease"] if distribution else worst + delta
             factor = 1 + (self.rate-target_rate)*bound["years"]
             if not math.isfinite(factor) or factor <= 0:
                 return None
@@ -90,6 +98,7 @@ class RollingLeaseExecutionMixin:
                              "target_lease": target_rate}
             factors[symbol] = factor
         return dict(reference_us=us, spot_reference_price=spot.price, rates=rates,
+                    estimator=bound["estimator"],
                     limit_anchor=self.config.limit_anchor,
                     factors=factors, expected_hedge_slippage_bps=self.config.expected_hedge_slippage_bps)
 
@@ -110,7 +119,7 @@ class RollingLeaseExecutionMixin:
             target_entry_fees=(entry_fees or {}).get("target"),
             expected_hedge_slippage_bps=self.config.expected_hedge_slippage_bps)
         return replace(decision, diagnostics={**decision.diagnostics,
-            "lease_estimator": "all_observed_price_pairs_in_trailing_source_time_window",
+            "lease_estimator": context["estimator"],
             "rolling_lease": context})
 
     def _rolling_limits(self, context, source, target, observations=None):
@@ -193,7 +202,7 @@ class RollingLeaseExecutionMixin:
             packed.append(dict(action="replace", pair_id=pair.pair_id,
                 order_id=order.identifier, symbol=order.symbol, role=order.role,
                 revision=self.queue_sequence, limit_price=limit, market_order=market,
-                lease_context=copy.deepcopy(context), binding_constraint="market_hedge" if market else "rolling_worst_lease",
+                lease_context=copy.deepcopy(context), binding_constraint="market_hedge" if market else self.config.repricing_mode+"_lease",
                 observation_us=max(self.observed_available_us.get(s, 0) for s in (source.symbol, target.symbol)),
                 decision_started_us=us, fill_revision=pair.fill_revision))
         if packed:

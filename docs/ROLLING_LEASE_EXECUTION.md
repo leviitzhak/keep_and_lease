@@ -131,3 +131,51 @@ fees, latency, participation and allocation settings identical and report
 completion by attempts and by quantity, nonfills, residual exposure, hedge
 waiting time, executed-minus-setting lease distribution, fees and net BTC value.
 No ten-day historical improvement or deployed-preview validation is claimed yet.
+# Separate rolling lease distributions — 2026-09-25
+
+`paired_repricing_mode="rolling_distribution"` implements two distinct
+distributions for each candidate future at the current decision/reprice time `t`:
+
+1. Hold current observed future `F(t)` fixed and vary received spot trades `S(u)`.
+2. Hold current observed spot `S(t)` fixed and vary received future trades `F(u)`.
+
+Use `L(F,S)=r(t) - (F/S-1)/T(t)` for every sample, where `T(t)` is remaining
+ACT/365 years to expiry. The source-time window is `[t-W,t]`, inclusive, and only
+observations already delivered through the feed-delay queue are eligible. An
+empty history makes that instrument unavailable; no future or full-day median
+is substituted. Existing current-quote age/skew and cash-rate gates still apply.
+
+Each observed trade has equal median weight (not volume or time weight).
+For each distribution calculate minimum, median and maximum **lease rates**.
+With even sample counts, average the two middle rates; for spot history this
+requires the mean of the two middle reciprocal prices, not reciprocal of the
+mean price. Duplicate-price trades retain their full sample count.
+
+Each provisional target is `median + alpha*(maximum-median)`. Combine the two
+targets by `min`, `max` or arithmetic `mean`, independently for each future in
+the candidate pair. Spot retains a price factor of one. Configuration:
+
+| Field | Default | Meaning |
+| --- | --- | --- |
+| `paired_lease_window_seconds` | 5 | Trailing source-time window |
+| `paired_lease_target_alpha` | 0.5 | Fraction from median to highest rate, in [0,1] |
+| `paired_lease_target_combine` | mean | min, max or mean of the two provisional targets |
+
+The combined target replaces the lease used in expiry-amortized transfer
+valuation and limit repricing. All existing prospective costs, funding limits,
+the selected price anchor and expected market-hedge slippage remain active.
+The older adverse lease delta is **not** additionally applied in this mode.
+After one leg fills, the remaining unmatched quantity follows the same funded
+market-hedge path; a changed lease target cannot veto recovery. Partial fills,
+feed/response queues, the exact hit revision and the rolling samples survive
+checkpoints. Audits record both distributions, both targets, alpha, combination,
+sample counts, current prices and common rate/maturity reference. Lease-limit
+and execution exports retain this evidence. Earlier saved modes keep their
+original definitions.
+
+The initial uncalibrated research preset is
+`strategies/research-btc-rolling-distribution-90day-500ms.json`: June 6 through
+September 4, 2026 (end exclusive), 500-ms decisions, mean, alpha 0.5, 5-second
+window, 10-bp fees, and 100-ms observation/decision/order delays. The 90-day
+result is a forward application of these declared settings, not evidence of
+out-of-sample calibration. No return or completion guarantee is implied.

@@ -76,14 +76,17 @@ LEASE_EXECUTION_FIELDS = [
     'hit_limit_price', 'first_fill_us', 'matched_source_btc', 'source_fill_price',
     'target_fill_price', 'worst_observed_lease', 'execution_delta', 'target_lease',
     'set_lease', 'executed_lease', 'executed_minus_set_lease', 'adverse_lease_slippage',
-    'expected_hedge_slippage_bps', 'hedge_wait_seconds', 'reference_us', 'years', 'cash_rate',
+    'expected_hedge_slippage_bps', 'hedge_wait_seconds', 'reference_us', 'years', 'cash_rate', 'lease_context',
 ]
 LEASE_LIMIT_FIELDS = ['date', 'kind', 'pair_id', 'symbol', 'role', 'order_id',
     'order_revision', 'revision', 'limit_price', 'market_order', 'active', 'applied',
     'rejection_reason', 'eligible_after_us', 'decision_started_us', 'decision_ready_us']
 LEASE_RATE_FIELDS = ['direction', 'min_lease', 'max_lease', 'worst_observed_lease',
     'execution_delta', 'target_lease', 'set_lease', 'reference_us', 'years', 'cash_rate',
-    'window_start_us', 'window_end_us', 'spot_extrema', 'future_extrema']
+    'window_start_us', 'window_end_us', 'spot_extrema', 'future_extrema',
+    'current_spot_price', 'current_future_price', 'spot_history', 'future_history',
+    'spot_history_leases', 'future_history_leases', 'target_alpha', 'target_combine',
+    'median_weighting', 'estimator']
 
 
 EXECUTION_OUTCOME_FIELDS = [

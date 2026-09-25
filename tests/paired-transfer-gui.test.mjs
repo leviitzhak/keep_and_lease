@@ -164,6 +164,36 @@ test('rolling imports preserve explicit values and reset missing settings',()=>{
   assert.equal(fields.get('paired_lease_window_seconds').value,'5');
 });
 
+test('two-distribution settings validate endpoints, aggregation and the 90-day preset',()=>{
+  const preset=JSON.parse(readFileSync(new URL('../strategies/research-btc-rolling-distribution-90day-500ms.json',import.meta.url),'utf8')).parameters;
+  assert.equal(Date.parse(preset.backtest_end)-Date.parse(preset.backtest_start),90*86400000);
+  assert.equal(preset.execution_interval_seconds,0.5);
+  assert.equal(preset.paired_repricing_mode,'rolling_distribution');
+  const settings={paired_selection_mode:'amortized_rank',paired_repricing_mode:'rolling_distribution',
+    paired_lease_window_seconds:'5',paired_lease_target_alpha:'0.5',paired_lease_target_combine:'mean',
+    paired_expected_hedge_slippage_bps:'1'};
+  for(const alpha of ['0','0.5','1'])for(const combine of ['min','max','mean']){
+    assert.doesNotThrow(()=>validationContext({...settings,paired_lease_target_alpha:alpha,paired_lease_target_combine:combine}).validatePairedForm());
+  }
+  for(const alpha of ['','NaN','-0.1','1.1'])assert.throws(()=>validationContext({...settings,paired_lease_target_alpha:alpha}).validatePairedForm(),/fraction/);
+  assert.throws(()=>validationContext({...settings,paired_lease_target_combine:'median'}).validatePairedForm(),/Combine/);
+});
+
+test('distribution controls appear for the new mode and hide the old adverse delta',()=>{
+  const elements=Object.entries({btc_data_source:'trade_tape',trade_strategy:'cost_aware_paired',paired_selection_mode:'amortized_rank',paired_repricing_mode:'rolling_distribution'}).map(([name,value])=>({name,value,closest:()=>null}));
+  elements.namedItem=name=>elements.find(field=>field.name===name);
+  const nodes=Object.fromEntries(['tradeReplayControls','pairedTransferControls','pairedLegacyNotice','pairedEmpiricalControls','previewLongScore','previewShortScore','rollingLeaseControls','rollingDistributionControls','rollingDeltaControl'].map(id=>[id,{}]));
+  const context={form:{elements},$:id=>nodes[id]};
+  vm.runInNewContext(source('updateTradeControls'),context);
+  context.updateTradeControls();
+  assert.equal(nodes.rollingLeaseControls.hidden,false);
+  assert.equal(nodes.rollingDistributionControls.hidden,false);
+  assert.equal(nodes.rollingDeltaControl.hidden,true);
+  elements.namedItem('paired_repricing_mode').value='rolling_worst';context.updateTradeControls();
+  assert.equal(nodes.rollingDistributionControls.hidden,true);
+  assert.equal(nodes.rollingDeltaControl.hidden,false);
+});
+
 test('repricing validates its mode and three independent nonnegative delays',()=>{
   assert.doesNotThrow(()=>validationContext({paired_repricing_mode:'adaptive',paired_observation_delay_seconds:'0.2',paired_decision_delay_seconds:'0.1',paired_order_delay_seconds:'0.3'}).validatePairedForm());
   assert.throws(()=>validationContext({paired_repricing_mode:'market'}).validatePairedForm(),/repricing/);
@@ -204,7 +234,7 @@ test('paired preset is bounded and every paired numeric default satisfies browse
   assert.equal(preset.parameters.trade_strategy,'cost_aware_paired');
   assert.equal(preset.parameters.btc_data_source,'trade_tape');
   assert.equal(Date.parse(preset.parameters.backtest_end)-Date.parse(preset.parameters.backtest_start),300000);
-  const migrationDefaults={paired_observation_delay_seconds:'0',paired_decision_delay_seconds:'0',paired_order_delay_seconds:'0',...empiricalDefaults};
+  const migrationDefaults={paired_lease_target_alpha:'0.5',paired_observation_delay_seconds:'0',paired_decision_delay_seconds:'0',paired_order_delay_seconds:'0',...empiricalDefaults};
   for(const tag of html.matchAll(/<input\b[^>]*name="paired_[^>]*>/g)){
     const attrs=Object.fromEntries([...tag[0].matchAll(/([\w-]+)="([^"]*)"/g)].map(match=>[match[1],match[2]]));
     assert.equal(String(preset.parameters[attrs.name]??migrationDefaults[attrs.name]),attrs.value,attrs.name+' preset default');

@@ -1,5 +1,35 @@
 # Current work
 
+## Separate rolling lease distributions — 2026-09-25
+
+`agent/rolling-lease-distributions`, based on master `4dfab8c3f4fb`, adds the
+owner's current-future/historical-spot and current-spot/historical-future
+distributions. Each target interpolates median to maximum with alpha; min, max
+or mean combines the targets before cost-aware expiry ranking and funded
+limit/market-hedge execution. The initial 90-day preset uses alpha 0.5 and mean,
+5-second trade windows and 500-ms decisions. Old modes are preserved. Local
+verification covers transformed medians, duplicates, causal latency, checkpoint
+continuity, partial market hedges, funding, both anchors and GUI controls.
+The first preview submission exposed a missing new module in the explicit Docker
+COPY lists. Both images now include it and run strategy imports during the build.
+Deployed engine: `3c08a1d9b2c2817ceb36e75145ce67af30f2f9eb`, preview
+https://keep-and-lease-preview-web-vfk2j2rgoq-zf.a.run.app/ . Workflow
+`36140211049` built both images, passed authenticated health and local replay
+checks. Interactive submission succeeded and the durable worker is running:
+`162b84f8184643d7bf91bf7045d2d8c3`, 2026-06-06 00:00 through 2026-09-04 00:00
+UTC (end exclusive), 15,552,000 planned 500-ms decisions. Defaults are mean,
+alpha 0.5, window 5 seconds, 10-bp fees and 100-ms observation/decision/order
+latency. Results and calibration are not yet established. See
+[ROLLING_LEASE_EXECUTION.md](ROLLING_LEASE_EXECUTION.md).
+
+The first-day spreadsheet input exporter reads the pinned immutable market
+manifest and preserves causal 100-ms observations at 500-ms ticks. It processes
+5,046,378 trades into 200,922 changed feature states. Price statistics are exact,
+including the two-middle-price reciprocal median needed for spot-history leases.
+The workbook keeps targets, cost amortization, ranking and repricing as formulas;
+changing the five-second source window or observation delay requires a feature
+refresh. Alpha and min/max/mean remain live spreadsheet inputs.
+
 ## Rolling worst lease execution — 2026-09-24
 
 Branch `agent/rolling-worst-lease-execution` is based on GitHub master

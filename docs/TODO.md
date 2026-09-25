@@ -518,3 +518,10 @@ handling.
 Remaining long-run work is fresh full-period Cloud Run acceptance, append-only
 validation for newly ingested history, and lifting reader/catalog bounds beyond
 90 days after resource checks.
+# Rolling distributions follow-up — 2026-09-25
+
+- [ ] Start and audit the declared 90-day `rolling_distribution` run (mean,
+  alpha 0.5); record run ID, exact engine commit, completion and unresolved
+  exposure rather than inferring success from order submission.
+- [ ] Calibrate window, median-to-high fraction and min/max/mean combination
+  on a separate training interval before claiming out-of-sample performance.
