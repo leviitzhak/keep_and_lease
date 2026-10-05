@@ -170,6 +170,10 @@ def run(request, root, work, report):
         output = work / preset
         cache = Cache(bucket, preset, output, gold)
         state = cache.restore(c)
+        report.setdefault("acquisition_state", {})[preset] = {
+            "reserved_estimated_usd": state["reserved_estimated_usd"],
+            "streams": {name: {key: row[key] for key in ("status", "request", "estimated_usd") if key in row}
+                        for name, row in state["streams"].items()}}
         report["stage"] = f"estimate_{preset}"
         plan = gold.estimate(cost_client, acquisition_requests(gold, c, state, request), state, "preview")
         contexts.append((preset, c, output, cache, state, plan))

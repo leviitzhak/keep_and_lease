@@ -60,7 +60,8 @@ private key stays in the requesting agent's private workspace; it is never sent
 to GCP, GitHub, a workflow, or the repository. A fresh AES-256-GCM key encrypts
 the result; RSA-OAEP-SHA256 wraps that key. Only this encrypted envelope is
 published as a seven-day GitHub artifact. The artifact contains no raw DBN or
-sample files. Public logs show request ID and completion state only. SDK output
+sample files. It includes the restored stream status/request metadata and
+reserved estimate to diagnose acquisition failures without another purchase. Public logs show request ID and completion state only. SDK output
 is captured in memory; outer errors return type and HTTP code. Databento errors are key-redacted
 before inclusion in the encrypted envelope. Credentials are neither logged nor included
 in the encrypted result. Complete summaries and samples remain in private GCS.
