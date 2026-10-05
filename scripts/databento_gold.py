@@ -9,6 +9,7 @@ import hashlib
 import json
 import math
 import os
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -32,14 +33,18 @@ MARKETS = {
 
 
 def market(c):
-    if c["future_symbol"] not in MARKETS:
-        raise ValueError("Supported contracts: 1OZZ6, SICZ6, MBTV6")
-    return MARKETS[c["future_symbol"]]
+    symbol = c["future_symbol"]
+    match = re.fullmatch(r"(1OZ|SIC|MBT)([FGHJKMNQUVXZ])([5-8])", symbol)
+    if not match:
+        raise ValueError("Supported contracts: dated 1OZ, SIC and MBT futures, 2025–2028")
+    root, code, year = match.groups()
+    template = {"1OZ": "1OZZ6", "SIC": "SICZ6", "MBT": "MBTV6"}[root]
+    return {**MARKETS[template], "month": "FGHJKMNQUVXZ".index(code) + 1, "year": 2020 + int(year)}
 
 
 def holding_setting(c, suffix):
     # Preserve the original gold config and raw filenames so paid caches resume.
-    prefix = "iau" if c["future_symbol"] == "1OZZ6" else "holding"
+    prefix = "iau" if market(c)["holding"] == "IAU" else "holding"
     return c[f"{prefix}_{suffix}"]
 
 
@@ -238,14 +243,15 @@ def expiry_from_definitions(frame, c):
     selected = frame[frame["raw_symbol"].eq(c["future_symbol"])]
     if selected.empty:
         raise ValueError("No definitions for requested contract")
-    month = market(c)["month"]
-    label = "December 2026" if month == 12 else "October 2026"
-    for column, expected in (("maturity_year", 2026), ("maturity_month", month)):
+    month, year = market(c)["month"], market(c)["year"]
+    maturity = pd.Timestamp(year=year, month=month, day=1, tz="UTC")
+    label = maturity.strftime("%B %Y")
+    for column, expected in (("maturity_year", year), ("maturity_month", month)):
         if column in selected and not selected[column].eq(expected).all():
             raise ValueError(f"Contract definition disagrees with {label}: {column}")
     expiry = pd.to_datetime(selected["expiration"], utc=True).dropna().unique()
-    lower = pd.Timestamp(year=2026, month=month if month == 10 else 11, day=1, tz="UTC")
-    upper = pd.Timestamp(year=2026, month=month, day=1, tz="UTC") + pd.offsets.MonthBegin(1)
+    lower = maturity if market(c)["holding"] == "IBIT" else maturity - pd.offsets.MonthBegin(1)
+    upper = maturity + pd.offsets.MonthBegin(1)
     if len(expiry) != 1 or not max(utc(c["end"]), lower) < expiry[0] < upper:
         raise ValueError("Missing, conflicting or implausible expiry; inspect the definitions")
     return pd.Timestamp(expiry[0])

@@ -1,5 +1,14 @@
 # Current work
 
+## Monthly three-commodity lease screen — 2026-10-05
+
+The owner selected monthly liquid contracts for October 2025–September 2026.
+The research-only workflow uses previous-day volume ranks, actual expiry,
+fee-adjusted ETF quantity scenarios, private caches and encrypted results.
+SIC has no history before its February 2026 launch. Initial execution estimates
+costs before purchasing quotes; each asset has a $1 cumulative estimate ceiling.
+See [monthly runbook](DATABENTO_MONTHLY_SCREEN.md). No application deployment.
+
 ## 1OZ / IAU, SIC / SLV and MBT / IBIT quote screening — 2026-10-05
 
 `agent/databento-1oz-lease-preview` adds an owner-run Databento CLI for September

@@ -7,6 +7,9 @@ December 2026 `1OZZ6`. Presets also select December 2026 `SICZ6` and October
 2026 `MBTV6`; none uses a rolling continuous series. The month is
 `[2026-09-01T00:00:00Z, 2026-10-01T00:00:00Z)`.
 
+The [monthly three-commodity screen](DATABENTO_MONTHLY_SCREEN.md) extends this
+analysis to October 2025–September 2026 with a monthly liquid-contract rule.
+
 ## Autonomous cloud execution
 
 The owner has granted access to the stored Databento key. The bounded
