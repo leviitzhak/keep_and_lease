@@ -5,9 +5,11 @@
 The owner reports the Databento secret grant is active. The operator branch adds
 a fixed September SIC/SLV and MBT/IBIT estimate/screen job, a combined $1
 cumulative acquisition cap, private GCS checkpoints and encrypted result return.
-Five focused offline tests pass. Historical ETF content is not available in the
+Six focused offline tests pass. Historical ETF content is not available in the
 inspected issuer exports; screens explicitly label snapshot approximations and
-use dated DGS3MO cash benchmarks. Live execution remains to be verified. See
+use dated DGS3MO cash benchmarks. Secret access and encrypted result return passed in run 37312663540; the
+combined cost estimate was $0.107625976205. A subsequent metadata server error
+preceded acquisition; a bounded metadata-only retry is now included. See
 [DATABENTO_CLOUD_RUNNER.md](DATABENTO_CLOUD_RUNNER.md).
 
 _Update this file whenever active development moves to another branch or pull

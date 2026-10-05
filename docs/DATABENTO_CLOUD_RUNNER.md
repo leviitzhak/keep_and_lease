@@ -3,7 +3,8 @@
 The owner reported granting the existing `keep-lease-codex-operator` identity
 access to Secret Manager secret `databento-api-key` on October 5, 2026. The
 `databento-research.yml` workflow uses the existing GitHub OIDC connection on
-`agent/cloud-autonomous-access`. Live access must still be verified by a run.
+`agent/cloud-autonomous-access`. Live secret access and encrypted result return were verified by run 37312663540.
+Its combined September download estimate was $0.107625976205.
 This operator addition runs research on a GitHub-hosted runner authenticated to
 GCP; it is not a Cloud Run service, deployment, or a trading connection.
 
@@ -18,7 +19,8 @@ Both actions use September 1 through October 1 exclusive for `SICZ6`/SLV and
 `estimate` retrieves metadata only. `screen` checks the combined cumulative
 Databento estimate against a hard $1 ceiling before acquiring any market data.
 This counts prior reserved acquisitions restored from the private cache. It is
-not a vendor invoice limit or a query of remaining signup credits. No MBO,
+not a vendor invoice limit or a query of remaining signup credits. Metadata-only server errors have at most three attempts; paid streaming requests
+are never retried automatically. No MBO,
 trades, arbitrary commands, other secrets, URLs or contract selections are
 accepted by the request. The workflow has a 25-minute timeout and serializes all
 requests through one concurrency group.
@@ -59,8 +61,8 @@ to GCP, GitHub, a workflow, or the repository. A fresh AES-256-GCM key encrypts
 the result; RSA-OAEP-SHA256 wraps that key. Only this encrypted envelope is
 published as a seven-day GitHub artifact. The artifact contains no raw DBN or
 sample files. Public logs show request ID and completion state only. SDK output
-is captured in memory; outer errors return type and HTTP code without potentially
-credential-bearing error strings. Credentials are neither logged nor included
+is captured in memory; outer errors return type and HTTP code. Databento errors are key-redacted
+before inclusion in the encrypted envelope. Credentials are neither logged nor included
 in the encrypted result. Complete summaries and samples remain in private GCS.
 
 This is a fixed research return mechanism, not a general private diagnostic or
@@ -95,6 +97,6 @@ application preview. The subsequent request-only push starts the research
 workflow without triggering an application deployment. No master merge or GUI
 change is part of this operational addition.
 
-Validation: five offline tests cover request limits, authenticated encryption
+Validation: six offline tests cover request limits, authenticated encryption
 round-trip, and write-ahead state/raw-file ordering. Run:
 `python -m unittest discover -s tests -p 'test_cloud_databento_research.py'`.

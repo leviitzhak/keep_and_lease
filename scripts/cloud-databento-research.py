@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import re
 import time
+from types import SimpleNamespace
 
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
@@ -22,6 +23,7 @@ PROJECT = "keep-and-lease"
 BUCKET = "keep-and-lease-market-data"
 PREFIX = "research/databento/september-2026-v1"
 PRESETS = ("sic", "mbt")
+SENSITIVE_VALUES = []  # Process memory only; never serialized.
 MAX_COST = 1.0  # Combined cumulative estimate, including restored paid caches.
 
 
@@ -109,6 +111,17 @@ class Cache:
             json.dumps(state), content_type="application/json", if_generation_match=0)
 
 
+def metadata_cost(client, **request):
+    from databento.common.error import BentoServerError
+    for attempt in range(3):
+        try:
+            return client.metadata.get_cost(**request)
+        except BentoServerError:
+            if attempt == 2:
+                raise
+            time.sleep(2 * (attempt + 1))
+
+
 def run(request, root, work, report):
     import databento as db
     import google.auth
@@ -124,8 +137,10 @@ def run(request, root, work, report):
     api_key = base64.b64decode(response.json()["payload"]["data"]).decode().strip()
     if not api_key:
         raise ValueError("Secret is empty")
+    SENSITIVE_VALUES.append(api_key)
     report["secret_access"] = "verified"
     client = db.Historical(api_key)
+    cost_client = SimpleNamespace(metadata=SimpleNamespace(get_cost=lambda **kw: metadata_cost(client, **kw)))
     bucket = storage.Client(project=PROJECT, credentials=credentials).bucket(BUCKET)
     contexts = []
     for preset in PRESETS:
@@ -133,7 +148,8 @@ def run(request, root, work, report):
         output = work / preset
         cache = Cache(bucket, preset, output, gold)
         state = cache.restore(c)
-        plan = gold.estimate(client, gold.requests_for(c, "preview"), state, "preview")
+        report["stage"] = f"estimate_{preset}"
+        plan = gold.estimate(cost_client, gold.requests_for(c, "preview"), state, "preview")
         contexts.append((preset, c, output, cache, state, plan))
     report["estimates"] = {row[0]: row[5] for row in contexts}
     total = sum(row[5]["new_estimated_usd"] + row[5]["previous_reserved_estimated_usd"] for row in contexts)
@@ -142,6 +158,7 @@ def run(request, root, work, report):
     if request["action"] == "estimate":
         return
     gold.check_budget({"new_estimated_usd": total, "previous_reserved_estimated_usd": 0}, MAX_COST)
+    report["stage"] = "cash_reference"
     # Latest available daily 3-month Treasury benchmark, with next-day use.
     import requests
     cash_url = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS3MO&cosd=2026-08-27&coed=2026-09-30"
@@ -171,10 +188,12 @@ def run(request, root, work, report):
                 cache.checkpoint(path, value)
         gold.save_json = durable_save
         try:
+            report["stage"] = f"acquire_{preset}"
             frames = gold.acquire_preview(client, plan, output, state)
         finally:
             gold.save_json = original_save
         try:
+            report["stage"] = f"analyze_{preset}"
             samples, summary = gold.analyze(frames, reference, provenance, c)
         except ValueError as exc:
             # Preserve successful acquisitions and let the other market complete.
@@ -225,8 +244,14 @@ def main():
             report["status"] = "completed"
         except Exception as exc:
             report["status"] = "failed"
-            # Error text may contain a credential; return only the type for outer failures.
             report["error_type"] = type(exc).__name__
+            if type(exc).__name__.startswith("Bento") or isinstance(exc, ValueError):
+                message = str(exc)
+                for sensitive in SENSITIVE_VALUES:
+                    message = message.replace(sensitive, "[REDACTED]")
+                report["error_message"] = message[:1200]
+            if hasattr(exc, "http_status"):
+                report["http_status"] = exc.http_status
             response = getattr(exc, "response", None)
             if response is not None:
                 report["http_status"] = getattr(response, "status_code", None)

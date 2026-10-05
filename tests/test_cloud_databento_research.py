@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -22,6 +22,14 @@ class ResearchTests(unittest.TestCase):
 
     def request(self):
         return dict(schema_version=1,request_id='test',action='estimate',result_public_key_pem=self.pem)
+
+    def test_only_metadata_server_errors_are_retried(self):
+        from databento.common.error import BentoServerError
+        client=Mock();client.metadata.get_cost.side_effect=[BentoServerError(503),.12]
+        with patch.object(runner.time,'sleep'):
+            self.assertEqual(runner.metadata_cost(client,symbols=['SICZ6']),.12)
+        self.assertEqual(client.metadata.get_cost.call_count,2)
+        client.timeseries.get_range.assert_not_called()
 
     def test_request_cannot_expand_scope_or_budget(self):
         runner.validate_request(self.request())
