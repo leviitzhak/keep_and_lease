@@ -9,13 +9,19 @@ and GCS upload. It is based on master `80be0fc4c30904a0f4dfb16e097de2a001424e64`
 Presets cover December 2026 1OZ and SIC, and October 2026 MBT. The user selected
 IAU for gold and IBIT for Bitcoin; silver uses SLV. Contract sizes and fee
 normalization support 1 oz, 100 oz and 0.1 BTC. Dated ETF content/cash inputs or an
-explicitly labeled constant scenario are required for the preview. Twenty
+explicitly labeled constant scenario are required for the preview. Twenty-seven
 focused offline tests pass, including size/depth checks, causal references,
-shared-timestamp comparison and gold cache compatibility. The owner granted secret access to the existing cloud operator. Run 37312663540
+shared-timestamp comparison, gold cache compatibility, private encrypted return
+and durable acquisition recovery. The owner granted secret access to the existing cloud operator. Run 37312663540
 verified secret access, metadata retrieval and encrypted result return; the
 combined SIC/MBT download estimate was $0.107625976205. The fixed cloud runner
-adds private durable acquisition state and a $1 cumulative cap. Numeric rates
-are reported only after a completed screen. See [runbook](DATABENTO_GOLD_RESEARCH.md).
+adds private durable acquisition state and a $1 cumulative cap. SIC completed
+in run 37313440074; the same run cached both MBT/IBIT price files before an MBT
+definition HTTP 504. A read-only cache diagnosis verified that failure point.
+The bounded recovery job partitions only the definition request and preserves
+its original cost reservation. Live execution evidence is linked in the cloud
+runbook; licensed records and numeric research results stay in private GCS and
+encrypted return artifacts. See [runbook](DATABENTO_GOLD_RESEARCH.md).
 
 ## Rolling worst lease execution — 2026-09-24
 

@@ -29,6 +29,10 @@ MAX_COST = 1.0  # Combined cumulative estimate, including restored paid caches.
 
 def validate_request(value):
     required = {"schema_version", "request_id", "action", "result_public_key_pem"}
+    if "reviewed_recovery_run" in value:
+        if value["action"] != "screen" or value["reviewed_recovery_run"] != 37313440074:
+            raise ValueError("Only the specifically reviewed MBT 504 can be recovered")
+        required.add("reviewed_recovery_run")
     if set(value) != required | ({"references"} if value.get("action") == "screen" else set()):
         raise ValueError("Unexpected request fields")
     if value["schema_version"] != 1 or value["action"] not in ("estimate", "screen"):
@@ -111,6 +115,25 @@ class Cache:
             json.dumps(state), content_type="application/json", if_generation_match=0)
 
 
+def acquisition_requests(gold, c, state, request):
+    items = gold.requests_for(c, "preview")
+    if c["future_symbol"] != "MBTV6" or not request.get("reviewed_recovery_run"):
+        return items
+    original = next(item for item in items if item["name"] == "future-definition")
+    failed = state["streams"].get("future-definition")
+    if not failed or failed["status"] not in ("inflight", "superseded_after_review") or failed["request"] != original["request"]:
+        raise ValueError("Recovery does not match the reviewed failed monthly request")
+    import pandas as pd
+    start, end = pd.Timestamp(c["start"]), pd.Timestamp(c["end"])
+    chunks = []
+    while start < end:
+        stop = min(start + pd.Timedelta(days=5), end)
+        chunks.append({"name": f"future-definition-{start:%Y%m%d}",
+                       "request": {**original["request"], "start": start.isoformat(), "end": stop.isoformat()}})
+        start = stop
+    return [item for item in items if item["name"] != "future-definition"] + chunks
+
+
 def metadata_cost(client, **request):
     from databento.common.error import BentoServerError
     for attempt in range(3):
@@ -148,8 +171,12 @@ def run(request, root, work, report):
         output = work / preset
         cache = Cache(bucket, preset, output, gold)
         state = cache.restore(c)
+        report.setdefault("acquisition_state", {})[preset] = {
+            "reserved_estimated_usd": state["reserved_estimated_usd"],
+            "streams": {name: {key: row[key] for key in ("status", "request", "estimated_usd") if key in row}
+                        for name, row in state["streams"].items()}}
         report["stage"] = f"estimate_{preset}"
-        plan = gold.estimate(cost_client, gold.requests_for(c, "preview"), state, "preview")
+        plan = gold.estimate(cost_client, acquisition_requests(gold, c, state, request), state, "preview")
         contexts.append((preset, c, output, cache, state, plan))
     report["estimates"] = {row[0]: row[5] for row in contexts}
     total = sum(row[5]["new_estimated_usd"] + row[5]["previous_reserved_estimated_usd"] for row in contexts)
@@ -188,8 +215,21 @@ def run(request, root, work, report):
                 cache.checkpoint(path, value)
         gold.save_json = durable_save
         try:
+            if preset == "mbt" and request.get("reviewed_recovery_run"):
+                failed = state["streams"]["future-definition"]
+                if failed["status"] == "inflight":
+                    failed["status"] = "superseded_after_review"
+                    failed["review"] = {"workflow_run": 37313440074, "http_status": 504,
+                                        "reason": "SDK rejects this HTTP status before opening the DBN writer. Replace the monthly query with six disjoint five-day queries; retain the failed request cost reservation."}
+                    durable_save(output / "state.json", state)
+                report["recovery"] = failed["review"]
             report["stage"] = f"acquire_{preset}"
             frames = gold.acquire_preview(client, plan, output, state)
+            if preset == "mbt" and request.get("reviewed_recovery_run"):
+                names = sorted(name for name in frames if name.startswith("future-definition-"))
+                if len(names) != 6:
+                    raise ValueError("Recovery is missing five-day partitions")
+                frames["future-definition"] = pd.concat([frames.pop(name) for name in names])
         finally:
             gold.save_json = original_save
         try:

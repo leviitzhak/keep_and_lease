@@ -330,8 +330,11 @@ Tests cover causal reference use, interval alignment, bid/ask direction, actual
 expiry, entry costs, 100-ounce/0.1-BTC sizing and fee normalization, whole-share
 and depth checks, common-timestamp comparisons, cache compatibility, invalid
 quotes and purchase resume.
-No real Databento data, numeric September result or GCS upload is claimed until
-the owner executes with credentials and inputs. This patch provides acquisition
+The operator's October 5 execution verified secret access, acquired September
+price data and persisted licensed inputs and screening outputs in private GCS.
+See the [cloud runbook](DATABENTO_CLOUD_RUNNER.md) for the exact live execution
+status and encrypted evidence workflow. No raw records or private numeric
+research output is published in this repository. This patch provides acquisition
 and rate screening, not the subsequent MBO queue/trade-through fill simulator.
 The latter should compare first/partial/full fills, censored unfilled orders and
 joint completion versus target rates and configured delays. Trade extraction
