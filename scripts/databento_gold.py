@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Cost-bounded 1OZ/IAU historical research. No trading or GUI dependencies."""
+"""Cost-bounded 1OZ/IAU, SIC/SLV and MBT/IBIT research. No trading dependencies."""
 from __future__ import annotations
 
 import argparse
@@ -17,6 +17,35 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = ROOT / "strategies/research-1oz-dec26-september.json"
+PRESETS = {
+    "gold": DEFAULT_CONFIG,
+    "sic": ROOT / "strategies/research-sic-dec26-september.json",
+    "mbt": ROOT / "strategies/research-mbt-oct26-september.json",
+}
+# Exchange quote prices are already USD per underlying unit. Multipliers apply
+# to quantities and per-contract fees, never to the price ratio.
+MARKETS = {
+    "1OZZ6": dict(holding="IAU", units_per_contract=1.0, unit="troy_oz", month=12, asset="gold", slug="1oz"),
+    "SICZ6": dict(holding="SLV", units_per_contract=100.0, unit="troy_oz", month=12, asset="silver", slug="sic"),
+    "MBTV6": dict(holding="IBIT", units_per_contract=0.1, unit="BTC", month=10, asset="btc", slug="mbt"),
+}
+
+
+def market(c):
+    if c["future_symbol"] not in MARKETS:
+        raise ValueError("Supported contracts: 1OZZ6, SICZ6, MBTV6")
+    return MARKETS[c["future_symbol"]]
+
+
+def holding_setting(c, suffix):
+    # Preserve the original gold config and raw filenames so paid caches resume.
+    prefix = "iau" if c["future_symbol"] == "1OZZ6" else "holding"
+    return c[f"{prefix}_{suffix}"]
+
+
+def default_output(c):
+    month = utc(c["start"]).strftime("%b%Y").lower()
+    return ROOT / f"outputs/databento-{market(c)['slug']}-{month}"
 
 
 def stamp():
@@ -53,23 +82,25 @@ def config_at(path):
         raise ValueError("Use increasing UTC midnight boundaries; end is exclusive")
     if c["quote_schema"] not in ("bbo-1m", "bbo-1s"):
         raise ValueError("Preview supports bbo-1m or bbo-1s")
-    if c["future_symbol"] != "1OZZ6":
-        raise ValueError("This preset workflow validates December 2026 1OZ only")
+    market(c)
     for key in ("contracts", "max_reference_age_days"):
         if not math.isfinite(c[key]) or c[key] <= 0:
             raise ValueError(f"{key} must be positive")
     if int(c["contracts"]) != c["contracts"]:
         raise ValueError("contracts must be an integer")
-    for key in ("future_fee_usd_per_contract", "iau_fee_usd_per_share", "iau_min_fee_usd"):
-        if not math.isfinite(c[key]) or c[key] < 0:
-            raise ValueError(f"{key} must be finite and nonnegative")
+    for value in (c["future_fee_usd_per_contract"], holding_setting(c, "fee_usd_per_share"), holding_setting(c, "min_fee_usd")):
+        if not math.isfinite(value) or value < 0:
+            raise ValueError("Entry fees must be finite and nonnegative")
+    if not isinstance(holding_setting(c, "dataset"), str) or not holding_setting(c, "dataset").strip():
+        raise ValueError("Holding dataset must be specified")
     return c
 
 
 def requests_for(c, stage):
     common = dict(start=c["start"], end=c["end"], stype_in="raw_symbol")
+    holding = market(c)["holding"]
     legs = [("future", "GLBX.MDP3", c["future_symbol"]),
-            ("iau", c["iau_dataset"], "IAU")]
+            (holding.lower(), holding_setting(c, "dataset"), holding)]
     schema = c["quote_schema"] if stage == "preview" else "mbo"
     result = [{"name": f"{leg}-{schema}", "request": dict(
         common, dataset=dataset, symbols=[symbol], schema=schema)}
@@ -160,30 +191,39 @@ def acquire_preview(client, plan, output, state):
 
 
 def reference_data(args, c):
+    m = market(c)
     if args.reference_csv:
         frame = pd.read_csv(args.reference_csv)
-        required = {"available_at", "ounces_per_share", "usd_rate", "source"}
+        if "units_per_share" not in frame and "ounces_per_share" in frame and m["unit"] == "troy_oz":
+            frame = frame.rename(columns={"ounces_per_share": "units_per_share"})
+        required = {"available_at", "units_per_share", "usd_rate", "source"}
         if not required <= set(frame):
-            raise ValueError("Reference CSV requires available_at,ounces_per_share,usd_rate,source")
+            raise ValueError("Reference CSV requires available_at,units_per_share,usd_rate,source (BTC per IBIT share for MBT)")
         frame["available_at"] = frame["available_at"].map(utc)
-        for column in ("ounces_per_share", "usd_rate"):
+        for column in ("units_per_share", "usd_rate"):
             frame[column] = pd.to_numeric(frame[column], errors="raise")
         if (frame["source"].isna() | frame["source"].astype(str).str.strip().eq("")).any():
             raise ValueError("Reference rows require a source description")
         provenance = {"mode": "dated_reference", "sha256": digest(args.reference_csv)}
     else:
-        if args.iau_oz_per_share is None or args.cash_rate_pct is None:
-            raise ValueError("Preview needs --reference-csv, or BOTH --iau-oz-per-share and --cash-rate-pct for an explicitly indicative scenario")
+        units = args.units_per_share
+        if args.iau_oz_per_share is not None:
+            if c["future_symbol"] != "1OZZ6" or units is not None:
+                raise ValueError("--iau-oz-per-share is only for gold; use --units-per-share for SIC/MBT")
+            units = args.iau_oz_per_share
+        if units is None or args.cash_rate_pct is None:
+            raise ValueError("Preview needs --reference-csv, or BOTH --units-per-share and --cash-rate-pct for an explicitly indicative scenario")
         frame = pd.DataFrame([{"available_at": utc(c["start"]),
-                               "ounces_per_share": args.iau_oz_per_share,
+                               "units_per_share": units,
                                "usd_rate": args.cash_rate_pct / 100,
                                "source": "user-specified constant scenario, not historical observations"}])
-        provenance = {"mode": "constant_scenario", "iau_oz_per_share": args.iau_oz_per_share,
+        provenance = {"mode": "constant_scenario", "units_per_share": units,
                       "cash_rate_pct": args.cash_rate_pct}
+    provenance.update(holding_symbol=m["holding"], underlying_unit=m["unit"])
     if frame.empty or frame["available_at"].duplicated().any():
         raise ValueError("Reference input is empty or has duplicate available_at timestamps")
-    if not frame["ounces_per_share"].map(lambda x: math.isfinite(x) and 0 < x < 1).all():
-        raise ValueError("Invalid IAU ounces per share")
+    if not frame["units_per_share"].map(lambda x: math.isfinite(x) and 0 < x < 1).all():
+        raise ValueError(f"Invalid {m['holding']} underlying units per share")
     if not frame["usd_rate"].map(lambda x: math.isfinite(x) and -0.1 < x < 1).all():
         raise ValueError("usd_rate must be a decimal annual rate, e.g. 0.04 for 4%")
     frame = frame.sort_values("available_at")
@@ -197,12 +237,16 @@ def expiry_from_definitions(frame, c):
         raise ValueError("Definitions missing raw_symbol or expiration")
     selected = frame[frame["raw_symbol"].eq(c["future_symbol"])]
     if selected.empty:
-        raise ValueError("No definitions for requested December contract")
-    for column, expected in (("maturity_year", 2026), ("maturity_month", 12)):
+        raise ValueError("No definitions for requested contract")
+    month = market(c)["month"]
+    label = "December 2026" if month == 12 else "October 2026"
+    for column, expected in (("maturity_year", 2026), ("maturity_month", month)):
         if column in selected and not selected[column].eq(expected).all():
-            raise ValueError(f"Contract definition disagrees with December 2026: {column}")
+            raise ValueError(f"Contract definition disagrees with {label}: {column}")
     expiry = pd.to_datetime(selected["expiration"], utc=True).dropna().unique()
-    if len(expiry) != 1 or not utc(c["end"]) < expiry[0] < pd.Timestamp("2027-01-01", tz="UTC"):
+    lower = pd.Timestamp(year=2026, month=month if month == 10 else 11, day=1, tz="UTC")
+    upper = pd.Timestamp(year=2026, month=month, day=1, tz="UTC") + pd.offsets.MonthBegin(1)
+    if len(expiry) != 1 or not max(utc(c["end"]), lower) < expiry[0] < upper:
         raise ValueError("Missing, conflicting or implausible expiry; inspect the definitions")
     return pd.Timestamp(expiry[0])
 
@@ -228,7 +272,10 @@ def quotes(frame, prefix, c):
 
 def summarize(frame):
     result = {"samples": len(frame)}
-    for col in ("long_lease_gross_pct", "long_lease_after_entry_cost_pct", "reverse_lease_boundary_pct"):
+    for col in ("long_lease_gross_pct", "long_lease_after_entry_cost_pct", "reverse_lease_boundary_pct",
+                "long_gain_to_expiry_after_entry_cost_bps"):
+        if col not in frame:  # Older saved gold output remains comparable.
+            continue
         s = frame[col]
         result[col] = {"min": float(s.min()), "p05": float(s.quantile(.05)),
                        "median": float(s.median()), "p95": float(s.quantile(.95)), "max": float(s.max())}
@@ -239,11 +286,18 @@ def summarize(frame):
 
 
 def analyze(frames, references, provenance, c):
+    m = market(c)
+    leg = m["holding"].lower()
+    references = references.copy()
+    if "units_per_share" not in references and m["unit"] == "troy_oz":
+        references = references.rename(columns={"ounces_per_share": "units_per_share"})
     expiry = expiry_from_definitions(frames["future-definition"], c)
     future = quotes(frames[f"future-{c['quote_schema']}"], "future", c)
-    iau = quotes(frames[f"iau-{c['quote_schema']}"], "iau", c)
-    paired = future.merge(iau, on="timestamp", how="inner", validate="one_to_one")
-    counts = {"future_samples": len(future), "iau_samples": len(iau), "matched_interval_samples": len(paired)}
+    holding = quotes(frames[f"{leg}-{c['quote_schema']}"], "holding", c)
+    paired = future.merge(holding, on="timestamp", how="inner", validate="one_to_one")
+    counts = {"future_samples": len(future), "holding_samples": len(holding), "matched_interval_samples": len(paired)}
+    if leg == "iau":
+        counts["iau_samples"] = len(holding)
     # Restrict to the ETF regular session; missing holidays yield no paired samples.
     local = paired["timestamp"].dt.tz_convert("America/New_York")
     minute = local.dt.hour * 60 + local.dt.minute
@@ -251,55 +305,107 @@ def analyze(frames, references, provenance, c):
     counts["regular_session_samples"] = len(paired)
     paired = pd.merge_asof(paired.sort_values("timestamp"), references,
                           left_on="timestamp", right_on="available_at", direction="backward")
-    valid = paired["ounces_per_share"].notna() & paired["usd_rate"].notna()
+    valid = paired["units_per_share"].notna() & paired["usd_rate"].notna()
     if provenance["mode"] == "dated_reference":
         valid &= (paired["timestamp"] - paired["available_at"]).dt.total_seconds() <= c["max_reference_age_days"] * 86400
-    for leg in ("future", "iau"):
-        bid, ask = paired[f"{leg}_bid_px_00"], paired[f"{leg}_ask_px_00"]
+    for prefix in ("future", "holding"):
+        bid, ask = paired[f"{prefix}_bid_px_00"], paired[f"{prefix}_ask_px_00"]
         valid &= bid.map(math.isfinite) & ask.map(math.isfinite) & (bid > 0) & (ask >= bid) & (ask < 1e6)
-        valid &= (paired[f"{leg}_bid_sz_00"] > 0) & (paired[f"{leg}_ask_sz_00"] > 0)
+        valid &= (paired[f"{prefix}_bid_sz_00"] > 0) & (paired[f"{prefix}_ask_sz_00"] > 0)
     paired = paired[valid].copy()
     counts["valid_reference_and_quotes"] = len(paired)
     q = c["contracts"]
-    paired["iau_shares_needed"] = (q / paired["ounces_per_share"]).map(math.ceil)
-    enough = (paired["future_ask_sz_00"] >= q) & (paired["iau_bid_sz_00"] >= paired["iau_shares_needed"])
+    units = q * m["units_per_contract"]
+    paired["underlying_quantity"] = units
+    paired["holding_shares_needed"] = (units / paired["units_per_share"]).map(math.ceil)
+    enough = (paired["future_ask_sz_00"] >= q) & (paired["holding_bid_sz_00"] >= paired["holding_shares_needed"])
     paired = paired[enough].copy()
     counts["long_size_qualified_samples"] = len(paired)
     if paired.empty:
         raise ValueError(f"No size-qualified synchronized quotes: {counts}")
     t = (expiry - paired["timestamp"]).dt.total_seconds() / (365 * 86400)
-    spot_bid = paired["iau_bid_px_00"] / paired["ounces_per_share"]
-    spot_ask = paired["iau_ask_px_00"] / paired["ounces_per_share"]
+    spot_bid = paired["holding_bid_px_00"] / paired["units_per_share"]
+    spot_ask = paired["holding_ask_px_00"] / paired["units_per_share"]
     f_ask, f_bid = paired["future_ask_px_00"], paired["future_bid_px_00"]
     paired["maturity_years"] = t
-    paired["iau_bid_usd_per_oz"] = spot_bid
-    paired["iau_ask_usd_per_oz"] = spot_ask
+    paired["holding_bid_usd_per_unit"] = spot_bid
+    paired["holding_ask_usd_per_unit"] = spot_ask
+    paired["forward_premium_pct"] = 100 * (f_ask / spot_bid - 1)
+    paired["annualized_forward_premium_pct"] = paired["forward_premium_pct"] / t
     paired["long_lease_gross_pct"] = 100 * (paired["usd_rate"] - (f_ask / spot_bid - 1) / t)
     # Explicit simple ACT/365 entry-cost drag, consistent with the preview signal.
-    etf_fee = (paired["iau_shares_needed"] * c["iau_fee_usd_per_share"]).clip(lower=c["iau_min_fee_usd"])
-    fee_per_oz = c["future_fee_usd_per_contract"] + etf_fee / q
-    paired["entry_cost_usd_per_oz"] = fee_per_oz
-    paired["long_lease_after_entry_cost_pct"] = paired["long_lease_gross_pct"] - 100 * fee_per_oz / spot_bid / t
+    etf_fee = (paired["holding_shares_needed"] * holding_setting(c, "fee_usd_per_share")).clip(lower=holding_setting(c, "min_fee_usd"))
+    fee_per_unit = (q * c["future_fee_usd_per_contract"] + etf_fee) / units
+    paired["entry_cost_usd_per_unit"] = fee_per_unit
+    paired["long_lease_after_entry_cost_pct"] = paired["long_lease_gross_pct"] - 100 * fee_per_unit / spot_bid / t
+    paired["long_gain_to_expiry_after_entry_cost_bps"] = paired["long_lease_after_entry_cost_pct"] * t * 100
     paired["reverse_lease_boundary_pct"] = 100 * (paired["usd_rate"] - (f_bid / spot_ask - 1) / t)
-    paired["reverse_size_qualified"] = (paired["future_bid_sz_00"] >= q) & (paired["iau_ask_sz_00"] >= paired["iau_shares_needed"])
-    paired["iau_rounding_residual_oz"] = paired["iau_shares_needed"] * paired["ounces_per_share"] - q
+    paired["reverse_size_qualified"] = (paired["future_bid_sz_00"] >= q) & (paired["holding_ask_sz_00"] >= paired["holding_shares_needed"])
+    paired["holding_rounding_residual_units"] = paired["holding_shares_needed"] * paired["units_per_share"] - units
+    if leg == "iau":
+        # Retain the public columns consumed by existing gold notebooks.
+        for column in [x for x in paired if x.startswith("holding_")]:
+            paired[column.replace("holding_", "iau_", 1).replace("_per_unit", "_per_oz").replace("_residual_units", "_residual_oz")] = paired[column]
+        paired["ounces_per_share"] = paired["units_per_share"]
+        paired["entry_cost_usd_per_oz"] = paired["entry_cost_usd_per_unit"]
     paired["date"] = paired["timestamp"].dt.strftime("%Y-%m-%d")
     daily = [{"date": day, **summarize(group)} for day, group in paired.groupby("date")]
     summary = {"created_at": stamp(), "classification": "sampled_quote_indication",
+               "config": c, "market": m, "future_symbol": c["future_symbol"],
+               "holding_symbol": m["holding"], "annualization_horizon": "definition_expiration",
                "expiry": expiry.isoformat(), "reference": provenance, "coverage": counts,
                "overall": summarize(paired), "daily": daily,
                "limitations": [
                    "Sampled bid/ask indication, not demonstrated fills or a time-to-fill backtest.",
                    "BBO ts_recv is interval end; quote age within samples is unknown. ts_event is last trade time.",
-                   f"IAU quotes are from {c['iau_dataset']}; they are venue-specific, not an NBBO guarantee.",
+                   f"{m['holding']} quotes are from {holding_setting(c, 'dataset')}; they are venue-specific, not an NBBO guarantee.",
                    "Two venues may change prices before either leg executes; only matching interval endpoints are compared.",
-                   "IAU normalized by gold ounces per share retains ETF premium/discount and basis risk.",
+                   "ETF normalized by underlying units per share retains ETF premium/discount and settlement-benchmark basis risk.",
+                   "Annualization uses the vendor definition expiration; settlement cash dates and terminal ETF convergence are not modeled.",
                    "Cash yield is a supplied benchmark/scenario, not a locked return; futures margin and variation cash flows excluded.",
                    "After-entry-cost rates exclude exit costs, taxes, slippage and future ETF expense advantage.",
                    "Reverse boundary is a price comparison, not a net short-strategy return; reverse depth flag is separate.",
                    "Daily and overall quantiles are sample-weighted; missing intervals are not filled or treated as zero.",
-                   "Whole ETF shares leave a disclosed small residual gold exposure."]}
+                   "Whole ETF shares leave disclosed residual exposure; the rate covers matched underlying units only."]}
     return paired, summary
+
+
+def compare_outputs(outputs):
+    """Read local screens only. Compare on identical, size-qualified timestamps."""
+    if len(outputs) < 2:
+        raise ValueError("compare needs at least two --compare-outputs directories")
+    screens, common, window = [], None, None
+    for output in outputs:
+        summary = json.loads((output / "lease-summary.json").read_text())
+        c = summary.get("config") or json.loads((output / "state.json").read_text())["config"]
+        this_window = (c["start"], c["end"], c["quote_schema"])
+        if window is not None and window != this_window:
+            raise ValueError("Comparison requires the same date window and quote schema")
+        window = this_window
+        samples = pd.read_csv(output / "lease-samples.csv.gz")
+        samples["timestamp"] = pd.to_datetime(samples["timestamp"], utc=True)
+        if samples["timestamp"].duplicated().any():
+            raise ValueError("Comparison samples contain duplicate timestamps")
+        samples["long_gain_to_expiry_after_entry_cost_bps"] = samples["long_lease_after_entry_cost_pct"] * samples["maturity_years"] * 100
+        times = pd.Index(samples["timestamp"])
+        common = times if common is None else common.intersection(times)
+        screens.append((c, summary, samples))
+    if common.empty:
+        raise ValueError("No shared size-qualified timestamps for comparison")
+    rows, cash_rates = [], []
+    for c, summary, samples in screens:
+        subset = samples.set_index("timestamp").loc[common.sort_values()]
+        cash_rates.append(subset["usd_rate"].reset_index(drop=True))
+        rows.append({"future_symbol": c["future_symbol"], "holding_symbol": market(c)["holding"],
+                     "reference": summary["reference"], "expiry": summary["expiry"],
+                     "fees": {"future_per_contract_usd": c["future_fee_usd_per_contract"],
+                              "holding_per_share_usd": holding_setting(c, "fee_usd_per_share"),
+                              "holding_minimum_usd": holding_setting(c, "min_fee_usd")},
+                     "all_qualified_samples": summarize(samples), "common_timestamps": summarize(subset)})
+    same_cash = all((rates - cash_rates[0]).abs().le(1e-12).all() for rates in cash_rates[1:])
+    return {"created_at": stamp(), "start": window[0], "end": window[1], "quote_schema": window[2],
+            "common_samples": len(common), "same_cash_rate_on_common_samples": bool(same_cash), "contracts": rows,
+            "note": "Compare common_timestamps for candidate selection. Positive indications are not demonstrated fills. Check reference modes, cash rates, fees and settlement basis before choosing a candidate."}
 
 
 def submit_mbo(client, plan, output, state):
@@ -369,19 +475,43 @@ def upload(output, destination):
 
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("command", choices=["estimate", "preview", "submit-mbo", "download-mbo", "upload"])
-    p.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
-    p.add_argument("--output", type=Path, default=ROOT / "outputs/databento-1oz-sep2026")
+    p.add_argument("command", choices=["estimate", "preview", "compare", "submit-mbo", "download-mbo", "upload"])
+    selection = p.add_mutually_exclusive_group()
+    selection.add_argument("--config", type=Path)
+    selection.add_argument("--preset", choices=list(PRESETS), help="Defaults to gold; all presets use September 2026")
+    p.add_argument("--output", type=Path, help="Default: separate preset output directory")
+    p.add_argument("--compare-outputs", nargs="+", type=Path, help="Local preview directories for compare (no API access)")
     p.add_argument("--stage", choices=["preview", "mbo"], default="preview", help="For estimate")
     p.add_argument("--max-cost-usd", type=float, help="Cumulative estimated Databento spend ceiling for this output directory")
     p.add_argument("--reference-csv", type=Path)
     p.add_argument("--iau-oz-per-share", type=float, help="Explicit constant scenario, not historical conversion")
+    p.add_argument("--units-per-share", type=float, help="Constant scenario: troy oz per IAU/SLV share or BTC per IBIT share")
     p.add_argument("--cash-rate-pct", type=float, help="Explicit constant annual cash-rate scenario, percent")
-    p.add_argument("--gcs-prefix", default="gs://keep-and-lease-market-data/gold/databento/1OZZ6/2026-09")
+    p.add_argument("--gcs-prefix", help="Default: asset/contract/month prefix in existing market-data bucket")
     args = p.parse_args(argv)
     key = ""
     try:
-        c = config_at(args.config)
+        if args.command == "compare":
+            report = compare_outputs(args.compare_outputs or [])
+            destination = args.output or ROOT / "outputs/databento-comparison-sep2026"
+            save_json(destination / "lease-comparison.json", report)
+            table = [{"contract": row["future_symbol"], "ETF": row["holding_symbol"],
+                      "reference": row["reference"]["mode"], "samples": report["common_samples"],
+                      "median_annual_pct": row["common_timestamps"]["long_lease_after_entry_cost_pct"]["median"],
+                      "p05_annual_pct": row["common_timestamps"]["long_lease_after_entry_cost_pct"]["p05"],
+                      "p95_annual_pct": row["common_timestamps"]["long_lease_after_entry_cost_pct"]["p95"],
+                      "positive_sample_pct": 100 * row["common_timestamps"]["sample_fraction_above_0pct"],
+                      "median_term_gain_bps": row["common_timestamps"]["long_gain_to_expiry_after_entry_cost_bps"]["median"]}
+                     for row in report["contracts"]]
+            table = pd.DataFrame(table)
+            table.to_csv(destination / "lease-comparison.csv", index=False)
+            print(table.to_string(index=False))
+            print(f"Same cash rates on common samples: {report['same_cash_rate_on_common_samples']}")
+            print(report["note"])
+            return 0
+        c = config_at(args.config or PRESETS[args.preset or "gold"])
+        args.output = args.output or default_output(c)
+        args.gcs_prefix = args.gcs_prefix or f"gs://keep-and-lease-market-data/{market(c)['asset']}/databento/{c['future_symbol']}/{utc(c['start']):%Y-%m}"
         args.output.mkdir(parents=True, exist_ok=True)
         state = state_at(args.output, c)
         if args.command == "upload":

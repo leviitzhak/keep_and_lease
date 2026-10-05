@@ -1,18 +1,18 @@
-name: Databento gold research validation
+name: Databento lease research validation
 
 on:
   push:
     paths:
       - scripts/databento_gold.py
       - tests/test_databento_gold.py
-      - strategies/research-1oz-dec26-september.json
+      - strategies/research-*-september.json
       - requirements-databento.txt
       - .github/workflows/databento-gold-validation.yml
   pull_request:
     paths:
       - scripts/databento_gold.py
       - tests/test_databento_gold.py
-      - strategies/research-1oz-dec26-september.json
+      - strategies/research-*-september.json
       - requirements-databento.txt
       - .github/workflows/databento-gold-validation.yml
 

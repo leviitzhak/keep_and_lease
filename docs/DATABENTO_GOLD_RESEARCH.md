@@ -1,10 +1,147 @@
-# September 2026 December 1OZ / IAU research
+# September 2026 gold, silver and Bitcoin lease-rate research
 
 This owner-run CLI first measures sampled, immediately marketable bid/ask lease
 indications, then optionally acquires MBO for a later time-to-fill study. It does
-not place orders or change the deployed strategy. The selected contract is
-December 2026 `1OZZ6`, not a rolling continuous series. The month is
+not place orders or change the deployed strategy. The default contract is
+December 2026 `1OZZ6`. Presets also select December 2026 `SICZ6` and October
+2026 `MBTV6`; none uses a rolling continuous series. The month is
 `[2026-09-01T00:00:00Z, 2026-10-01T00:00:00Z)`.
+
+## SIC and MBT: screen before choosing an MBO candidate
+
+| `--preset` | Futures contract | Units per contract | ETF reference | Reference conversion |
+| --- | --- | ---: | --- | --- |
+| `gold` (default) | `1OZZ6`, December 2026 | 1 troy oz | IAU | Gold oz/share |
+| `sic` | `SICZ6`, December 2026 | 100 troy oz | SLV | Silver oz/share |
+| `mbt` | `MBTV6`, October 2026 | 0.1 BTC | IBIT | BTC/share |
+
+IBIT is the user's selected Bitcoin reference. All futures use `GLBX.MDP3`;
+all three ETF presets use Nasdaq `XNAS.ITCH`, a single venue, including SLV
+which is primarily listed elsewhere. Availability and depth on this venue must
+be checked using the account. The CLI does not silently substitute an ETF/feed.
+Displayed ETF sizes are shares and futures sizes are contracts.
+
+Pull the feature branch, activate the environment described below, then estimate
+the September BBO/definition downloads (metadata only):
+
+```bash
+git switch agent/databento-1oz-lease-preview
+git pull --ff-only origin agent/databento-1oz-lease-preview
+source .venv-databento/bin/activate
+python -m pip install -r requirements-databento.txt
+python scripts/databento_gold.py estimate --preset sic
+python scripts/databento_gold.py estimate --preset mbt
+```
+
+New presets are in `strategies/research-sic-dec26-september.json` and
+`strategies/research-mbt-oct26-september.json`. They default to **zero fees**;
+enter actual futures and ETF commissions/minimums there before an economic net
+comparison, or copy a preset and select it with `--config`. A changed config
+requires a fresh `--output`. Existing gold config, raw filenames, paid download
+state and legacy IAU sample columns remain compatible.
+
+For historical estimates, provide one dated reference CSV per ETF:
+
+```text
+available_at,units_per_share,usd_rate,source
+```
+
+Use silver troy ounces per SLV share and BTC per IBIT share. The legacy
+`ounces_per_share` column is also accepted for metals, but rejected for MBT.
+Derive content from same-date issuer holdings divided by shares outstanding, or
+an issuer entitlement with the basket size verified. IBIT's holdings quantity
+represents BTC; do not use ETF NAV as if it were units per share. Observe the
+availability/staleness rules below. Use the same dated cash benchmark for all
+contracts to make the cross-contract comparison meaningful.
+
+```bash
+python scripts/databento_gold.py preview --preset sic \
+  --reference-csv /path/to/slv-and-cash-reference.csv --max-cost-usd 10
+python scripts/databento_gold.py preview --preset mbt \
+  --reference-csv /path/to/ibit-and-cash-reference.csv --max-cost-usd 10
+```
+
+If historical holdings inputs are not ready, a **constant scenario** can be run
+immediately. Enter your chosen assumptions at the prompts; these are not verified
+historical inputs. Each cost cap below is an example per output directory; two
+caps of $10 authorize up to $20 in combined estimates, not a shared $10 budget.
+
+```bash
+read -rp 'SLV silver ounces per share (scenario): ' SLV_OZ_PER_SHARE
+read -rp 'IBIT BTC per share (scenario): ' IBIT_BTC_PER_SHARE
+read -rp 'Annual cash rate in percent, e.g. 4 means 4% (scenario): ' CASH_RATE_PCT
+python scripts/databento_gold.py preview --preset sic \
+  --units-per-share "$SLV_OZ_PER_SHARE" --cash-rate-pct "$CASH_RATE_PCT" --max-cost-usd 10
+python scripts/databento_gold.py preview --preset mbt \
+  --units-per-share "$IBIT_BTC_PER_SHARE" --cash-rate-pct "$CASH_RATE_PCT" --max-cost-usd 10
+```
+
+Changing reference inputs reuses cached raw quotes. Output directories are
+`outputs/databento-sic-sep2026` and `outputs/databento-mbt-sep2026`. Each contains
+the same daily/overall quantiles, positive-sample fractions and coverage counts
+as gold. Compare locally, without an API key or another download:
+
+```bash
+python scripts/databento_gold.py compare --compare-outputs \
+  outputs/databento-sic-sep2026 outputs/databento-mbt-sep2026
+# Append outputs/databento-1oz-sep2026 to include a completed gold screen.
+```
+
+This prints a compact table and writes `lease-comparison.json` and
+`lease-comparison.csv` under `outputs/databento-comparison-sep2026`. The table
+uses **only timestamps where every selected contract has a size-qualified
+sample**, with each contract's own valid-sample statistics retained in JSON.
+It rejects mismatched windows/schemas, discloses reference modes and configured
+fees, and flags unequal cash assumptions on shared timestamps. Do not rank
+contracts under incompatible input assumptions. A small overlap may itself
+indicate a poor candidate for a paired execution test.
+
+Candidate metrics include median/p05/p95 annualized after-entry-cost rate,
+fraction of common samples above zero, and median gain to expiration in basis
+points. The last metric is `annual_rate_pct * maturity_years * 100`: it exposes
+the smaller economic cushion behind a large annualized rate for short-dated
+MBT. Positive rates mean the cash-funded futures replacement looks favorable
+under these inputs; they do not establish executable profit. Favor repeated
+positive indications with adequate coverage and cost cushion before acquiring
+MBO for a fill study. No contract has yet been confirmed positive by this patch.
+
+The generic calculation uses `U = contracts * units_per_contract`, ETF shares
+`ceil(U / units_per_share)`, and prices in USD per underlying unit:
+
+```text
+S_bid = ETF_bid / units_per_share
+entry_cost_per_unit = (contracts * futures_fee + max(ETF_shares * ETF_fee, ETF_min_fee)) / U
+long_lease_after_entry_cost = usd_rate - (future_ask / S_bid - 1) / T - entry_cost_per_unit / S_bid / T
+```
+
+The futures multiplier is never applied to the quoted price ratio. The reported
+rate covers the matched underlying quantity; excess whole-share exposure is
+reported separately. `forward_premium_pct` and `annualized_forward_premium_pct`
+are included in samples for auditing the calculation.
+
+Definitions supply the annualization endpoint and must agree with the selected
+contract month. SIC ends trading in the month before its named contract month;
+MBT October has an October expiry. The CLI labels its horizon
+`definition_expiration`: this is a screening convention, not a model of final
+cash payment timing. SIC settles against COMEX silver futures; MBT settles
+against the CME CF BRR. Neither guarantees convergence to SLV/IBIT quotes, and
+IBIT's NAV benchmark is the BRR New York variant. Confirm the applicable
+settlement timetable and exit basis before treating an indication as a locked
+holding-to-maturity return. Only the ETF's regular weekday session is screened,
+even when the underlying futures can trade outside those hours.
+
+Once a candidate is selected, use the same preset for optional MBO and GCS:
+
+```bash
+python scripts/databento_gold.py estimate --preset sic --stage mbo
+python scripts/databento_gold.py submit-mbo --preset sic --max-cost-usd 100
+python scripts/databento_gold.py download-mbo --preset sic
+python scripts/databento_gold.py upload --preset sic
+```
+
+Replace `sic` with `mbt` to acquire MBT/IBIT. Defaults upload under
+`gs://keep-and-lease-market-data/silver/databento/SICZ6/2026-09/` and
+`gs://keep-and-lease-market-data/btc/databento/MBTV6/2026-09/` respectively.
 
 ## Run in Google Cloud Shell or a VM
 
@@ -35,7 +172,7 @@ account; this implementation has not been validated against a funded API key.
 quotes, not consolidated NBBO). Dataset access and record availability depend
 on the account. No fallback silently replaces an unavailable dataset.
 
-The preset is `strategies/research-1oz-dec26-september.json`. It defaults to one
+The default gold preset is `strategies/research-1oz-dec26-september.json`. It defaults to one
 futures contract, one-minute BBO and zero entry fees. Set your actual futures
 per-contract fee, ETF per-share fee and ETF minimum fee before computing a net
 entry indication. Changing config requires a fresh output directory.
@@ -180,7 +317,9 @@ Keep licensed market records and reference exports out of the public repository.
 
 Run `python -m unittest discover -s tests -p 'test_databento_gold.py'`.
 Tests cover causal reference use, interval alignment, bid/ask direction, actual
-expiry, entry costs, whole-share/depth checks, invalid quotes and purchase resume.
+expiry, entry costs, 100-ounce/0.1-BTC sizing and fee normalization, whole-share
+and depth checks, common-timestamp comparisons, cache compatibility, invalid
+quotes and purchase resume.
 No real Databento data, numeric September result or GCS upload is claimed until
 the owner executes with credentials and inputs. This patch provides acquisition
 and rate screening, not the subsequent MBO queue/trade-through fill simulator.
@@ -193,3 +332,8 @@ Sources: [Databento BBO](https://databento.com/docs/schemas-and-data-formats/bbo
 [batch example](https://databento.com/docs/examples/basics-historical/programmatic-batch-download),
 [IAU issuer](https://www.ishares.com/us/products/239561/ishares-gold-trust),
 [CME 1OZ FAQ](https://www.cmegroup.com/articles/faqs/faq-1-oz-gold-futures.html).
+Additional sources: [CME SIC rulebook](https://www.cmegroup.com/rulebook/COMEX/1a/130.pdf),
+[SIC FAQ](https://www.cmegroup.com/articles/faqs/frequently-asked-questions-100-ounce-silver-futures.html),
+[CME MBT specifications](https://www.cmegroup.com/content/dam/cmegroup/education/files/getting-started-with-micro-bitcoin-futures.pdf),
+[SLV issuer](https://www.ishares.com/us/products/239855/ishares-silver-trust-fund),
+[IBIT issuer](https://www.ishares.com/us/products/333011/ishares-bitcoin-trust-etf).

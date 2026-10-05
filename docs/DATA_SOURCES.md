@@ -2,14 +2,19 @@
 
 ## Required datasets
 
-### December 2026 1OZ / IAU research
+### September 2026 1OZ / IAU, SIC / SLV and MBT / IBIT research
 
 The optional [Databento workflow](DATABENTO_GOLD_RESEARCH.md) screens September
-2026 `1OZZ6` using `GLBX.MDP3` and IAU on `XNAS.ITCH`. It obtains sampled BBO and
+2026 `1OZZ6` and `SICZ6` (December contracts), and `MBTV6` (October contract),
+using `GLBX.MDP3` and IAU/SLV/IBIT on `XNAS.ITCH`. It obtains sampled BBO and
 definitions first, with MBO acquisition as a separate cost-bounded command.
 Raw data remains outside git and can be uploaded to the existing GCS market-data
-bucket. Cash-rate and IAU gold-content inputs have explicit availability times;
-constant scenarios are labeled. This feed is not wired into the strategy GUI.
+bucket. Cash-rate and ETF content inputs (gold/silver oz or BTC per share) have
+explicit availability times; constant scenarios are labeled. Contract quantities
+are 1 oz, 100 oz and 0.1 BTC respectively. Comparisons use shared size-qualified
+timestamps and disclose fee/cash assumptions. These are ETF-relative indications,
+with settlement-benchmark basis risk, not physical lending rates or demonstrated
+fills. This feed is not wired into the strategy GUI.
 
 ### Commodity futures
 
