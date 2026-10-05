@@ -31,6 +31,22 @@ class ResearchTests(unittest.TestCase):
         self.assertEqual(client.metadata.get_cost.call_count,2)
         client.timeseries.get_range.assert_not_called()
 
+    def test_recovery_requires_matching_failed_request_and_covers_exact_month(self):
+        import pandas as pd
+        c=dict(future_symbol='MBTV6',start='2026-09-01T00:00:00Z',end='2026-10-01T00:00:00Z')
+        item={'name':'future-bbo-1m','request':dict(dataset='GLBX.MDP3',symbols=['MBTV6'],schema='bbo-1m',start=c['start'],end=c['end'])}
+        gold=Mock();gold.requests_for.return_value=[item]
+        state={'streams':{'future-bbo-1m':dict(status='inflight',request=item['request'])},'reserved_estimated_usd':.053}
+        self.assertEqual(runner.acquisition_requests(gold,c,state,{}),[item])
+        parts=runner.acquisition_requests(gold,c,state,{'reviewed_recovery_run':37313440074})
+        self.assertEqual(len(parts),6)
+        self.assertEqual(pd.Timestamp(parts[0]['request']['start']),pd.Timestamp(c['start']))
+        self.assertEqual(pd.Timestamp(parts[-1]['request']['end']),pd.Timestamp(c['end']))
+        for left,right in zip(parts,parts[1:]):self.assertEqual(left['request']['end'],right['request']['start'])
+        self.assertEqual(state['reserved_estimated_usd'],.053)
+        state['streams']['future-bbo-1m']['request']={'symbols':['OTHER']}
+        with self.assertRaises(ValueError):runner.acquisition_requests(gold,c,state,{'reviewed_recovery_run':37313440074})
+
     def test_request_cannot_expand_scope_or_budget(self):
         runner.validate_request(self.request())
         for field,value in [('command','bash'),('max_cost_usd',100),('source_commit','x'),('secret','another-key')]:

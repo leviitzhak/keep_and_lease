@@ -100,3 +100,16 @@ change is part of this operational addition.
 Validation: six offline tests cover request limits, authenticated encryption
 round-trip, and write-ahead state/raw-file ordering. Run:
 `python -m unittest discover -s tests -p 'test_cloud_databento_research.py'`.
+
+## Reviewed MBT gateway-timeout recovery
+
+Run 37313440074 completed SIC and persisted its private results, then returned
+Databento HTTP 504 on the monthly MBT future BBO request. In SDK 0.87.0,
+`check_http_error` executes before the DBN writer is opened; this is distinct
+from an interrupted data stream. The failed monthly request was reviewed, not
+silently retried. A screen may specify `reviewed_recovery_run: 37313440074` to
+replace that exact request with six disjoint five-day ranges. Its original cost
+reservation remains counted in the combined $1 ceiling, conservatively alongside
+the new estimates. The original state records the reviewed run and reason. Any
+uncertain partition stops as before; this is not a general retry permission.
+SIC reuses its completed cache. Seven focused runner tests now pass.
