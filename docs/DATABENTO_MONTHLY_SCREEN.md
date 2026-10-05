@@ -72,6 +72,28 @@ API keys, licensed records and numeric research output are not committed.
 Validate with `python -m unittest discover -s tests -p 'test*databento*.py'`.
 No application deployment or GUI verification is required.
 
+## Completed study — October 5, 2026
+
+[Estimate run 37325652697](https://github.com/leviitzhak/keep_and_lease/actions/runs/37325652697)
+passed for all assets before acquisition.
+[Screen run 37326417493](https://github.com/leviitzhak/keep_and_lease/actions/runs/37326417493)
+completed successfully for request `20261005-year-screen-1`, returning all 32
+available asset-months. The other four rows are SIC months before launch.
+Summaries, samples and reference inputs persist under the private prefix above,
+at `runs/20261005-year-screen-1/{asset}/{YYYY-MM}/`. Encrypted return artifacts
+contain the monthly and daily statistics; their retention is shorter than the
+durable GCS copy. The owner-facing workbook adds remaining maturity, gain to
+expiry and a constant-ratio sensitivity beside the primary monthly table.
+September SIC and MBT constant-ratio medians reproduce the previous screening
+on their respective qualifying sample sets. Different commodities do not use
+an intersection of timestamps in this study.
+
+All 32 focused offline tests and all three cloud preflight jobs passed. The
+research branch is `agent/databento-1oz-lease-preview`; bounded cloud execution
+ran from `agent/cloud-autonomous-access` because that is the authorized identity
+ref. These runs acquired BBO and definitions only. They did not acquire MBO,
+simulate queue fills, modify the deployed strategy or deploy the application.
+
 Sources: [Databento symbology](https://databento.com/docs/standards-and-conventions/symbology),
 [CME SIC launch](https://www.cmegroup.com/notices/market-regulation/2026/02/msn02-04-26b.html),
 [IAU](https://www.ishares.com/us/products/239561/ishares-gold-trust),

@@ -5,9 +5,17 @@
 The owner selected monthly liquid contracts for October 2025–September 2026.
 The research-only workflow uses previous-day volume ranks, actual expiry,
 fee-adjusted ETF quantity scenarios, private caches and encrypted results.
-SIC has no history before its February 2026 launch. Initial execution estimates
-costs before purchasing quotes; each asset has a $1 cumulative estimate ceiling.
-See [monthly runbook](DATABENTO_MONTHLY_SCREEN.md). No application deployment.
+SIC has no history before its February 2026 launch. Estimate run `37325652697`
+completed before acquisition; each asset enforced a $1 cumulative estimate
+ceiling. Screen run `37326417493` completed successfully for all three assets:
+12 gold months, 8 SIC months and 12 Bitcoin months. Four pre-launch SIC months
+are explicitly unavailable. Numeric results and source records remain private;
+the owner-facing workbook includes monthly statistics, selected contracts,
+remaining maturity and the fixed-snapshot sensitivity. Thirty-two focused
+offline tests pass. See [monthly runbook](DATABENTO_MONTHLY_SCREEN.md).
+Research changes are on `agent/databento-1oz-lease-preview`; the bounded GCP
+execution uses the existing `agent/cloud-autonomous-access` identity.
+No application deployment.
 
 ## 1OZ / IAU, SIC / SLV and MBT / IBIT quote screening — 2026-10-05
 
