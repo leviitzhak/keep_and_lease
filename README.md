@@ -112,6 +112,14 @@ and the corresponding formula for `r_keep(t)`. This is equivalent to scaling eac
 
 The prior standalone-compounded and multiplicative-attribution plot families are retained in the calculation output for compatibility but are not displayed in the GUI.
 
+## Databento lease-rate research
+
+For September 2026 quote-rate screening of December 1OZ/IAU, December SIC/SLV
+and October MBT/IBIT, cost estimates, common-timestamp comparisons and
+optional MBO acquisition to Google Cloud, see
+[Databento lease-rate research](docs/DATABENTO_GOLD_RESEARCH.md). The standalone
+CLI accepts `--preset gold|sic|mbt` and `DATABENTO_API_KEY` or a hidden key prompt.
+
 ## Subsecond BTC research runs
 
 Choose **BTC market data → Trade replay (research) → Load 500 ms BTC example**,

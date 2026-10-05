@@ -1,0 +1,12 @@
+{
+  "start": "2026-09-01T00:00:00Z",
+  "end": "2026-10-01T00:00:00Z",
+  "future_symbol": "1OZZ6",
+  "iau_dataset": "XNAS.ITCH",
+  "quote_schema": "bbo-1m",
+  "contracts": 1,
+  "max_reference_age_days": 7,
+  "future_fee_usd_per_contract": 0.0,
+  "iau_fee_usd_per_share": 0.0,
+  "iau_min_fee_usd": 0.0
+}

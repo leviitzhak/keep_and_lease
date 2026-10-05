@@ -24,6 +24,12 @@ acceptance tests remain.
 
 ### Provisioned foundation
 
+Owner-run September 2026 gold, silver and Bitcoin research can upload Databento files directly to
+the existing market-data bucket using an authorized gcloud identity. See
+[Databento lease-rate research](DATABENTO_GOLD_RESEARCH.md) for the per-contract
+presets, output directories and GCS prefixes. This offline workflow
+does not require a Cloud Run job, a service-account key or IAM changes.
+
 - Google Cloud project: `keep-and-lease` (project number `989708711229`).
 - Primary region: Tel Aviv `me-west1`.
 - Foundation Terraform: `infra/gcp/`, with remote state at

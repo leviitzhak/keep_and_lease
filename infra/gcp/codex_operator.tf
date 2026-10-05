@@ -43,3 +43,12 @@ resource "google_storage_bucket_iam_member" "codex_results_reader" {
   role   = "roles/storage.objectViewer"
   member = "serviceAccount:${google_service_account.codex_operator.email}"
 }
+
+# Owner reports this secret-level grant was made manually on 2026-10-05.
+# Adopt the existing binding in foundation state before a reviewed apply.
+resource "google_secret_manager_secret_iam_member" "codex_databento_reader" {
+  project   = var.project_id
+  secret_id = "databento-api-key"
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.codex_operator.email}"
+}

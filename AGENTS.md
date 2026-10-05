@@ -18,9 +18,14 @@ that are intentionally left unfixed. Do not start or use the local Sites preview
 as part of the normal development, validation, or deployment workflow unless the
 user explicitly asks to work on that compatibility. The deployed GCP preview is
 the authoritative GUI/API preview. When reporting a push, state the GitHub branch
-and full commit SHA and identify the deployed GCP preview URL.
+and full commit SHA. For application deployments, also identify the deployed
+GCP preview URL; research-only pushes need no deployment URL.
 
 ### Required development and deployment sequence
+
+This sequence applies to strategy, GUI, application behavior, and runtime
+infrastructure changes. For data-analysis and standalone research changes, use
+the research-only exception below.
 
 1. Implement the change on a feature branch based on the current GitHub `master`
    and run relevant local checks that do not require a Sites preview.
@@ -44,9 +49,31 @@ and full commit SHA and identify the deployed GCP preview URL.
    **stable** target.
 
 Do not push or deploy an incomplete intermediate state merely to preserve it, and
-do not merge a feature branch before preview approval. Do not publish a Sites
-version as a substitute for the GCP preview and do not spend time repairing local
+do not merge an application feature branch before preview approval. Research-only
+branches require explicit merge approval but no application preview. Do not
+publish a Sites version as a substitute for the GCP preview and do not spend time repairing local
 Sites compatibility unless requested.
+
+### Data-analysis and research-only exception
+
+Changes limited to data analysis, standalone research or acquisition scripts,
+research tests, research outputs, and their documentation do not require an
+application deployment. Run the relevant analysis or script checks, and push
+completed repository changes when authorized. Do not deploy, wait for an
+application deployment, or recheck the GUI solely for these changes.
+
+This exception applies when the changes do not alter the deployed strategy,
+GUI, application behavior, or runtime infrastructure. Changes to data consumed
+by the deployed application must be assessed for their effect on that behavior;
+a mixed application/research patch follows the normal deployment sequence.
+
+Documentation-only pushes are already ignored by the deployment workflow. For
+research-only pushes whose paths would otherwise trigger deployment, use
+`[skip ci]` in the pushed commit messages. This also skips automatic CI, so run
+relevant checks separately or use the bounded research workflow. Do not use
+this mechanism to skip deployment or required checks for application changes.
+Record the branch, full commit SHA, and research validation results; no preview
+approval or GUI verification is required for a research-only push.
 
 ### Required Sites checkout freshness check
 
@@ -95,8 +122,8 @@ Do not leave obsolete behavior documented or completed work listed as pending.
 
 ## Preview deployment after changes
 
-Every push containing application, deployment, infrastructure, or data changes
-to a non-`master` branch automatically deploys that exact commit to the shared
+Subject to the research-only exception above, every push containing application,
+deployment, infrastructure, or data changes to a non-`master` branch automatically deploys that exact commit to the shared
 preview target. The corresponding pushes to `master` deploy to stable. A push
 changing only `docs/**`, Markdown files, or `.cloud-agent/requests/**` is ignored
 by the deployment workflow. A mixed commit still deploys. The diagnostic request
@@ -105,8 +132,9 @@ revision it is intended to inspect.
 
 The authoritative preview path is the GitHub Actions workflow **Deploy Google
 Cloud workloads** (`.github/workflows/deploy-google-cloud.yml`). Push any
-non-`master` branch; the push automatically deploys that exact commit to the
-preview target with private access. Manual dispatch remains available for reruns,
+non-`master` branch with deployment-relevant changes; the push automatically
+deploys that exact commit to the preview target with private access. Manual
+dispatch remains available for reruns,
 with `deployment_target=preview` and `allow_unauthenticated=false`.
 
 The preview target is a separate private, IAP-protected Cloud Run service and

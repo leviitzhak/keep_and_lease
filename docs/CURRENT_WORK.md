@@ -1,5 +1,45 @@
 # Current work
 
+## Monthly three-commodity lease screen — 2026-10-05
+
+The owner selected monthly liquid contracts for October 2025–September 2026.
+The research-only workflow uses previous-day volume ranks, actual expiry,
+fee-adjusted ETF quantity scenarios, private caches and encrypted results.
+SIC has no history before its February 2026 launch. Estimate run `37325652697`
+completed before acquisition; each asset enforced a $1 cumulative estimate
+ceiling. Screen run `37326417493` completed successfully for all three assets:
+12 gold months, 8 SIC months and 12 Bitcoin months. Four pre-launch SIC months
+are explicitly unavailable. Numeric results and source records remain private;
+the owner-facing workbook includes monthly statistics, selected contracts,
+remaining maturity and the fixed-snapshot sensitivity. Thirty-two focused
+offline tests pass. See [monthly runbook](DATABENTO_MONTHLY_SCREEN.md).
+Research changes are on `agent/databento-1oz-lease-preview`; the bounded GCP
+execution uses the existing `agent/cloud-autonomous-access` identity.
+No application deployment.
+
+## 1OZ / IAU, SIC / SLV and MBT / IBIT quote screening — 2026-10-05
+
+`agent/databento-1oz-lease-preview` adds an owner-run Databento CLI for September
+cost estimates, sampled quote-implied rates, common-timestamp comparisons,
+resumable two-leg MBO acquisition,
+and GCS upload. It is based on master `80be0fc4c30904a0f4dfb16e097de2a001424e64`.
+Presets cover December 2026 1OZ and SIC, and October 2026 MBT. The user selected
+IAU for gold and IBIT for Bitcoin; silver uses SLV. Contract sizes and fee
+normalization support 1 oz, 100 oz and 0.1 BTC. Dated ETF content/cash inputs or an
+explicitly labeled constant scenario are required for the preview. Twenty-seven
+focused offline tests pass, including size/depth checks, causal references,
+shared-timestamp comparison, gold cache compatibility, private encrypted return
+and durable acquisition recovery. The owner granted secret access to the existing cloud operator. Run 37312663540
+verified secret access, metadata retrieval and encrypted result return; the
+combined SIC/MBT download estimate was $0.107625976205. The fixed cloud runner
+adds private durable acquisition state and a $1 cumulative cap. SIC completed
+in run 37313440074; the same run cached both MBT/IBIT price files before an MBT
+definition HTTP 504. A read-only cache diagnosis verified that failure point.
+The bounded recovery job partitions only the definition request and preserves
+its original cost reservation. Live execution evidence is linked in the cloud
+runbook; licensed records and numeric research results stay in private GCS and
+encrypted return artifacts. See [runbook](DATABENTO_GOLD_RESEARCH.md).
+
 ## Rolling worst lease execution — 2026-09-24
 
 Branch `agent/rolling-worst-lease-execution` is based on GitHub master
