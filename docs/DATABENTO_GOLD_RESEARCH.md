@@ -7,6 +7,16 @@ December 2026 `1OZZ6`. Presets also select December 2026 `SICZ6` and October
 2026 `MBTV6`; none uses a rolling continuous series. The month is
 `[2026-09-01T00:00:00Z, 2026-10-01T00:00:00Z)`.
 
+## Autonomous cloud execution
+
+The owner has granted access to the stored Databento key. The bounded
+[cloud runner](DATABENTO_CLOUD_RUNNER.md) supports the SIC/MBT September
+cost check and screen through the existing operator branch, with a combined
+$1 cumulative estimate ceiling, private GCS caches and encrypted result return.
+Secret access and metadata retrieval were verified by run 37312663540.
+ETF conversion inputs in this cloud screen are explicitly snapshot scenarios;
+the owner-run CLI below also accepts causal dated reference files.
+
 ## SIC and MBT: screen before choosing an MBO candidate
 
 | `--preset` | Futures contract | Units per contract | ETF reference | Reference conversion |

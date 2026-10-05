@@ -206,3 +206,13 @@ application, optional adoption of an existing manual grant, and revocation.
 The private-diagnostics transport remains unimplemented. Bucket read access
 neither bypasses the application's owner checks nor permits private run data in
 public workflow logs/artifacts. All keyless and output restrictions above remain.
+
+## Fixed Databento research access — October 5, 2026
+
+The owner has granted the operator secret-level access to `databento-api-key`.
+The dedicated [Databento runner](DATABENTO_CLOUD_RUNNER.md) adds an estimate or
+capped September SIC/MBT quote screen on the existing OIDC branch. It writes
+private immutable market-data objects and returns only encrypted summary
+artifacts. It does not extend the general operator's allowed actions, expose
+raw data, create service-account keys, or grant itself permissions. Live secret access and encrypted result return succeeded in run 37312663540.
+Numeric screens are reported only after the corresponding research run succeeds.

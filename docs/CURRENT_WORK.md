@@ -11,9 +11,11 @@ IAU for gold and IBIT for Bitcoin; silver uses SLV. Contract sizes and fee
 normalization support 1 oz, 100 oz and 0.1 BTC. Dated ETF content/cash inputs or an
 explicitly labeled constant scenario are required for the preview. Twenty
 focused offline tests pass, including size/depth checks, causal references,
-shared-timestamp comparison and gold cache compatibility. Real account
-access, numeric September results and GCS transfers remain unverified; no key has
-been supplied and no credits consumed. See [runbook](DATABENTO_GOLD_RESEARCH.md).
+shared-timestamp comparison and gold cache compatibility. The owner granted secret access to the existing cloud operator. Run 37312663540
+verified secret access, metadata retrieval and encrypted result return; the
+combined SIC/MBT download estimate was $0.107625976205. The fixed cloud runner
+adds private durable acquisition state and a $1 cumulative cap. Numeric rates
+are reported only after a completed screen. See [runbook](DATABENTO_GOLD_RESEARCH.md).
 
 ## Rolling worst lease execution — 2026-09-24
 
