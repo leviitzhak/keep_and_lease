@@ -98,14 +98,15 @@ application preview. The subsequent request-only push starts the research
 workflow without triggering an application deployment. No master merge or GUI
 change is part of this operational addition.
 
-Validation: six offline tests cover request limits, authenticated encryption
-round-trip, and write-ahead state/raw-file ordering. Run:
+Validation: seven offline tests cover request limits, authenticated encryption
+round-trip, write-ahead state/raw-file ordering, metadata-only retries, and the
+reviewed recovery partitions. Run:
 `python -m unittest discover -s tests -p 'test_cloud_databento_research.py'`.
 
 ## Reviewed MBT gateway-timeout recovery
 
 Run 37313440074 completed SIC and persisted its private results, then returned
-Databento HTTP 504 on the monthly MBT future BBO request. In SDK 0.87.0,
+Databento HTTP 504 on the monthly MBT futures definition request. In SDK 0.87.0,
 `check_http_error` executes before the DBN writer is opened; this is distinct
 from an interrupted data stream. The failed monthly request was reviewed, not
 silently retried. A screen may specify `reviewed_recovery_run: 37313440074` to
@@ -114,3 +115,7 @@ reservation remains counted in the combined $1 ceiling, conservatively alongside
 the new estimates. The original state records the reviewed run and reason. Any
 uncertain partition stops as before; this is not a general retry permission.
 SIC reuses its completed cache. Seven focused runner tests now pass.
+
+The read-only cache diagnosis in run 37315520848 confirmed that both MBT/IBIT
+BBO files were complete and the timeout affected `future-definition`. Recovery
+partitions only that definition stream and reuses both completed price files.

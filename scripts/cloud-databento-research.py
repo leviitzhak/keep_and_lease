@@ -119,18 +119,19 @@ def acquisition_requests(gold, c, state, request):
     items = gold.requests_for(c, "preview")
     if c["future_symbol"] != "MBTV6" or not request.get("reviewed_recovery_run"):
         return items
-    failed = state["streams"].get("future-bbo-1m")
-    if not failed or failed["status"] not in ("inflight", "superseded_after_review") or failed["request"] != items[0]["request"]:
+    original = next(item for item in items if item["name"] == "future-definition")
+    failed = state["streams"].get("future-definition")
+    if not failed or failed["status"] not in ("inflight", "superseded_after_review") or failed["request"] != original["request"]:
         raise ValueError("Recovery does not match the reviewed failed monthly request")
     import pandas as pd
     start, end = pd.Timestamp(c["start"]), pd.Timestamp(c["end"])
     chunks = []
     while start < end:
         stop = min(start + pd.Timedelta(days=5), end)
-        chunks.append({"name": f"future-bbo-1m-{start:%Y%m%d}",
-                       "request": {**items[0]["request"], "start": start.isoformat(), "end": stop.isoformat()}})
+        chunks.append({"name": f"future-definition-{start:%Y%m%d}",
+                       "request": {**original["request"], "start": start.isoformat(), "end": stop.isoformat()}})
         start = stop
-    return chunks + items[1:]
+    return [item for item in items if item["name"] != "future-definition"] + chunks
 
 
 def metadata_cost(client, **request):
@@ -215,7 +216,7 @@ def run(request, root, work, report):
         gold.save_json = durable_save
         try:
             if preset == "mbt" and request.get("reviewed_recovery_run"):
-                failed = state["streams"]["future-bbo-1m"]
+                failed = state["streams"]["future-definition"]
                 if failed["status"] == "inflight":
                     failed["status"] = "superseded_after_review"
                     failed["review"] = {"workflow_run": 37313440074, "http_status": 504,
@@ -225,10 +226,10 @@ def run(request, root, work, report):
             report["stage"] = f"acquire_{preset}"
             frames = gold.acquire_preview(client, plan, output, state)
             if preset == "mbt" and request.get("reviewed_recovery_run"):
-                names = sorted(name for name in frames if name.startswith("future-bbo-1m-"))
+                names = sorted(name for name in frames if name.startswith("future-definition-"))
                 if len(names) != 6:
                     raise ValueError("Recovery is missing five-day partitions")
-                frames["future-bbo-1m"] = pd.concat([frames.pop(name) for name in names])
+                frames["future-definition"] = pd.concat([frames.pop(name) for name in names])
         finally:
             gold.save_json = original_save
         try:
