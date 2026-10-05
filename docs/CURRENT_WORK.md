@@ -1,5 +1,15 @@
 # Current work
 
+## December 1OZ / IAU quote screening — 2026-10-05
+
+`agent/databento-1oz-lease-preview` adds an owner-run Databento CLI for September
+cost estimates, sampled quote-implied rates, resumable two-leg MBO acquisition,
+and GCS upload. It is based on master `80be0fc4c30904a0f4dfb16e097de2a001424e64`.
+The user selected IAU as the other leg. Dated IAU gold-content/cash inputs or an
+explicitly labeled constant scenario are required for the preview. Real account
+access, numeric September results and GCS transfers remain unverified; no key has
+been supplied and no credits consumed. See [runbook](DATABENTO_GOLD_RESEARCH.md).
+
 ## Rolling worst lease execution — 2026-09-24
 
 Branch `agent/rolling-worst-lease-execution` is based on GitHub master

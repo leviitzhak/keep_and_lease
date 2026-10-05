@@ -1,0 +1,3 @@
+# Optional historical gold research CLI, separate from application dependencies.
+databento==0.87.0
+pandas==2.3.3
