@@ -171,3 +171,13 @@ Delete the permanent operator branch or change `codex_operator_branch` and reapp
 Terraform to revoke GitHub impersonation. To remove the integration completely,
 remove `infra/gcp/codex_operator.tf` and apply the reviewed destruction plan. This
 does not delete application data or either Terraform state bucket.
+
+## Fixed Databento research access — October 5, 2026
+
+The owner has granted the operator secret-level access to `databento-api-key`.
+The dedicated [Databento runner](DATABENTO_CLOUD_RUNNER.md) adds an estimate or
+capped September SIC/MBT quote screen on the existing OIDC branch. It writes
+private immutable market-data objects and returns only encrypted summary
+artifacts. It does not extend the general operator's allowed actions, expose
+raw data, create service-account keys, or grant itself permissions. Live access
+and numeric results are recorded only after the workflow actually succeeds.

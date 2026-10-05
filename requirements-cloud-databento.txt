@@ -1,0 +1,4 @@
+# Only the fixed keyless research runner; application dependencies unchanged.
+cryptography==46.0.0
+google-cloud-storage==3.13.1
+google-api-core==2.34.0

@@ -1,5 +1,15 @@
 # Current work
 
+## Bounded cloud Databento screening — 2026-10-05
+
+The owner reports the Databento secret grant is active. The operator branch adds
+a fixed September SIC/SLV and MBT/IBIT estimate/screen job, a combined $1
+cumulative acquisition cap, private GCS checkpoints and encrypted result return.
+Five focused offline tests pass. Historical ETF content is not available in the
+inspected issuer exports; screens explicitly label snapshot approximations and
+use dated DGS3MO cash benchmarks. Live execution remains to be verified. See
+[DATABENTO_CLOUD_RUNNER.md](DATABENTO_CLOUD_RUNNER.md).
+
 _Update this file whenever active development moves to another branch or pull
 request. Other documents link here instead of duplicating a change-specific PR or
 branch._

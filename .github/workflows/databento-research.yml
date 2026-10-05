@@ -1,0 +1,56 @@
+name: Bounded Databento research
+on:
+  push:
+    branches: [agent/cloud-autonomous-access]
+    paths: [.cloud-agent/requests/databento-research.json]
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: databento-september-research
+  cancel-in-progress: false
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check out reviewed screen implementation
+        uses: actions/checkout@v4
+        with:
+          ref: a48da25628a211194b73bbc09026a9f152627d84
+          path: research
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install research dependencies
+        run: python -m pip install -r research/requirements-databento.txt -r requirements-cloud-databento.txt
+      - name: Validate bounded request before authentication
+        run: |
+          python - <<'PY'
+          import importlib.util,json
+          spec=importlib.util.spec_from_file_location('runner','scripts/cloud-databento-research.py')
+          runner=importlib.util.module_from_spec(spec);spec.loader.exec_module(runner)
+          runner.validate_request(json.load(open('.cloud-agent/requests/databento-research.json')))
+          PY
+      - name: Authenticate existing research operator
+        uses: google-github-actions/auth@v2
+        with:
+          project_id: keep-and-lease
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com
+      - name: Estimate or screen the fixed two contracts
+        run: |
+          python scripts/cloud-databento-research.py \
+            --request .cloud-agent/requests/databento-research.json \
+            --research-root research
+      - name: Return encrypted evidence
+        if: ${{ always() && hashFiles('databento-evidence/result.encrypted.json') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: databento-encrypted-${{ github.run_id }}
+          path: databento-evidence/result.encrypted.json
+          retention-days: 7
