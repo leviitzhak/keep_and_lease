@@ -1,0 +1,51 @@
+name: Monthly Databento research
+on:
+  push:
+    branches: [agent/cloud-autonomous-access]
+    paths: [.cloud-agent/requests/databento-year.json]
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: databento-monthly-research
+  cancel-in-progress: false
+jobs:
+  research:
+    strategy:
+      fail-fast: false
+      matrix:
+        asset: [gold, sic, mbt]
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install research dependencies
+        run: python -m pip install -r requirements-databento.txt -r requirements-cloud-databento.txt
+      - name: Validate fixed research request
+        run: |
+          python - <<'PY'
+          import sys,json
+          sys.path.insert(0,'scripts')
+          import databento_year
+          databento_year.validate_request(json.load(open('.cloud-agent/requests/databento-year.json')))
+          PY
+      - name: Authenticate existing research operator
+        uses: google-github-actions/auth@v2
+        with:
+          project_id: keep-and-lease
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com
+      - name: Estimate or screen monthly contracts
+        run: python scripts/databento_year.py --request .cloud-agent/requests/databento-year.json --asset '${{ matrix.asset }}'
+      - name: Return encrypted evidence
+        if: ${{ always() && hashFiles('year-evidence/result.encrypted.json') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: databento-year-${{ matrix.asset }}-${{ github.run_id }}
+          path: year-evidence/result.encrypted.json
+          retention-days: 7
