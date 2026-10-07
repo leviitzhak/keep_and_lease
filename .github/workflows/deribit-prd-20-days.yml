@@ -1,0 +1,44 @@
+name: Deribit PRD 20 full days (read only)
+on:
+  push:
+    branches: [agent/cloud-autonomous-access]
+    paths: [.cloud-agent/requests/deribit-prd-20-days.json]
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: deribit-prd-20-days
+  cancel-in-progress: false
+jobs:
+  export:
+    if: github.ref == 'refs/heads/agent/cloud-autonomous-access'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'google-cloud-storage>=2.18,<4' 'cryptography>=43,<47'
+      - name: Validate bounded request before authentication
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          assert json.loads(Path('.cloud-agent/requests/deribit-prd-20-days.json').read_text()) == {'schema_version':1,'action':'read-deribit-20-full-days','sequence':1}
+          PY
+      - uses: google-github-actions/auth@v2
+        with:
+          project_id: keep-and-lease
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com
+      - name: Read pinned immutable tapes and encrypt
+        run: python scripts/export-deribit-prd-20-days.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deribit-prd-20-days-encrypted
+          path: encrypted-deribit-20-days/
+          retention-days: 3
+          if-no-files-found: error
