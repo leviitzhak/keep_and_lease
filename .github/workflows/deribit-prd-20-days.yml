@@ -27,7 +27,7 @@ jobs:
           python - <<'PY'
           import json
           from pathlib import Path
-          assert json.loads(Path('.cloud-agent/requests/deribit-prd-20-days.json').read_text()) == {'schema_version':1,'action':'read-deribit-20-full-days','sequence':1}
+          assert json.loads(Path('.cloud-agent/requests/deribit-prd-20-days.json').read_text()) == {'schema_version':1,'action':'read-deribit-20-full-days','sequence':2}
           PY
       - uses: google-github-actions/auth@v2
         with:

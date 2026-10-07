@@ -14,7 +14,7 @@ from google.cloud import storage
 
 ROOT = Path(__file__).resolve().parents[1]
 RANGE_SHA = '52ef7ab51def1e37fc774f96bd94697ed90ad286d6885c72f69de84c285c9912'
-EXPECTED = {'schema_version': 1, 'action': 'read-deribit-20-full-days', 'sequence': 1}
+EXPECTED = {'schema_version': 1, 'action': 'read-deribit-20-full-days', 'sequence': 2}
 AAD = b'deribit-prd-20-full-days-v1'
 
 
@@ -45,7 +45,9 @@ def main():
     days = manifest['daily_datasets']
     assert len(days) == 90
     assert days[0]['start'].startswith('2026-06-06') and days[-1]['start'].startswith('2026-09-03')
-    indices = [round(i * 89 / 19) for i in range(20)]
+    # June 6..July 26 supports at least two contracts remaining >=60 days
+    # through the entire day. Later archive days lose the September leg.
+    indices = [round(i * 50 / 19) for i in range(20)]
     assert len(set(indices)) == 20
     archive = io.BytesIO()
     selected = []
@@ -71,8 +73,9 @@ def main():
                 data = read(f"btc/raw/sha256/{item['sha256']}/{name}", item['sha256'], 20_000_000)
                 z.writestr(f'{date}/{name}', data)
                 expiry = datetime.fromisoformat(item['expiry'].replace('Z', '+00:00')).timestamp()
-                if expiry - lo >= 60 * 86400:
+                if expiry - hi >= 60 * 86400:
                     eligible.append(symbol)
+            assert len(eligible) >= 2
             selected.append(dict(date=date, range_day_index=i, daily_sha256=digest,
                                  eligible_symbols=eligible, futures_count=len(source['futures'])))
         z.writestr('selection.json', json.dumps(selected, indent=2))
