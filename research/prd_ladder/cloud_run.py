@@ -3,7 +3,8 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from datetime import date,timedelta
 import base64,gzip,hashlib,io,json,os,zipfile
-from replay import Replay,load_rows,save_run,ms,digest,eligible
+from replay import load_rows,ms,digest,eligible
+from run_policies import run_cases
 
 BUCKET='keep-and-lease-market-data'
 ROOT='btc/research/deribit-history-extension-v1'
@@ -58,22 +59,16 @@ def main():
     out=Path('ladder-reports/dec_mar');out.mkdir(parents=True,exist_ok=True)
     (out/'source_receipts.json').write_text(json.dumps(receipts,indent=2)+'\n')
     (out/'seeds.json').write_text(json.dumps(seeds,indent=2)+'\n')
-    for name,delay,participation,agg in [('base',500,1.,False),('opposite_aggressor',500,1.,True),('ten_percent_volume',500,.1,False),('one_second',1000,1.,False),('ten_ms',10,1.,False)]:
-        replay=Replay(symbols,expiry,seeds,start,end,delay,participation,agg,name)
-        result=replay.run(events);save_run(out/name,replay,result,coverage)
-        print('RESULT '+json.dumps(result),flush=True)
+    run_cases(events,coverage,symbols,expiry,seeds,start,end,out)
     # Only research outputs are bundled, never auth files, environment or raw tokens.
     buf=io.BytesIO()
     with zipfile.ZipFile(buf,'w',zipfile.ZIP_DEFLATED) as z:
         for p in sorted(out.rglob('*')):
             if p.is_file():z.write(p,str(p.relative_to(out.parent)))
     blob=buf.getvalue();Path('ladder-reports/Dec26_Mar27_results.zip').write_bytes(blob)
-    key=f'btc/research/prd-ladder-v2/results/{digest(blob)}/Dec26_Mar27_results.zip'
+    key=f'btc/research/prd-ladder-v3/results/{digest(blob)}/Dec26_Mar27_results.zip'
     bucket.blob(key).upload_from_string(blob,if_generation_match=0,checksum='crc32c')
     print('RESULT_BUNDLE_META '+json.dumps(dict(sha256=digest(blob),bytes=len(blob),key=key)),flush=True)
-    # Connector-accessible copy, chunked to avoid long-line truncation.
-    encoded=base64.b64encode(blob).decode()
-    for i in range(0,len(encoded),6000):print(f'RESULT_BUNDLE_CHUNK {i//6000:05d} '+encoded[i:i+6000],flush=True)
     print('READY prd-ladder-six-level-0.6-btc',flush=True)
 
 if __name__=='__main__':main()
