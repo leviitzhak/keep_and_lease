@@ -110,7 +110,23 @@ class Replay:
     def arrivals(self,t,inclusive=False):
         while self.queue and (self.queue[0][0]<=t if inclusive else self.queue[0][0]<t):
             _,_,tid,leg,q=heapq.heappop(self.queue);v=self.tasks.get(tid)
-            if v and v.generation==q['generation']:v.active[leg]=q
+            if v and v.generation==q['generation']:
+                # Cancel/replace the old quote; reject a new quote that would
+                # trade with our own resting opposite order on this instrument.
+                v.active.pop(leg,None)
+                own=v.side(leg)
+                crossed=False
+                for other in self.tasks.values():
+                    oq=other.active.get(leg)
+                    if other.id==v.id or other.side(leg)==own or not oq or oq['qty']<=0:continue
+                    allowance=self.permission(other,leg)
+                    if allowance is not None and allowance<=0:continue
+                    if (q['limit']>=oq['limit'] if own==1 else q['limit']<=oq['limit']):
+                        crossed=True;break
+                if crossed:
+                    self.counts['self_cross_quote_rejections']+=1
+                    v.requested.pop(leg,None)
+                else:v.active[leg]=q
 
     def invalidate(self,v):
         v.generation+=1;v.active.clear();v.requested.clear()
@@ -216,6 +232,7 @@ class Replay:
             unrealized_btc=gross-self.realized,net_1bp_btc=gross-.0001*self.turnover,
             last_trade_mark_gross_btc=last_trade_pnl,index=self.spot,turnover_btc=self.turnover,
             inventory_btc=inventory,paired_inventory_btc=paired,unpaired_btc=unpaired,
+            net_directional_face_btc=sum(self.pos)*10/self.spot,
             occupied_levels=slots,near_contracts=self.pos[0],far_contracts=self.pos[1],prd_pp=d,
             near_mark=marks[0],far_mark=marks[1],
             near_mark_age_seconds=(t-self.latest[0]['timestamp'])/1000,

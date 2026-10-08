@@ -13,7 +13,9 @@ REQUEST='.cloud-agent/requests/prd-ladder-research.json'
 
 def validate_request():
     r=json.loads(Path(REQUEST).read_text())
-    assert r=={'schema_version':1,'action':'replay-six-level-prd-0.6-btc','sequence':1}
+    assert set(r)=={'schema_version','action','sequence'}
+    assert r['schema_version']==1 and r['action']=='replay-six-level-prd-0.6-btc'
+    assert type(r['sequence']) is int and 1<=r['sequence']<=100
 
 def main():
     validate_request()

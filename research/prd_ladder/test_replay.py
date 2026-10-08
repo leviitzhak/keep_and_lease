@@ -49,5 +49,13 @@ class ModelTests(unittest.TestCase):
             v=r.tasks[tid];v.active[0]=self.quote()
         r.run([self.row(amount=30)])
         self.assertEqual(sum(f['contracts'] for f in r.fills),3)
+    def test_self_cross_rejected_at_arrival(self):
+        r=self.make();r.queue.clear()
+        # Buy near and reversed sell near would cross; preserve the resting buy.
+        r.tasks[1].active[0]=self.quote(price=1000)
+        q=self.quote(price=995)
+        r.queue.append((500,999,2,0,q));r.arrivals(600)
+        self.assertNotIn(0,r.tasks[2].active)
+        self.assertEqual(r.counts['self_cross_quote_rejections'],1)
 
 if __name__=='__main__':unittest.main()

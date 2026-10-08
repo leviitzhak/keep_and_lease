@@ -43,12 +43,17 @@ trade at their exact activation timestamp. Timestamp groups are all processed
 before their new observations can generate future quotes. Source timestamp
 reversals are normalized by per-instrument sequence prefix-maximum time.
 
+At each quote arrival the old quote is canceled; reject a replacement that
+would cross any of this account's other resting orders on that instrument.
+Retry on subsequent observations. This prevents profit from impossible
+simultaneous self-crossing quotes; it does not reconstruct the external book.
+
 After any leading fill, freeze its APR, pause the leading leg and price the
 lagging leg from that APR and the signed PRD target. Reprice with the causally
 observed index and time. Once balanced, float both legs again after the delay.
 This retains the **ideal instantaneous coupling/cancellation gate** of prior
 research: cancellation races, exchange queue position, post-only rejection,
-order-book depth, self-trade prevention and adverse market impact are not
+external order-book depth and adverse market impact are not
 reconstructed. Therefore it is a research fill estimate, not an executable
 or guaranteed conservative live P&L forecast. Sparse last-trade references
 can be stale. Native trade-attached index and mark prices are carried forward;
@@ -76,7 +81,8 @@ also asserts native conservation, latency and strict crossing.
 
 Install source with [skip ci] to avoid application deployment. Launch only
 the bounded request `.cloud-agent/requests/prd-ladder-research.json` with
-`{"schema_version":1,"action":"replay-six-level-prd-0.6-btc","sequence":1}`.
+`{"schema_version":1,"action":"replay-six-level-prd-0.6-btc","sequence":1}`;
+increment sequence (bounded 1..100) to rerun a corrected research revision.
 The workflow reads selected GCS market data, writes content-addressed research
 results and artifacts, and logs research-result chunks accessible through the
 GitHub connector. It never exports credentials or identity tokens.
