@@ -4,7 +4,7 @@ from replay import Replay,YEAR,split
 class ModelTests(unittest.TestCase):
     def make(self):
         seeds={s:dict(instrument_name=s,timestamp=-1,trade_id=str(i),price=1000.,index_price=1000.,mark_price=1000.) for i,s in enumerate(['N','F'])}
-        return Replay(['N','F'],[YEAR,2*YEAR],seeds,0,100000)
+        return Replay(['N','F'],[YEAR,2*YEAR],seeds,0,100000,async_cap_btc=.1)
     def row(self,t=600,leg=0,price=990,amount=100,direction='sell'):
         return dict(timestamp=t,instrument_name=['N','F'][leg],price=price,amount=amount,direction=direction,
                     index_price=1000.,mark_price=price,trade_id=str(t),trade_seq=t)
@@ -57,5 +57,22 @@ class ModelTests(unittest.TestCase):
         r.queue.append((500,999,2,0,q));r.arrivals(600)
         self.assertNotIn(0,r.tasks[2].active)
         self.assertEqual(r.counts['self_cross_quote_rejections'],1)
+    def test_default_async_chunk_cap(self):
+        r=self.make();r.async_cap_btc=.02;r.queue.clear()
+        for v in r.tasks.values():v.requested.clear()
+        r.snapshot(0);r.arrivals(600)
+        for v in r.tasks.values():
+            for q in v.active.values():self.assertLessEqual(q['qty']*10/q['limit'],.02+1e-12)
+        v=r.tasks[1]
+        with self.assertRaises(AssertionError):r.fill(v,0,self.quote(),3,self.row())
+    def test_matched_apr_is_actual_and_excludes_unmatched(self):
+        r=self.make();v=r.tasks[1];r.fill(v,0,self.quote(),3,self.row())
+        self.assertEqual(len(r.matched),0);self.assertEqual(r.prd_stats['sold'][0],0)
+        q=self.quote(price=1030,qty=3);q.update(observed=600,activation=1100)
+        r.fill(v,1,q,2,self.row(t=1200,leg=1,price=1040,direction='buy'))
+        self.assertEqual(len(r.matched),1);m=r.matched[0]
+        self.assertEqual(m['contracts'],2);self.assertAlmostEqual(m['near_apr_pp'],0)
+        self.assertAlmostEqual(m['actual_prd_pp'],(1.03-1)/((2*YEAR-1200)/YEAR)*100)
+        self.assertEqual(m['spread_side'],'sold');self.assertEqual(r.prd_stats['sold'][0],2)
 
 if __name__=='__main__':unittest.main()

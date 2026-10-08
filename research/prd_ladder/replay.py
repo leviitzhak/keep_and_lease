@@ -40,19 +40,24 @@ class Task:
     anchor_time:int=0
     active:dict=field(default_factory=dict)
     requested:dict=field(default_factory=dict)
+    unmatched_fills:list=field(default_factory=lambda:[deque(),deque()])
     def side(self,leg): return self.direction*(1 if leg==0 else -1)*(1 if self.kind=='open' else -1)
     def done(self): return self.total>0 and min(self.fills)==self.total
 
 class Replay:
-    def __init__(self,symbols,expiry,seeds,start,end,delay=500,participation=1.0,opposite_aggressor=True,name='base'):
+    def __init__(self,symbols,expiry,seeds,start,end,delay=500,participation=1.0,opposite_aggressor=True,name='base',async_cap_btc=.02):
         self.symbols=symbols;self.expiry=expiry;self.start=start;self.end=end
         self.delay=delay;self.participation=participation;self.opposite_aggressor=opposite_aggressor;self.name=name
+        self.async_cap_btc=async_cap_btc
         self.latest=[seeds[s] for s in symbols]
         assert all(r['timestamp']<start and eligible(r) for r in self.latest)
         self.spot=float(max(self.latest,key=lambda r:(r['timestamp'],int(r['trade_id'])))['index_price'])
         self.tasks={};self.serial=0;self.next_id=0;self.queue=[];self.cells=[]
         self.cash=0.;self.turnover=0.;self.realized=0.;self.pos=[0,0]
         self.fills=[];self.cycles=[];self.daily=[];self.closures=[];self.counts=Counter()
+        self.matched=[];self.timeline=[];self.turnover_usd=0.;self.realized_usd_at_fills=0.
+        self.prd_stats={'bought':[0,0.],'sold':[0,0.]}
+        self.peak_backlog_btc=0.;self.max_lead_fill_btc=0.;self.peak_task_backlog_btc=0.
         self.peak_gross=0.;self.peak_unpaired=0.;self.peak_slots=0
         self.high=[0.,0.];self.drawdown=[0.,0.];self.last_t=start
         self.unpaired_seconds=0.;self.weighted_exposure_seconds=0.
@@ -98,6 +103,8 @@ class Replay:
             for leg in [0,1]:
                 allowance=self.permission(v,leg)
                 if allowance is None:allowance=quote_total
+                if v.fills[0]==v.fills[1]:
+                    allowance=min(allowance,math.floor(self.async_cap_btc*min(self.spot,limits[leg])/10+1e-10))
                 if allowance<=0:continue
                 assert limits[leg]>0
                 signature=(v.generation,limits[leg],allowance,quote_total)
@@ -148,6 +155,7 @@ class Replay:
         side=v.side(leg);face=n*10
         cash=side*face/price;self.cash+=cash;c['cash']+=cash
         self.turnover+=face/price;c['turnover']+=face/price
+        self.turnover_usd+=face
         self.pos[leg]+=side*n;c['position'][leg]+=side*n
         if v.kind=='open':c['lots'][leg].append([n,price])
         else:
@@ -156,6 +164,7 @@ class Replay:
                 lot=c['lots'][leg][0];k=min(remain,lot[0])
                 pnl=-side*k*10*(1/lot[1]-1/price)
                 self.realized+=pnl;c['realized']+=pnl
+                self.realized_usd_at_fills+=pnl*self.spot
                 lot[0]-=k;remain-=k
                 if lot[0]==0:c['lots'][leg].popleft()
 
@@ -168,7 +177,11 @@ class Replay:
         side=v.side(leg);assert row['price']<q['limit'] if side==1 else row['price']>q['limit']
         if self.opposite_aggressor:assert row['direction']==('sell' if side==1 else 'buy')
         lag=v.fills[leg]<v.fills[1-leg];old=min(v.fills)
+        if not lag:
+            assert n*10/q['limit']<=self.async_cap_btc+1e-12
+            self.max_lead_fill_btc=max(self.max_lead_fill_btc,n*10/q['limit'])
         self.book(c,v,leg,n,q['limit']);v.fills[leg]+=n;q['qty']-=n
+        fill_apr=(q['limit']/self.spot-1)/((self.expiry[leg]-t)/YEAR)
         self.fills.append(dict(timestamp_ms=t,utc=utc(t),cell=v.cell,cycle_start_ms=c['first'],
             kind=v.kind,direction=v.direction,target_prd_pp=v.direction*v.magnitude*100,
             leg=leg,instrument=self.symbols[leg],side='buy' if side==1 else 'sell',
@@ -176,7 +189,30 @@ class Replay:
             trade_id=row['trade_id'],trade_seq=row['trade_seq'],trade_usd_face=row['amount'],
             quote_observed_ms=q['observed'],activation_ms=q['activation'],quote_index=q['index'],
             reference_age_ms=q['reference_age_ms'],role='catch_up' if lag else 'lead',
-            index_before_print=self.spot))
+            index_before_print=self.spot,fill_apr_pp=fill_apr*100,
+            filled_btc=n*10/q['limit'],async_cap_btc=self.async_cap_btc,
+            task_id=v.id,aggressor=row['direction']))
+        v.unmatched_fills[leg].append(dict(contracts=n,price=q['limit'],apr_pp=fill_apr*100,
+            timestamp_ms=t,index=self.spot,fill_id=len(self.fills)-1,reference_age_ms=q['reference_age_ms']))
+        while v.unmatched_fills[0] and v.unmatched_fills[1]:
+            a,b=v.unmatched_fills[0][0],v.unmatched_fills[1][0]
+            k=min(a['contracts'],b['contracts']);prd=b['apr_pp']-a['apr_pp']
+            spread_side='sold' if v.side(0)==1 else 'bought'
+            self.prd_stats[spread_side][0]+=k;self.prd_stats[spread_side][1]+=k*prd
+            self.matched.append(dict(timestamp_ms=t,utc=utc(t),kind=v.kind,cell=v.cell,
+                cycle_start_ms=c['first'],task_id=v.id,direction=v.direction,spread_side=spread_side,
+                contracts=k,usd_face=k*10,btc_at_match_index=k*10/self.spot,
+                near_btc=k*10/a['price'],far_btc=k*10/b['price'],
+                near_price=a['price'],far_price=b['price'],near_apr_pp=a['apr_pp'],far_apr_pp=b['apr_pp'],
+                bought_apr_pp=a['apr_pp'] if v.side(0)==1 else b['apr_pp'],
+                sold_apr_pp=b['apr_pp'] if v.side(0)==1 else a['apr_pp'],
+                actual_prd_pp=prd,target_prd_pp=v.direction*v.magnitude*100,
+                sold_minus_bought_apr_pp=prd if v.side(0)==1 else -prd,
+                near_fill_ms=a['timestamp_ms'],far_fill_ms=b['timestamp_ms'],
+                near_fill_id=a['fill_id'],far_fill_id=b['fill_id'],hedge_wait_ms=abs(a['timestamp_ms']-b['timestamp_ms'])))
+            a['contracts']-=k;b['contracts']-=k
+            if not a['contracts']:v.unmatched_fills[0].popleft()
+            if not b['contracts']:v.unmatched_fills[1].popleft()
         self.counts['fill_events']+=1
         delta=min(v.fills)-old
         if v.kind=='open' and delta:
@@ -220,6 +256,11 @@ class Replay:
         inventory=sum(max(abs(x) for x in c['position'])*10/self.spot for c in self.cells)
         paired=sum(min(abs(x) for x in c['position'])*10/self.spot for c in self.cells)
         slots=sum(c['direction']!=0 for c in self.cells)
+        backlog_usd=sum(abs(v.fills[0]-v.fills[1])*10 for v in self.tasks.values())
+        task_gap=max((abs(v.fills[0]-v.fills[1])*10/self.spot for v in self.tasks.values()),default=0.)
+        self.peak_backlog_btc=max(self.peak_backlog_btc,backlog_usd/self.spot)
+        self.peak_task_backlog_btc=max(self.peak_task_backlog_btc,task_gap)
+        leg_gross_usd=sum(sum(abs(x) for x in c['position'])*10 for c in self.cells)
         assert slots<=6
         self.peak_slots=max(self.peak_slots,slots);self.peak_gross=max(self.peak_gross,inventory)
         self.peak_unpaired=max(self.peak_unpaired,unpaired)
@@ -236,10 +277,21 @@ class Replay:
             occupied_levels=slots,near_contracts=self.pos[0],far_contracts=self.pos[1],prd_pp=d,
             near_mark=marks[0],far_mark=marks[1],
             near_mark_age_seconds=(t-self.latest[0]['timestamp'])/1000,
-            far_mark_age_seconds=(t-self.latest[1]['timestamp'])/1000)
+            far_mark_age_seconds=(t-self.latest[1]['timestamp'])/1000,
+            inventory_usd=inventory*self.spot,paired_inventory_usd=paired*self.spot,
+            gross_legs_usd=leg_gross_usd,gross_legs_btc=leg_gross_usd/self.spot,
+            unpaired_usd=unpaired*self.spot,backlog_usd=backlog_usd,backlog_btc=backlog_usd/self.spot,
+            net_directional_usd=sum(self.pos)*10,turnover_usd=self.turnover_usd,
+            gross_usd=gross*self.spot,realized_usd_at_fills=self.realized_usd_at_fills,
+            realized_usd_current=self.realized*self.spot,unrealized_usd=(gross-self.realized)*self.spot,
+            realized_fx_usd=self.realized*self.spot-self.realized_usd_at_fills,
+            average_bought_prd_pp=self.prd_stats['bought'][1]/self.prd_stats['bought'][0] if self.prd_stats['bought'][0] else None,
+            average_sold_prd_pp=self.prd_stats['sold'][1]/self.prd_stats['sold'][0] if self.prd_stats['sold'][0] else None,
+            matched_bought_usd=self.prd_stats['bought'][0]*10,matched_sold_usd=self.prd_stats['sold'][0]*10)
 
     def run(self,events):
         previous=self.measures(self.start)
+        self.timeline.append(previous);last_bin=0
         for t,it in itertools.groupby(events,key=lambda r:r['timestamp']):
             assert self.start<=t<self.end and t>=self.last_t
             if t//DAY!=self.last_day:
@@ -248,7 +300,7 @@ class Replay:
             dt=(t-self.last_t)/1000
             self.unpaired_seconds+=dt*(previous['unpaired_btc']>0)
             self.weighted_exposure_seconds+=dt*previous['inventory_btc'];self.last_t=t
-            group=list(it);self.arrivals(t)
+            group=list(it);self.arrivals(t);before_fills=len(self.fills)
             for row in group:
                 leg=self.symbols.index(row['instrument_name'])
                 capacity=math.floor(row['amount']/10*self.participation+1e-10)
@@ -277,9 +329,13 @@ class Replay:
                 leg=self.symbols.index(row['instrument_name']);self.latest[leg]=row
                 self.spot=float(row['index_price'])
             self.snapshot(t);previous=self.measures(t)
+            current_bin=(t-self.start)//900000
+            if current_bin!=last_bin or len(self.fills)!=before_fills:
+                self.timeline.append(previous);last_bin=current_bin
         self.unpaired_seconds+=(self.end-self.last_t)/1000*(previous['unpaired_btc']>0)
         self.weighted_exposure_seconds+=(self.end-self.last_t)/1000*previous['inventory_btc']
         final=self.measures(self.end);self.daily.append(dict(final,date=utc(self.last_day*DAY)[:10]))
+        self.timeline.append(final)
         open_cells=[]
         for c in self.cells:
             if c['direction']:
@@ -289,6 +345,9 @@ class Replay:
                     remaining_far_contracts=c['position'][1]))
         summary=dict(scenario=self.name,symbols=self.symbols,start=utc(self.start),end_exclusive=utc(self.end),
             delay_ms=self.delay,participation=self.participation,opposite_aggressor=self.opposite_aggressor,
+            async_cap_btc=self.async_cap_btc,max_lead_fill_btc=self.max_lead_fill_btc,
+            peak_execution_backlog_btc=self.peak_backlog_btc,peak_single_task_backlog_btc=self.peak_task_backlog_btc,
+            hedge_policy='frozen_apr_no_timeout',freshness_policy='none',
             allocation_btc_per_level=.1,max_reserved_allocation_btc=.6,**self.counts,
             completed_cycles=len(self.cycles),positive_cycles=sum(x['direction']==1 for x in self.cycles),
             negative_cycles=sum(x['direction']==-1 for x in self.cycles),
@@ -337,5 +396,5 @@ def save_run(out,replay,summary,coverage):
     out=Path(out);out.mkdir(parents=True,exist_ok=True)
     (out/'summary.json').write_text(json.dumps(summary,indent=2,allow_nan=False)+'\n')
     (out/'input_coverage.json').write_text(json.dumps(coverage,indent=2)+'\n')
-    for name,rows in [('daily.csv',replay.daily),('fills.csv.gz',replay.fills),('cycles.csv',replay.cycles),('closures.csv.gz',replay.closures)]:
+    for name,rows in [('daily.csv',replay.daily),('timeline.csv.gz',replay.timeline),('matched.csv.gz',replay.matched),('fills.csv.gz',replay.fills),('cycles.csv',replay.cycles),('closures.csv.gz',replay.closures)]:
         write_csv(out/name,rows)

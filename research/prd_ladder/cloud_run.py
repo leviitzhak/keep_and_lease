@@ -58,7 +58,7 @@ def main():
     out=Path('ladder-reports/dec_mar');out.mkdir(parents=True,exist_ok=True)
     (out/'source_receipts.json').write_text(json.dumps(receipts,indent=2)+'\n')
     (out/'seeds.json').write_text(json.dumps(seeds,indent=2)+'\n')
-    for name,delay,participation,agg in [('base',500,1.,False),('opposite_aggressor',500,1.,True),('ten_percent_volume',500,.1,False),('one_second',1000,1.,False)]:
+    for name,delay,participation,agg in [('base',500,1.,False),('opposite_aggressor',500,1.,True),('ten_percent_volume',500,.1,False),('one_second',1000,1.,False),('ten_ms',10,1.,False)]:
         replay=Replay(symbols,expiry,seeds,start,end,delay,participation,agg,name)
         result=replay.run(events);save_run(out/name,replay,result,coverage)
         print('RESULT '+json.dumps(result),flush=True)
@@ -68,7 +68,7 @@ def main():
         for p in sorted(out.rglob('*')):
             if p.is_file():z.write(p,str(p.relative_to(out.parent)))
     blob=buf.getvalue();Path('ladder-reports/Dec26_Mar27_results.zip').write_bytes(blob)
-    key=f'btc/research/prd-ladder-v1/results/{digest(blob)}/Dec26_Mar27_results.zip'
+    key=f'btc/research/prd-ladder-v2/results/{digest(blob)}/Dec26_Mar27_results.zip'
     bucket.blob(key).upload_from_string(blob,if_generation_match=0,checksum='crc32c')
     print('RESULT_BUNDLE_META '+json.dumps(dict(sha256=digest(blob),bytes=len(blob),key=key)),flush=True)
     # Connector-accessible copy, chunked to avoid long-line truncation.
