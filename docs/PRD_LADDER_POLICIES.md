@@ -135,3 +135,12 @@ The separate prd-input-export request copies only the 180 immutable, hash-verifi
 Dec26/Mar27 trade files, seeds and receipts to an artifact for local replay. It
 uses the same bounded loader, reads existing GCS archives, makes no exchange
 request, and runs no strategy. No credentials or environment files are exported.
+
+## Worker isolation and local reproduction
+Policy workers use fresh spawned processes with explicit input initialization,
+rather than inheriting the loader process after threaded storage downloads.
+This changes worker startup only; the policy engine and its source hash are
+unchanged. The result bundle includes the verified pair trade files for local
+reproduction without a cloud job. run_dec_mar_local.py accepts the input folder,
+output folder, and optional scenario names; run_policies.py does the same for
+the original Sep/Dec history folder.

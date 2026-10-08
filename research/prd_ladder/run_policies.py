@@ -5,6 +5,9 @@ from policies import PolicyReplay,scenarios,save_policy
 from replay import load_rows,ms
 
 _INPUT=None
+def initialize_worker(data):
+    global _INPUT
+    _INPUT=data
 def one_case(item):
     events,coverage,symbols,expiry,seeds,start,end,out,code_hash=_INPUT
     name,kwargs=item;began=time.monotonic()
@@ -27,7 +30,8 @@ def run_cases(events,coverage,symbols,expiry,seeds,start,end,out,names=None):
     if workers==1:
         for item in selected:one_case(item)
     else:
-        with ProcessPoolExecutor(max_workers=workers,mp_context=multiprocessing.get_context('fork')) as pool:
+        with ProcessPoolExecutor(max_workers=workers,mp_context=multiprocessing.get_context('spawn'),
+                initializer=initialize_worker,initargs=(_INPUT,)) as pool:
             list(pool.map(one_case,selected))
 
 if __name__=='__main__':
