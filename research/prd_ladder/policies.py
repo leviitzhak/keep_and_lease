@@ -22,7 +22,7 @@ class PolicyReplay(Replay):
     def task(self,*args,**kwargs):
         v=super().task(*args,**kwargs)
         v.pending=None;v.cancel_token=0;v.episode=None;v.emergency=False
-        v.last_rescue_observation=-1;v.order_serial=0
+        v.last_rescue_observation=-1;v.order_serial=0;v.rejected={}
         return v
 
     def timer(self,t,kind,payload):
@@ -48,7 +48,7 @@ class PolicyReplay(Replay):
                  near_at_request=v.fills[0],far_at_request=v.fills[1],
                  near_at_ack=None,far_at_ack=None,residual_contracts_at_ack=None,
                  late_fill_contracts=0,status='pending_at_period_end')
-        self.cancellations.append(rec);v.pending=rec;v.requested.clear()
+        self.cancellations.append(rec);v.pending=rec;v.requested.clear();v.rejected.clear()
         self.timer(t+self.delay,'cancel',(v.id,token))
         self.timer(t+2*self.delay,'ack',(v.id,token))
 
@@ -195,9 +195,12 @@ class PolicyReplay(Replay):
     def queue_quote(self,v,leg,q,t):
         signature=(q['limit'],q['qty'],q['total'],q['phase'],q['side'])
         if v.requested.get(leg)==signature:return
+        # Rejection alone supplies no new price information. Do not turn quote
+        # arrival into a D-millisecond retry loop through a silent market.
+        if v.rejected.get(leg)==(self.index_time,signature):return
         v.requested[leg]=signature;self.serial+=1
         q.update(observed=t,activation=t+self.delay,index=self.spot,generation=v.generation,
-                 fill_watermark=v.fills[leg],index_age_ms=t-self.index_time)
+                 fill_watermark=v.fills[leg],index_age_ms=t-self.index_time,request_signature=signature)
         heapq.heappush(self.queue,(t+self.delay,self.serial,v.id,leg,q))
 
     def rescue_quote(self,v,t):
@@ -280,7 +283,8 @@ class PolicyReplay(Replay):
             if not q['qty']:v.requested.pop(leg,None);continue
             if self.cross_own(v,leg,q):
                 self.counts['self_cross_quote_rejections']+=1;v.requested.pop(leg,None)
-            else:v.active[leg]=q
+                v.rejected[leg]=(self.index_time,q.get('request_signature',(q['limit'],q['qty'],q['total'],q['phase'],q['side'])))
+            else:v.active[leg]=q;v.rejected.pop(leg,None)
 
     def timer_event(self,t,kind,payload):
         self.clock=t

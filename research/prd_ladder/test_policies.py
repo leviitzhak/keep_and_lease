@@ -81,5 +81,15 @@ class PolicyTests(unittest.TestCase):
         later=self.quote(qty=30);later.update(observed=100,activation=600)
         r.queue.append((600,1,v.id,0,later));r.arrivals(700)
         self.assertEqual(v.active[0]['qty'],10)
+    def test_rejected_quote_waits_for_new_observation(self):
+        r=self.make();v=r.tasks[1];other=r.tasks[2]
+        other.active[0]=self.quote(price=98000,side=-1)
+        q=self.quote(price=99000);r.queue_quote(v,0,q,0);r.arrivals(501)
+        self.assertEqual(r.counts['self_cross_quote_rejections'],1)
+        self.assertNotIn(0,v.active)
+        r.queue_quote(v,0,self.quote(price=99000),501)
+        self.assertEqual(len(r.queue),0)
+        r.index_time=600;r.queue_quote(v,0,self.quote(price=99000),600)
+        self.assertEqual(len(r.queue),1)
 
 if __name__=='__main__':unittest.main()

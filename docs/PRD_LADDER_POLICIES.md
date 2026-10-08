@@ -144,3 +144,10 @@ unchanged. The result bundle includes the verified pair trade files for local
 reproduction without a cloud job. run_dec_mar_local.py accepts the input folder,
 output folder, and optional scenario names; run_policies.py does the same for
 the original Sep/Dec history folder.
+
+## Rejection retry correction
+An unchanged quote rejected for crossing another own order is not retried merely
+because its arrival timer fired. It becomes eligible after a new market
+observation or a changed price/quantity/policy request; reconciliation also
+clears the rejection cache. This prevents a silent-market retry loop at the
+10ms posting interval. All final cases were rerun with this correction.
