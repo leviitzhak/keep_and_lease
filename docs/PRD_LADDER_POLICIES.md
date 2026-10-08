@@ -129,3 +129,9 @@ Deribit order-state and cancellation references:
 https://docs.deribit.com/api-reference/trading/private-cancel
 https://docs.deribit.com/api-reference/trading/private-get_order_state
 https://docs.deribit.com/api-reference/trading/private-get_user_trades_by_order
+
+## Verified input export
+The separate prd-input-export request copies only the 180 immutable, hash-verified
+Dec26/Mar27 trade files, seeds and receipts to an artifact for local replay. It
+uses the same bounded loader, reads existing GCS archives, makes no exchange
+request, and runs no strategy. No credentials or environment files are exported.
