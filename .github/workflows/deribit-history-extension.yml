@@ -1,0 +1,51 @@
+name: Download earlier Sep-Dec and missing Mar27 history
+on:
+  push:
+    branches: [agent/cloud-autonomous-access]
+    paths: [.cloud-agent/requests/deribit-history-extension.json]
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: deribit-history-extension
+  cancel-in-progress: false
+jobs:
+  download:
+    name: ${{ matrix.job }}
+    if: github.ref == 'refs/heads/agent/cloud-autonomous-access'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        job: [earlier-sep26, earlier-dec26, missing-mar27]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate fixed instruments and date ranges
+        run: python research/deribit_history/download_extension.py --validate-request
+      - name: Install storage client
+        run: python -m pip install 'google-cloud-storage>=2.18,<4'
+      - name: Authenticate for immutable market-data publication
+        uses: google-github-actions/auth@v2
+        with:
+          project_id: keep-and-lease
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com
+      - name: Download, validate and save days — follow progress here
+        env:
+          HISTORY_JOB: ${{ matrix.job }}
+        run: python -u research/deribit_history/download_extension.py --job "$HISTORY_JOB"
+      - name: Save coverage and completion reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deribit-history-${{ matrix.job }}
+          path: history-reports/${{ matrix.job }}/
+          retention-days: 30
+          if-no-files-found: warn
