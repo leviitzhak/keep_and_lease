@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "action": "validate",
+  "action": "download",
   "job_id": "btc-full-20261009-archive",
-  "sequence": 3
+  "sequence": 4
 }
