@@ -6,6 +6,14 @@ def row(n):
     return dict(instrument_name='BTC-25DEC26', trade_seq=n, trade_id=str(n), price=100, amount=10, timestamp=1000+n)
 
 class FullHistoryTest(unittest.TestCase):
+    def test_historical_parameter_required(self):
+        class Response:
+            def __enter__(self):return self
+            def __exit__(self,*args):pass
+            def read(self):return b'{"result":{"trades":[]}}'
+        with patch.object(d.urllib.request,'urlopen',return_value=Response()) as opened, patch.object(d.time,'sleep'):
+            d.api('get_last_trades_by_instrument',instrument_name='BTC-25DEC26',count=1)
+        self.assertIn('include_old=true',opened.call_args.args[0])
     def test_gap_is_fatal(self):
         with self.assertRaises(ValueError):
             d.checked_rows({'trades':[row(1),row(3)]}, 'BTC-25DEC26', 1, 3)

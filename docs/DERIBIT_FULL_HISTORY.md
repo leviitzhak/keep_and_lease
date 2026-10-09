@@ -27,7 +27,7 @@ A request-only push triggers **Download full BTC futures history** and is ignore
 by application deployment. Install code/workflow/docs using a separate
 `[skip ci]` commit before submitting a request.
 
-Run `validate` first: unit tests, historical catalog and two oldest trade records,
+Run `validate` first: unit tests, historical catalog and two earliest available trade records,
 then a small immutable GCS write/read probe. It does not start the bulk download.
 Run `download` with the intended job ID to freeze the plan and launch eight
 deterministic shards, at most two running simultaneously.
@@ -38,7 +38,9 @@ Job plan, receipts, attempts, completed shard records, and final manifest:
 `jobs/<job_id>/`. Compressed raw objects: `objects/<sha256>/`.
 
 Each chunk holds up to 10,000 consecutive trade sequences, requested in pages of
-at most 1,000. Validate sequence coverage, instrument, unique IDs within chunks,
+at most 10,000 using the historical endpoint's required \`include_old=true\`.
+See Deribit's institutional setup guide, Historical Data section:
+https://statics.deribit.com/files/DeribitInstitutionalSetupGuide.pdf. Validate sequence coverage, instrument, unique IDs within chunks,
 and positive finite prices/amount/timestamps. Upload content-addressed objects
 and verify downloaded bytes before committing the immutable receipt. On resume,
 verify existing receipt/object hashes and skip its API download. Incomplete

@@ -9,7 +9,7 @@ REQUEST = '.cloud-agent/requests/deribit-full-history.json'
 SYMBOL = re.compile(r'^BTC-[0-9]{1,2}[A-Z]{3}[0-9]{2}$')
 SHARDS = 8
 CHUNK = 10000
-PAGE = 1000
+PAGE = 10000
 ALLOWED = {'get_instruments', 'get_last_trades_by_instrument'}
 
 def request():
@@ -32,6 +32,7 @@ def api(method, **params):
             raise ValueError('Only BTC futures are authorized')
     elif not SYMBOL.fullmatch(params.get('instrument_name', '')):
         raise ValueError('Only dated BTC instruments are authorized')
+    params['include_old'] = 'true'
     url = 'https://history.deribit.com/api/v2/public/' + method + '?' + urllib.parse.urlencode(params)
     for attempt in range(7):
         try:
@@ -227,14 +228,19 @@ def finish(bucket, r):
 
 def preflight():
     raw, instruments = catalog()
-    symbol = instruments[0]['instrument_name']
-    result = api('get_last_trades_by_instrument', instrument_name=symbol, start_seq=1, count=2, sorting='asc')
-    rows = result['trades']
-    if not rows:
-        raise ValueError('Oldest catalog instrument returned no archive data')
+    empty = []
+    for info in instruments:
+        symbol = info['instrument_name']
+        result = api('get_last_trades_by_instrument', instrument_name=symbol, start_seq=1, count=2, sorting='asc')
+        rows = result['trades']
+        if rows:
+            break
+        empty.append(symbol)
+    else:
+        raise ValueError('Archive catalog returned no available trade histories')
     checked_rows(result, symbol, rows[0]['trade_seq'], rows[-1]['trade_seq'])
     print(json.dumps({'stage': 'PREFLIGHT_OK', 'instruments': len(instruments),
-                      'oldest': symbol, 'earliest_creation': min(i['creation_timestamp'] for i in instruments),
+                      'oldest_available': symbol, 'empty_earlier_instruments': empty, 'earliest_creation': min(i['creation_timestamp'] for i in instruments),
                       'first_available_trade': rows[0]['timestamp']}), flush=True)
 
 if __name__ == '__main__':
