@@ -119,3 +119,13 @@ SIC reuses its completed cache. Seven focused runner tests now pass.
 The read-only cache diagnosis in run 37315520848 confirmed that both MBT/IBIT
 BBO files were complete and the timeout affected `future-definition`. Recovery
 partitions only that definition stream and reuses both completed price files.
+
+## Separately authorized 1OZ order-book acquisition
+
+The restrictions above apply to the fixed September SIC/MBT runner. The owner
+approved the distinct [three-month 1OZ MBO download](GOLD_1OZ_MBO_DOWNLOAD.md)
+after its free cost quotation on 9 October 2026. The dedicated fixed-scope
+workflow reuses the same operator identity, secret and private bucket; it adds
+no service-account permissions or application deployment. Licensed DBN data,
+append-only checkpoints and manifests remain in GCS. Its USD 0.25 cumulative
+estimated purchase limit includes failed or uncertain acquisition reservations.

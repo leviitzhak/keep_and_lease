@@ -30,3 +30,12 @@ printed. Estimates are not an invoice, account credit balance or storage cost.
 Installing this operator-only addition uses `[skip ci]`, followed by a
 request-only push. Neither push deploys the application. A cost estimate does
 not authorize a paid download; report the quote before acquisition.
+
+## Quote and subsequent acquisition
+
+Run 37906292534 completed the free estimate. Its 1OZ MBO quote for the fixed
+10-contract scope was USD 0.164054270089. The owner subsequently selected full
+order-book acquisition on 9 October 2026. The separately authorized, resumable
+[1OZ MBO downloader](GOLD_1OZ_MBO_DOWNLOAD.md) uses daily DBN files, private GCS
+checkpoints and a cumulative USD 0.25 estimated purchase limit. The metadata-only
+estimate request continues to perform no acquisition.

@@ -1,0 +1,36 @@
+name: Download 1OZ full order-book history
+on:
+  push:
+    branches: [agent/cloud-autonomous-access]
+    paths: [.cloud-agent/requests/databento-1oz-mbo.json]
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: databento-1oz-mbo-fixed-history
+  cancel-in-progress: false
+jobs:
+  download:
+    if: github.ref == 'refs/heads/agent/cloud-autonomous-access'
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate authorized fixed request
+        run: python research/databento/download_1oz_mbo.py --request .cloud-agent/requests/databento-1oz-mbo.json --validate-only
+      - name: Install existing research dependencies
+        run: python -m pip install -r requirements-databento.txt -r requirements-cloud-databento.txt
+      - name: Authenticate existing research operator
+        uses: google-github-actions/auth@v2
+        with:
+          project_id: keep-and-lease
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com
+      - name: Download and persist resumable daily MBO files
+        run: python research/databento/download_1oz_mbo.py --request .cloud-agent/requests/databento-1oz-mbo.json
