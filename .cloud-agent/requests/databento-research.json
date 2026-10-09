@@ -1,19 +1,6 @@
 {
   "schema_version": 1,
-  "request_id": "20261005-sic-mbt-screen-4",
-  "action": "screen",
-  "result_public_key_pem": "-----BEGIN PUBLIC KEY-----\nMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEApOP2gS3kWWqlolEAVKCQ\nEvL+0slDouwwmNR/DfQp35lB3clHfMnGcAtB+cyJJVE+8o6PZaGJdk+6ULUlTE6a\nP+SqaHLhUPx41F+7ptnyUD1b2UIOPQr7VyIEmfUOGqk7bwa8uwcXPPNCZeaIGvXV\nfPqTlhhca0QsMfIjG0SMzypCWLcUgOUzgVN0Rjn0f46Sf8yZT2so6wg36j0waTMs\nfLbckdXPu8LCINlLOTSAvo/KOYvJc8ddAx4EK+zjtZDxmbCP929eN5rY+fiUUp1h\nIceIsFxnLofm0jcy9tKlCz7JqVSzbtoAXaCbHkmmFkLVPRF7U/sHLuSHggjxLi85\nSKP7VERx6j5ecVPcAx+amqn43HAfSSt/ZkOcdJ5FYEXPv/Xqmll48moVzB4geNwd\n5h25cEsrrB6PM1P1ZrRwRM5rBfyf7S+/x1qLru5qbJ0b/rTic/kwMKzUVm1yWD+R\n4SCkIzxb07WDIKygHOr1Rvo4yyP1olNuaCLlH9aQYidRAgMBAAE=\n-----END PUBLIC KEY-----\n",
-  "references": {
-    "sic": {
-      "units_per_share": 0.903096962291781,
-      "as_of": "2026-10-02",
-      "source": "iShares SLV issuer snapshot 2026-10-02: 493361870.50 troy ounces / 546300000 shares; https://www.ishares.com/us/products/239855/ishares-silver-trust-fund"
-    },
-    "mbt": {
-      "units_per_share": 0.0005675216574102788,
-      "as_of": "2026-10-02",
-      "source": "iShares IBIT holdings CSV 2026-10-02: 805222.42840 BTC / 1418840000 shares; https://www.ishares.com/us/products/333011/ishares-bitcoin-trust-etf/latest-holdings.csv"
-    }
-  },
-  "reviewed_recovery_run": 37313440074
+  "request_id": "20261009-gc-access-probe",
+  "action": "estimate",
+  "result_public_key_pem": "-----BEGIN PUBLIC KEY-----\nMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAqPjHBGr5S6R5N1S4j875\n8YAOcoJqfb70k9RYOhSWRjA5Puiex/gTPboM4COnAVj9UdNb2xzGKtkXeKIc8zQq\nsXzHSexb/KnIit75iODTN6553zK6EHmD7puNY03jwGINMn4sA0Ux6C3620zxZTjH\nbw7u9q7O5hdvAibFblC37uUZJMfuaDL/6qXJ7MBCxdEMFmko/fhArE3nb5gbD5oI\nZFLF/y2dmY66c+7qJ4DQAUXZAaQmzkqiQ9miHImaBtYd/ESEAmwVi+uX4+L0IE6A\nLMwGQNpgcrlFcRbthPSa0w5EfAcb1brygGTQ0Q4hz02uiWJMLocLIK6ASkBgmvNi\ntvE46TzlVG1hS9/vEqrMC5af2+FNFLOivmXPaYFxcH9dilOO/8E4IBhKtFMmQ6yZ\nzAoeyPspNOnaYGIZDac6M1UzvkOTffuuicypheleIag2x3mQO+B4T/FpZ3pjA55y\n3QVaqODN2V6+3KhPRSyhVIuxYbfK6xUOZv1CkldelPONAgMBAAE=\n-----END PUBLIC KEY-----"
 }
