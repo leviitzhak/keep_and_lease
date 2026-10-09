@@ -29,6 +29,10 @@ MAX_COST = 1.0  # Combined cumulative estimate, including restored paid caches.
 
 def validate_request(value):
     required = {"schema_version", "request_id", "action", "result_public_key_pem"}
+    if "study" in value:
+        if value["study"] != "gold-three-month-cost-only-v1" or value["action"] != "estimate":
+            raise ValueError("The gold study supports metadata-only estimates")
+        required.add("study")
     if "reviewed_recovery_run" in value:
         if value["action"] != "screen" or value["reviewed_recovery_run"] != 37313440074:
             raise ValueError("Only the specifically reviewed MBT 504 can be recovered")
@@ -266,6 +270,74 @@ def run(request, root, work, report):
             report["comparison_error"] = str(exc).replace(api_key, "[REDACTED]")
 
 
+
+def gold_quote_candidates(product):
+    # Later contract months guarantee at least 3 months from the fixed window end.
+    codes = "FGHJKMNQUVXZ"
+    months = range(2 if product == "1OZ" else 1, 13)
+    return [(f"{product}{codes[m-1]}{y % 10}", y * 12 + m)
+            for y in (2027, 2028) for m in months
+            if product == "GC" or m % 2 == 0]
+
+
+def eligible_gold_symbols(candidates, mappings):
+    active = [(symbol, month) for symbol, month in candidates if mappings.get(symbol)]
+    return [symbol for symbol, month in active
+            if any(other != symbol and abs(other_month - month) <= 3
+                   for other, other_month in active)]
+
+
+def run_gold_quote(report):
+    """Free metadata and symbology only; never call timeseries or batch submission."""
+    import databento as db
+    import google.auth
+    from google.auth.transport.requests import AuthorizedSession
+    import pandas as pd
+
+    report["stage"] = "secret_access"
+    credentials, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
+    response = AuthorizedSession(credentials).get(
+        f"https://secretmanager.googleapis.com/v1/projects/{PROJECT}/secrets/databento-api-key/versions/latest:access",
+        timeout=30)
+    response.raise_for_status()
+    api_key = base64.b64decode(response.json()["payload"]["data"]).decode().strip()
+    if not api_key:
+        raise ValueError("Secret is empty")
+    SENSITIVE_VALUES.append(api_key)
+    report["secret_access"] = "verified"
+    client = db.Historical(api_key)
+    report["stage"] = "dataset_range"
+    available = client.metadata.get_dataset_range(dataset="GLBX.MDP3")
+    start = "2026-07-09"
+    end = min(pd.Timestamp("2026-10-09", tz="UTC"), pd.to_datetime(available["end"], utc=True))
+    report.update(window=[start, end.isoformat()],
+                  requested_end="2026-10-09",
+                  minimum_maturity_cutoff="2027-01-09",
+                  paid_download_started=False,
+                  definition_downloaded=False,
+                  eligibility_note="Outrights only; eligible contract months are Jan 2027 or later for GC/MGC and Feb 2027 or later for 1OZ. 1OZ expires in the prior month. Keep only contracts with another eligible expiry month within 3 months. Exact vendor expiration timestamps require subsequent definition validation.",
+                  quotes={})
+    for product in ("1OZ", "MGC", "GC"):
+        report["stage"] = f"symbology_{product}"
+        candidates = gold_quote_candidates(product)
+        resolved = client.symbology.resolve(
+            dataset="GLBX.MDP3", symbols=[s for s, _ in candidates],
+            stype_in="raw_symbol", stype_out="instrument_id",
+            start_date=start, end_date=end.date().isoformat())
+        symbols = eligible_gold_symbols(candidates, resolved["result"])
+        product_report = {"symbols": symbols, "schemas": {}}
+        report["quotes"][product] = product_report
+        if not symbols:
+            product_report["status"] = "no_eligible_symbols"
+            continue
+        for schema in ("trades", "mbp-1", "mbo", "bbo-1m"):
+            report["stage"] = f"cost_{product}_{schema}"
+            kwargs = dict(dataset="GLBX.MDP3", symbols=symbols, stype_in="raw_symbol",
+                          schema=schema, start=start, end=end.isoformat())
+            product_report["schemas"][schema] = {"estimated_usd": metadata_cost(client, **kwargs)}
+        product_report["status"] = "quoted"
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--request", type=Path, required=True)
@@ -280,7 +352,10 @@ def main():
     # Vendor and SDK diagnostics stay in memory; public logs contain only status.
     with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
         try:
-            run(request, args.research_root, args.work, report)
+            if request.get("study") == "gold-three-month-cost-only-v1":
+                run_gold_quote(report)
+            else:
+                run(request, args.research_root, args.work, report)
             report["status"] = "completed"
         except Exception as exc:
             report["status"] = "failed"
@@ -299,6 +374,11 @@ def main():
             status = 1
     encrypt_result(report, public_key, args.evidence / "result.encrypted.json")
     print(f"Bounded Databento request {request['request_id']}: {report['status']}; encrypted evidence only.")
+    if request.get("study") == "gold-three-month-cost-only-v1":
+        # Public evidence contains free quote metadata and sanitized status, no market records.
+        safe = {k: report[k] for k in ("status", "stage", "window", "paid_download_started",
+                "quotes", "error_type", "http_status", "error_stage") if k in report}
+        print("GOLD_COST_METADATA " + json.dumps(safe, allow_nan=False))
     return status
 
 
