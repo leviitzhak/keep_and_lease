@@ -51,6 +51,10 @@ Databento includes synthetic midnight UTC order-book snapshots on weekdays,
 allowing independent book reconstruction at these daily boundaries. No extra
 trades-only or top-of-book dataset is purchased.
 
+The saved data can be checked without new purchases using the fixed
+[1OZ data audit](GOLD_1OZ_DATA_AUDIT.md), which verifies files and reports
+actual contract activity and overlapping expiry-pair coverage.
+
 The workflow is serialized and has a 350-minute execution limit. There is no
 scheduled monitoring or automatic resubmission. After launch, the agent reports
 the workflow run ID and storage prefix without polling progress. Installing the
