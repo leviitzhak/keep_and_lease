@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "request_id": "gold-1oz-saved-data-audit-20261009-v1",
+  "request_id": "gold-1oz-saved-data-audit-20261009-v2",
   "action": "audit",
   "result_public_key_pem": "-----BEGIN PUBLIC KEY-----\nMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAthDglQ/ZzNX6corOLyCk\nl3OMuTTP4cZMfPh9EibibjjILF5zQMeCG3AUpTeKllSZGifrq0DUmM8MDnosnqDF\nyum3RJzBmI6UUwu1vbJIxuOgYaMtJy9F40Y1BAXicmZfNtFIkVVmIzAYtsXMpv5p\nT2AGwl+W2JzNXgaZ32rtxTlztjABJ0l+1IzEoevGem6EZgXl/miBGcbLLDzUt0EV\nP32xkvPpdzPNZcLP82P8edNNBbOJF0+J+XVJT6n2TxVRsNV3TmzkRVZkZK1IqlCn\nmEyD8lDYWeXUh2eA5Wmrppo26gdru+G3/E2Q1Mq/aTdotXSq3GXfw4wiqtzn+tGf\nMHKbO5cMdCtbYxhYbE14K1jb4sJjvpwIgcPz7mFbMxt5IiOv8qT10VRfL2o0lGJG\ndHCpStVXZB3PiChnMtPoWMgwO4pYSxzArk4oGN6I1XREDJi9yHOsN2E2Wsmxrmi5\nF1ZswUEStYADSX4iko1Zugz3lO6p40Mp2atoD6ymLZ6lAgMBAAE=\n-----END PUBLIC KEY-----\n"
 }
