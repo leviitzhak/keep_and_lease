@@ -1,0 +1,90 @@
+name: Download full BTC futures history
+run-name: BTC full history — ${{ github.event.head_commit.message }}
+on:
+  push:
+    branches: [agent/cloud-autonomous-access]
+    paths: [.cloud-agent/requests/deribit-full-history.json]
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: deribit-full-history
+  cancel-in-progress: false
+jobs:
+  prepare:
+    if: github.ref == 'refs/heads/agent/cloud-autonomous-access'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    outputs:
+      action: ${{ steps.request.outputs.action }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate request and test resume integrity
+        id: request
+        run: |
+          python -m unittest discover -s research/deribit_history -p test_full_history.py -v
+          python -c "import sys,os; sys.path.insert(0,'research/deribit_history'); from download_full_history import request; r=request(); open(os.environ['GITHUB_OUTPUT'],'a').write('action='+r['action']+'\n')"
+      - run: python -m pip install 'google-cloud-storage>=2.18,<4'
+      - uses: google-github-actions/auth@v2
+        with:
+          project_id: keep-and-lease
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com
+      - name: Preflight metadata and storage only
+        if: steps.request.outputs.action == 'validate'
+        run: python -u research/deribit_history/download_full_history.py --mode validate
+      - name: Freeze available instrument histories
+        if: steps.request.outputs.action == 'download'
+        run: python -u research/deribit_history/download_full_history.py --mode plan
+  download:
+    needs: prepare
+    if: needs.prepare.outputs.action == 'download'
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'google-cloud-storage>=2.18,<4'
+      - uses: google-github-actions/auth@v2
+        with:
+          project_id: keep-and-lease
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com
+      - name: Download and checkpoint verified chunks
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: python -u research/deribit_history/download_full_history.py --mode download --shard "$SHARD"
+  finalize:
+    needs: [prepare, download]
+    if: needs.prepare.outputs.action == 'download'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'google-cloud-storage>=2.18,<4'
+      - uses: google-github-actions/auth@v2
+        with:
+          project_id: keep-and-lease
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com
+      - name: Publish completed available-history manifest
+        run: python -u research/deribit_history/download_full_history.py --mode finish
