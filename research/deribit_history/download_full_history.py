@@ -1,7 +1,8 @@
 """Full available Deribit BTC dated-futures archive, immutable resumable chunks."""
-import argparse, gzip, hashlib, json, math, os, re, time, urllib.parse, urllib.request
+import argparse, gzip, hashlib, json, math, os, re, socket, time, urllib.error, urllib.parse, urllib.request
 from pathlib import Path
 from datetime import datetime, timezone
+from concurrent.futures import ThreadPoolExecutor
 from download_extension import create_bytes, encode, digest
 BUCKET = 'keep-and-lease-market-data'
 PREFIX = 'btc/research/deribit-full-history-v1'
@@ -9,7 +10,8 @@ REQUEST = '.cloud-agent/requests/deribit-full-history.json'
 SYMBOL = re.compile(r'^BTC-[0-9]{1,2}[A-Z]{3}[0-9]{2}$')
 SHARDS = 8
 CHUNK = 10000
-PAGE = 10000
+PAGE = 1000
+POLICY = 'archive-reconcile-v2'
 ALLOWED = {'get_instruments', 'get_last_trades_by_instrument'}
 
 def request():
@@ -24,7 +26,7 @@ def request():
         raise ValueError('Invalid request sequence')
     return r
 
-def api(method, **params):
+def api(method, evidence=None, **params):
     if method not in ALLOWED:
         raise ValueError('Unsupported public endpoint')
     if method == 'get_instruments':
@@ -33,19 +35,111 @@ def api(method, **params):
     elif not SYMBOL.fullmatch(params.get('instrument_name', '')):
         raise ValueError('Only dated BTC instruments are authorized')
     params['include_old'] = 'true'
-    url = 'https://history.deribit.com/api/v2/public/' + method + '?' + urllib.parse.urlencode(params)
     for attempt in range(7):
+        record = {'method': method, 'parameters': dict(params),
+                  'retrieved_at': datetime.now(timezone.utc).isoformat()}
         try:
+            url = 'https://history.deribit.com/api/v2/public/' + method + '?' + urllib.parse.urlencode(params)
             time.sleep(0.5)
             with urllib.request.urlopen(url, timeout=60) as f:
                 result = json.load(f)
+            record['response'] = result
             if 'error' in result:
+                if result['error'].get('code') == 13888:
+                    raise TimeoutError('Deribit archive timed_out (13888)')
                 raise ValueError(str(result['error']))
             return result['result']
-        except Exception:
+        except urllib.error.HTTPError as e:
+            body = e.read().decode('utf-8', errors='replace')
+            record['http_status'], record['error_body'] = e.code, body
+            timed_out = 'timed_out' in body or '13888' in body
+            if not timed_out and e.code not in (429, 500, 502, 503, 504):
+                raise ValueError(f'Deribit HTTP {e.code}: {body[:500]}') from e
             if attempt == 6:
                 raise
-            time.sleep(min(30, 2 ** attempt))
+            if timed_out and params.get('count', 0) > 100:
+                params['count'] = max(100, params['count'] // 2)
+        except (TimeoutError, socket.timeout, urllib.error.URLError) as e:
+            record['error'] = str(e)
+            if attempt == 6:
+                raise
+            if params.get('count', 0) > 100:
+                params['count'] = max(100, params['count'] // 2)
+        finally:
+            if evidence is not None:
+                evidence.append(record)
+        time.sleep(min(16, 2 ** attempt))
+
+
+def numeric_flags(row):
+    flags = []
+    for field in ('price', 'amount', 'timestamp'):
+        value = row.get(field)
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
+            flags.append(f'invalid_{field}')
+        elif not math.isfinite(value):
+            raise ValueError(f'Non-finite JSON numeric value: {field}')
+        elif value <= 0:
+            flags.append(('zero_' if value == 0 else 'negative_') + field)
+    return flags
+
+
+def page_rows(result, symbol):
+    by_seq, by_id = {}, {}
+    for row in result['trades']:
+        seq, identifier = row.get('trade_seq'), row.get('trade_id')
+        if row.get('instrument_name') != symbol or type(seq) is not int or seq < 1 or not identifier:
+            raise ValueError('Wrong instrument or invalid trade identity')
+        if seq in by_seq and by_seq[seq] != row:
+            raise ValueError(f'Conflicting sequence {symbol} {seq}')
+        if identifier in by_id and by_id[identifier] != seq:
+            raise ValueError(f'Conflicting trade ID {symbol} {identifier}')
+        numeric_flags(row)
+        by_seq[seq], by_id[identifier] = row, seq
+    return [by_seq[k] for k in sorted(by_seq)]
+
+
+def collect_chunk(symbol, start, end, responses):
+    # API bounds are hints: older archives sometimes return shifted windows.
+    # Advance by returned trade_seq, and never advance past an unresolved hole.
+    captured, ids = {}, {}
+    cursor, query_start, stalled, queries = start, start, 0, 0
+    while cursor <= end:
+        queries += 1
+        if queries > 500:
+            raise ValueError('Bounded chunk request budget exceeded')
+        result = api('get_last_trades_by_instrument', evidence=responses,
+                     instrument_name=symbol, start_seq=query_start,
+                     count=PAGE, sorting='asc')
+        rows = page_rows(result, symbol)
+        for row in rows:
+            seq, identifier = row['trade_seq'], row['trade_id']
+            if start <= seq <= end:
+                if seq in captured and captured[seq] != row:
+                    raise ValueError(f'Conflicting overlap {symbol} {seq}')
+                if identifier in ids and ids[identifier] != seq:
+                    raise ValueError(f'Duplicate trade ID across pages: {identifier}')
+                captured[seq], ids[identifier] = row, seq
+        before = cursor
+        while cursor <= end and cursor in captured:
+            cursor += 1
+        if cursor > before:
+            query_start, stalled = cursor, 0
+            continue
+        stalled += 1
+        if stalled >= 8:
+            raise ValueError(f'Unresolved sequence gap: {symbol} {cursor}; retained response evidence')
+        if not rows:
+            query_start = max(1, query_start - PAGE * 2 ** (stalled - 1))
+        elif rows[0]['trade_seq'] > cursor:
+            query_start = max(1, query_start - max(rows[0]['trade_seq'] - cursor, 2 ** (stalled - 1)))
+        elif rows[-1]['trade_seq'] < cursor:
+            query_start += max(1, cursor - rows[0]['trade_seq'])
+        else:
+            # The page brackets a real/endpoint hole: seek from its left edge.
+            query_start = max(1, cursor - PAGE // 2 * 2 ** (stalled - 1))
+    return [captured[n] for n in range(start, end + 1)]
+
 
 def catalog():
     raw = {flag: api('get_instruments', currency='BTC', kind='future', expired=flag)
@@ -75,22 +169,11 @@ def key_for(job_id, name):
     return f'{PREFIX}/jobs/{job_id}/{name}'
 
 def checked_rows(result, symbol, start, end):
-    rows = result['trades']
-    if not rows:
-        raise ValueError(f'Empty page before frozen tail: {symbol} {start}')
-    rows = sorted(rows, key=lambda x: x['trade_seq'])
-    if [r['trade_seq'] for r in rows] != list(range(start, start + len(rows))):
-        raise ValueError(f'Sequence gap or duplicate: {symbol} {start}')
-    if rows[-1]['trade_seq'] > end:
-        raise ValueError('Endpoint exceeded requested sequence range')
-    ids = set()
-    for r in rows:
-        if r.get('instrument_name') != symbol or r['trade_id'] in ids:
-            raise ValueError('Wrong instrument or duplicate trade ID')
-        ids.add(r['trade_id'])
-        if not all(math.isfinite(r[k]) and r[k] > 0 for k in ('price', 'amount', 'timestamp')):
-            raise ValueError('Invalid trade numeric field')
+    rows = [r for r in page_rows(result, symbol) if start <= r['trade_seq'] <= end]
+    if not rows or [r['trade_seq'] for r in rows] != list(range(start, start + len(rows))):
+        raise ValueError(f'Sequence gap: {symbol} {start}')
     return rows
+
 
 def verify_receipt(bucket, key, symbol, start, end):
     r = get_json(bucket, key)
@@ -144,6 +227,43 @@ def plan(bucket, r):
     create_bytes(bucket, key, encode(p))
     return p
 
+def reconcile_plan(bucket, r, original):
+    key = key_for(r['job_id'], 'plan-reconciled-v2.json')
+    previous = get_json(bucket, key)
+    if previous is not None:
+        return previous
+    def boundary(item):
+        symbol = item['instrument']
+        expiry = item['metadata']['expiration_timestamp']
+        frozen_at = datetime.fromisoformat(item['snapshot_at']).timestamp() * 1000
+        # Keep active contract cutoffs exactly as originally frozen.
+        if expiry > frozen_at or item['last_available_seq'] is None:
+            return dict(item)
+        saved_key = key_for(r['job_id'], f'boundaries-v2/{symbol}.json')
+        saved = get_json(bucket, saved_key)
+        if saved is None:
+            evidence = []
+            result = api('get_last_trades_by_instrument', evidence=evidence,
+                         instrument_name=symbol, count=PAGE, sorting='desc')
+            rows = page_rows(result, symbol)
+            if not rows:
+                raise ValueError(f'Expired tail disappeared: {symbol}')
+            high = max(item['last_available_seq'], max(row['trade_seq'] for row in rows))
+            data = gzip.compress(encode(evidence), mtime=0)
+            obj = create_bytes(bucket, f'{PREFIX}/objects/{digest(data)}/boundary-response.json.gz', data)
+            saved = {'instrument': symbol, 'original_last_seq': item['last_available_seq'],
+                     'last_seq': high, 'evidence': obj, 'policy': POLICY}
+            create_bytes(bucket, saved_key, encode(saved))
+        return dict(item, last_available_seq=saved['last_seq'], original_last_available_seq=item['last_available_seq'], boundary_receipt=saved_key)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        instruments = list(pool.map(boundary, original['instruments']))
+    result = dict(original, instruments=instruments, source_policy=POLICY,
+                  original_plan_key=key_for(r['job_id'], 'plan.json'),
+                  boundary_policy='Maximum of original frozen tail and a 1000-record descending tail sample, expired contracts only')
+    create_bytes(bucket, key, encode(result))
+    return result
+
+
 def tasks(p, shard):
     for item in p['instruments']:
         lo, hi = item['first_available_seq'], item['last_available_seq']
@@ -160,38 +280,39 @@ def download_chunk(bucket, r, symbol, start, end, label):
     old = verify_receipt(bucket, key, symbol, start, end)
     if old:
         return key, old['rows'], True
-    cursor = start
-    trades, responses, ids = [], [], set()
-    while cursor <= end:
-        result = api('get_last_trades_by_instrument', instrument_name=symbol,
-                     start_seq=cursor, end_seq=min(cursor + PAGE - 1, end),
-                     count=PAGE, sorting='asc')
-        rows = checked_rows(result, symbol, cursor, min(cursor + PAGE - 1, end))
-        for row in rows:
-            if row['trade_id'] in ids:
-                raise ValueError('Duplicate trade ID across pages')
-            ids.add(row['trade_id'])
-        responses.append({'start_seq': cursor, 'retrieved_at': datetime.now(timezone.utc).isoformat(), 'result': result})
-        trades.extend(rows)
-        cursor = rows[-1]['trade_seq'] + 1
+    responses = []
+    try:
+        trades = collect_chunk(symbol, start, end, responses)
+    except Exception as exc:
+        if responses:
+            data = gzip.compress(encode(responses), mtime=0)
+            obj = create_bytes(bucket, f'{PREFIX}/failure-evidence/{digest(data)}.json.gz', data)
+            exc.evidence_key = obj['key']
+        raise
+    anomalies = [{'trade_seq': t['trade_seq'], 'trade_id': t['trade_id'],
+                  'flags': numeric_flags(t), 'eligible_for_execution': False}
+                 for t in trades if numeric_flags(t)]
     objects = []
-    for name, values in [('trades.jsonl.gz', trades), ('responses.jsonl.gz', responses)]:
+    for name, values in [('trades.jsonl.gz', trades), ('responses.jsonl.gz', responses), ('anomalies.jsonl.gz', anomalies)]:
         data = gzip.compress(b''.join(encode(v).replace(b'\n', b'') + b'\n' for v in values), mtime=0)
         objects.append(create_bytes(bucket, f'{PREFIX}/objects/{digest(data)}/{name}', data))
     receipt = {'schema_version': 1, 'status': 'COMPLETE', 'instrument': symbol,
                'first_seq': start, 'last_seq': end, 'rows': len(trades), 'objects': objects,
-               'min_timestamp': min(t['timestamp'] for t in trades), 'max_timestamp': max(t['timestamp'] for t in trades),
-               'timestamp_reversals': sum(b['timestamp'] < a['timestamp'] for a, b in zip(trades, trades[1:]))}
+               'source_policy': POLICY, 'numeric_anomaly_rows': len(anomalies),
+               'source_commit': os.environ.get('GITHUB_SHA'),
+               'min_timestamp': min((t['timestamp'] for t in trades if isinstance(t.get('timestamp'), (int, float)) and t['timestamp'] > 0), default=None), 'max_timestamp': max((t['timestamp'] for t in trades if isinstance(t.get('timestamp'), (int, float)) and t['timestamp'] > 0), default=None),
+               'timestamp_reversals': sum(b['timestamp'] < a['timestamp'] for a, b in zip(trades, trades[1:]) if isinstance(a.get('timestamp'), (int, float)) and isinstance(b.get('timestamp'), (int, float)))}
     create_bytes(bucket, key, encode(receipt))
     return key, len(trades), False
 
 def download(bucket, r, shard):
-    p = get_json(bucket, key_for(r['job_id'], 'plan.json'))
+    p = get_json(bucket, key_for(r['job_id'], 'plan-reconciled-v2.json'))
     if p is None:
         raise ValueError('Missing frozen plan')
     started = time.monotonic()
     completed, failed = [], []
     pending = False
+    consecutive_operational_failures = 0
     for symbol, start, end, label in tasks(p, shard):
         if time.monotonic() - started > 300 * 60:
             pending = True
@@ -199,11 +320,13 @@ def download(bucket, r, shard):
         try:
             key, rows, reused = download_chunk(bucket, r, symbol, start, end, label)
             completed.append(key)
+            consecutive_operational_failures = 0
             print(json.dumps({'stage': 'CHUNK_COMPLETE', 'instrument': symbol, 'first_seq': start, 'last_seq': end, 'reused': reused}), flush=True)
         except Exception as e:
-            failed.append({'instrument': symbol, 'first_seq': start, 'last_seq': end, 'error': str(e)[:500]})
+            failed.append({'instrument': symbol, 'first_seq': start, 'last_seq': end, 'error': str(e)[:500], 'evidence_key': getattr(e, 'evidence_key', None)})
             print(json.dumps({'stage': 'CHUNK_FAILED', **failed[-1]}), flush=True)
-            if len(failed) >= 10:
+            consecutive_operational_failures = 0 if isinstance(e, ValueError) else consecutive_operational_failures + 1
+            if consecutive_operational_failures >= 10:
                 pending = True
                 break
     report = {'job_id': r['job_id'], 'shard': shard, 'status': 'COMPLETE' if not failed and not pending else 'INCOMPLETE',
@@ -215,12 +338,12 @@ def download(bucket, r, shard):
     create_bytes(bucket, key_for(r['job_id'], f'completed/shard-{shard}.json'), encode(report))
 
 def finish(bucket, r):
-    p = get_json(bucket, key_for(r['job_id'], 'plan.json'))
+    p = get_json(bucket, key_for(r['job_id'], 'plan-reconciled-v2.json'))
     shards = [get_json(bucket, key_for(r['job_id'], f'completed/shard-{s}.json')) for s in range(SHARDS)]
     if p is None or any(s is None or s['status'] != 'COMPLETE' for s in shards):
         raise ValueError('At least one shard is incomplete')
     result = {'schema_version': 1, 'job_id': r['job_id'], 'status': 'COMPLETE_AVAILABLE_HISTORY',
-              'plan_key': key_for(r['job_id'], 'plan.json'),
+              'plan_key': key_for(r['job_id'], 'plan-reconciled-v2.json'),
               'shard_keys': [key_for(r['job_id'], f'completed/shard-{s}.json') for s in range(SHARDS)],
               'instruments': len(p['instruments']),
               'prefix_unavailable': [i['instrument'] for i in p['instruments'] if i['prefix_unavailable']]}
@@ -260,7 +383,7 @@ if __name__ == '__main__':
         from google.cloud import storage
         bucket = storage.Client().bucket(BUCKET)
         if a.mode == 'plan':
-            p = plan(bucket, r)
+            p = reconcile_plan(bucket, r, plan(bucket, r))
             print(json.dumps({'job_id': r['job_id'], 'stage': 'PLAN_READY', 'instruments': len(p['instruments']),
                               'storage': f"gs://{BUCKET}/{PREFIX}/jobs/{r['job_id']}/"}), flush=True)
         elif a.mode == 'download':
