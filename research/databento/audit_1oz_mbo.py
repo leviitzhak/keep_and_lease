@@ -135,7 +135,7 @@ def run(request, report):
         unexpected = set()
         for item in items[1:]:
             path = paths[item["name"]]
-            frame = db.DBNStore.from_file(path).to_df(pretty_ts=False, pretty_px=False, map_symbols=True).reset_index()
+            frame = db.DBNStore.from_file(path).to_df(pretty_ts=False, price_type="fixed", map_symbols=True).reset_index()
             day = item["request"]["start"][:10]
             start = pd.Timestamp(item["request"]["start"]).value
             end = pd.Timestamp(item["request"]["end"]).value

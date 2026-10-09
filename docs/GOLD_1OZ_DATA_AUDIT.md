@@ -17,7 +17,8 @@ Only the public key belongs in the request. Installation commits use
 The audit validates the final append-only checkpoint, all 93 completed
 partitions (92 daily MBO files and definitions), SHA-256 checksums, DBN schema
 and dataset, decoded fields, actual expirations, symbol coverage, duplicate
-records, timestamp ordering and partition bounds. Daily empty files are
+records, timestamp ordering and partition bounds. Prices are decoded with
+the current SDK's `price_type="fixed"` to retain integer precision. Daily empty files are
 reported rather than assumed to be acquisition failures.
 
 It reconstructs explicit orders independently for each outright, carrying
