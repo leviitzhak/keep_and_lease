@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
-  "request_id": "20261009-gc-access-probe",
+  "request_id": "20261009-gold-three-month-cost",
   "action": "estimate",
-  "result_public_key_pem": "-----BEGIN PUBLIC KEY-----\nMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAqPjHBGr5S6R5N1S4j875\n8YAOcoJqfb70k9RYOhSWRjA5Puiex/gTPboM4COnAVj9UdNb2xzGKtkXeKIc8zQq\nsXzHSexb/KnIit75iODTN6553zK6EHmD7puNY03jwGINMn4sA0Ux6C3620zxZTjH\nbw7u9q7O5hdvAibFblC37uUZJMfuaDL/6qXJ7MBCxdEMFmko/fhArE3nb5gbD5oI\nZFLF/y2dmY66c+7qJ4DQAUXZAaQmzkqiQ9miHImaBtYd/ESEAmwVi+uX4+L0IE6A\nLMwGQNpgcrlFcRbthPSa0w5EfAcb1brygGTQ0Q4hz02uiWJMLocLIK6ASkBgmvNi\ntvE46TzlVG1hS9/vEqrMC5af2+FNFLOivmXPaYFxcH9dilOO/8E4IBhKtFMmQ6yZ\nzAoeyPspNOnaYGIZDac6M1UzvkOTffuuicypheleIag2x3mQO+B4T/FpZ3pjA55y\n3QVaqODN2V6+3KhPRSyhVIuxYbfK6xUOZv1CkldelPONAgMBAAE=\n-----END PUBLIC KEY-----"
+  "study": "gold-three-month-cost-only-v1",
+  "result_public_key_pem": "-----BEGIN PUBLIC KEY-----\nMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAthDglQ/ZzNX6corOLyCk\nl3OMuTTP4cZMfPh9EibibjjILF5zQMeCG3AUpTeKllSZGifrq0DUmM8MDnosnqDF\nyum3RJzBmI6UUwu1vbJIxuOgYaMtJy9F40Y1BAXicmZfNtFIkVVmIzAYtsXMpv5p\nT2AGwl+W2JzNXgaZ32rtxTlztjABJ0l+1IzEoevGem6EZgXl/miBGcbLLDzUt0EV\nP32xkvPpdzPNZcLP82P8edNNBbOJF0+J+XVJT6n2TxVRsNV3TmzkRVZkZK1IqlCn\nmEyD8lDYWeXUh2eA5Wmrppo26gdru+G3/E2Q1Mq/aTdotXSq3GXfw4wiqtzn+tGf\nMHKbO5cMdCtbYxhYbE14K1jb4sJjvpwIgcPz7mFbMxt5IiOv8qT10VRfL2o0lGJG\ndHCpStVXZB3PiChnMtPoWMgwO4pYSxzArk4oGN6I1XREDJi9yHOsN2E2Wsmxrmi5\nF1ZswUEStYADSX4iko1Zugz3lO6p40Mp2atoD6ymLZ6lAgMBAAE=\n-----END PUBLIC KEY-----\n"
 }
