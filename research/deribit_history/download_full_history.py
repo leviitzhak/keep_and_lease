@@ -1,5 +1,5 @@
 """Full available Deribit BTC dated-futures archive, immutable resumable chunks."""
-import argparse, gzip, hashlib, json, math, os, re, socket, time, urllib.error, urllib.parse, urllib.request
+import argparse, gzip, hashlib, http.client, json, math, os, re, socket, time, urllib.error, urllib.parse, urllib.request
 from pathlib import Path
 from datetime import datetime, timezone
 from concurrent.futures import ThreadPoolExecutor
@@ -59,8 +59,11 @@ def api(method, evidence=None, **params):
                 raise
             if timed_out and params.get('count', 0) > 100:
                 params['count'] = max(100, params['count'] // 2)
-        except (TimeoutError, socket.timeout, urllib.error.URLError) as e:
+        except (TimeoutError, socket.timeout, urllib.error.URLError,
+                http.client.IncompleteRead, http.client.RemoteDisconnected,
+                ConnectionError, json.JSONDecodeError) as e:
             record['error'] = str(e)
+            record['error_type'] = type(e).__name__
             if attempt == 6:
                 raise
             if params.get('count', 0) > 100:
@@ -305,6 +308,26 @@ def download_chunk(bucket, r, symbol, start, end, label):
     create_bytes(bucket, key, encode(receipt))
     return key, len(trades), False
 
+def attempt_key(r, name):
+    attempt = f"{os.environ.get('GITHUB_RUN_ID', 'local')}-{os.environ.get('GITHUB_RUN_ATTEMPT', '1')}"
+    return key_for(r['job_id'], f'attempts/{attempt}/{name}')
+
+
+def announce(result):
+    print(json.dumps(result), flush=True)
+    summary = os.environ.get('GITHUB_STEP_SUMMARY')
+    if summary:
+        with open(summary, 'a') as f:
+            f.write(f"\nBTC history `{result['job_id']}`: **{result['status']}**")
+            if 'shard' in result:
+                f.write(f" (shard {result['shard']})")
+            f.write('.\n')
+            if result['status'] == 'PAUSED':
+                f.write('Time budget reached; saved chunks remain resumable. '
+                        'Submit a new download request with the same job ID and an incremented sequence. '
+                        'The archive is not yet complete.\n')
+
+
 def download(bucket, r, shard):
     p = get_json(bucket, key_for(r['job_id'], 'plan-reconciled-v2.json'))
     if p is None:
@@ -329,25 +352,54 @@ def download(bucket, r, shard):
             if consecutive_operational_failures >= 10:
                 pending = True
                 break
-    report = {'job_id': r['job_id'], 'shard': shard, 'status': 'COMPLETE' if not failed and not pending else 'INCOMPLETE',
+    status = 'INCOMPLETE' if failed else ('PAUSED' if pending else 'COMPLETE')
+    report = {'job_id': r['job_id'], 'shard': shard, 'status': status,
               'receipt_keys': completed, 'failures': failed, 'pending': pending}
-    report_key = key_for(r['job_id'], f"attempts/{os.environ.get('GITHUB_RUN_ID', 'local')}-{os.environ.get('GITHUB_RUN_ATTEMPT', '1')}/shard-{shard}.json")
+    if status == 'PAUSED':
+        report['pause_reason'] = 'work_time_budget'
+    report_key = attempt_key(r, f'shard-{shard}.json')
     create_bytes(bucket, report_key, encode(report))
-    if report['status'] != 'COMPLETE':
+    announce({'job_id': r['job_id'], 'shard': shard, 'status': status,
+              'completed_chunks': len(completed), 'failed_chunks': len(failed),
+              'report_key': report_key})
+    if status == 'INCOMPLETE':
         raise RuntimeError('Shard incomplete; rerun failed jobs to resume verified chunks')
-    create_bytes(bucket, key_for(r['job_id'], f'completed/shard-{shard}.json'), encode(report))
+    if status == 'COMPLETE':
+        create_bytes(bucket, key_for(r['job_id'], f'completed/shard-{shard}.json'), encode(report))
+    return report
 
 def finish(bucket, r):
     p = get_json(bucket, key_for(r['job_id'], 'plan-reconciled-v2.json'))
     shards = [get_json(bucket, key_for(r['job_id'], f'completed/shard-{s}.json')) for s in range(SHARDS)]
-    if p is None or any(s is None or s['status'] != 'COMPLETE' for s in shards):
-        raise ValueError('At least one shard is incomplete')
+    if p is None:
+        raise ValueError('Missing frozen plan')
+    paused = []
+    for shard, record in enumerate(shards):
+        if record is not None:
+            if (record.get('job_id'), record.get('shard'), record.get('status')) != (r['job_id'], shard, 'COMPLETE'):
+                raise ValueError('Invalid completed shard record')
+            continue
+        attempt = get_json(bucket, attempt_key(r, f'shard-{shard}.json'))
+        if (attempt is None or
+                (attempt.get('job_id'), attempt.get('shard'), attempt.get('status')) != (r['job_id'], shard, 'PAUSED') or
+                attempt.get('pause_reason') != 'work_time_budget' or
+                attempt.get('failures') != [] or attempt.get('pending') is not True):
+            raise ValueError(f'Shard {shard} is incomplete without a clean pause report for this attempt')
+        paused.append(shard)
+    if paused:
+        result = {'job_id': r['job_id'], 'status': 'PAUSED', 'paused_shards': paused,
+                  'pause_reason': 'work_time_budget', 'resume_request_sequence': r['sequence'] + 1}
+        create_bytes(bucket, attempt_key(r, 'summary.json'), encode(result))
+        announce(result)
+        return result
     result = {'schema_version': 1, 'job_id': r['job_id'], 'status': 'COMPLETE_AVAILABLE_HISTORY',
               'plan_key': key_for(r['job_id'], 'plan-reconciled-v2.json'),
               'shard_keys': [key_for(r['job_id'], f'completed/shard-{s}.json') for s in range(SHARDS)],
               'instruments': len(p['instruments']),
               'prefix_unavailable': [i['instrument'] for i in p['instruments'] if i['prefix_unavailable']]}
     create_bytes(bucket, key_for(r['job_id'], 'manifest.json'), encode(result))
+    announce(result)
+    return result
 
 def preflight():
     raw, instruments = catalog()

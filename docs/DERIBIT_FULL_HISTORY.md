@@ -40,6 +40,10 @@ Job plan, receipts, attempts, completed shard records, and final manifest:
 Each chunk holds up to 10,000 consecutive trade sequences. Requests start with
 1,000 records and use `include_old=true`. Archive timeouts (including HTTP 400
 with code 13888) reduce the requested count, down to 100, with bounded backoff.
+Interrupted response bodies (`IncompleteRead`), disconnects, connection resets,
+and invalid/truncated JSON also retry the same sequence with a smaller page.
+Requests have at most seven attempts; retry exhaustion remains a real failure
+and preserves the exception type and request parameters in failure evidence.
 Other permanent HTTP errors retain the error body and fail explicitly.
 See Deribit's institutional setup guide, Historical Data section:
 https://statics.deribit.com/files/DeribitInstitutionalSetupGuide.pdf.
@@ -66,10 +70,19 @@ and verify downloaded bytes before committing the immutable receipt. On resume,
 verify existing receipt/object hashes and skip its API download. Incomplete
 chunks retry. Sequence gaps fail rather than silently skipping records.
 
-Workers stop after a 300-minute work budget (330-minute Actions timeout), save
-an INCOMPLETE report, and fail visibly if work remains. **Re-run failed jobs**
-resumes the same plan and job ID. A new request with the same job ID and incremented
-sequence also resumes. No automatic agent monitoring or recurring retry loop.
+Workers check a 300-minute work budget between chunks (330-minute Actions timeout).
+If work remains without chunk failures, they save a `PAUSED` attempt report with
+reason `work_time_budget` and exit successfully. Logs and the Actions job summary
+state that the archive is not yet complete. Actual chunk failures still produce
+`INCOMPLETE` and a failing worker, even if its time budget also expires.
+The finalizer accepts only completed shard records or clean pause reports from
+the current run attempt. A paused run writes `attempts/<run>-<attempt>/summary.json`
+and no final manifest; Actions success means the bounded attempt ran cleanly,
+not that all history has been downloaded.
+
+Resume with a new request using the same job ID and an incremented sequence.
+This uses the latest installed code and retries chunks without valid receipts.
+No automatic agent monitoring or recurring retry loop.
 Storage persists independently of GitHub Actions runner lifetime.
 The final manifest exists only after all eight shards have completed.
 
@@ -80,6 +93,9 @@ failed uploads and corrupt stored data. Recovery tests additionally cover shifte
 windows, out-of-range extras, identical/conflicting duplicates, genuine unresolved
 gaps, numeric anomaly retention, timeout-driven smaller pages and durable failure
 evidence.
+Transport/pause tests cover interrupted response recovery, retry exhaustion,
+durable pause reports, real failures at the time boundary, rejection of stale or
+missing reports, and withholding the final manifest until every shard completes.
 
 ## October 9 recovery
 The first bulk attempt saved 183 verified chunks (1,685,145 trades), then stopped
@@ -101,3 +117,16 @@ ranges passed with complete selected sequence coverage: BTC-29SEP17 30001-40000
 preserved), BTC-30MAR18 1-10000 (11 attempts), and BTC-29SEP17 350001-359794
 (10 attempts). The expired-tail probe separately found sequence 359795 in a
 larger tail response although count=1 returned 359794.
+
+## October 11 resume hardening
+Run `37916313719` saved 9,841 verified chunks representing 97,109,121 trades,
+including the 183 chunks reused from the first attempt. All eight workers reached
+their five-hour work budget. The only observed chunk failure was an interrupted
+HTTP response for BTC-28JUN24 sequences 840001–850000. The earlier sequence and
+zero-amount failures did not recur in that attempt.
+
+The transport retry and explicit pause changes retain job ID
+`btc-full-20261009-archive`, the reconciled plan, and all compatible receipts.
+Validation: 27 local unit tests pass. Install with `[skip ci]`, then submit request
+sequence 6 to resume using the existing operator workflow without application
+deployment. Launching this request does not establish download completion.

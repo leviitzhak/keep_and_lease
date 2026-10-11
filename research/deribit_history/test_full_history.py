@@ -123,6 +123,113 @@ class FullHistoryTest(unittest.TestCase):
         self.assertEqual(len(writes),1)
         self.assertIn('/failure-evidence/',writes[0])
 
+class TransportRecoveryTest(unittest.TestCase):
+    def test_interrupted_body_retried_with_bounded_smaller_request(self):
+        class Response:
+            def __init__(self, failure=None): self.failure = failure
+            def __enter__(self): return self
+            def __exit__(self, *args): pass
+            def read(self):
+                if self.failure: raise self.failure
+                return b'{"result":{"trades":[]}}'
+        for error in (d.http.client.IncompleteRead(b'partial', 227520),
+                      d.http.client.RemoteDisconnected('closed'), ConnectionResetError('reset'),
+                      d.json.JSONDecodeError('truncated', '{', 1)):
+            with self.subTest(error=type(error).__name__):
+                evidence = []
+                with patch.object(d.urllib.request, 'urlopen', side_effect=[Response(error), Response()]) as opened, patch.object(d.time, 'sleep'):
+                    result = d.api('get_last_trades_by_instrument', evidence=evidence,
+                                   instrument_name='BTC-25DEC26', count=1000, start_seq=840001)
+                self.assertEqual(result, {'trades': []})
+                self.assertEqual(opened.call_count, 2)
+                self.assertIn('count=500', opened.call_args.args[0])
+                self.assertIn('start_seq=840001', opened.call_args.args[0])
+                self.assertEqual(evidence[0]['error_type'], type(error).__name__)
+                self.assertEqual(len(evidence), 2)
+
+    def test_persistent_interruption_fails_after_seven_attempts(self):
+        evidence = []
+        with patch.object(d.urllib.request, 'urlopen', side_effect=d.http.client.IncompleteRead(b'partial', 99)) as opened, patch.object(d.time, 'sleep'):
+            with self.assertRaises(d.http.client.IncompleteRead):
+                d.api('get_last_trades_by_instrument', evidence=evidence,
+                      instrument_name='BTC-25DEC26', count=1000)
+        self.assertEqual(opened.call_count, 7)
+        self.assertEqual(len(evidence), 7)
+        self.assertEqual(evidence[-1]['parameters']['count'], 100)
+
+
+class PauseRecoveryTest(unittest.TestCase):
+    def setUp(self):
+        self.r = {'job_id': 'btc-full-20261009-test', 'sequence': 6}
+        self.saved = {}
+        self.p = {'instruments': []}
+        self.saved[d.key_for(self.r['job_id'], 'plan-reconciled-v2.json')] = self.p
+        def save(bucket, key, data):
+            self.saved[key] = d.json.loads(data)
+            return {'key': key}
+        for patcher in (
+                patch.object(d, 'get_json', side_effect=lambda bucket, key: self.saved.get(key)),
+                patch.object(d, 'create_bytes', side_effect=save),
+                patch.object(d, 'announce'),
+                patch.dict(d.os.environ, {'GITHUB_RUN_ID': 'test-run', 'GITHUB_RUN_ATTEMPT': '2'})):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def run_download(self, failure=None, times=(0, 1, 18001)):
+        chunks = [('BTC-25DEC26', 1, 2, 'a'), ('BTC-25DEC26', 3, 4, 'b')]
+        with patch.object(d, 'tasks', return_value=chunks), patch.object(d.time, 'monotonic', side_effect=times), patch.object(d, 'download_chunk', return_value=('receipt-a', 2, True), side_effect=failure):
+            return d.download(None, self.r, 0)
+
+    def test_time_budget_saves_pause_without_completion_record(self):
+        report = self.run_download()
+        self.assertEqual(report['status'], 'PAUSED')
+        self.assertEqual(report['receipt_keys'], ['receipt-a'])
+        self.assertEqual(self.saved[d.attempt_key(self.r, 'shard-0.json')], report)
+        self.assertNotIn(d.key_for(self.r['job_id'], 'completed/shard-0.json'), self.saved)
+
+    def test_time_budget_does_not_hide_real_failure(self):
+        with self.assertRaisesRegex(RuntimeError, 'Shard incomplete'):
+            self.run_download(ValueError('source gap'))
+        report = self.saved[d.attempt_key(self.r, 'shard-0.json')]
+        self.assertEqual(report['status'], 'INCOMPLETE')
+        self.assertEqual(len(report['failures']), 1)
+
+    def test_completed_shard_still_published(self):
+        report = self.run_download(times=(0, 1, 2))
+        self.assertEqual(report['status'], 'COMPLETE')
+        self.assertEqual(self.saved[d.key_for(self.r['job_id'], 'completed/shard-0.json')], report)
+
+    def fill_other_shards(self):
+        for shard in range(1, d.SHARDS):
+            self.saved[d.key_for(self.r['job_id'], f'completed/shard-{shard}.json')] = {
+                'job_id': self.r['job_id'], 'shard': shard, 'status': 'COMPLETE'}
+
+    def test_finish_paused_has_no_final_manifest(self):
+        self.run_download()
+        self.fill_other_shards()
+        result = d.finish(None, self.r)
+        self.assertEqual(result['status'], 'PAUSED')
+        self.assertEqual(result['paused_shards'], [0])
+        self.assertEqual(self.saved[d.attempt_key(self.r, 'summary.json')], result)
+        self.assertNotIn(d.key_for(self.r['job_id'], 'manifest.json'), self.saved)
+
+    def test_finish_rejects_missing_stale_or_failed_attempt(self):
+        self.fill_other_shards()
+        with self.assertRaises(ValueError): d.finish(None, self.r)
+        self.run_download()
+        with patch.dict(d.os.environ, {'GITHUB_RUN_ATTEMPT': '3'}):
+            with self.assertRaises(ValueError): d.finish(None, self.r)
+        self.saved[d.attempt_key(self.r, 'shard-0.json')]['failures'] = [{'error': 'gap'}]
+        with self.assertRaises(ValueError): d.finish(None, self.r)
+
+    def test_finish_complete_publishes_manifest(self):
+        self.run_download(times=(0, 1, 2))
+        self.fill_other_shards()
+        result = d.finish(None, self.r)
+        self.assertEqual(result['status'], 'COMPLETE_AVAILABLE_HISTORY')
+        self.assertEqual(self.saved[d.key_for(self.r['job_id'], 'manifest.json')], result)
+
+
 class BoundaryPlanTest(unittest.TestCase):
     def test_expired_tail_extended_active_tail_frozen_and_resume(self):
         saved={}

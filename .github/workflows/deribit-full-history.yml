@@ -86,5 +86,5 @@ jobs:
           project_id: keep-and-lease
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com
-      - name: Publish completed available-history manifest
+      - name: Report pause or publish completed available-history manifest
         run: python -u research/deribit_history/download_full_history.py --mode finish
