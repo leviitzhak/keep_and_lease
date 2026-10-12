@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "request_id": "20261009-gold-three-month-cost",
+  "request_id": "treasury-cost-jul11-oct10-2026-v1",
   "action": "estimate",
-  "study": "gold-three-month-cost-only-v1",
-  "result_public_key_pem": "-----BEGIN PUBLIC KEY-----\nMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAthDglQ/ZzNX6corOLyCk\nl3OMuTTP4cZMfPh9EibibjjILF5zQMeCG3AUpTeKllSZGifrq0DUmM8MDnosnqDF\nyum3RJzBmI6UUwu1vbJIxuOgYaMtJy9F40Y1BAXicmZfNtFIkVVmIzAYtsXMpv5p\nT2AGwl+W2JzNXgaZ32rtxTlztjABJ0l+1IzEoevGem6EZgXl/miBGcbLLDzUt0EV\nP32xkvPpdzPNZcLP82P8edNNBbOJF0+J+XVJT6n2TxVRsNV3TmzkRVZkZK1IqlCn\nmEyD8lDYWeXUh2eA5Wmrppo26gdru+G3/E2Q1Mq/aTdotXSq3GXfw4wiqtzn+tGf\nMHKbO5cMdCtbYxhYbE14K1jb4sJjvpwIgcPz7mFbMxt5IiOv8qT10VRfL2o0lGJG\ndHCpStVXZB3PiChnMtPoWMgwO4pYSxzArk4oGN6I1XREDJi9yHOsN2E2Wsmxrmi5\nF1ZswUEStYADSX4iko1Zugz3lO6p40Mp2atoD6ymLZ6lAgMBAAE=\n-----END PUBLIC KEY-----\n"
+  "study": "treasury-three-month-cost-only-v1",
+  "result_public_key_pem": "-----BEGIN PUBLIC KEY-----\nMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEA9v2b9HcSYhEcjPswSs3N\n6KUiHpz2dgWadqzydJQjEqWrKHykkRHftaz87fGlS3Yp8k+5KRq9FW3j1sOxChfs\nIMPjxHjRZiKkz1LuJxeeU0SLxD4GsnEjPDWEAlqFzjBJECG/izMbT3M6HdC0UNRO\nIFS8oXxKfaLKg3RSsS1vtpI6jx53YnK/pdkf5RdCKIdkttp2MsUsiJIjc6OwPDBe\nEtvv0zYXYmpgpK4Jr3YU6N99Qit2O1xdFKVcs/T8u5dCdRXoIxsLk3GSVUqZRCdK\nSZLpzpWh9SvSfQhPk1t6Zibws0nA22jMOS5jGkPvqhwBcrtJtLtp07nCZ+BSPYeI\neMgpGPXB1BGjj8GqWsDBEywKJi0lUwM0G9b31neSi0blv1hQDTvo+XXTkpFjpXHQ\nDjIUZ2BgzVOlSQfkt+rXmZ9DS0n49WCq7XpHpIcQUgJIKnWzTdqw5PTnF6YDcvRu\nCN8BF1NdOXC3995iN9Ig7RLE5kjb4+xOM2YcG87mBuBLAgMBAAE=\n-----END PUBLIC KEY-----\n"
 }
