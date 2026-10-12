@@ -1,5 +1,8 @@
 # Bounded Databento cloud research
 
+The [Treasury metadata-only study](TREASURY_DATABENTO_COST_ESTIMATES.md) quotes
+ZT/ZF/ZN/TN/ZB/UB over the fixed three-month window without purchasing data.
+
 The owner reported granting the existing `keep-lease-codex-operator` identity
 access to Secret Manager secret `databento-api-key` on October 5, 2026. The
 `databento-research.yml` workflow uses the existing GitHub OIDC connection on
@@ -16,13 +19,16 @@ is pinned to reviewed commit `a48da25628a211194b73bbc09026a9f152627d84`.
 Both actions use September 1 through October 1 exclusive for `SICZ6`/SLV and
 `MBTV6`/IBIT, one contract each, Nasdaq ETF quotes and CME futures.
 
+The named Treasury and gold studies below have their own fixed metadata-only
+scope; they do not invoke the September acquisition/cache path.
+
 `estimate` retrieves metadata only. `screen` checks the combined cumulative
 Databento estimate against a hard $1 ceiling before acquiring any market data.
 This counts prior reserved acquisitions restored from the private cache. It is
 not a vendor invoice limit or a query of remaining signup credits. Metadata-only server errors have at most three attempts; paid streaming requests
 are never retried automatically. No MBO,
 trades, arbitrary commands, other secrets, URLs or contract selections are
-accepted by the request. The workflow has a 25-minute timeout and serializes all
+accepted as arbitrary request parameters. The workflow has a 25-minute timeout and serializes all
 requests through one concurrency group.
 
 Private cache objects live under:
@@ -98,7 +104,7 @@ application preview. The subsequent request-only push starts the research
 workflow without triggering an application deployment. No master merge or GUI
 change is part of this operational addition.
 
-Validation: seven offline tests cover request limits, authenticated encryption
+Validation: ten offline tests cover request limits, authenticated encryption
 round-trip, write-ahead state/raw-file ordering, metadata-only retries, and the
 reviewed recovery partitions. Run:
 `python -m unittest discover -s tests -p 'test_cloud_databento_research.py'`.
@@ -129,3 +135,4 @@ workflow reuses the same operator identity, secret and private bucket; it adds
 no service-account permissions or application deployment. Licensed DBN data,
 append-only checkpoints and manifests remain in GCS. Its USD 0.25 cumulative
 estimated purchase limit includes failed or uncertain acquisition reservations.
+

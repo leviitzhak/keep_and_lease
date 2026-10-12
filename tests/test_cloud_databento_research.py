@@ -63,6 +63,41 @@ class ResearchTests(unittest.TestCase):
         request['references']['mbt']['units_per_share']=float('nan')
         with self.assertRaises(ValueError):runner.validate_request(request)
 
+    def test_treasury_study_accepts_only_fixed_metadata_request(self):
+        request=self.request();request['study']=runner.TREASURY_STUDY
+        runner.validate_request(request)
+        for extra in ({'action':'screen'}, {'start':'2020-01-01'}, {'symbols':['ES.FUT']},
+                      {'reviewed_recovery_run':37313440074}, {'study':'arbitrary'}):
+            with self.subTest(extra=extra), self.assertRaises(ValueError):
+                runner.validate_request({**request,**extra})
+
+    def test_treasury_quote_has_exact_window_and_never_acquires_data(self):
+        client=Mock()
+        client.metadata.get_dataset_range.return_value={'start':'2010-01-01T00:00:00Z','end':'2026-10-11T00:00:00Z'}
+        client.symbology.resolve.side_effect=lambda **kw: {'result': {symbol:[{'s':'1'}] for symbol in kw['symbols'] if symbol.endswith('Z6')}}
+        client.metadata.get_cost.side_effect=lambda **kw: .25 if kw['stype_in']=='parent' else .2
+        report={};runner.treasury_quote_plan(client,report)
+        self.assertEqual(client.metadata.get_cost.call_count,48)
+        self.assertEqual(set(report['quotes']),set(runner.TREASURY_PRODUCTS))
+        for product,row in report['quotes'].items():
+            self.assertEqual(row['outright_symbols'],[product+'Z6'])
+            for scope in ('parent_family','outrights'):
+                self.assertEqual(set(row[scope]),set(runner.TREASURY_SCHEMAS))
+                for value in row[scope].values():
+                    self.assertEqual(value['request']['start'],runner.TREASURY_START)
+                    self.assertEqual(value['request']['end'],runner.TREASURY_END)
+        self.assertEqual(report['totals_usd']['parent_family']['mbo'],1.5)
+        self.assertAlmostEqual(report['totals_usd']['outrights']['mbo'],1.2)
+        self.assertFalse(report['paid_download_started'])
+        client.timeseries.get_range.assert_not_called()
+        client.batch.submit_job.assert_not_called()
+
+    def test_treasury_quote_rejects_truncated_data_window(self):
+        client=Mock();client.metadata.get_dataset_range.return_value={'start':'2010-01-01T00:00:00Z','end':'2026-10-09T00:00:00Z'}
+        with self.assertRaises(ValueError):runner.treasury_quote_plan(client,{})
+        client.metadata.get_cost.assert_not_called()
+        client.symbology.resolve.assert_not_called()
+
     def test_only_recipient_can_read_encrypted_summary(self):
         payload={'private':'test-market-statistics','status':'completed'}
         with tempfile.TemporaryDirectory() as folder:
@@ -93,3 +128,4 @@ class ResearchTests(unittest.TestCase):
             self.assertLess(methods.index('blob().upload_from_filename'),methods.index('blob().upload_from_string'))
 
 if __name__=='__main__':unittest.main()
+

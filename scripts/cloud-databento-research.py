@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bounded September SIC/MBT screening via the existing keyless GCP operator."""
+"""Bounded Databento screening and metadata-only quotations via the GCP operator."""
 from __future__ import annotations
 import argparse
 import base64
@@ -25,15 +25,22 @@ PREFIX = "research/databento/september-2026-v1"
 PRESETS = ("sic", "mbt")
 SENSITIVE_VALUES = []  # Process memory only; never serialized.
 MAX_COST = 1.0  # Combined cumulative estimate, including restored paid caches.
+TREASURY_STUDY = "treasury-three-month-cost-only-v1"
+TREASURY_PRODUCTS = ("ZT", "ZF", "ZN", "TN", "ZB", "UB")
+TREASURY_SCHEMAS = ("trades", "mbp-1", "mbp-10", "mbo")
+TREASURY_START = "2026-07-11T00:00:00Z"
+TREASURY_END = "2026-10-10T00:00:00Z"
 
 
 def validate_request(value):
     required = {"schema_version", "request_id", "action", "result_public_key_pem"}
     if "study" in value:
-        if value["study"] != "gold-three-month-cost-only-v1" or value["action"] != "estimate":
-            raise ValueError("The gold study supports metadata-only estimates")
+        if value["study"] not in ("gold-three-month-cost-only-v1", TREASURY_STUDY) or value["action"] != "estimate":
+            raise ValueError("Named studies support metadata-only estimates")
         required.add("study")
     if "reviewed_recovery_run" in value:
+        if "study" in value:
+            raise ValueError("Cost-only studies cannot request acquisition recovery")
         if value["action"] != "screen" or value["reviewed_recovery_run"] != 37313440074:
             raise ValueError("Only the specifically reviewed MBT 504 can be recovered")
         required.add("reviewed_recovery_run")
@@ -338,6 +345,70 @@ def run_gold_quote(report):
         product_report["status"] = "quoted"
 
 
+def treasury_quote_plan(client, report):
+    """Fixed free metadata/symbology calls; no timeseries, batch or storage API."""
+    from datetime import datetime, timezone
+
+    available = client.metadata.get_dataset_range(dataset="GLBX.MDP3")
+    parse = lambda s: datetime.fromisoformat(s.replace("Z", "+00:00")).astimezone(timezone.utc)
+    start, end = parse(TREASURY_START), parse(TREASURY_END)
+    if parse(available["start"]) > start or parse(available["end"]) < end:
+        raise ValueError("Dataset does not cover the exact requested Treasury window")
+    report.update(dataset="GLBX.MDP3", window=[TREASURY_START, TREASURY_END],
+                  end_exclusive=True, dataset_range=available,
+                  paid_download_started=False, definition_downloaded=False,
+                  quoted_at_utc=datetime.now(timezone.utc).isoformat(), quotes={},
+                  scope_note="Parent families include outright expiries and listed futures spreads. The separate outright quote resolves quarterly raw symbols from 2026 through 2029; it excludes spreads and options and is not a front-month continuous series.")
+    for product in TREASURY_PRODUCTS:
+        row = {"parent_symbol": f"{product}.FUT", "parent_family": {}, "outrights": {}}
+        report["quotes"][product] = row
+        # Enumerate a documented bounded horizon; absent contracts are omitted by
+        # free symbology. No charged definition request is used for discovery.
+        candidates = [f"{product}{month}{year % 10}" for year in range(2026, 2030) for month in "HMUZ"]
+        report["stage"] = f"symbology_{product}"
+        resolved = client.symbology.resolve(dataset="GLBX.MDP3", symbols=candidates,
+                    stype_in="raw_symbol", stype_out="instrument_id",
+                    start_date=start.date().isoformat(), end_date=end.date().isoformat())
+        symbols = [symbol for symbol in candidates if resolved["result"].get(symbol)]
+        row["outright_symbols"] = symbols
+        row["unresolved_candidates"] = [symbol for symbol in candidates if symbol not in symbols]
+        if not symbols:
+            raise ValueError(f"No outright symbols resolve for {product}")
+        for scope, selection, stype in (("parent_family", [f"{product}.FUT"], "parent"),
+                                         ("outrights", symbols, "raw_symbol")):
+            for schema in TREASURY_SCHEMAS:
+                report["stage"] = f"cost_{product}_{scope}_{schema}"
+                request = dict(dataset="GLBX.MDP3", symbols=selection, stype_in=stype,
+                               schema=schema, start=TREASURY_START, end=TREASURY_END)
+                row[scope][schema] = {"estimated_usd": float(metadata_cost(client, **request)),
+                                      "request": request}
+        row["status"] = "quoted"
+    report["totals_usd"] = {scope: {schema: sum(report["quotes"][product][scope][schema]["estimated_usd"]
+                                                for product in TREASURY_PRODUCTS)
+                                      for schema in TREASURY_SCHEMAS}
+                             for scope in ("parent_family", "outrights")}
+    report["stage"] = "treasury_quotes_complete"
+
+
+def run_treasury_quote(report):
+    import databento as db
+    import google.auth
+    from google.auth.transport.requests import AuthorizedSession
+
+    report["stage"] = "secret_access"
+    credentials, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
+    response = AuthorizedSession(credentials).get(
+        f"https://secretmanager.googleapis.com/v1/projects/{PROJECT}/secrets/databento-api-key/versions/latest:access",
+        timeout=30)
+    response.raise_for_status()
+    api_key = base64.b64decode(response.json()["payload"]["data"]).decode().strip()
+    if not api_key:
+        raise ValueError("Secret is empty")
+    SENSITIVE_VALUES.append(api_key)
+    report["secret_access"] = "verified"
+    treasury_quote_plan(db.Historical(api_key), report)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--request", type=Path, required=True)
@@ -354,6 +425,8 @@ def main():
         try:
             if request.get("study") == "gold-three-month-cost-only-v1":
                 run_gold_quote(report)
+            elif request.get("study") == TREASURY_STUDY:
+                run_treasury_quote(report)
             else:
                 run(request, args.research_root, args.work, report)
             report["status"] = "completed"
@@ -384,3 +457,4 @@ def main():
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
