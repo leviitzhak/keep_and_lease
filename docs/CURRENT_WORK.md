@@ -1,5 +1,29 @@
 # Current work
 
+## BTC PRD exposure-band strategy preparation — 2026-10-13
+
+Documentation branch `docs/btc-prd-exposure-band-plan` is based on GitHub master
+`80be0fc4c30904a0f4dfb16e097de2a001424e64`. The requested strategy and the
+pre-implementation decision register are recorded in
+[BTC_PRD_EXPOSURE_BAND_PLAN.md](BTC_PRD_EXPOSURE_BAND_PLAN.md) and `TODO.md`.
+The revised design includes paid proxy in net exposure and excludes it from
+futures leverage; it defines reversible opening levels, APR-based directions,
+pair-aware three-month rolls, cash bootstrap, arbitrary-position restart/import,
+two latency legs and optional proxy margin-liquidity surcharge. Remaining
+research choices are labeled. The funded-transfer ledger rejects shorts and
+leverage; this is a limitation of that engine, not of all prior project research.
+
+Direct preflight read 182 retained raw files / 1,149,605 rows and verified every
+source hash. Both inspected dated pairs fail the 25% rule throughout their
+sample windows. A separate hypothetical proxy/future limit screen used 2%/1%
+and 500-ms observation + 500-ms market-arrival delays; its crossings are not
+portfolio fills, completed pairs or P&L. See
+[BTC_PRD_BAND_DATA_PREFLIGHT.md](BTC_PRD_BAND_DATA_PREFLIGHT.md). The full cash-start
+research replay precedes application integration and remains pending. This
+branch contains planning and the reproducible preflight under `docs/`; no
+application deployment or master merge is part of this work. Remote push was
+explicitly authorized by the owner after the first local commit was blocked.
+
 ## Rolling worst lease execution — 2026-09-24
 
 Branch `agent/rolling-worst-lease-execution` is based on GitHub master

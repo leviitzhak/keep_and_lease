@@ -6,6 +6,55 @@ The September 11 small batch completes four items and partially improves full-au
 progress. Scope and validation are recorded in `TODO_SMALL_BATCH_VALIDATION.md`;
 remaining items below are not implicitly completed by that batch.
 
+## BTC PRD strategy with an exposure band — research preparation (2026-10-13)
+
+Specification and decision register:
+[BTC_PRD_EXPOSURE_BAND_PLAN.md](BTC_PRD_EXPOSURE_BAND_PLAN.md).
+This is a new opt-in strategy; application strategy not implemented. The example
+30–60% exposure band and 2%/1% PRDs are not approved defaults.
+
+- [x] Record the requested exposure band, maximum total-position leverage,
+  high/low PRD opening/closing orders, optional opening-level increments,
+  three-month / 25%-separation maturity filters, lagging short fills and
+  optional holding/proxy long leg. Inspect current ledger/execution integration
+  and document open decisions, formulas and future acceptance cases.
+- [x] Record owner clarifications: holdings count in net exposure but paid proxy
+  is excluded from the futures-leverage numerator; pair direction depends only
+  on APR; closing restores lower ladder levels; proxy APR is e/(1-e) plus an
+  optional margin-liquidity surcharge; proxy pairs have no separation test.
+  Require pair-aware rolling at the three-month threshold, cash-only first POC,
+  arbitrary-position restart/import before integration, and two delay legs
+  (observations/fills to decisions; decisions to market) initially equal.
+- [x] Directly verify hashes and scan 182 available local raw files (1,149,605
+  rows). Sep26/Dec26 Mar–Jun and Dec26/Mar27 Jun–Sep have zero eligible seconds
+  under the 25% rule. Run a bounded proxy/future strict-through quote-crossing
+  screen at 2%/1% with two 500-ms delays. This is not a portfolio backtest.
+  See [BTC_PRD_BAND_DATA_PREFLIGHT.md](BTC_PRD_BAND_DATA_PREFLIGHT.md).
+- [ ] Resolve remaining research choices: bootstrap below the minimum band,
+  account/payoff and margin/cash model, actual leverage and size settings,
+  ladder scope/released quantities, quote freshness, anchor policy and roll
+  lead time/fallback. Keep proposed defaults distinct from owner requirements.
+- [ ] Inspect other pairs in the wider historical catalog; the two scanned
+  local datasets do not establish full-cloud-download coverage or completion.
+- [ ] Run the direct raw-data, capital-constrained research POC before
+  application integration: strict-through future fills, synthetic near-spot
+  proxy, cash startup, delayed fill knowledge, global reservations, reversible
+  ladder, pair-aware rolls, explicit funding/costs and full P&L reconciliation.
+  Compare delay, participation and proxy surcharge/margin-offset assumptions.
+- [ ] Implement a separately versioned signed-position/margin ledger and a
+  global exposure/leverage/order-reservation allocator. The existing funded
+  ledger is long-only and explicitly rejects short futures and leverage.
+- [ ] Implement concurrent pair inventory, bounded lagging shorts, closing/roll
+  reservations, strict-through fills with shared tape-volume budgets, actual
+  delayed fill knowledge, tranche catch-up targets and the reversible PRD ladder.
+- [ ] Define and validate arbitrary-position/order import and pause/restart:
+  reconcile actual account state, restore pair/rung lineage where available,
+  explicitly classify missing historical metadata and repair infeasible states.
+- [ ] Add opt-in GUI/API/preset controls, checkpoint persistence, complete
+  execution/risk/P&L audit and plots/exports; preserve earlier strategies.
+- [ ] Validate synthetic boundary/partial-fill/restart cases and the declared
+  direct real-tape research sample before application acceptance or long runs.
+
 ## Cost-aware expiry-amortized ranking strategy
 
 - [ ] **Separate lease estimation from hedge execution policy** (2026-09-25).

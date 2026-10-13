@@ -13,6 +13,8 @@ Start with [PROJECT_STATE.md](PROJECT_STATE.md).
 - [Strategy](STRATEGY.md) — portfolio construction and trading rules.
 - [Scoring](SCORING.md) — contract ranking formulas.
 - [Parameters](PARAMETERS.md) — configuration reference.
+- [BTC PRD exposure-band plan](BTC_PRD_EXPOSURE_BAND_PLAN.md) — proposed multi-pair opening/closing strategy, exposure/leverage accounting and decisions required before implementation.
+- [BTC PRD raw-data preflight](BTC_PRD_BAND_DATA_PREFLIGHT.md) — verified input coverage, maturity eligibility and a preliminary delayed strict-through quote screen; not a portfolio backtest.
 - [Empirical BTC lease execution](EMPIRICAL_LEASE_EXECUTION.md) — waiting-time/slippage calibration, funded execution budgets and the separate ten-day evaluation.
 - [GUI specification](GUI_SPECIFICATION.md) — views and interaction.
 - [Backtest engine](BACKTEST_ENGINE.md) — timing and accounting.

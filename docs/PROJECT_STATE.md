@@ -1,12 +1,24 @@
 # Keep & Lease — Project State
 
-_Last updated: 2026-09-24_
+_Last updated: 2026-10-13 (strategy-planning addition only)_
 
 ## Purpose
 
 Build an interactive research and backtesting application for strategies that allocate among commodity ETFs, commodity futures across maturities, and Treasury/cash instruments. The application should expose all economically meaningful parameters in a GUI and make the daily decisions auditable.
 
 ## Current scope
+
+- **Planned, not implemented:** BTC PRD pair strategy with configurable long
+  exposure band, maximum gross futures leverage, high/low opening/closing PRD,
+  lagging shorts, reversible opening ladder, pair-aware rolls and proxy long leg.
+  Cash-start raw-data research precedes integration; arbitrary-state recovery
+  is required before application acceptance. See
+  [BTC_PRD_EXPOSURE_BAND_PLAN.md](BTC_PRD_EXPOSURE_BAND_PLAN.md) for proposed
+  definitions, required accounting work and decisions before implementation.
+  Existing runtime/default strategies remain unchanged. Direct raw-input
+  preflight and a hypothetical delayed strict-through quote screen are recorded
+  in [BTC_PRD_BAND_DATA_PREFLIGHT.md](BTC_PRD_BAND_DATA_PREFLIGHT.md); they are not
+  a capital-constrained portfolio replay.
 
 - Optional rolling worst-lease execution for amortized ranking is implemented
   on `agent/rolling-worst-lease-execution`: trailing observed price-pair bounds,

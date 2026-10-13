@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-10-13 — BTC PRD exposure-band strategy preparation
+
+- Apply owner clarifications: proxy holdings count in exposure but not futures
+  leverage; use APR-driven directions, restore lower levels after closing,
+  roll near-expiry legs while retaining pair lineage, start the first POC in
+  cash, require arbitrary-position recovery before integration, and model two
+  initially equal latency legs. Add optional proxy margin-liquidity APR cost
+  and synthetic 24/7 near-spot execution with no proxy expiry restriction.
+- Verify and directly screen 182 retained raw files / 1,149,605 records. Both
+  inspected dated pairs fail the 25% separation rule; the proxy exception
+  provides a research path. Record hypothetical strict-through quote crossings
+  separately from the pending funded portfolio replay. Save reproducible
+  preflight code and source hashes under `docs/research/`.
+- Add a design-only specification and TODO workstream for a configurable BTC
+  exposure band, gross leverage limit, high/low PRD pair entry/exit, lagging
+  short fills, maturity proximity filters, optional entry ladder and proxy leg.
+- Record proposed rate/sign conventions, global reservations, partial-fill and
+  pair-inventory accounting, implementation dependencies and acceptance cases.
+  Explicitly identify unresolved owner choices and the current ledger's lack
+  of short/leverage support in the funded-transfer engine. No application
+  runtime behavior, defaults or deployment change.
+
 ## 2026-09-23 — Cloud Run cold-start diagnostics
 
 - Increase the web revision's startup-probe allowance from 30 to 120 seconds
