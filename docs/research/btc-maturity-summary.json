@@ -1,0 +1,174 @@
+{
+  "archive": {
+    "samples": 3741,
+    "pair_samples": 2409,
+    "no_pair_samples": 1332,
+    "passing_samples": 26,
+    "minimum_pct": 24.57245724572457,
+    "maximum_pct": 50.18382352941176
+  },
+  "listed": {
+    "samples": 3741,
+    "pair_samples": 2409,
+    "no_pair_samples": 1332,
+    "passing_samples": 26,
+    "minimum_pct": 24.57245724572457,
+    "maximum_pct": 50.18382352941176
+  },
+  "by_year": {
+    "2016": {
+      "samples": 172,
+      "pair_samples": 0,
+      "no_pair_samples": 172,
+      "passing_samples": 0,
+      "minimum_pct": null,
+      "maximum_pct": null
+    },
+    "2017": {
+      "samples": 365,
+      "pair_samples": 0,
+      "no_pair_samples": 365,
+      "passing_samples": 0,
+      "minimum_pct": null,
+      "maximum_pct": null
+    },
+    "2018": {
+      "samples": 365,
+      "pair_samples": 8,
+      "no_pair_samples": 357,
+      "passing_samples": 0,
+      "minimum_pct": 48.31858407079646,
+      "maximum_pct": 50.18382352941176
+    },
+    "2019": {
+      "samples": 365,
+      "pair_samples": 19,
+      "no_pair_samples": 346,
+      "passing_samples": 0,
+      "minimum_pct": 48.31858407079646,
+      "maximum_pct": 49.90859232175503
+    },
+    "2020": {
+      "samples": 366,
+      "pair_samples": 275,
+      "no_pair_samples": 91,
+      "passing_samples": 0,
+      "minimum_pct": 33.29268292682927,
+      "maximum_pct": 49.90859232175503
+    },
+    "2021": {
+      "samples": 365,
+      "pair_samples": 364,
+      "no_pair_samples": 1,
+      "passing_samples": 4,
+      "minimum_pct": 24.75442043222004,
+      "maximum_pct": 49.63636363636363
+    },
+    "2022": {
+      "samples": 365,
+      "pair_samples": 365,
+      "no_pair_samples": 0,
+      "passing_samples": 14,
+      "minimum_pct": 24.57245724572457,
+      "maximum_pct": 33.29268292682927
+    },
+    "2023": {
+      "samples": 365,
+      "pair_samples": 365,
+      "no_pair_samples": 0,
+      "passing_samples": 7,
+      "minimum_pct": 24.57245724572457,
+      "maximum_pct": 33.29268292682927
+    },
+    "2024": {
+      "samples": 366,
+      "pair_samples": 366,
+      "no_pair_samples": 0,
+      "passing_samples": 0,
+      "minimum_pct": 25.045871559633028,
+      "maximum_pct": 33.29268292682927
+    },
+    "2025": {
+      "samples": 365,
+      "pair_samples": 365,
+      "no_pair_samples": 0,
+      "passing_samples": 0,
+      "minimum_pct": 25.045871559633028,
+      "maximum_pct": 33.29268292682927
+    },
+    "2026": {
+      "samples": 282,
+      "pair_samples": 282,
+      "no_pair_samples": 0,
+      "passing_samples": 1,
+      "minimum_pct": 24.97712717291857,
+      "maximum_pct": 33.29268292682927
+    }
+  },
+  "intraday_25pct": {
+    "qualifying_pair_windows": [
+      {
+        "pair": [
+          "BTC-31DEC21",
+          "BTC-25MAR22"
+        ],
+        "start_utc": "2021-04-19T12:03:37.615+00:00",
+        "end_exclusive_utc": "2021-04-23T08:00:00.001+00:00",
+        "duration_hours": 91.93955166666667,
+        "minimum_ratio_pct": 24.71818221919867,
+        "start_ms": 1618833817615,
+        "end_exclusive_ms": 1619164800001
+      },
+      {
+        "pair": [
+          "BTC-30DEC22",
+          "BTC-31MAR23"
+        ],
+        "start_utc": "2022-03-25T08:54:59.724+00:00",
+        "end_exclusive_utc": "2022-04-01T08:00:00.001+00:00",
+        "duration_hours": 167.08341027777777,
+        "minimum_ratio_pct": 24.530827123858206,
+        "start_ms": 1648198499724,
+        "end_exclusive_ms": 1648800000001
+      },
+      {
+        "pair": [
+          "BTC-31MAR23",
+          "BTC-30JUN23"
+        ],
+        "start_utc": "2022-06-24T08:34:47.021+00:00",
+        "end_exclusive_utc": "2022-07-01T08:00:00.001+00:00",
+        "duration_hours": 167.42027222222222,
+        "minimum_ratio_pct": 24.529898997152806,
+        "start_ms": 1656059687021,
+        "end_exclusive_ms": 1656662400001
+      },
+      {
+        "pair": [
+          "BTC-29MAR24",
+          "BTC-28JUN24"
+        ],
+        "start_utc": "2023-06-23T08:24:30.064+00:00",
+        "end_exclusive_utc": "2023-06-30T08:00:00.001+00:00",
+        "duration_hours": 167.59164916666666,
+        "minimum_ratio_pct": 24.52942684396975,
+        "start_ms": 1687508670064,
+        "end_exclusive_ms": 1688112000001
+      },
+      {
+        "pair": [
+          "BTC-25JUN27",
+          "BTC-24SEP27"
+        ],
+        "start_utc": "2026-09-24T08:06:05.976+00:00",
+        "end_exclusive_utc": "2026-09-25T08:00:00.001+00:00",
+        "duration_hours": 23.898340277777777,
+        "minimum_ratio_pct": 24.931796183378996,
+        "start_ms": 1790237165976,
+        "end_exclusive_ms": 1790323200001
+      }
+    ],
+    "union_duration_hours": 617.9332236111111,
+    "note": "Exact metadata eligibility at millisecond precision through the final daily sample; no liquidity inference."
+  }
+}

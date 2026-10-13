@@ -18,7 +18,12 @@ Build an interactive research and backtesting application for strategies that al
   Existing runtime/default strategies remain unchanged. Direct raw-input
   preflight and a hypothetical delayed strict-through quote screen are recorded
   in [BTC_PRD_BAND_DATA_PREFLIGHT.md](BTC_PRD_BAND_DATA_PREFLIGHT.md); they are not
-  a capital-constrained portfolio replay.
+  a capital-constrained portfolio replay. The completed full archive's 540-contract
+  metadata yields only five 25%-eligible windows (about 618 hours); daily minima
+  and coverage caveats are in [BTC_MATURITY_SEPARATION_HISTORY.md](BTC_MATURITY_SEPARATION_HISTORY.md).
+  Design now includes minimum-APR acquisition below the floor, no compulsory
+  price-drift rebalance, escalating no-roll exit PRD and qualifying roll ladder
+  occupancy. Both H/L location and gap require data calibration.
 
 - Optional rolling worst-lease execution for amortized ranking is implemented
   on `agent/rolling-worst-lease-execution`: trailing observed price-pair bounds,

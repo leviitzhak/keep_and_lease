@@ -23,6 +23,9 @@ No ordinary-record timestamp reversal was found in these inputs.
 These are the two inspected local datasets. This report does not assert that
 they exhaust the separate full-history cloud download or certify its current
 completion state. It also does not assume availability of other contract pairs.
+The subsequent [full-catalog maturity analysis](BTC_MATURITY_SEPARATION_HISTORY.md)
+does verify the frozen archive's completion records and examines all 540
+instruments; it finds five qualifying 25% windows across the saved history.
 The inputs have native trade-attached index and mark fields; no independent
 continuous spot/proxy transaction feed is established by this check.
 

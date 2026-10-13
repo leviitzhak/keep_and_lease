@@ -30,12 +30,23 @@ This is a new opt-in strategy; application strategy not implemented. The example
   under the 25% rule. Run a bounded proxy/future strict-through quote-crossing
   screen at 2%/1% with two 500-ms delays. This is not a portfolio backtest.
   See [BTC_PRD_BAND_DATA_PREFLIGHT.md](BTC_PRD_BAND_DATA_PREFLIGHT.md).
-- [ ] Resolve remaining research choices: bootstrap below the minimum band,
+- [x] Record lowest-APR long acquisition below minimum with shorts suppressed;
+  price-only above-maximum drift blocks new longs without compulsory reduction;
+  no-roll closing PRD increases over time from L; qualifying rolls can occupy
+  ladder capacity. Define active inventory as remaining counted open quantity.
+- [x] Inspect the completed 540-contract archive metadata and check all 12,322
+  planned chunk references. Print 3,741 daily minima and every monthly summary,
+  with exact 25% eligibility windows. Only five windows (about 618 hours) pass.
+  See [BTC_MATURITY_SEPARATION_HISTORY.md](BTC_MATURITY_SEPARATION_HISTORY.md).
+- [ ] Resolve remaining research choices: baseline-ladder treatment,
   account/payoff and margin/cash model, actual leverage and size settings,
   ladder scope/released quantities, quote freshness, anchor policy and roll
-  lead time/fallback. Keep proposed defaults distinct from owner requirements.
-- [ ] Inspect other pairs in the wider historical catalog; the two scanned
-  local datasets do not establish full-cloud-download coverage or completion.
+  effective-PRD definition, lead time and exit escalation step/interval/cap/deadline.
+  Keep proposed defaults distinct from owner requirements.
+- [ ] Calibrate H=L+w for both level L and gap w on prior data and held-out
+  lifecycle runs; 2%/1% remain examples. Reconcile actual unequal-maturity P&L,
+  costs, delayed fills and unfinished positions. Compare explicitly labeled
+  maturity-ceiling sensitivities; preserve the requested 25% baseline.
 - [ ] Run the direct raw-data, capital-constrained research POC before
   application integration: strict-through future fills, synthetic near-spot
   proxy, cash startup, delayed fill knowledge, global reservations, reversible

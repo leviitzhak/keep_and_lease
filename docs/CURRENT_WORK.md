@@ -13,6 +13,19 @@ two latency legs and optional proxy margin-liquidity surcharge. Remaining
 research choices are labeled. The funded-transfer ledger rejects shorts and
 leverage; this is a limitation of that engine, not of all prior project research.
 
+Further owner decisions: acquire lowest-APR longs below minimum with short
+openings suppressed; do not forcibly rebalance price-only drift above maximum;
+raise no-roll exit PRD over time from L; permit qualifying roll occupancy without
+silently double-counting retired/replacement inventory. Define current opening
+levels from remaining counted positions and calibrate both H/L location and gap.
+
+Full-archive metadata has now been retrieved through a bounded read-only export.
+The completed frozen plan covers 540 contracts / 12,322 chunks / 120,105,433 raw
+records (509 instruments with trades). The maturity analysis computes 3,741
+daily minima and five exact 25% windows totaling 617.933 hours. It is a catalog
+and coverage analysis, not a rescan of all raw records or a new fill simulation.
+See [BTC_MATURITY_SEPARATION_HISTORY.md](BTC_MATURITY_SEPARATION_HISTORY.md).
+
 Direct preflight read 182 retained raw files / 1,149,605 rows and verified every
 source hash. Both inspected dated pairs fail the 25% rule throughout their
 sample windows. A separate hypothetical proxy/future limit screen used 2%/1%

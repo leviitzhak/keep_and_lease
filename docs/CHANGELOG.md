@@ -2,6 +2,14 @@
 
 ## 2026-10-13 — BTC PRD exposure-band strategy preparation
 
+- Add full-archive maturity analysis with 3,741 daily values, monthly tables and
+  a chart. Validate metadata for 540 contracts against 12,322 completion keys;
+  five coverage windows pass 25%, totaling 617.933 hours. No rescan of all raw
+  trades, portfolio backtest or application deployment is claimed.
+- Refine owner rules: minimum-APR acquisition below the floor, short suppression,
+  no forced reduction for price-only upper-band drift, escalating no-roll exit
+  PRD, reversible inventory levels and qualifying-roll occupancy. Explain joint
+  roll geometry and why both H/L location and gap need empirical calibration.
 - Apply owner clarifications: proxy holdings count in exposure but not futures
   leverage; use APR-driven directions, restore lower levels after closing,
   roll near-expiry legs while retaining pair lineage, start the first POC in

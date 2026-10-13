@@ -8,7 +8,10 @@ change to existing saved strategies. The owner requested a direct raw-data
 proof of concept before application integration and authorized the remote push.
 A bounded raw-data preflight is recorded in
 [BTC_PRD_BAND_DATA_PREFLIGHT.md](BTC_PRD_BAND_DATA_PREFLIGHT.md); it is not a
-capital-constrained portfolio replay. No data purchase or deployment is part
+capital-constrained portfolio replay. The full saved catalog's daily maturity
+minima and exact 25% windows are in
+[BTC_MATURITY_SEPARATION_HISTORY.md](BTC_MATURITY_SEPARATION_HISTORY.md).
+No data purchase or deployment is part
 of this work. Examples below are not approved production defaults.
 
 ## 1. Requested behavior
@@ -16,6 +19,8 @@ of this work. Examples below are not approved production defaults.
 - Configure minimum and maximum capital proportions in long BTC exposure /
   holdings, for example 30% and 60%, and a maximum leverage on total positions.
 - Configure high opening PRD and low closing PRD, for example 2% and 1%.
+- Calibrate both the opening/closing gap and its absolute level against data;
+  the example rates are placeholders, not fixed experiment settings.
 - Optionally raise the opening PRD with active opening inventory; closing
   positions restores lower opening levels (owner-confirmed).
 - Continuously consider futures pairs with both expiries at least three months
@@ -30,9 +35,14 @@ of this work. Examples below are not approved production defaults.
 - Roll futures approaching less than three months to expiry: seek the lowest
   APR replacement long or highest APR replacement short, preserving the paired
   counterpart and the maturity-separation constraint where possible.
+- When no permissible roll exists, progressively increase closing PRD from L
+  over time. A qualifying roll above the current H may occupy ladder capacity.
 - Select direction by APR difference, without a near-long/far-short restriction.
 - First portfolio proof of concept starts entirely in cash. Before application
   integration, define import/recovery from arbitrary holdings and orders.
+- Below minimum exposure, suppress short openings and acquire lowest-APR longs.
+  Price-only drift above maximum exposure blocks new longs without forced
+  exposure reduction.
 - Model market-event-to-decision and decision-to-market latency separately;
   the initial experiment can set them to the same value.
 
@@ -67,6 +77,40 @@ positions in one actual contract require the netting rules in section 6.
 H > L is required. Report actual currency P&L separately: a change from 2% to
 1% PRD is not a guaranteed 1% return on capital, particularly with unequal
 maturities, changing spot, funding, fees and asynchronous execution.
+
+### Calibrate both the gap and its location
+
+The owner's 2%/1% values are placeholders. Parameterize `H = L + w`, with
+positive entry/exit gap w, and calibrate both w and L to causal historical
+observations. The gap measures targeted APR-spread convergence; its location
+determines entry/exit frequency, time holding inventory, and roll frequency.
+It does not alone determine actual paired P&L for unequal maturities.
+
+For equal-BTC USD-linear legs and quantity q, before costs:
+
+```
+PnL / q = (F_B_entry - F_A_entry) - (F_B_exit - F_A_exit)
+F_B - F_A = S * (a_B * tau_B - a_A * tau_A)
+          = S * (tau_B * D + (tau_B - tau_A) * a_A)
+```
+
+Thus the common APR level, both maturities and spot also matter. For example,
+hold S at $100,000: at entry, tau_A=0.75, tau_B=1.00, a_A=3%, a_B=5%, so
+D=2% and the price spread is $2,750. After 0.10 year, let a_A=8%, a_B=9%:
+D=1% but tau_A=0.65, tau_B=0.90 and the price spread is $2,900. A one-BTC
+long-A/short-B pair loses $150 before costs despite the one-point PRD narrowing.
+This is an algebraic illustration, not an observed result. Native inverse
+contracts require their actual BTC cash-flow/P&L accounting, not this formula.
+
+Calibrate on chronologically prior training windows; freeze parameters on each
+held-out window. Screen eligible pairs' causal APR/PRD distributions, then
+measure H/L combinations with actual strict-through fills, both latency legs,
+partial positions, costs, funding, bootstrap, ladder and roll/exit rules. Compare
+net P&L, drawdown, capital utilization, time to close, censored unfinished pairs
+and forced-exit losses. Include terminal inventory marking and sensitivity to
+costs/delays. Do not select only completed profitable pairs or tune levels on
+the same future data used to claim performance. A quote-crossing count cannot
+calibrate portfolio returns by itself.
 
 ## 3. Capital, exposure, leverage and funding
 
@@ -126,12 +170,33 @@ blocked, but reserved short catch-up may proceed down to the lower band.
 The first portfolio proof of concept starts with cash and zero positions,
 orders and borrowing. This starts below a positive minimum exposure; it is an
 explicit ACQUIRING state, not an invalid input or an invented initial BTC fill.
-Proposed bootstrap: admit long/proxy acquisition within maximum exposure and
-funding limits; defer any short fill that would take projected net exposure
-below the minimum. Transition to NORMAL on reaching the band. Whether the
-baseline minimum should be bought promptly in the cheapest-APR long/proxy or
-acquired only as opening-limit opportunities fill is still a design choice.
-Track time below target. A cash-only native inverse run must explicitly buy or
+Owner direction: while below the minimum, suppress new short-opening orders
+and acquire the lowest-APR eligible long (including the enabled proxy). This
+acquisition need not wait for a high-PRD pair opportunity. Transition to NORMAL
+only after confirmed exposure reaches the minimum, allowing for costs, lot
+rounding and already reserved orders. Track time below target. Apply the same
+policy after a later below-minimum condition; reducing existing shorts may also
+restore exposure, with selection and attribution recorded separately.
+
+Use current causal, valid APRs; rank by raw APR, then proposed tie-breaks of
+lower turnover cost, deeper observed liquidity and later expiry. A standalone
+future must satisfy the three-month floor plus the selected roll buffer; it
+does not need a hypothetical short counterpart to pass the pair-separation
+test. Reserve aggregate acquisition capacity, cash and margin before posting.
+Do not buy an unlimited amount of the apparently cheapest contract or ignore
+its collateral/roll cost. Keep raw-APR selection and cost-adjusted sensitivity
+separate so the requested objective remains visible. If no eligible long can
+be funded or filled, stay ACQUIRING and report the shortfall.
+
+Cancel/reconcile existing strategy short-opening orders on entry to ACQUIRING;
+late fills remain possible and must be reserved, not deleted. Previously owned
+shorts need not be liquidated merely to forbid new shorts. For the proof of
+concept, label minimum-exposure acquisitions as baseline inventory outside the
+PRD ladder, because they did not execute a high-PRD opening. Reassignment of a
+baseline lot to a later qualifying pair/roll transfers ownership explicitly
+and counts it once. A different baseline-ladder seed is an explicit scenario.
+
+A cash-only native inverse run must explicitly buy or
 convert collateral if its account model requires BTC; USD cannot silently
 serve as native BTC settlement collateral.
 
@@ -153,8 +218,10 @@ allowed products through a RECONCILING state:
    opening NAV and use a documented inventory-based ladder seed. Unpriceable
    positions block new risk until valued. Missing ownership/pair assignment
    requires an import policy, not an implicit reset to cash.
-5. If below the band, allow exposure-restoring acquisitions and safe reductions
-   of shorts. If above it, allow reductions/hedges that restore it. If leverage
+5. If below the band, use the acquisition policy above. If above it, block new
+   long-opening capacity; do not presume that an imported excess requires
+   liquidation. Preserve a known price-drift cause across restart; for an
+   unknown cause, pause new longs and report it under the import policy. If leverage
    or funding is already excessive, prioritize its reduction. Preserve real
    starting positions even if constraints are violated; do not discard them or
    reject the whole recovery merely because they exceed a configured limit.
@@ -178,13 +245,22 @@ $18k proxy gain and $12k futures loss: NAV rises to $106k, but settling the
 $12k loss requires $2k beyond the initial cash. This ignores margin reserves,
 which can make available cash smaller. Proxy sales/recognition therefore matter.
 
-Proposed controls: conservative futures leverage, separate cash/eligible-margin
-reserve, shared live-order reservations, and spot/basis/liquidity stress
-scenarios. For modest allocation drift, stop worsening orders and let planned
-closings/catch-up restore the band where feasible; an optional tolerance and
-rebalance deadline prevent continual tiny trades. Cash/margin emergencies and
-expiry deadlines have an explicit forced-recovery policy. These are proposals,
-not an assumption that normal market movement always requires liquidation.
+Owner-confirmed: **price-only drift above the maximum does not trigger active
+exposure reduction**. Block new long openings and cancel/reconcile outstanding
+long-opening capacity, accounting for late fills. Do not add a rebalance deadline
+or force a sale merely to return inside the band. Ordinary pair exits, reserved
+short catch-up and required rolls may still proceed under their own conditions.
+An eventual return inside the band is not guaranteed or required on a timer.
+
+Proposed controls remain conservative futures leverage, separate cash/eligible
+margin reserve, shared order reservations and spot/basis/liquidity stresses.
+Cash/margin emergencies and expiry deadlines remain distinct risk actions.
+Replacement longs or short buybacks required for these actions are not new
+discretionary long openings: prefer sequences/chunks that do not worsen the
+excess, and explicitly report any unavoidable temporary excursion. A max band
+is an order-admission rule with a price-drift exception, not a promise that the
+marked fraction can never cross it. Keep fill errors, funding and imported
+uncertainty separately classified rather than treating every crossing as drift.
 
 Record breaches by cause (price drift, fill/latency, imported state or funding),
 duration and recovery costs. Do not discard actual fills because a mark moved
@@ -251,11 +327,13 @@ Proposed refinements:
   APR. Preserve the original entry target for attribution, but do not reuse
   the retired leg's APR as the replacement's execution anchor. Closing targets
   apply to the current owned pair. Rolling is neither a new PRD opening nor a
-  completed strategy exit and must not reset/free its ladder occupancy.
+  completed strategy exit and must not automatically reset/free its ladder
+  occupancy; qualifying roll treatment is defined in section 7.
 - Replacing with the same contract as the staying opposite leg would net the
   position: classify this as closing the pair, not as a new zero-gap pair.
-- If no replacement preserves the ratio: try rolling both legs together to an
-  eligible pair; otherwise close the pair, or retain the counterpart temporarily
+- If no replacement preserves the ratio: consider rolling both legs to an
+  eligible pair; otherwise close the pair using the escalating exit rule below,
+  or retain the counterpart temporarily
   only under an explicit unmatched-exposure policy. Any relaxed-ratio fallback
   must be separately enabled with a ceiling and deadline. Do not silently turn
   'if possible' into unrestricted maturity mismatches.
@@ -263,6 +341,45 @@ Proposed refinements:
   individually lowest long APR and highest short APR may not form an eligible
   pair. Existing counterpart closings and roll reservations must not compete
   for the same inventory.
+
+Why considering two replacements can help: an expiring leg near three months
+may be paired with a staying four-month leg. If the only replacements have six
+and seven months left, replacing just the expiring leg fails: 4/6 gives 33.3%
+and 4/7 gives 42.9%. Replacing both with 6/7 gives 14.3%, which passes. The
+improvement is in the set of geometrically eligible pairs, not in the liquidity
+or fill probability of either individual order. Four transactions can cost
+more and introduce more partial-fill risk. Joint planning still executes via
+the same delayed, volume-limited independent orders. Prefer a feasible single
+roll unless the joint alternative has a documented advantage.
+
+### No-roll exit escalation
+
+Owner-confirmed: when a pair must be retired and no permissible roll is found,
+begin closing at the ordinary low PRD L and progressively **increase** the
+allowed closing PRD. With the original orientation `D = APR(short)-APR(long)`,
+the close condition is `D <= L_exit`; raising L_exit makes it less restrictive.
+A proposed deterministic schedule is:
+
+```
+L_exit(t) = min(L_exit_cap, L + exit_increment_pp * floor((t - t_start) / exit_interval))
+```
+
+Set t_start when retirement/no-roll exit begins, preferably before the
+three-month boundary. Persist it through pauses/restarts. It must not reset
+on every unsuccessful replacement search. Amount, interval, cap, lead time and
+deadline are research parameters to calibrate. The exit ceiling may exceed
+ordinary H; forced-exit losses are permitted and separately reported. Never
+raise the ordinary entry threshold just because exit urgency increased.
+
+Apply relaxation to unfinished exit quantities, including catch-up after a
+first closing-leg fill. Preserve its actual execution APR; change only the
+authorized target and resulting counterleg limit. Cancel/replace obeys both
+latencies, with old orders and reservations live until reconciliation. Continue
+to seek feasible rolls only for inventory not committed to conflicting exits.
+At the deadline, declare a bounded aggressive-exit scenario or an unresolved
+position. Trade-only strict-through data cannot guarantee an exit, even with
+a very permissive limit; never fabricate execution or classify expiration as
+a successful three-month roll.
 
 ## 5. Orders, reservations and execution
 
@@ -272,8 +389,10 @@ All pairs share one account risk allocator. Listing all candidates does not
 authorize a full-size order on every candidate using the same capacity.
 Reserve capacity for live orders, submitted/unacknowledged orders, replacement
 overlap, possible late fills and the unfinished paired leg. For each feasible
-fill combination, require the exposure band, gross leverage, cash and margin
-constraints after costs. Do not assume both legs fill together.
+fill combination, enforce exposure admission, gross leverage, cash and margin
+constraints after costs, with the startup and price-drift exceptions above.
+Do not assume both legs fill together. Existing outside-band positions are
+preserved; the allocator must still admit authorized recovery/exit sequences.
 
 In a linear model at frozen marks, exposure checks reduce to the endpoints
 where all exposure-increasing orders fill and where all decreasing orders
@@ -359,7 +478,8 @@ executed APR has no quote-age expiry; the current index needed to price its
 catch-up order still needs valid causal observations. On stale feeds, stop new
 discretionary risk and use a declared cancel/recovery policy for existing
 orders. Timeout, allowed slippage, market fallback and target relaxation remain
-separate parameters; relaxation is off unless expressly selected.
+separate parameters; ordinary catch-up relaxation is off unless expressly
+selected. The owner-authorized no-roll exit escalation is a separate exception.
 
 Preserve strict-through tape fills: a buy requires a later trade below its
 limit; a sell requires a later trade above its limit. Model execution at the
@@ -403,7 +523,9 @@ actual order must instead reconcile the entire account allocation explicitly.
 
 ## 7. Optional opening ladder
 
-Owner-confirmed: **closing positions restores lower opening levels**. The
+Owner-confirmed: **opening inventory raises the opening threshold; closing it
+restores lower levels**. "Active inventory" simply means the remaining owned
+quantity counted by this ladder, not trade frequency or lifetime turnover. The
 earlier cumulative, never-reset ratchet is rejected. Proposed exact semantics:
 
 ```
@@ -430,11 +552,44 @@ new inventory crosses 0.20 BTC and returns to H_2. Existing catch-up orders
 retain their own original target, even when the new-opening threshold falls.
 
 Proposed scope remains per economic pair family. Rolls preserve that family
-and its occupied allocation, so changing symbols does not restart at H_0.
+and already occupied allocation, so changing symbols does not restart at H_0.
 An account-wide ladder is an alternative requiring confirmation. FIFO is a
 proposed closing-lot rule; its actual lot P&L remains distinct from the aggregate
 level counter. Preserve counters through pause/restart. Reconstruct them from
 imported inventory under a declared policy when original history is absent.
+
+### A qualifying roll can occupy ladder capacity
+
+Owner rule: a roll with effective PRD **strictly greater than the current high
+PRD** can count as ladder occupying. Proposed meaning of roll PRD is the
+executed sell-APR minus buy-APR of the transfer itself:
+
+```
+long roll:  D_roll = APR(sell old long) - APR(buy replacement long)
+short roll: D_roll = APR(sell replacement short) - APR(buy back old short)
+qualifies: D_roll > H_before_roll
+```
+
+This is distinct from the APR difference of the resulting owned long/short
+pair. Retain both diagnostics; confirm this transfer-based definition before
+coding. A two-leg roll comprises two transfers, with each transfer checked
+separately; summing their annualized PRDs is not a valid shared rate.
+Use actual executed-APR anchors under the same convention as entries, with a
+common-time diagnostic. Freeze H_before_roll when reserving the tranche; split
+prospective newly counted quantity at ladder boundaries and reserve that
+capacity before other openings. Final qualification uses the completed
+matched transfer, not a quoted opportunity or its unfilled remainder.
+
+Count each resulting economic allocation once. Already counted inventory
+transfers its existing occupied slot; it does not add a second permanent slot
+for the retired leg. A qualifying roll of previously uncounted baseline or
+imported inventory may add its completed quantity to the ladder. A roll that
+fails to qualify does not erase pre-existing occupancy. Temporary old/new
+overlap consumes real exposure, gross leverage and margin, even though it does
+not create permanent duplicate ladder occupancy. Later actual disposal releases
+the counted replacement quantity. This inventory interpretation avoids a
+hidden cumulative-turnover ratchet; counting each repeated roll as additional
+permanent quantity would be a different policy requiring explicit selection.
 
 ## 8. Optional proxy as the long leg
 
@@ -531,7 +686,9 @@ Research first, application integration later:
 
 1. Inspect raw-data coverage and eligibility. The completed local preflight
    verifies 182 compressed files / 1,149,605 raw rows; both inspected dated
-   pairs have zero eligible seconds under the 25% rule. See the linked report.
+   pairs have zero eligible seconds under the 25% rule. The wider completed
+   540-contract catalog has only five archive-supported 25% windows totaling
+   about 618 hours; see the maturity history for daily values and limitations.
 2. Freeze a declared proof-of-concept configuration (cash capital, net band,
    futures leverage, margin model, bootstrap, ladder scope/size, proxy expense
    and surcharge, equal delay d). Use raw strict-through futures trades and
@@ -565,7 +722,8 @@ Minimum future acceptance cases:
   forced exit and recovery during expiry/margin stress.
 - Ladder boundary crossing, partial/lagging legs, restart, closing/reopening and
   lower-level restoration only for released inventory; no executions retroactively
-  repriced. Rolling carries rung occupancy and pair identity to new symbols.
+  repriced. Rolling carries occupied quantity and pair identity to new symbols;
+  a qualifying roll of uncounted inventory counts once, with frozen threshold.
 - Native inverse versus linear accounting, collateral exposure, lot/dust
   handling and closed-round-trip P&L; reject unsupported combinations.
 - Proxy disabled/enabled, e=0, expense/surcharge units, synthetic 24/7 pricing,
@@ -574,7 +732,14 @@ Minimum future acceptance cases:
 - Cash-only ACQUIRING state; arbitrary long/short/proxy imports inside/outside
   bands, missing historical pair metadata, unknown pending orders and late fills.
 - Pair-aware one-/two-leg rolls with partial fills, unavailable ratio-preserving
-  replacements, deadline escalation and no occupied-rung reset on contract change.
+  replacements, increasing exit ceilings, delayed cancel/replacement, persisted
+  escalation clocks and no occupied-rung reset on contract change.
+- Lowest-APR acquisition from cash/below minimum without short openings, partial
+  acquisition, missing liquidity, fees/lot overshoot and baseline-ladder attribution.
+- Price-only above-maximum drift never creates a compulsory rebalance; cancel
+  new long openings while permitting authorized expiry/funding/exit sequences.
+- H/L location versus gap sensitivity, chronological held-out calibration,
+  unequal-maturity P&L identity and inclusion of unfinished/forced-exit losses.
 - Continuous versus resumed runs have identical positions, orders, reservations,
   ladder counters, fees, P&L and audit sequence; immutable input/version hashes.
 
@@ -594,15 +759,17 @@ separately labeled 100% BTC comparison. The exposure band changes that benchmark
 | --- | --- | --- |
 | D1 | Exposure | Proxy/direct holdings count alongside signed futures; current-NAV delta definition proposed |
 | D2 | Leverage | Exclude paid proxy; use gross futures notional / NAV; choose cap, venue/payoff and separate margin/cash model |
-| D3 | Startup/restart | Cash-only first POC; arbitrary allowed-product holdings/orders before integration; prompt baseline buy versus opportunity-driven bootstrap remains open |
+| D3 | Startup/restart | Cash-only first POC; acquire lowest-APR longs below minimum and suppress short openings; arbitrary allowed-product holdings/orders before integration; baseline outside ladder proposed |
 | D4 | Pair direction/maturity | APR determines sides; no near/far restriction; three-month roll required; calendar-month interpretation and ratio-only early rolls remain proposed |
 | D5 | Asynchrony | Shorts may lag within exposure capacity; long-first at floor and safe either-leg-first inside band proposed |
-| D6 | Ladder | Closures must restore lower levels; active-inventory formula proposed; scope, amount and partial-close details to finalize |
+| D6 | Ladder | Open positions raise levels, closes restore them; rolls above current H may count; transfer-based effective roll PRD, no double count, scope and amount remain explicit proposals |
 | D7 | Latency/sizing | Two equal configurable delay legs for first POC; sizes, freshness, cancellation and concurrency explicit |
 | D8 | Catch-up PRD | Executed-leg APR anchor proposed; common-time diagnostic separate; no silent relaxation |
-| D9 | Rolling/recovery | Lowest-APR long / highest-APR short preserving counterpart ratio where possible; roll lead time, fallback/deadline, tolerance and cash reserve to finalize |
+| D9 | Rolling/recovery | Lowest-APR long / highest-APR short preserving counterpart ratio where possible; no-roll exits raise closing PRD over time from L; lead time, slope/step, cap, deadline and cash reserve to choose |
 | D10 | Proxy | e/(1-e), any eligible partner, synthetic 24/7 near-spot execution, optional annual margin-liquidity surcharge confirmed; numerical costs/offset model to choose |
-| D11 | Research sequence | Direct raw-data analysis before application integration; preflight completed, capital-constrained strategy replay pending |
+| D11 | Research sequence | Direct raw-data analysis before integration; raw preflight and full-catalog maturity analysis completed, capital-constrained strategy replay pending |
+| D12 | Price drift | No active reduction solely for price-driven excess above maximum; stop new longs; expiry/funding actions remain separate |
+| D13 | Calibration | 2%/1% are examples; calibrate both gap and location with actual net P&L, latency, costs and incomplete trades; do not infer return directly from APR convergence |
 
 Numeric inputs still needed include capital, actual x_min/x_max, maximum
 leverage, H/L, optional ladder amount/increment, sizes, delays, quote ages and
