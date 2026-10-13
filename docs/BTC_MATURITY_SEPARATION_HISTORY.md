@@ -130,6 +130,43 @@ These are values at the specified midnight, not monthly averages.
 | Oct 1 | 25.395% | Jun27 / Sep27 |
 | Oct 9 | 25.975% | Jun27 / Sep27 |
 
+## Threshold comparison
+
+The owner subsequently proposed considering 30%. Recounting the same verified
+daily series gives the following proportion of midnight samples with at least
+one archive-supported pair. All samples in these year slices have two or more
+contracts meeting the individual three-month requirement.
+
+| Period | Samples | At 25% | At 30% | At one-third |
+| --- | ---: | ---: | ---: | ---: |
+| 2024 | 366 | 0 (0.00%) | 246 (67.21%) | 366 (100%) |
+| 2025 | 365 | 0 (0.00%) | 245 (67.12%) | 365 (100%) |
+| 2026 Jan 1–Oct 9 | 282 | 1 (0.35%) | 193 (68.44%) | 282 (100%) |
+
+Across all 2,409 pair-present daily samples, 30% admits 1,360 (56.45%);
+25% admits 26 (1.08%). Earlier catalog regimes had fewer longer-dated listings,
+so the all-history percentage differs from the recent-year comparison. These
+counts are not percentages of exact intraday time, and do not measure fresh
+prices, trade sizes, fill probability, return or risk.
+
+Recommendation: use 30% as the first research setting; preserve 25% and
+one-third as explicit sensitivity cases. It provides materially more data while
+retaining a tighter maturity constraint than one-third. Availability alone
+does not establish that it is the best financial choice. Wider tenor mismatch
+can alter common-APR sensitivity, actual spread P&L and roll opportunities.
+
+For a fixed 91-day expiry gap, 30% requires the farther expiry to be at least
+303.333 days away (versus 364 days at 25%). Thus an approximately one-year
+listing can provide about two months of eligibility, followed by a gap before
+the next listing. In 2026, passing midnight runs were Jan 1–Feb 25,
+Mar 28–May 27, Jun 27–Aug 26 and Sep 25–Oct 9 (the snapshot cutoff).
+These are sampled runs, not exact listing/threshold-crossing timestamps.
+
+[Recount script](research/btc_maturity_thresholds.py) and
+[machine-readable results](research/btc-maturity-threshold-comparison.json)
+retain the source hash, counts and both all-sample/pair-present denominators.
+Run `python docs/research/btc_maturity_thresholds.py` from the repository root.
+
 ## Implications for the proposed experiment
 
 A 91-day gap requires at least 364 days to the farther expiry to pass 25%.
@@ -138,10 +175,11 @@ longer-expiry listings becoming available; APR direction does not affect it.
 Rolling both legs can expand the candidate set relative to keeping one fixed,
 but cannot create an eligible dated pair when the global minimum exceeds 25%.
 
-Keep 25% as the requested baseline. If a futures/futures experiment is desired
-outside these sparse windows, compare explicitly labeled sensitivity scenarios
-such as 30%, one-third and 35%, alongside the proxy-enabled scenario. Do not
-silently relax the rule or select a threshold to maximize in-sample P&L.
+The original 25% case remains the reference calculation in the chart, yearly
+table and exact-window list above. The subsequent recommendation is 30% for
+the first research setting, with 25% and one-third as declared sensitivities,
+alongside a proxy-enabled scenario. No application setting has changed.
+Do not select the maturity ceiling to maximize in-sample P&L.
 The archived minimum also constrains roll feasibility; a held pair can remain
 open after losing entry eligibility, and a ratio-only roll trigger remains an
 unresolved policy choice.

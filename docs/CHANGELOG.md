@@ -2,6 +2,11 @@
 
 ## 2026-10-13 — BTC PRD exposure-band strategy preparation
 
+- Quantify the proposed 30% maturity ceiling against 25% and one-third on the
+  verified daily series. Recommend 30% for first research (about 67–68% recent
+  daily availability), retaining the original comparison. Expand the causal
+  H/L calibration protocol, clarify the documents' implementation purpose and
+  enumerate material unconfirmed policies. No calibrated rates or new backtest.
 - Add full-archive maturity analysis with 3,741 daily values, monthly tables and
   a chart. Validate metadata for 540 contracts against 12,322 completion keys;
   five coverage windows pass 25%, totaling 617.933 hours. No rescan of all raw

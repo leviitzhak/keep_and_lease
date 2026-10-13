@@ -14,6 +14,14 @@ minima and exact 25% windows are in
 No data purchase or deployment is part
 of this work. Examples below are not approved production defaults.
 
+Audience and purpose: this is our internal research and implementation
+specification, rather than an external strategy presentation. It preserves
+agreed behavior, marks recommendations as proposals, maps them to accounting,
+order/pair/checkpoint state and modules, and supplies future acceptance cases.
+It is useful implementation input, but a proposed rule in this file is not an
+owner decision. The material unresolved policies are collected in section 10.
+No calibrated H/L values or portfolio-performance findings exist yet.
+
 ## 1. Requested behavior
 
 - Configure minimum and maximum capital proportions in long BTC exposure /
@@ -24,7 +32,10 @@ of this work. Examples below are not approved production defaults.
 - Optionally raise the opening PRD with active opening inventory; closing
   positions restores lower opening levels (owner-confirmed).
 - Continuously consider futures pairs with both expiries at least three months
-  away and expiry separation at most 25% of the longer remaining maturity.
+  away and a configurable expiry-separation ceiling relative to the longer
+  remaining maturity. Original example: 25%; owner now proposes considering
+  30%, which is recommended as the first research setting below, not a deployed
+  default. Preserve 25% as a historical comparison.
 - Post opening pair limits at high PRD while long exposure and leverage permit.
   Permit shorts to lag executed longs within the maximum net-long exposure.
 - Post closing limits at low PRD for pairs with inventory, up to the smaller
@@ -111,6 +122,64 @@ and forced-exit losses. Include terminal inventory marking and sensitivity to
 costs/delays. Do not select only completed profitable pairs or tune levels on
 the same future data used to claim performance. A quote-crossing count cannot
 calibrate portfolio returns by itself.
+
+### Concrete proposed calibration procedure
+
+1. Freeze the experiment's capital, exposure band, leverage, native payoff and
+   margin model, costs, order sizes, two delays, proxy assumptions and roll/exit
+   policy. Recommend 30% separation for the main research case, with 25% and
+   one-third as declared sensitivities. Compare H/L candidates under identical
+   inputs, initial cash and order state. A subsequent walk-forward path carries
+   its own real inventory forward rather than resetting at every refit.
+2. Build causal PRD histories for eligible pairs using a common contemporaneous
+   spot/index convention and explicit observation ages. Keep futures/futures
+   and proxy/futures populations separate. Inspect both APR-driven directions,
+   retaining original orientation for every owned pair. Estimate time-weighted
+   distributions, entry excursions and conditional time to lower levels; do not
+   let the most frequently traded contract dominate merely by print count.
+   Raw distribution statistics are screening evidence, not executable spreads.
+3. Predeclare a small coarse search over `L` and positive `w`, with `H=L+w`.
+   Training-window PRD quantiles can locate the search range; avoid a separate
+   fitted parameter set for every named expiry. Use broad maturity categories
+   only if they have enough independent history. Equal gaps at different
+   locations, and several gaps at each location, must both be compared. Expand
+   a range only under a recorded development rule, not by inspecting test P&L.
+4. Replay each candidate through actual strict-through futures fills at limits,
+   both delays, shared print volume and risk capacity, partial/unmatched legs,
+   funding, proxy costs, rolls and escalating no-roll exits. First inspect H/L
+   with the optional ladder disabled, then validate shortlisted levels with the
+   chosen ladder and all final lifecycle rules. A crossing probability or
+   apparent round-trip APR gap is not the selection objective.
+5. Rank full NAV/cash-flow results net of costs, using a predeclared objective:
+   proposed incremental return over the same baseline-acquisition policy
+   without discretionary pair trading, subject to drawdown and funding limits.
+   Also report directional BTC contribution, matched spread P&L, capital/margin
+   occupied, duration, exit/roll losses and unfinished positions. Include every
+   attempted trade; mark residual inventory. Return per capital-day is a useful
+   diagnostic, not a reason to ignore unmatched losses or unused cash.
+6. Select on prior training/validation blocks and evaluate unchanged on later
+   unseen blocks. A starting example is six months for development and the next
+   three months for testing, repeated chronologically; extend blocks if too few
+   completed/rolled cycles are observed. Training must not use an eventual exit
+   beyond its cutoff: mark open positions there. Preserve a final untouched
+   test period and record every candidate tried. Reusing test results to choose
+   another setting makes that period development data.
+7. Prefer a broad region of similar results in the L/w heatmap across time
+   blocks, over an isolated historical maximum. Check costs, delays, fills,
+   proxy assumptions and maturity ceiling around the chosen region. A lack of
+   stable candidates is a valid result; no profitable H/L pair is presumed.
+   If refitting periodically, update targets for new openings only; retain
+   existing tranche entry anchors and ordinary closing targets, except for
+   explicitly authorized exit escalation. This refit policy is proposed.
+
+The immediate next research output can be eligible PRD distributions and
+coarse fill/holding-time screens. Selecting final H/L needs the isolated funded
+lifecycle replay already on the TODO; it does not require GUI integration.
+Statistical caution: searching many configurations raises false-positive risk;
+an ordinary holdout alone does not resolve repeated selection. See Bailey et al.,
+[The Probability of Backtest Overfitting](https://www.davidhbailey.com/dhbpapers/backtest-prob.pdf).
+The procedure above is our proposed protocol, not a claim that this paper
+validates this strategy or guarantees out-of-sample performance.
 
 ## 3. Capital, exposure, leverage and funding
 
@@ -275,8 +344,16 @@ At each decision/refresh require both listed, unexpired futures to satisfy:
 
 ```
 min(expiry_A, expiry_B) >= add_calendar_months(t, 3)
-abs(expiry_A - expiry_B) <= 0.25 * (max(expiry_A, expiry_B) - t)
+abs(expiry_A - expiry_B) <= max_separation_ratio * (max(expiry_A, expiry_B) - t)
 ```
+
+Current research recommendation: `max_separation_ratio=0.30`; compare 0.25 and
+one-third separately. At 30%, the saved catalog admits at least one pair on
+193/282 daily samples in 2026 through October 9, versus 1/282 at 25%. The rates
+are about 67% in both 2024 and 2025; one-third passes every daily sample in
+those three year slices. These are 00:00 UTC metadata-eligibility counts, not
+fill opportunities or exact fractions of intraday trading time. See the
+[threshold comparison](BTC_MATURITY_SEPARATION_HISTORY.md#threshold-comparison).
 
 Use remaining duration, not the contract's original tenor or a date number.
 Approximate examples: 3/6 months fails (50%); 9/12 months passes (25%);
@@ -288,7 +365,7 @@ No inference of newly downloaded data coverage from an old manifest.
 New opening quantities require current eligibility, current usable market
 observations and risk capacity. When a held future approaches the three-month
 boundary, initiate the roll described below and cancel unused opening capacity.
-Exits stay allowed. Losing the 25% ratio alone stops new openings; whether it
+Exits stay allowed. Losing the configured ratio alone stops new openings; whether it
 also triggers an early roll is a remaining policy choice. Perpetuals are outside
 this dated-futures rule. The proxy is exempt from maturity/separation tests;
 its real futures partner still observes the three-month rule.
@@ -297,7 +374,7 @@ its real futures partner still observes the three-month rule.
 
 Owner rule: replace an expiring long with a lowest-APR eligible long, and an
 expiring short with a highest-APR eligible short, retaining the counterpart's
-identity and the 25% separation condition where possible. Pair/tranche lineage
+identity and the configured separation condition where possible. Pair/tranche lineage
 is therefore required state, including through restarts and partial rolls.
 
 Proposed refinements:
@@ -770,6 +847,34 @@ separately labeled 100% BTC comparison. The exposure band changes that benchmark
 | D11 | Research sequence | Direct raw-data analysis before integration; raw preflight and full-catalog maturity analysis completed, capital-constrained strategy replay pending |
 | D12 | Price drift | No active reduction solely for price-driven excess above maximum; stop new longs; expiry/funding actions remain separate |
 | D13 | Calibration | 2%/1% are examples; calibrate both gap and location with actual net P&L, latency, costs and incomplete trades; do not infer return directly from APR convergence |
+
+### Material policies still to settle
+
+These are not extra agreed requirements. Some have been mentioned in discussion
+without their precise implementation semantics; others were introduced as
+engineering proposals and need to be visible before coding.
+
+| Policy | Current proposal | Why it changes behavior |
+| --- | --- | --- |
+| Maturity ceiling and drift | 30% first research setting; apply to new/replacement pairs; do not force an exit merely because a held pair later crosses it | At 30%, roughly a third of recent daily samples have no eligible dated pair; forcing ratio-driven rolls could cause unnecessary exits |
+| Three-month definition | Calendar months in UTC, not a fixed 90 days | Changes entry and retirement boundaries |
+| Ladder scope | Existing draft uses a persistent economic pair family; global account ladder remains an alternative | One pair's fill either does or does not raise other pairs' opening targets; pair-family identity must be defined before implementation |
+| Baseline inventory | Minimum-exposure acquisitions sit outside PRD ladder until explicitly reassigned to a qualifying allocation | Otherwise the first discretionary trade can begin above H_0 even though no high-PRD entry occurred |
+| Roll credit | Transfer sell APR minus buy APR, compared to frozen pre-roll H; transfer counted quantity once | Counting repeat rolls again would introduce turnover-based occupancy despite unchanged open quantity; the exact meaning remains unconfirmed |
+| Partial fills and capacity competition | Long-first at floor; stage exits using available headroom; reserve account capacity once; prioritize expiry/funding, exits and catch-up, then deterministic opening allocation | Not all pairs can rest full orders against the same capital; first-leg direction matters at either band edge |
+| Shared actual contracts | Reconcile all logical pairs to one net actual position; draft POC blocks conflicting opposite allocations | An A-long/B-short pair and B-long/C-short pair compete over B; blocking versus netting changes allowed trades and requires explicit choice |
+| Price anchor and freshness | Retain executed-leg APR for catch-up; refresh current causal index/time; stop new discretionary quotes on stale observations | Defines the actual counterleg limit after spot moves and the maximum tolerated data age |
+| Retirement fallback | Plan before three months; increase close ceiling from L on a persisted schedule; choose final deadline/action | Strict-through tape cannot promise a fill; the run must record unresolved positions or a separately declared aggressive-exit scenario |
+| Funding and proxy | Native inverse payoff/collateral adapter for native claims; explicit cash reserve, fees and proxy liquidity cost/offset assumptions | A gross leverage cap does not specify when collateral must be funded or proxy sold |
+| Recovery without pair history | Import actual positions/orders, infer feasible labeled allocations and ladder seed without inventing past profits | Required before application integration; cash-start research may precede this adapter |
+| Calibration objective and refit | Incremental net result versus baseline, with risk constraints; refits affect new openings while held targets persist | Maximizing raw total return, turnover or matched-only P&L can select different thresholds |
+
+Numerical configuration can remain adjustable rather than requiring one
+permanent answer: capital, band, leverage, rung size/increment, child size,
+delay, maximum observation age, participation, fees, reserve, proxy surcharge,
+roll lead time and exit escalation schedule. Predeclare values for each test.
+By contrast, ledger semantics, ladder ownership, netting and event ordering must
+be deterministic and documented before interpreting that test's performance.
 
 Numeric inputs still needed include capital, actual x_min/x_max, maximum
 leverage, H/L, optional ladder amount/increment, sizes, delays, quote ages and

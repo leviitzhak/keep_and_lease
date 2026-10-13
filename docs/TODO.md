@@ -38,6 +38,13 @@ This is a new opt-in strategy; application strategy not implemented. The example
   planned chunk references. Print 3,741 daily minima and every monthly summary,
   with exact 25% eligibility windows. Only five windows (about 618 hours) pass.
   See [BTC_MATURITY_SEPARATION_HISTORY.md](BTC_MATURITY_SEPARATION_HISTORY.md).
+- [x] Quantify the owner's proposed 30% ceiling: 67.21% / 67.12% / 68.44% of
+  daily samples admit a pair in 2024 / 2025 / 2026 through Oct 9. Recommend 30%
+  for the first research setting, retaining 25% and one-third comparisons.
+- [x] Explain the documents' internal implementation purpose; collect material
+  unconfirmed policies in the plan's section 10, including shared-contract
+  netting, ladder scope, baseline attribution, deadline policy and refitting.
+  Specify a concrete causal H/L calibration procedure and selection diagnostics.
 - [ ] Resolve remaining research choices: baseline-ladder treatment,
   account/payoff and margin/cash model, actual leverage and size settings,
   ladder scope/released quantities, quote freshness, anchor policy and roll
@@ -46,7 +53,8 @@ This is a new opt-in strategy; application strategy not implemented. The example
 - [ ] Calibrate H=L+w for both level L and gap w on prior data and held-out
   lifecycle runs; 2%/1% remain examples. Reconcile actual unequal-maturity P&L,
   costs, delayed fills and unfinished positions. Compare explicitly labeled
-  maturity-ceiling sensitivities; preserve the requested 25% baseline.
+  maturity-ceiling sensitivities; retain 25% as the original reference and
+  examine 30% as the recommended first research setting.
 - [ ] Run the direct raw-data, capital-constrained research POC before
   application integration: strict-through future fills, synthetic near-spot
   proxy, cash startup, delayed fill knowledge, global reservations, reversible

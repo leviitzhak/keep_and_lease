@@ -26,6 +26,13 @@ daily minima and five exact 25% windows totaling 617.933 hours. It is a catalog
 and coverage analysis, not a rescan of all raw records or a new fill simulation.
 See [BTC_MATURITY_SEPARATION_HISTORY.md](BTC_MATURITY_SEPARATION_HISTORY.md).
 
+The owner's proposed 30% ceiling is recommended for first research, with
+25%/one-third comparisons: 30% admits a pair at about 67–68% of daily samples
+in 2024–2026, compared with almost none at 25%. Added a reproducible recount,
+concrete H/L calibration protocol and explicit list of unconfirmed behavior.
+The design document is an internal implementation specification; proposed
+rules and numerical experiment settings are not silently treated as agreed.
+
 Direct preflight read 182 retained raw files / 1,149,605 rows and verified every
 source hash. Both inspected dated pairs fail the 25% rule throughout their
 sample windows. A separate hypothetical proxy/future limit screen used 2%/1%

@@ -1,0 +1,167 @@
+{
+  "source_file": "btc-maturity-daily.json",
+  "source_sha256": "c45ca6e83839123d6c8906af0042348b88a01da04cda98a398486c2fa470bf76",
+  "sample_time": "00:00 UTC daily; not exact intraday availability",
+  "periods": {
+    "full_catalog_span": {
+      "start": "2016-07-13",
+      "end": "2026-10-09",
+      "samples": 3741,
+      "pair_present_samples": 2409,
+      "comparisons": [
+        {
+          "ceiling": 0.25,
+          "qualifying_daily_samples": 26,
+          "pct_all_samples": 0.6950013365410318,
+          "pct_pair_present_samples": 1.0792860107928601
+        },
+        {
+          "ceiling": 0.3,
+          "qualifying_daily_samples": 1360,
+          "pct_all_samples": 36.3539160652232,
+          "pct_pair_present_samples": 56.45496056454961
+        },
+        {
+          "ceiling": 0.3333333333333333,
+          "qualifying_daily_samples": 1979,
+          "pct_all_samples": 52.900294039026996,
+          "pct_pair_present_samples": 82.1502698215027
+        },
+        {
+          "ceiling": 0.35,
+          "qualifying_daily_samples": 2032,
+          "pct_all_samples": 54.31702753274526,
+          "pct_pair_present_samples": 84.35035284350353
+        }
+      ]
+    },
+    "2021_onward": {
+      "start": "2021-01-01",
+      "end": "2026-10-09",
+      "samples": 2108,
+      "pair_present_samples": 2107,
+      "comparisons": [
+        {
+          "ceiling": 0.25,
+          "qualifying_daily_samples": 26,
+          "pct_all_samples": 1.2333965844402277,
+          "pct_pair_present_samples": 1.233981964878975
+        },
+        {
+          "ceiling": 0.3,
+          "qualifying_daily_samples": 1360,
+          "pct_all_samples": 64.51612903225806,
+          "pct_pair_present_samples": 64.546748932131
+        },
+        {
+          "ceiling": 0.3333333333333333,
+          "qualifying_daily_samples": 1978,
+          "pct_all_samples": 93.83301707779886,
+          "pct_pair_present_samples": 93.87755102040816
+        },
+        {
+          "ceiling": 0.35,
+          "qualifying_daily_samples": 1999,
+          "pct_all_samples": 94.8292220113852,
+          "pct_pair_present_samples": 94.87422876127195
+        }
+      ]
+    },
+    "2024": {
+      "start": "2024-01-01",
+      "end": "2024-12-31",
+      "samples": 366,
+      "pair_present_samples": 366,
+      "comparisons": [
+        {
+          "ceiling": 0.25,
+          "qualifying_daily_samples": 0,
+          "pct_all_samples": 0.0,
+          "pct_pair_present_samples": 0.0
+        },
+        {
+          "ceiling": 0.3,
+          "qualifying_daily_samples": 246,
+          "pct_all_samples": 67.21311475409836,
+          "pct_pair_present_samples": 67.21311475409836
+        },
+        {
+          "ceiling": 0.3333333333333333,
+          "qualifying_daily_samples": 366,
+          "pct_all_samples": 100.0,
+          "pct_pair_present_samples": 100.0
+        },
+        {
+          "ceiling": 0.35,
+          "qualifying_daily_samples": 366,
+          "pct_all_samples": 100.0,
+          "pct_pair_present_samples": 100.0
+        }
+      ]
+    },
+    "2025": {
+      "start": "2025-01-01",
+      "end": "2025-12-31",
+      "samples": 365,
+      "pair_present_samples": 365,
+      "comparisons": [
+        {
+          "ceiling": 0.25,
+          "qualifying_daily_samples": 0,
+          "pct_all_samples": 0.0,
+          "pct_pair_present_samples": 0.0
+        },
+        {
+          "ceiling": 0.3,
+          "qualifying_daily_samples": 245,
+          "pct_all_samples": 67.12328767123287,
+          "pct_pair_present_samples": 67.12328767123287
+        },
+        {
+          "ceiling": 0.3333333333333333,
+          "qualifying_daily_samples": 365,
+          "pct_all_samples": 100.0,
+          "pct_pair_present_samples": 100.0
+        },
+        {
+          "ceiling": 0.35,
+          "qualifying_daily_samples": 365,
+          "pct_all_samples": 100.0,
+          "pct_pair_present_samples": 100.0
+        }
+      ]
+    },
+    "2026": {
+      "start": "2026-01-01",
+      "end": "2026-10-09",
+      "samples": 282,
+      "pair_present_samples": 282,
+      "comparisons": [
+        {
+          "ceiling": 0.25,
+          "qualifying_daily_samples": 1,
+          "pct_all_samples": 0.3546099290780142,
+          "pct_pair_present_samples": 0.3546099290780142
+        },
+        {
+          "ceiling": 0.3,
+          "qualifying_daily_samples": 193,
+          "pct_all_samples": 68.43971631205673,
+          "pct_pair_present_samples": 68.43971631205673
+        },
+        {
+          "ceiling": 0.3333333333333333,
+          "qualifying_daily_samples": 282,
+          "pct_all_samples": 100.0,
+          "pct_pair_present_samples": 100.0
+        },
+        {
+          "ceiling": 0.35,
+          "qualifying_daily_samples": 282,
+          "pct_all_samples": 100.0,
+          "pct_pair_present_samples": 100.0
+        }
+      ]
+    }
+  }
+}

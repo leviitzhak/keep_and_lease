@@ -24,6 +24,11 @@ Build an interactive research and backtesting application for strategies that al
   Design now includes minimum-APR acquisition below the floor, no compulsory
   price-drift rebalance, escalating no-roll exit PRD and qualifying roll ladder
   occupancy. Both H/L location and gap require data calibration.
+  Owner now proposes considering 30% maturity separation; it admits pairs on
+  about 67–68% of recent daily samples and is recommended for first research,
+  with 25% and one-third comparisons. No parameter or strategy is deployed.
+  A concrete calibration protocol and material unresolved policies are recorded
+  in the internal implementation plan.
 
 - Optional rolling worst-lease execution for amortized ranking is implemented
   on `agent/rolling-worst-lease-execution`: trailing observed price-pair bounds,
