@@ -20,7 +20,9 @@ agreed behavior, marks recommendations as proposals, maps them to accounting,
 order/pair/checkpoint state and modules, and supplies future acceptance cases.
 It is useful implementation input, but a proposed rule in this file is not an
 owner decision. The material unresolved policies are collected in section 10.
-No calibrated H/L values or portfolio-performance findings exist yet.
+The first raw-data execution calibration is recorded in
+[BTC_PRD_EXECUTION_CALIBRATION.md](BTC_PRD_EXECUTION_CALIBRATION.md). No final
+H/L values or funded portfolio-performance findings exist yet.
 
 ## 1. Requested behavior
 
@@ -51,8 +53,9 @@ No calibrated H/L values or portfolio-performance findings exist yet.
   before 60 days to maturity. Three months remains the opening/retirement-start
   boundary; 60 days is the owner's current completion target.
 - When no permissible roll exists, progressively increase closing PRD from L
-  over time. Transfer qualifying occupancy to the resulting pair using updated
-  effective executed PRD incorporating both initial and transfer executions.
+  over time. Move actual surviving/replacement lots to the resulting pair;
+  derive its ladder from their current executed APR differences. Do not add
+  cumulative credit from completed legs.
 - Every affected pair keeps updated executed PRD and immutable execution
   history, including when a new opening nets an existing opposite leg.
 - Select direction by APR difference, without a near-long/far-short restriction.
@@ -419,8 +422,9 @@ Proposed refinements:
   from two independent trade tapes.
 - Keep immutable parent/tranche lineage, but allocate resulting holdings to the
   destination oriented pair (or create it). Record old/new execution prices,
-  realized P&L, fees, surviving-leg entry anchors, transfer PRD and both current
-  leg PRD and effective path PRD. Update the old and destination records as in
+  realized P&L, fees, surviving-leg entry anchors and replacement executed APRs.
+  Derive current PRD from the resulting open legs; no path credit. Update the
+  old and destination records as in
   section 6. The old pair remains retired; its decreasing ladder is bookkeeping,
   not permission to reopen. Destination occupancy is handled in section 7.
 - Replacing with the same contract as the staying opposite leg would net the
@@ -674,177 +678,111 @@ The same execution may affect an old pair and a resulting pair, but its native
 quantity, fee and cash flow occur only once. A third pair may also be affected
 when the destination already owns inventory: update every touched record.
 
-### Updated executed PRD and transfer attribution
+### Updated executed PRD from the current pair's fills
 
-Owner requirements: each pair has updated executed PRD; update both old and
-resulting pairs when an execution closes/replaces a leg. Preserve immutable
-fills and original entry targets alongside derived current fields. The
-following precise distinction is proposed so "effective" is not ambiguous:
+Owner clarification, 2026-10-13: use the **actual executed APR difference of the
+currently owned legs** as the pair's current PRD and derive its ladder from its
+remaining fills. There is no separate transferred credit and no cumulative
+initial-plus-roll PRD for ladder decisions. The previously proposed
+`effective_path_PRD` / `closed_leg_APR_credit` policy is superseded.
 
-- `open_leg_PRD`: difference between the stored executed APRs of the two
-  currently allocated open legs, short minus long. It is not today's marked
-  market PRD. Retained legs keep their own entry anchors.
-- `effective_path_PRD`: an execution-history measure carrying the initial
-  pair PRD plus signed PRDs of matched replacement transfers along that same
-  quantity's lineage. This is proposed for the owner's transfer-credit ladder
-  test. It can differ from open_leg_PRD because it also carries completed-leg
-  APR changes. It is not an economic annual return or cash P&L.
-- `transfer_PRD`, `closed_leg_APR_credit`, actual realized/unrealized native
-  P&L, costs and original entry/exit records stay separately auditable.
-
-If imported history does not establish an executed anchor/lineage, mark the
-corresponding executed PRD unknown. Do not invent zero credit or historical
-fills to qualify it; use the separately declared import/ladder seed policy.
-
-For an equal-reference-quantity long A / short B fragment, let `a` and `b` be
-the retained executed APR anchors and `C` its prior closed-leg APR credit:
+For each matched lot:
 
 ```
-D_open = b - a
-D_effective = D_open + C
-
-Long roll: sell A at APR s, buy replacement X at APR x
-R_long = s - x
-C_new = C + (s - a)
-D_open_new (X long / B short) = b - x
-D_effective_new = D_effective_old + R_long = D_open_new + C_new
-
-Short roll: buy back B at APR u, sell replacement Y at APR y
-R_short = y - u
-C_new = C + (b - u)
-D_open_new (A long / Y short) = y - a
-D_effective_new = D_effective_old + R_short = D_open_new + C_new
+current_executed_PRD = short_leg_executed_APR - long_leg_executed_APR
+Long A -> X replacement: new PRD = retained_B_short_APR - executed_X_long_APR
+Short B -> Y replacement: new PRD = executed_Y_short_APR - retained_A_long_APR
 ```
 
-These are identities of stored APR values under one declared convention, not
-identities of currency returns. Amounts, maturities and execution times must
-remain in the native cash ledger; never book an APR credit as money. For two-leg
-rolls, apply both signed transfers to the same matched quantity once. Raw PRDs
-of different quantities are not simply added; split and weight the fragments.
-The path measure remains a proposed interpretation of the owner's effective
-executed PRD. It must not silently replace an actual fill APR in a catch-up
-limit or today's market PRD in the ordinary closing condition.
+An unchanged leg retains its actual original executed APR, even when the roll
+occurs later. A newly filled leg gets its own execution-time APR. This is not
+today's market PRD. Closing executions, realized native P&L and fees remain in
+the immutable history; completed legs do not raise the new pair's opening rung.
 
-Example: buy A at 3% APR and sell B at 5%, giving initial D=2%. Later sell A
-at 4% and buy X at 2%, giving roll PRD=2%. The resulting X/B pair has
-`open_leg_PRD=5%-2%=3%`, closed-leg APR credit `4%-3%=1%`, and
-`effective_path_PRD=2%+2%=4%`. Thus "initial plus roll" is a coherent history
-measure, but it is not the current open legs' 3% difference. Keep both visible.
+Example: buy A at 3%, sell B at 5%; then buy back B at 4% and sell Y at 6%.
+The new A/Y pair has current executed PRD **6% - 3% = 3%**. The B exit belongs
+in realized P&L and trade history. Adding initial 2% and transfer 2% to make 4%
+would mix a completed leg into the current pair's ladder and is not used.
 
-For a nominal new opening that nets a leg, apply the same rule. Example:
-existing A-long/B-short, then buy B/sell Y. Buying B closes that old short;
-the residual actual pair is A-long/Y-short, and this is the short-roll identity
-above even if the order originated from the B/Y opportunity list. The B/Y
-transaction has an executed transfer PRD; it does not also create fictitious
-owned B/Y inventory for its netted portion. Any amount beyond the old B short
-can open a real B/Y pair, with its own entry PRD and no duplicated inherited
-credit. Both the reduced old pair and resulting pair(s) update.
+A pair can contain differently executed lots. Retain each lot's native quantity,
+frozen reference BTC weight and both executed APRs; display the remaining-weight
+average PRD, but qualify ladder quantity from individual lots. A profitable lot
+must not make a below-threshold lot qualify through averaging. If anchors are
+missing on import, PRD is unknown; do not invent a zero anchor or past execution.
+The arbitrary-position import policy remains required before application use.
 
-Proposed deterministic allocation procedure:
+Nominal openings that net old inventory follow the same rule. With A-long/B-short,
+buying B and selling Y closes the old B short and leaves A-long/Y-short. It does
+not create a fictitious B/Y position for the netted amount. Excess beyond the
+old B short can create a real B/Y pair with its own executed anchors. Update all
+affected pairs, including any existing destination inventory, once.
 
-1. Reserve affected lots and orders under a persistent transfer ID. Select
-   old lots FIFO within their pair/rung unless a later policy changes this.
-2. Apply each actual fill to native net positions, cash, fees and margin once.
-   Deduplicate by execution ID. Assign only actual closed quantity to old lots.
-   At the exchange a fill changes exposure immediately; strategy knowledge and
-   follow-up commands still obey the prescribed observation/order delays.
-3. Split matched transfer quantity from pending remainder. An unfinished roll
-   can leave an unpaired leg; do not invent the replacement's executed APR
-   before its fill. Retain reservations and old/new anchors for that fragment.
-4. For completed matched quantity, transfer surviving-leg ownership and its
-   lineage credit to the destination pair, calculate both new PRD fields and
-   recompute the old pair's remaining-quantity weighted fields. Use frozen
-   reference BTC weights for the PRD summaries; retain exact native quantities
-   for risk and settlement. Differently executed lots must remain separable.
-5. If the old pair has no remaining matched inventory, its current open PRD
-   is null, not zero. Keep its historical executed PRDs and retirement/transfer
-   record; do not overwrite history to make an empty pair appear open. Show
-   residual unmatched quantity separately. Partial removals can change its
-   remaining weighted PRD; removing equal-rate lots need not change the number.
-6. Update pair versions, occupancy, allocations and transfer journal in one
-   durable transition. After restart, complete/reconcile the transition without
-   duplicating a fill, allocation, APR credit, fee or occupied quantity.
+Deterministic allocation procedure (FIFO lot selection is the research policy):
 
-When a transfer first retires one leg, pending old exits/catch-up orders still
-need cancellation/reconciliation so they cannot trade the reassigned leg twice.
-Provisional transfer quantity consumes real risk capacity and a pending ladder
-reservation; completed quantity is never permanently counted on both pairs.
+1. Reserve affected lots under a persistent transfer ID. Preserve immutable
+   execution IDs and original order targets; do not duplicate cash or fees.
+2. Apply fills to actual native positions/cash once. Exchange inventory changes
+   on execution; strategy knowledge still arrives after the observation delay.
+3. Separate completed replacements from pending fragments. Never fabricate an
+   executed replacement APR before its fill. Pending fragments keep real risk
+   capacity and execution reservations.
+4. Move the surviving leg's ownership to the resulting pair and attach the
+   replacement fill. Recompute that pair's current lot PRDs and derived ladder,
+   including its preexisting lots. Recompute the old pair from its remaining lots.
+5. A pair with no remaining matched lots has null current PRD, not zero. Keep its
+   history and show any unmatched residual explicitly. The old retiring pair
+   remains closed to new openings even when its derived ladder falls.
+6. Persist all affected allocation versions and journal entries atomically.
+   Reconcile delayed cancellations and fills without assigning one surviving
+   quantity to two pairs or reviving a completed order on restart.
 
-## 7. Optional opening ladder
+A small research reference and deterministic tests now exercise current-leg
+PRD, partial lot removal, replacement and ladder rebuilding:
+[research/btc_prd_pair_lots.py](research/btc_prd_pair_lots.py). This is not yet a
+native account ledger or durable multi-pair execution implementation.
 
-Owner-confirmed: **opening inventory raises the opening threshold; closing it
-restores lower levels**. "Active inventory" simply means the remaining owned
-quantity counted by this ladder, not trade frequency or lifetime turnover. The
-earlier cumulative, never-reset ratchet is rejected. Proposed exact semantics:
+## 7. Optional per-pair opening ladder
 
-```
-Q_active = sum(max(remaining_long_allocation, remaining_short_allocation)
-               for each owned tranche in the ladder scope)
-new_opening_level = floor(Q_active / level_amount)
-H_new = H_0 + new_opening_level * increment_pp
-```
+Owner-confirmed: opening inventory raises levels; closing it restores lower
+levels; each oriented pair owns its ladder and remaining fill records. The
+ladder is derived from those records, not lifetime turnover, accumulated roll
+profits or a separately transferable credit balance. Account/strategy/long
+symbol/short symbol define a pair; transfer lineage is stored separately.
 
-Allocation units are recorded reference BTC equivalents at entry, adjusted
-proportionally for actual native-contract closure, not recomputed from changing
-spot prices. This avoids ladder changes solely from mark movements. Unmatched
-inventory consumes capacity; opening both legs is counted once. An isolated
-first closing-leg fill does not release a pair's allocation while its other
-leg remains outstanding. A matched partial close releases only its completed
-fraction. Explicit disposal of a wholly unpaired tranche also releases its
-allocation after cancel/reconciliation.
+Use `H_k = H_0 + k * increment_pp`, with a configured reference BTC amount per
+rung. Frozen entry reference quantities avoid rung changes merely from BTC
+price movements. Risk accounting still uses current native positions and marks.
+A replacement lot is treated by exactly the same executed-PRD rule as another
+lot in the resulting pair. An empty destination has no inherited old-pair rung.
 
-Reserve ladder capacity for pending orders as well as executed inventory.
-Split new children at level boundaries; do not retroactively reprice fills.
-Example: Q_active=0.25 BTC with 0.10-BTC levels quotes new capacity at H_2.
-A completed 0.06-BTC close leaves 0.19 BTC and restores 0.01 BTC at H_1 before
-new inventory crosses 0.20 BTC and returns to H_2. Existing catch-up orders
-retain their own original target, even when the new-opening threshold falls.
+The first **research convention**, made explicit for reproducibility, is:
 
-Owner-confirmed scope is per pair. Proposed implementation key: account,
-strategy instance, oriented long symbol and oriented short symbol. Log parameter
-revisions separately; a revision or restart does not erase existing occupancy.
-Keep parent/child transfer lineage separately; it is not an account-wide ladder.
-If a roll produces X-long/B-short, use that destination pair's ladder, merging
-with its existing inventory if present. A retiring A/B pair cannot reopen just
-because removing quantity lowers its own ladder. FIFO remains a proposed lot
-selection rule. Preserve counters through pause/restart and explicitly seed
-imported inventory whose history is absent.
+- Rebuild contiguous occupied rungs from remaining completed lots in ascending
+  current executed PRD order, breaking ties by stable lot ID. Split quantities
+  at rung boundaries. A fragment qualifies only if its actual current PRD is
+  at least that rung's threshold (including equality at an intended limit).
+- Preserve low/unknown-PRD quantity as owned risk inventory even when it cannot
+  qualify a rung. Do not erase it or lend it a completed leg's APR. It is visible
+  as unqualified quantity in the research reference.
+- Use each lot, not the pair-wide average, to populate rungs. Derived counted
+  quantity determines the next opening threshold. Closing a lower lot allows
+  remaining qualifying lots to move down and restores lower opening levels.
+- Reserve unfinished orders and unmatched quantities separately. They cannot
+  be reused for new orders just because a completed matched PRD is not yet
+  available. A first closing-leg fill does not release the entire allocation.
+- Keep catch-up targets for already committed lots; rebuilding a new-opening
+  ladder never reprices old executions or silently changes those targets.
 
-### A qualifying roll can occupy ladder capacity
+Example: H_0=2%, increment=0.5 percentage point, amount=0.10 BTC. Owned lots
+0.10 BTC at actual PRD 2.1% and 0.10 BTC at 3.1% fill the 2% and 2.5% rungs;
+new openings start at 3%. Closing the first lot leaves 0.10 BTC, fills the 2%
+rung and restores the next threshold to 2.5%. A transferred lot at 3% cannot
+qualify a 3.5% rung by adding the profit from a now-closed leg.
 
-Owner refinement: retirement rolls stop additions to the old pair. Transfer
-occupancy to the resulting pair, considering its effective executed PRD from
-both original and transfer executions. This supersedes comparing the transfer's
-standalone PRD to the retiring pair's H or blindly preserving a pair-family
-counter across symbol changes.
-
-Proposed exact admission test for each transferred fragment:
-
-```
-D_effective_destination = D_effective_source + D_executed_transfer
-qualifies for destination rung: D_effective_destination > H_destination_reserved
-```
-
-Use section 6's lineage measure, separately displaying open_leg_PRD. Compare
-against the destination's pre-transfer reserved threshold, not its own
-post-transfer threshold. A new destination starts with its own H_0; an existing
-one retains its occupied/pending quantities. Reserve prospective rung capacity
-jointly with competing openings, split at rung boundaries and retain each
-fragment's threshold. Final qualification uses completed executions. If a
-single fill spans rungs, count only fragments satisfying their reserved rung
-test; preserve every actual held quantity regardless of qualification.
-
-At completion remove the moved quantity from the old pair's occupancy and
-credit qualifying quantity to the destination once. If a mandatory roll's
-effective PRD fails the destination test, the proposed treatment is to retain
-it as explicitly unqualified carried inventory without adding ladder credit.
-It still consumes all exposure/leverage/margin capacity; no trade or loss is
-erased. This below-threshold classification remains a decision to settle.
-Never retain both old and new permanent credits for the same transferred
-quantity. Partial/pending rolls retain reconciliation reservations; temporary
-old/new physical overlap still consumes real risk capacity. Repeated rolls may
-change effective history PRD, but do not multiply owned quantity. Closing the
-resulting allocation releases only its actual counted amount.
+This research convention resolves the reconstruction algorithm for tests;
+exact pending-order reservations and import seeding still belong to the funded
+replay. The first empirical execution calibration disables ladder increments
+so level/location effects can be measured before capacity/ladder interaction.
 
 ## 8. Optional proxy as the long leg
 
@@ -978,8 +916,8 @@ Minimum future acceptance cases:
 - Ladder boundary crossing, partial/lagging legs, restart, closing/reopening and
   lower-level restoration only for released inventory; no executions retroactively
   repriced. A retiring pair does not reopen when its ladder falls; a roll transfers
-  qualifying quantity to the destination pair, with its reserved threshold and
-  updated effective PRD, without double-counting either permanent allocation.
+  actual surviving lots to the destination pair, with its derived ladder and
+  updated current-leg executed PRD, without double-counting either allocation.
 - Native inverse versus linear accounting, collateral exposure, lot/dust
   handling and closed-round-trip P&L; reject unsupported combinations.
 - Proxy disabled/enabled, e=0, expense/surcharge units, synthetic 24/7 pricing,
@@ -990,12 +928,12 @@ Minimum future acceptance cases:
 - Pair-aware one-/two-leg rolls with partial fills, unavailable ratio-preserving
   replacements, increasing exit ceilings, delayed cancel/replacement, persisted
   escalation clocks and a target strictly before 60 days remaining. Record misses.
-- Long/short/two-leg roll APR identities; partial lot removals update the old
-  weighted PRD; an empty pair has null current PRD; destination combines initial
-  and transfer history without changing original fills or cash accounting.
+- Long/short/two-leg replacement uses current executed anchors; partial lot
+  removals update the old weighted PRD; an empty pair has null current PRD;
+  no completed-leg APR credit enters the new ladder or cash accounting.
 - A nominal new opening nets an old opposite leg, updates all affected pairs,
   and creates actual new inventory only for excess quantity. Restart cannot
-  duplicate transferred surviving legs, APR credits, costs or occupancy.
+  duplicate transferred surviving legs, costs or occupancy.
 - Headroom-derived order amounts, multiple candidates competing for one reserve,
   rung splits without an arbitrary child cap, and native rounding.
 - Broad proximity posting versus always-posted comparison, marketable limits,
@@ -1015,7 +953,7 @@ exposures; gross leverage and reserved headroom; actual and reserved margin;
 open matched/unmatched quantities in BTC and USD; cumulative matched and gross
 turnover separately; realized/unrealized P&L and NAV in USD/BTC; fees/funding;
 per-pair target ladder and execution PRDs; opening/closing markers with quantity,
-both APRs, target/original/effective PRD and timestamps. Include breach/recovery
+both APRs, original targets/current executed PRD and timestamps. Include breach/recovery
 and rejection reasons, nonfills/timeouts, and matched-only weighted bought/sold
 PRDs. Benchmark against the same initial BTC/cash portfolio as well as any
 separately labeled 100% BTC comparison. The exposure band changes that benchmark.
@@ -1029,21 +967,21 @@ separately labeled 100% BTC comparison. The exposure band changes that benchmark
 | D3 | Startup/restart | Cash-only first POC; acquire lowest-APR longs below minimum and suppress short openings; arbitrary allowed-product holdings/orders before integration; baseline outside ladder proposed |
 | D4 | Pair direction/maturity | APR determines sides; no near/far restriction; retire around three months and target exit before 60 days remaining; no new openings in retiring pairs; calendar-month interpretation and ratio-only early rolls remain proposed |
 | D5 | Asynchrony | Shorts may lag within exposure capacity; long-first at floor and safe either-leg-first inside band proposed |
-| D6 | Ladder | Per-pair confirmed; open positions raise levels, closes restore them; transfer occupancy using initial plus transfer execution history and destination threshold; path-PRD formula and below-threshold treatment proposed |
+| D6 | Ladder | Per-pair confirmed; open positions raise levels, closes restore them; derive occupancy from current-leg executed APR differences in remaining per-pair lots; no separate transfer credit; contiguous-rung reconstruction is the declared research policy |
 | D7 | Latency/sizing | Two equal configurable delays; quantity derives from exposure headroom, leverage/funding and reservations; no arbitrary child cap or selected numerical age filter; broad near-market posting required |
 | D8 | Catch-up PRD | Executed-leg APR anchor proposed; common-time diagnostic separate; no silent relaxation |
 | D9 | Rolling/recovery | Lowest-APR long / highest-APR short preserving counterpart ratio where possible; target before 60 days; no-roll exits raise closing PRD over time from L; slope/step, cap, buffer and final missed-deadline action remain to choose |
 | D10 | Proxy | e/(1-e), any eligible partner, synthetic 24/7 near-spot execution, optional annual margin-liquidity surcharge confirmed; numerical costs/offset model to choose |
-| D11 | Research sequence | Direct raw-data analysis before integration; raw preflight and full-catalog maturity analysis completed, capital-constrained strategy replay pending |
+| D11 | Research sequence | Direct raw-data analysis before integration; raw preflight, full-catalog maturity history and first chronological unit execution calibration completed; capital-constrained strategy replay pending |
 | D12 | Price drift | No active reduction solely for price-driven excess above maximum; stop new longs; expiry/funding actions remain separate |
 | D13 | Calibration | 2%/1% are examples; calibrate both gap and location with actual net P&L, latency, costs and incomplete trades; do not infer return directly from APR convergence |
-| D14 | Updated PRD/netting | Each affected pair updates when rolls or new openings close a leg; immutable fills plus current open-leg and effective-path PRD proposed; no phantom opposite positions |
+| D14 | Updated PRD/netting | Each affected pair updates when rolls or new openings close a leg; immutable fills plus actual current-leg executed PRD confirmed; no completed-leg credit or phantom opposite positions |
 
 "Ownership, accounting and execution rules" means concrete mechanics:
 
 - Ownership: which actual position quantities belong to each logical pair and
   which surviving quantity moves when a leg is closed or replaced.
-- Accounting: update actual quantities, costs, cash, native P&L, both PRD fields
+- Accounting: update actual quantities, costs, cash, native P&L, current executed PRD
   and ladder occupancy once, preserving their historical provenance.
 - Execution: decide admissible amount and PRD limit, whether it is close enough
   to submit, when it becomes live after latency, and how partial/late fills and
@@ -1060,7 +998,7 @@ engineering proposals and need to be visible before coding.
 | Maturity ceiling and drift | 30% first research setting; apply to new/replacement pairs; do not force an exit merely because a held pair later crosses it | At 30%, roughly a third of recent daily samples have no eligible dated pair; forcing ratio-driven rolls could cause unnecessary exits |
 | Three-month definition | Calendar months in UTC, not a fixed 90 days | Changes entry and retirement boundaries |
 | Baseline inventory | Minimum-exposure acquisitions sit outside PRD ladder until explicitly reassigned to a qualifying allocation | Otherwise the first discretionary trade can begin above H_0 even though no high-PRD entry occurred |
-| Effective PRD and roll credit | Carry initial plus signed matched transfer PRDs for the destination ladder; display held-leg PRD separately; below-threshold rolls remain unqualified held inventory | The two PRD measures can differ; mandatory low-PRD rolls must remain in risk accounting even if not granted ladder credit |
+| Ladder reconstruction | Current-leg executed PRD confirmed; research fills contiguous rungs from individual remaining lots, with low/unknown-PRD inventory separately visible | Pending reservations and missing-history seeding must preserve risk capacity; no cumulative credit from closed legs |
 | Partial fills and capacity competition | Long-first at floor; stage exits using available headroom; reserve account capacity once; prioritize expiry/funding, exits and catch-up, then deterministic opening allocation | Not all pairs can rest full orders against the same capital; first-leg direction matters at either band edge |
 | Shared actual contracts | Net opposing actual quantities and transfer affected pair allocations; FIFO proposed | User permits openings that close existing legs; choice of old lot changes remaining PRDs, cost attribution and ladder state |
 | Price anchor and feed health | Retain executed APR; refresh causal index/time; numerical age cutoff optional and unselected; record sparse trade age separately from outage | An old resting order or old print is not automatically invalid; bad/missing data must not create assumed current prices |

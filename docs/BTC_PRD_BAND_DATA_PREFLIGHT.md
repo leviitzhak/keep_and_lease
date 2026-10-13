@@ -102,7 +102,11 @@ python docs/research/btc_prd_band_input_screen.py \
   --output docs/research/btc-prd-band-input-screen.json
 ```
 
-The next deliverable is the capital-constrained cash-start research replay
+The subsequent [execution calibration](BTC_PRD_EXECUTION_CALIBRATION.md) tests
+a chronological threshold grid with actual unit fills, synthetic proxy execution
+and unfinished-position marks. It confirms that both local dated pairs also
+fail the proposed 30% rule. It remains separate from the capital-constrained
+cash-start research replay
 described in [BTC_PRD_EXPOSURE_BAND_PLAN.md](BTC_PRD_EXPOSURE_BAND_PLAN.md), with
 the bootstrap and numerical research settings stated explicitly. The existing
 six-level research engine cannot be called this strategy unchanged: it lacks

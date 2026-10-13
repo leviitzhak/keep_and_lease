@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-10-13 — Initial BTC PRD execution calibration
+
+- Adopt owner clarification: current pair PRD equals the executed APR difference
+  of its currently allocated legs. Remove cumulative transferred ladder credit;
+  derive occupancy from remaining individual fills and retain old executions
+  solely for history and native cash P&L. Add a research lot/rung reference.
+- Start calibration on 1,110,095 ordinary raw records: 13 training-derived H/L
+  candidates, 338 unit proxy/inverse-future execution runs, two latency legs,
+  strict-through/volume/aggressor conditions, broad posting and five sensitivities.
+  Retain all 45,088 fills, costs and unfinished marks. Independent raw-tape/cash
+  audit and 16 deterministic tests pass. Fixed 2%/1% completes no later cycles;
+  observed December median PRD moves from 3.09% to 3.80% then 4.45%.
+- Keep this explicitly separate from the pending capital-constrained strategy:
+  no portfolio-optimal H/L, margin funding, exposure allocator, multi-pair ladder
+  execution, retirement or restart performance claim. Both local dated-pair
+  windows fail 30%; additional raw archive periods are required for that branch.
+  No application runtime or deployment changes.
+
 ## 2026-10-13 — BTC PRD exposure-band strategy preparation
 
 - Record per-pair ladder approval, retirement with no reopening and completion

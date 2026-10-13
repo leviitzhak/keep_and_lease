@@ -6,7 +6,7 @@ The September 11 small batch completes four items and partially improves full-au
 progress. Scope and validation are recorded in `TODO_SMALL_BATCH_VALIDATION.md`;
 remaining items below are not implicitly completed by that batch.
 
-## BTC PRD strategy with an exposure band — research preparation (2026-10-13)
+## BTC PRD strategy with an exposure band — calibration started (2026-10-13)
 
 Specification and decision register:
 [BTC_PRD_EXPOSURE_BAND_PLAN.md](BTC_PRD_EXPOSURE_BAND_PLAN.md).
@@ -46,9 +46,10 @@ This is a new opt-in strategy; application strategy not implemented. The example
   netting, ladder scope, baseline attribution, deadline policy and refitting.
   Specify a concrete causal H/L calibration procedure and selection diagnostics.
 - [x] Record per-pair ladders, no new openings in retiring pairs, transferred
-  occupancy with updated initial/transfer PRD, and updates to every affected
-  pair when a nominal opening nets an existing leg. Separate held-leg executed
-  PRD, cumulative effective execution history and actual currency P&L.
+  ownership and updates to every affected pair when a nominal opening nets an
+  existing leg. Latest owner rule supersedes cumulative transfer credit: use
+  the actual current legs' executed APR difference and derive each pair ladder
+  from its remaining individual fills; retain completed-leg history/P&L separately.
 - [x] Set the owner's current retirement completion target strictly before
   60 days remaining, with planning around three months; explain that escalation
   means relaxing the closing PRD from L, not increasing positions or leverage.
@@ -57,11 +58,17 @@ This is a new opt-in strategy; application strategy not implemented. The example
   and distinguish observation age from resting-order lifetime and feed health.
 - [ ] Resolve remaining research choices: baseline-ladder treatment,
   account/payoff and margin/cash model, actual leverage, exposure allocation,
-  effective-path PRD formula versus held-leg PRD, below-threshold roll credit,
+  pending/unknown-PRD ladder reservations and import seeding,
   posting band/feed-health policy, old-lot selection, and exit escalation
   step/interval/cap/operational buffer/final no-fill response before 60 days.
   Keep proposed defaults distinct from owner requirements.
-- [ ] Calibrate H=L+w for both level L and gap w on prior data and held-out
+- [x] Start raw-data execution calibration: 13 training-derived H/L candidates,
+  338 independent unit proxy/future experiments, chronological validation/test
+  slices and five sensitivities. Preserve all 45,088 fills and terminal marks;
+  validate against original raw trades. Add 16 deterministic current-leg
+  ladder/accounting/latency tests. These are not funded portfolio results. See
+  [BTC_PRD_EXECUTION_CALIBRATION.md](BTC_PRD_EXECUTION_CALIBRATION.md).
+- [ ] Complete calibration of H=L+w on prior data and held-out
   lifecycle runs; 2%/1% remain examples. Reconcile actual unequal-maturity P&L,
   costs, delayed fills and unfinished positions. Compare explicitly labeled
   maturity-ceiling sensitivities; retain 25% as the original reference and
@@ -71,13 +78,17 @@ This is a new opt-in strategy; application strategy not implemented. The example
   proxy, cash startup, delayed fill knowledge, global reservations, reversible
   ladder, pair-aware rolls, explicit funding/costs and full P&L reconciliation.
   Compare delay, participation and proxy surcharge/margin-offset assumptions.
+  Obtain raw windows containing 30%-eligible dated pairs and retirement/rolls;
+  both current local dated-pair samples fail even the 30% rule. Evaluate causal
+  refitting of level location, preserving held targets, on new held-out periods.
+  The July–September execution-test slice is now examined, not untouched.
 - [ ] Implement a separately versioned signed-position/margin ledger and a
   global exposure/leverage/order-reservation allocator. The existing funded
   ledger is long-only and explicitly rejects short futures and leverage.
 - [ ] Implement concurrent pair inventory, bounded lagging shorts, closing/roll
   reservations, strict-through fills with shared tape-volume budgets, actual
   delayed fill knowledge, tranche catch-up targets and reversible per-pair
-  ladders. Add atomic pair transfer/netting updates with both PRD measures,
+  ladders. Add atomic pair transfer/netting updates with current-leg executed PRD,
   no retired-pair reopening, capacity-based sizing and near-market posting.
 - [ ] Define and validate arbitrary-position/order import and pause/restart:
   reconcile actual account state, restore pair/rung lineage where available,

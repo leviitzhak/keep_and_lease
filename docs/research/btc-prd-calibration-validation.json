@@ -1,0 +1,24 @@
+{
+  "status": "PASS",
+  "runs": 338,
+  "fills": 45088,
+  "raw_files": 182,
+  "raw_rows": 1149605,
+  "ordinary_rows": 1110095,
+  "checks": [
+    "source compressed-file hashes",
+    "unique per-run tape use",
+    "two latency legs and no same-time fills",
+    "actual aggressive direction",
+    "strict-through limit fills",
+    "per-print participation budget",
+    "source-observation limit and posting distance",
+    "four-phase causal lifecycle",
+    "native inverse short P&L",
+    "proxy decay and transaction fees",
+    "unfinished position mark and complete cash reconciliation"
+  ],
+  "fills_gzip_sha256": "c57764ac608b4d0ce341cdaac3aca47fdfd7521aa9aa5d58e815a1cf9049101b",
+  "report_sha256": "0403775f329f3db1a7970d7757468c5e7c22143d278b42a2da9e44d8aab83f97",
+  "limitations": "Unit experiments only; no portfolio capacity, margin, live queue, roll or restart certification."
+}

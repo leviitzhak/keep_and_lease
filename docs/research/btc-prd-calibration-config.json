@@ -1,0 +1,82 @@
+{
+  "training_end": "2026-06-06T00:00:00+00:00",
+  "validation_end": "2026-07-21T00:00:00+00:00",
+  "test_end": "2026-09-04T00:00:00+00:00",
+  "train_quantiles": [
+    0.02201313500563795,
+    0.02513106872332108,
+    0.028528768925778554,
+    0.03177539399684964
+  ],
+  "location_rounding": 0.0025,
+  "gaps": [
+    0.0025,
+    0.005,
+    0.01
+  ],
+  "candidates": [
+    {
+      "high": 0.02,
+      "low": 0.01
+    },
+    {
+      "high": 0.025,
+      "low": 0.0225
+    },
+    {
+      "high": 0.0275,
+      "low": 0.0225
+    },
+    {
+      "high": 0.0275,
+      "low": 0.025
+    },
+    {
+      "high": 0.03,
+      "low": 0.025
+    },
+    {
+      "high": 0.03,
+      "low": 0.0275
+    },
+    {
+      "high": 0.0325,
+      "low": 0.0225
+    },
+    {
+      "high": 0.0325,
+      "low": 0.0275
+    },
+    {
+      "high": 0.035,
+      "low": 0.025
+    },
+    {
+      "high": 0.035,
+      "low": 0.0325
+    },
+    {
+      "high": 0.0375,
+      "low": 0.0275
+    },
+    {
+      "high": 0.0375,
+      "low": 0.0325
+    },
+    {
+      "high": 0.0425,
+      "low": 0.0325
+    }
+  ],
+  "selection": "No winner selected: execution diagnostics only, not funded optimization",
+  "default": {
+    "delay_ms_each": 500,
+    "posting_band": 0.01,
+    "participation": 0.1,
+    "fee_bp_each_leg": 1,
+    "proxy_expense": 0,
+    "proxy_liquidity_surcharge": 0
+  },
+  "face_usd": 10.0,
+  "tick_usd": 2.5
+}

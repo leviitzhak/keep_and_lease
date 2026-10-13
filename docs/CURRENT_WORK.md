@@ -1,6 +1,6 @@
 # Current work
 
-## BTC PRD exposure-band strategy preparation — 2026-10-13
+## BTC PRD exposure-band design and initial calibration — 2026-10-13
 
 Documentation branch `docs/btc-prd-exposure-band-plan` is based on GitHub master
 `80be0fc4c30904a0f4dfb16e097de2a001424e64`. The requested strategy and the
@@ -33,16 +33,24 @@ concrete H/L calibration protocol and explicit list of unconfirmed behavior.
 The design document is an internal implementation specification; proposed
 rules and numerical experiment settings are not silently treated as agreed.
 
-Latest owner clarification confirms per-pair ladders and retirement completion
-strictly before 60 days remaining, with no new openings on retiring pairs.
-Rolls and nominal new openings that net a leg must update old/resulting pair
-records and transfer occupancy. The plan now proposes explicit held-leg PRD
-and cumulative effective execution PRD, with immutable fills and native P&L
-kept separately. Order quantity follows exposure headroom plus leverage/funding
-and shared reserves; arbitrary child caps and numerical quote-age gates are
-not selected. Broad near-market order submission is required, with latency and
-missed-opportunity sensitivity. Exact path-credit/low-PRD transfer treatment,
-posting distance and exit-escalation schedule remain proposed.
+Latest owner clarification removes the proposed cumulative transfer credit.
+Current pair PRD is the actual executed APR difference of its currently owned
+legs. Derive each pair ladder from its remaining individual fills; preserve
+completed-leg execution history and P&L separately. The new research reference
+checks partial replacements, weighted PRD updates and lower-rung restoration.
+Retirement stays strictly before 60 days, with no new openings on retiring pairs.
+Sizing uses exposure headroom plus leverage/funding/reservations; broad near-market
+posting is required. No arbitrary child cap or numerical quote-age gate is chosen.
+
+Calibration has started: 13 training-derived thresholds, 338 independent unit
+proxy/future execution experiments and five stress settings. All 45,088 fills
+are retained and independently checked against raw trades; 16 deterministic
+accounting/latency tests pass. December median observed APR shifts from 3.09%
+in training to 3.80% and 4.45% in later slices. The 2%/1% example completes no
+cycles in either later slice. No funded optimum is selected: these experiments
+have no shared capital/margin/band allocator or expiry rolls. Both local dated
+pairs fail the 30% geometry rule, so futures/futures calibration needs additional
+raw archive windows. See [BTC_PRD_EXECUTION_CALIBRATION.md](BTC_PRD_EXECUTION_CALIBRATION.md).
 
 Direct preflight read 182 retained raw files / 1,149,605 rows and verified every
 source hash. Both inspected dated pairs fail the 25% rule throughout their
@@ -51,7 +59,8 @@ and 500-ms observation + 500-ms market-arrival delays; its crossings are not
 portfolio fills, completed pairs or P&L. See
 [BTC_PRD_BAND_DATA_PREFLIGHT.md](BTC_PRD_BAND_DATA_PREFLIGHT.md). The full cash-start
 research replay precedes application integration and remains pending. This
-branch contains planning and the reproducible preflight under `docs/`; no
+branch contains planning, preflight and execution-calibration research under
+`docs/`; no
 application deployment or master merge is part of this work. Remote push was
 explicitly authorized by the owner after the first local commit was blocked.
 

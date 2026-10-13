@@ -1,6 +1,6 @@
 # Keep & Lease — Project State
 
-_Last updated: 2026-10-13 (strategy-planning addition only)_
+_Last updated: 2026-10-13 (strategy design and initial execution calibration)_
 
 ## Purpose
 
@@ -32,8 +32,13 @@ Build an interactive research and backtesting application for strategies that al
   Further confirmed rules: per-pair ladders; no new openings while retiring;
   completion target before 60 days to maturity; updated PRDs and occupancy
   across rolls/netting openings; headroom-derived size and broad near-market
-  posting. Held-leg versus effective-history PRD formulas and execution-policy
-  details remain explicit proposals. Application strategy still unimplemented.
+  posting. Latest owner rule uses actual current-leg executed APR differences
+  and remaining fill records for per-pair ladders; cumulative roll credit is
+  removed. First calibration now includes 13 threshold candidates, 338 unit
+  execution experiments, full raw-tape fill audit and 16 deterministic tests.
+  See [BTC_PRD_EXECUTION_CALIBRATION.md](BTC_PRD_EXECUTION_CALIBRATION.md).
+  This is not a funded strategy result: cash/margin/band allocation, native
+  account reconciliation and full rolling/restart replay remain to implement.
 
 - Optional rolling worst-lease execution for amortized ranking is implemented
   on `agent/rolling-worst-lease-execution`: trailing observed price-pair bounds,
