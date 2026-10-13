@@ -45,10 +45,21 @@ This is a new opt-in strategy; application strategy not implemented. The example
   unconfirmed policies in the plan's section 10, including shared-contract
   netting, ladder scope, baseline attribution, deadline policy and refitting.
   Specify a concrete causal H/L calibration procedure and selection diagnostics.
+- [x] Record per-pair ladders, no new openings in retiring pairs, transferred
+  occupancy with updated initial/transfer PRD, and updates to every affected
+  pair when a nominal opening nets an existing leg. Separate held-leg executed
+  PRD, cumulative effective execution history and actual currency P&L.
+- [x] Set the owner's current retirement completion target strictly before
+  60 days remaining, with planning around three months; explain that escalation
+  means relaxing the closing PRD from L, not increasing positions or leverage.
+- [x] Use exposure-headroom sizing with leverage/funding/shared reservations;
+  remove arbitrary child-size assumptions. Require broad near-market posting,
+  and distinguish observation age from resting-order lifetime and feed health.
 - [ ] Resolve remaining research choices: baseline-ladder treatment,
-  account/payoff and margin/cash model, actual leverage and size settings,
-  ladder scope/released quantities, quote freshness, anchor policy and roll
-  effective-PRD definition, lead time and exit escalation step/interval/cap/deadline.
+  account/payoff and margin/cash model, actual leverage, exposure allocation,
+  effective-path PRD formula versus held-leg PRD, below-threshold roll credit,
+  posting band/feed-health policy, old-lot selection, and exit escalation
+  step/interval/cap/operational buffer/final no-fill response before 60 days.
   Keep proposed defaults distinct from owner requirements.
 - [ ] Calibrate H=L+w for both level L and gap w on prior data and held-out
   lifecycle runs; 2%/1% remain examples. Reconcile actual unequal-maturity P&L,
@@ -65,7 +76,9 @@ This is a new opt-in strategy; application strategy not implemented. The example
   ledger is long-only and explicitly rejects short futures and leverage.
 - [ ] Implement concurrent pair inventory, bounded lagging shorts, closing/roll
   reservations, strict-through fills with shared tape-volume budgets, actual
-  delayed fill knowledge, tranche catch-up targets and the reversible PRD ladder.
+  delayed fill knowledge, tranche catch-up targets and reversible per-pair
+  ladders. Add atomic pair transfer/netting updates with both PRD measures,
+  no retired-pair reopening, capacity-based sizing and near-market posting.
 - [ ] Define and validate arbitrary-position/order import and pause/restart:
   reconcile actual account state, restore pair/rung lineage where available,
   explicitly classify missing historical metadata and repair infeasible states.

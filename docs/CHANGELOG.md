@@ -2,6 +2,12 @@
 
 ## 2026-10-13 — BTC PRD exposure-band strategy preparation
 
+- Record per-pair ladder approval, retirement with no reopening and completion
+  before 60 days, cross-pair netting/transfer PRD updates, capacity-derived
+  order size and broad near-market posting. Propose explicit held-leg versus
+  effective-history PRD identities; clarify escalation, child orders, market
+  data age versus order lifetime, and ownership/accounting/execution mechanics.
+  This supersedes transfer-only qualification and blanket opposite-pair blocking.
 - Quantify the proposed 30% maturity ceiling against 25% and one-third on the
   verified daily series. Recommend 30% for first research (about 67–68% recent
   daily availability), retaining the original comparison. Expand the causal

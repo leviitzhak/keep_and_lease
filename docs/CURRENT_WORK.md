@@ -33,6 +33,17 @@ concrete H/L calibration protocol and explicit list of unconfirmed behavior.
 The design document is an internal implementation specification; proposed
 rules and numerical experiment settings are not silently treated as agreed.
 
+Latest owner clarification confirms per-pair ladders and retirement completion
+strictly before 60 days remaining, with no new openings on retiring pairs.
+Rolls and nominal new openings that net a leg must update old/resulting pair
+records and transfer occupancy. The plan now proposes explicit held-leg PRD
+and cumulative effective execution PRD, with immutable fills and native P&L
+kept separately. Order quantity follows exposure headroom plus leverage/funding
+and shared reserves; arbitrary child caps and numerical quote-age gates are
+not selected. Broad near-market order submission is required, with latency and
+missed-opportunity sensitivity. Exact path-credit/low-PRD transfer treatment,
+posting distance and exit-escalation schedule remain proposed.
+
 Direct preflight read 182 retained raw files / 1,149,605 rows and verified every
 source hash. Both inspected dated pairs fail the 25% rule throughout their
 sample windows. A separate hypothetical proxy/future limit screen used 2%/1%

@@ -29,6 +29,11 @@ Build an interactive research and backtesting application for strategies that al
   with 25% and one-third comparisons. No parameter or strategy is deployed.
   A concrete calibration protocol and material unresolved policies are recorded
   in the internal implementation plan.
+  Further confirmed rules: per-pair ladders; no new openings while retiring;
+  completion target before 60 days to maturity; updated PRDs and occupancy
+  across rolls/netting openings; headroom-derived size and broad near-market
+  posting. Held-leg versus effective-history PRD formulas and execution-policy
+  details remain explicit proposals. Application strategy still unimplemented.
 
 - Optional rolling worst-lease execution for amortized ranking is implemented
   on `agent/rolling-worst-lease-execution`: trailing observed price-pair bounds,
