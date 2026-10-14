@@ -1,0 +1,52 @@
+name: Calibrate retained BTC PRD history
+on:
+  push:
+    branches: [agent/cloud-autonomous-access]
+    paths: [.cloud-agent/requests/btc-prd-full-history.json]
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: btc-prd-full-history
+  cancel-in-progress: false
+jobs:
+  replay:
+    if: github.ref == 'refs/heads/agent/cloud-autonomous-access'
+    strategy:
+      fail-fast: false
+      max-parallel: 8
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'numpy>=2,<3' 'google-cloud-storage>=2.18,<4'
+      - name: Validate fixed request and local acceptance cases
+        run: |
+          python -c 'import json; assert json.load(open(".cloud-agent/requests/btc-prd-full-history.json")) == {"schema_version": 1, "action": "calibrate-frozen-btc-history", "sequence": 1}'
+          python -m unittest discover -s research/prd_full_history -p test_btc_prd_calibration.py
+      - uses: google-github-actions/auth@v2
+        with:
+          project_id: keep-and-lease
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com
+      - name: Read fixed archive and run chronological unit studies
+        run: |
+          python -u research/prd_full_history/btc_prd_full_history.py --shard ${{ matrix.shard }} --shards 8
+          python -m pip freeze > full-history-output/requirements-observed.txt
+          lscpu > full-history-output/cpu.txt
+          free -b > full-history-output/memory.txt
+          du -sb archive-cache > full-history-output/cache-size.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: btc-prd-full-history-${{ matrix.shard }}
+          path: full-history-output/
+          retention-days: 30
+          if-no-files-found: warn
