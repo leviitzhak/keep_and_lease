@@ -83,6 +83,17 @@ This is a new opt-in strategy; application strategy not implemented. The example
   observations. Preserve missing-mark fallbacks, exclusions, incomplete cycles,
   and unpaired proxy-interval P&L. Benchmark 1.58 GiB maximum worker RSS and
   provide reproducible offline preparation/replay instructions. No funded optimum.
+- [x] Record the owner's live-calibration requirement for both recent-data
+  location and gap; specify a causal adaptive policy, existing-lot/ladder/order
+  transitions, and a competing-agent market feasibility plan. Verify a bounded
+  180-file workload scan: 462,642 ordinary trades imply 46,264,200 deliveries
+  to 100 agents subscribed to every trade. This is not a simulator benchmark.
+  See [BTC_PRD_ADAPTIVE_MARKET_RESEARCH.md](BTC_PRD_ADAPTIVE_MARKET_RESEARCH.md).
+- [ ] Implement and evaluate recent-data H/L updates, policy/version persistence,
+  sparse-data handling and causal shadow selection. Compare adaptation memories,
+  update cadence and existing-pair exit policies; choose ladder transitions and
+  explicit cash-P&L/retirement overrides. Freeze the algorithm, not numerical
+  thresholds, on evaluation paths; no live adaptive engine is implemented yet.
 - [ ] Complete calibration of H=L+w on prior data and held-out
   lifecycle runs; 2%/1% remain examples. Reconcile actual unequal-maturity P&L,
   costs, delayed fills and unfinished positions. Compare explicitly labeled
@@ -95,8 +106,17 @@ This is a new opt-in strategy; application strategy not implemented. The example
   Compare delay, participation and proxy surcharge/margin-offset assumptions.
   Obtain raw windows containing 30%-eligible dated pairs and retirement/rolls;
   both current local dated-pair samples fail even the 30% rule. Evaluate causal
-  refitting of level location, preserving held targets, on new held-out periods.
+  refitting of both location and gap with explicit held-inventory transitions.
   The July–September execution-test slice is now examined, not untouched.
+- [ ] Prototype a shared matching-engine market with a small mixed population,
+  three dated books and proxy reference; compare agent delays and adaptation
+  under finite shared liquidity. Audit unique counterparties, priority, latency,
+  cancel races, signed cash/margin and symmetric-agent outcomes. Benchmark event
+  throughput and memory before increasing agents or historical duration.
+- [ ] Obtain suitable depth/flow observations or explicitly bracket synthetic
+  assumptions; calibrate/validate background liquidity independently of strategy
+  profits. Historical trades alone cannot identify cancellations, queue rank or
+  private latency. Preserve strict-through replay as a separate comparison.
 - [ ] Implement a separately versioned signed-position/margin ledger and a
   global exposure/leverage/order-reservation allocator. The existing funded
   ledger is long-only and explicitly rejects short futures and leverage.

@@ -1,0 +1,48 @@
+{
+  "status": "DESCRIPTIVE_TRADE_WORKLOAD_NOT_A_SIMULATOR_BENCHMARK",
+  "start_utc": "2026-06-06T00:00:00+00:00",
+  "end_exclusive_utc": "2026-09-04T00:00:00+00:00",
+  "calendar_days": 90.0,
+  "verified_source_files": 180,
+  "raw_trades": 486203,
+  "excluded_flagged_trades": 23561,
+  "ordinary_trades": 462642,
+  "instruments": {
+    "BTC-25DEC26": {
+      "ordinary_trades": 306692,
+      "distinct_exchange_milliseconds": 204293,
+      "trades_in_same_instrument_millisecond_batches": 156358,
+      "max_trades_in_one_exchange_millisecond": 55,
+      "positive_interarrival_ms_p50": 636,
+      "positive_interarrival_ms_p95": 191137,
+      "max_interarrival_ms": 5858800
+    },
+    "BTC-26MAR27": {
+      "ordinary_trades": 155950,
+      "distinct_exchange_milliseconds": 118275,
+      "trades_in_same_instrument_millisecond_batches": 63937,
+      "max_trades_in_one_exchange_millisecond": 43,
+      "positive_interarrival_ms_p50": 1203,
+      "positive_interarrival_ms_p95": 344358,
+      "max_interarrival_ms": 13278349
+    }
+  },
+  "ordinary_trades_per_day_mean": 5140.466666666666,
+  "ordinary_trades_per_day_p95": 11561,
+  "ordinary_trades_per_day_max": 25019,
+  "ordinary_trades_in_busiest_second": 241,
+  "all_to_all_individual_trade_deliveries": {
+    "10": 4626420,
+    "100": 46264200,
+    "1000": 462642000
+  },
+  "limitations": [
+    "Delivery counts assume every agent subscribes to both instruments and every individual trade.",
+    "These counts exclude book updates, agent wakeups, order commands, fills, cancellations and acknowledgments.",
+    "Trade timestamps and identifiers do not identify cross-instrument matching-engine order or local receipt latency.",
+    "No historical order book, queue positions or cancellation stream are present."
+  ],
+  "source_manifest_sha256": "1deec1539c7f220d5895d51b0f7ed77f8e15d6a067a41eedfc5d04701a63021d",
+  "sorted_source_hashes_sha256": "1a89e16364da2cbf38d24c9471cd6afa80036d347e695af5530b01298b421a2d",
+  "script_sha256": "6844b5b5c463e7e401074e92251f15e142fdf8e6b5dcd0d49f1ce7905866ecb1"
+}

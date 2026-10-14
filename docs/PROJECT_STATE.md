@@ -1,6 +1,6 @@
 # Keep & Lease — Project State
 
-_Last updated: 2026-10-14 (PRD accounting, fee/latency and historical research extension)_
+_Last updated: 2026-10-14 (PRD live adaptation and competing-market feasibility)_
 
 ## Purpose
 
@@ -49,6 +49,12 @@ Build an interactive research and backtesting application for strategies that al
   2%/1% unit results and incomplete cycles do not select a funded strategy.
   This is not a funded strategy result: cash/margin/band allocation, native
   account reconciliation and full rolling/restart replay remain to implement.
+  Owner now requires recent-data location and gap to update live. The
+  [adaptive research design](BTC_PRD_ADAPTIVE_MARKET_RESEARCH.md) specifies
+  proposed causal calibration and inventory transitions, and analyzes a shared
+  market of agents with different delays. A hash-verified trade-workload scan
+  supports sizing; no adaptive replay, market simulator or depth-derived queue
+  calibration has yet been implemented.
 
 - Optional rolling worst-lease execution for amortized ranking is implemented
   on `agent/rolling-worst-lease-execution`: trailing observed price-pair bounds,

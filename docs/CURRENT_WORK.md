@@ -1,5 +1,18 @@
 # Current work
 
+## BTC PRD live adaptation and market feasibility — 2026-10-14
+
+The owner requires both location and gap to adapt from recent observations
+while trading. [The research design](BTC_PRD_ADAPTIVE_MARKET_RESEARCH.md) proposes
+recent weighted statistics, causal policy selection, versioned lot/ladder/order
+transitions, and an interacting market with agents having different delays.
+It distinguishes historical replay from endogenous order-book matching and
+records the missing depth/cancellation/latency data. A reproducible scan verifies
+462,642 ordinary trades across 180 local files; 100 fully subscribed agents would
+require 46.3 million trade deliveries alone. This is workload arithmetic, not a
+simulator timing result. Adaptive strategy and market simulator remain pending;
+the existing full-history results are fixed-grid independent unit probes.
+
 ## BTC PRD accounting, fee and latency extension — 2026-10-14
 
 Research remains on `docs/btc-prd-exposure-band-plan`. The frozen 2026 grid now

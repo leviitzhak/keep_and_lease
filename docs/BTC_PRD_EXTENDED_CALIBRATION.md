@@ -5,6 +5,11 @@ probes, not the funded exposure-band strategy or an investment return estimate.
 The original [calibration report](BTC_PRD_EXECUTION_CALIBRATION.md) remains the
 record of the earlier experiment. No application strategy or deployment changes.
 
+Subsequent owner requirement: infer both location and gap from recent data and
+update them live. The runs below fit each grid once and hold it fixed; they are
+controls, not evidence for an adaptive policy. See the proposed
+[live calibration and competing-market research design](BTC_PRD_ADAPTIVE_MARKET_RESEARCH.md).
+
 ## Expense APR and economic decay
 
 The proxy APR `e/(1-e) + c` affects the future limit price required to meet a PRD.

@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-10-14 — Adaptive PRD and competing-market research design
+
+- Record the owner's requirement to update both location and gap from recent
+  observations during operation. Propose causal quantile/policy updates,
+  versioned inventory/ladder transitions and explicit existing-exit choices.
+- Analyze a competing-agent discrete-event market, framework reuse, data limits,
+  latency/queue accounting, validation and staged feasibility gates. Distinguish
+  endogenous matching from strict-through historical replay.
+- Add a reproducible workload scan of 180 hash-verified sources: 462,642 ordinary
+  trades and 46.3 million all-trade deliveries for 100 agents. No market-simulator
+  performance, new adaptive P&L, application change or deployment is claimed.
+
 ## 2026-10-14 — PRD accounting and execution sensitivity extension
 
 - Use proxy APR for quote construction and accrue expense only once through
