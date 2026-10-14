@@ -87,12 +87,16 @@ def load_contract(a,item,end):
             if t>=end:counts['rows_at_or_after_study_end']+=1;continue
             if any(x.get(k) for k in FLAGS):counts['flagged_excluded']+=1;continue
             if any(not isinstance(x.get(k),(int,float)) or not math.isfinite(x[k]) or x[k]<=0
-                   for k in ('price','index_price','mark_price','amount')):
+                   for k in ('price','index_price','amount')):
                 counts['invalid_numeric_excluded']+=1;continue
             if x['direction'] not in ('buy','sell') or abs(x['amount']/FACE-round(x['amount']/FACE))>1e-8:
                 counts['invalid_contract_or_direction_excluded']+=1;continue
             tid=str(x['trade_id']);assert tid not in seen,(symbol,tid);seen.add(tid)
-            rows.append(Trade(int(t),x['price'],x['index_price'],x['mark_price'],x['amount'],x['direction'],tid))
+            mark=x.get('mark_price')
+            fallback=not isinstance(mark,(int,float)) or not math.isfinite(mark) or mark<=0
+            if fallback:counts['mark_missing_or_invalid_trade_price_fallback']+=1;mark=x['price']
+            counts['final_mark_is_trade_price_fallback']=int(fallback)
+            rows.append(Trade(int(t),x['price'],x['index_price'],mark,x['amount'],x['direction'],tid))
         assert n==r['rows']
     counts['ordinary_rows']=len(rows)
     counts['compressed_trade_bytes']=sum(s['bytes'] for s in sources)
@@ -206,6 +210,7 @@ def study(a,item,out):
                     'no full band, ladder sizing, native margin, roll, restart, book or forced deadline execution',
                     'open inventory is marked before 60d deadline, not assumed liquidated',
                     'synthetic proxy uses trade-attached index; expense/margin costs are modeling assumptions',
+                    'missing/nonpositive exchange marks use last valid trade price for valuation only, counted explicitly',
                     'historical metadata tick assumed throughout each contract; no historical tick-change schedule',
                     'negative fees conditional maker sensitivity; tape cannot prove post-only acceptance'])
     (out/(symbol+'.json')).write_bytes(encode(result)+b'\n')

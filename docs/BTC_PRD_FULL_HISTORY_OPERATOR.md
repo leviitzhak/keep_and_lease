@@ -21,3 +21,8 @@ the contract metadata snapshot; no historical tick-change schedule is available.
 Source objects are hash checked and cached for an offline rerun using the same
 CLI with `--offline`. Read `docs/research/btc_prd_full_history.py` on the research
 branch for the maintained source and the resulting study documentation there.
+
+Early 2017 trades lack exchange marks. Valid trade and index observations remain
+usable for execution; when a mark is absent or nonpositive, valuation uses the
+last trade price as an explicitly counted fallback. No mark is synthesized for
+order execution, and fallback valuations are not exchange margin marks.
