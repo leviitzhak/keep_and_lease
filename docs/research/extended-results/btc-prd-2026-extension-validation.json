@@ -1,0 +1,16 @@
+{
+  "status": "PASS",
+  "scenarios": 416,
+  "execution_replays": 260,
+  "fee_revaluations": 156,
+  "audited_fills": 20475,
+  "raw_files": 180,
+  "raw_rows": 486203,
+  "ordinary_rows": 462642,
+  "unchanged_legacy_cases": 208,
+  "acceptance_tests": 21,
+  "three_bucket_reconciliations": 416,
+  "completed_component_reconciliations": 416,
+  "source_code": "docs/research/btc_prd_2026_extension.py",
+  "notes": "Fee-only cases retain identical execution paths; three-way P&L components reconcile; no portfolio funding claim."
+}

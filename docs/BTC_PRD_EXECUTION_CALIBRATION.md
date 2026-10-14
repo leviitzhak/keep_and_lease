@@ -1,5 +1,10 @@
 # BTC PRD: first execution calibration
 
+Follow-up: [extended calibration](BTC_PRD_EXTENDED_CALIBRATION.md) adds separate
+realized/unrealized accounting, zero and negative futures fees, 1 ms delays and
+the longer retained-history study. This document preserves the initial results.
+
+
 2026-10-13. Calibration and testing have started. This is a reproducible **unit
 execution experiment**, not the requested funded portfolio proof of concept and
 not a selection of production H/L values. No application deployment or live

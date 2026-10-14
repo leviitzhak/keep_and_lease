@@ -1,5 +1,23 @@
 # Current work
 
+## BTC PRD accounting, fee and latency extension — 2026-10-14
+
+Research remains on `docs/btc-prd-exposure-band-plan`. The frozen 2026 grid now
+has 416 comparisons with separate completed-realized, unfinished-realized and
+unrealized marks. Zero fees, futures-only rebates and two 1 ms delay legs are
+included. All 20,475 fills are independently audited; 208 overlapping earlier
+cases reproduce exactly. There are 21 focused acceptance cases, including
+single-charge expense decay and missing historical mark handling. The historical
+operator is read-only against the frozen archive; no application deployment or
+master merge is part of this research. See
+[BTC_PRD_EXTENDED_CALIBRATION.md](BTC_PRD_EXTENDED_CALIBRATION.md) and
+[BTC_PRD_OFFLINE_TESTING.md](BTC_PRD_OFFLINE_TESTING.md).
+The complete eligible-history study now covers 42 contracts (March 2017-October
+2026), 55,954,166 ordinary observations, 3,256 scenario results and 1,173,177
+audited fills. All eight shards passed. Results expose unpaired proxy movement
+and terminal holdings; no universal H/L or funded strategy performance is
+claimed. Peak worker RSS was 1.58 GiB; total work was 101.2 worker-minutes.
+
 ## BTC PRD exposure-band design and initial calibration — 2026-10-13
 
 Documentation branch `docs/btc-prd-exposure-band-plan` is based on GitHub master

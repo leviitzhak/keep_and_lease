@@ -1,0 +1,3892 @@
+{
+  "status": "PASS",
+  "scope": "full eligible proxy-future unit history, not funded portfolio",
+  "contracts": 42,
+  "runs": 3256,
+  "execution_replays": 2035,
+  "audited_fills": 1173177,
+  "counts": {
+    "receipt_rows": 92038192,
+    "rows_after_study_end_not_loaded": 35016566,
+    "raw_rows_loaded": 57021626,
+    "flagged_excluded": 883260,
+    "rows_at_or_after_study_end": 184111,
+    "ordinary_rows": 55954166,
+    "compressed_trade_bytes": 980614142,
+    "backdated_excluded": 23,
+    "mark_missing_or_invalid_trade_price_fallback": 358883,
+    "invalid_contract_or_direction_excluded": 46,
+    "invalid_numeric_excluded": 20
+  },
+  "first_observation": "2017-03-27T12:46:59.755000+00:00",
+  "last_end": "2026-10-09T08:48:58.934000+00:00",
+  "first_heldout_start": "2017-03-28T11:11:19.836000+00:00",
+  "contracts_with_terminal_trade_mark": 3,
+  "delay_comparison": {
+    "one_ms_delays": {
+      "equal_cycles": 94,
+      "fewer_cycles": 219,
+      "more_cycles": 94
+    },
+    "two_second_delays": {
+      "equal_cycles": 85,
+      "more_cycles": 274,
+      "fewer_cycles": 48
+    },
+    "always_posted": {
+      "equal_cycles": 224,
+      "more_cycles": 183
+    }
+  },
+  "delay_pnl_comparison": {
+    "one_ms_delays": {
+      "completed_realized": {
+        "better": 267,
+        "same": 55,
+        "worse": 85
+      },
+      "marked_total": {
+        "better": 255,
+        "same": 50,
+        "worse": 102
+      }
+    },
+    "two_second_delays": {
+      "completed_realized": {
+        "worse": 308,
+        "same": 49,
+        "better": 50
+      },
+      "marked_total": {
+        "worse": 310,
+        "same": 45,
+        "better": 52
+      }
+    }
+  },
+  "fixed_2_1": [
+    {
+      "scenario": "always_posted",
+      "runs": 42,
+      "completed_cycles": 2727,
+      "contracts_with_completed_cycles": 33,
+      "contracts_ending_short": 16,
+      "contracts_ending_proxy_only": 10,
+      "completed_cycle_realized_net_usd_sum": -51.311625085507494,
+      "unfinished_cycle_realized_net_usd_sum": -0.04181009083336536,
+      "unrealized_mark_net_usd_sum": 10.721304694417446
+    },
+    {
+      "scenario": "base",
+      "runs": 42,
+      "completed_cycles": 2703,
+      "contracts_with_completed_cycles": 32,
+      "contracts_ending_short": 16,
+      "contracts_ending_proxy_only": 10,
+      "completed_cycle_realized_net_usd_sum": -51.45740756967328,
+      "unfinished_cycle_realized_net_usd_sum": -0.04180530393933921,
+      "unrealized_mark_net_usd_sum": 10.790814813034638
+    },
+    {
+      "scenario": "maker_rebate_minus_0_2bp",
+      "runs": 42,
+      "completed_cycles": 2703,
+      "contracts_with_completed_cycles": 32,
+      "contracts_ending_short": 16,
+      "contracts_ending_proxy_only": 10,
+      "completed_cycle_realized_net_usd_sum": -39.59570510470563,
+      "unfinished_cycle_realized_net_usd_sum": 0.0031610607878683095,
+      "unrealized_mark_net_usd_sum": 10.790814813034638
+    },
+    {
+      "scenario": "maker_rebate_minus_1bp",
+      "runs": 42,
+      "completed_cycles": 2703,
+      "contracts_with_completed_cycles": 32,
+      "contracts_ending_short": 16,
+      "contracts_ending_proxy_only": 10,
+      "completed_cycle_realized_net_usd_sum": -35.29420824635262,
+      "unfinished_cycle_realized_net_usd_sum": 0.015805303939339682,
+      "unrealized_mark_net_usd_sum": 10.790814813034638
+    },
+    {
+      "scenario": "no_fees",
+      "runs": 42,
+      "completed_cycles": 2703,
+      "contracts_with_completed_cycles": 32,
+      "contracts_ending_short": 16,
+      "contracts_ending_proxy_only": 10,
+      "completed_cycle_realized_net_usd_sum": -40.67107931929389,
+      "unfinished_cycle_realized_net_usd_sum": 4.688090193827321e-16,
+      "unrealized_mark_net_usd_sum": 10.790814813034638
+    },
+    {
+      "scenario": "one_ms_delays",
+      "runs": 42,
+      "completed_cycles": 2401,
+      "contracts_with_completed_cycles": 32,
+      "contracts_ending_short": 18,
+      "contracts_ending_proxy_only": 10,
+      "completed_cycle_realized_net_usd_sum": -46.82250384705842,
+      "unfinished_cycle_realized_net_usd_sum": -0.0457928238335117,
+      "unrealized_mark_net_usd_sum": 9.508467864439233
+    },
+    {
+      "scenario": "proxy_cost",
+      "runs": 42,
+      "completed_cycles": 2993,
+      "contracts_with_completed_cycles": 31,
+      "contracts_ending_short": 13,
+      "contracts_ending_proxy_only": 12,
+      "completed_cycle_realized_net_usd_sum": -40.476042410541076,
+      "unfinished_cycle_realized_net_usd_sum": -0.0377666713721792,
+      "unrealized_mark_net_usd_sum": 12.062229350427804
+    },
+    {
+      "scenario": "two_second_delays",
+      "runs": 42,
+      "completed_cycles": 3165,
+      "contracts_with_completed_cycles": 32,
+      "contracts_ending_short": 12,
+      "contracts_ending_proxy_only": 10,
+      "completed_cycle_realized_net_usd_sum": -71.15689947957709,
+      "unfinished_cycle_realized_net_usd_sum": -0.033843312352191554,
+      "unrealized_mark_net_usd_sum": 10.074646411487922
+    }
+  ],
+  "annual": [
+    {
+      "heldout_start_year": "2017",
+      "contracts": 4,
+      "median_training_prd": 0.09694420823738677,
+      "reference_cycles": 271,
+      "reference_contracts_with_cycles": 4
+    },
+    {
+      "heldout_start_year": "2018",
+      "contracts": 4,
+      "median_training_prd": 0.007623730322410633,
+      "reference_cycles": 234,
+      "reference_contracts_with_cycles": 3
+    },
+    {
+      "heldout_start_year": "2019",
+      "contracts": 4,
+      "median_training_prd": 0.018922104482239608,
+      "reference_cycles": 175,
+      "reference_contracts_with_cycles": 4
+    },
+    {
+      "heldout_start_year": "2020",
+      "contracts": 5,
+      "median_training_prd": 0.058021121735164084,
+      "reference_cycles": 323,
+      "reference_contracts_with_cycles": 4
+    },
+    {
+      "heldout_start_year": "2021",
+      "contracts": 5,
+      "median_training_prd": 0.0996685727930006,
+      "reference_cycles": 672,
+      "reference_contracts_with_cycles": 5
+    },
+    {
+      "heldout_start_year": "2022",
+      "contracts": 4,
+      "median_training_prd": 0.024704510018964905,
+      "reference_cycles": 975,
+      "reference_contracts_with_cycles": 4
+    },
+    {
+      "heldout_start_year": "2023",
+      "contracts": 4,
+      "median_training_prd": 0.04004932514868037,
+      "reference_cycles": 31,
+      "reference_contracts_with_cycles": 3
+    },
+    {
+      "heldout_start_year": "2024",
+      "contracts": 4,
+      "median_training_prd": 0.11299269918878473,
+      "reference_cycles": 0,
+      "reference_contracts_with_cycles": 0
+    },
+    {
+      "heldout_start_year": "2025",
+      "contracts": 4,
+      "median_training_prd": 0.07176373609084934,
+      "reference_cycles": 19,
+      "reference_contracts_with_cycles": 4
+    },
+    {
+      "heldout_start_year": "2026",
+      "contracts": 4,
+      "median_training_prd": 0.042493599543532115,
+      "reference_cycles": 3,
+      "reference_contracts_with_cycles": 1
+    }
+  ],
+  "archive_cache_bytes_summed_over_8_shards": 1000267032,
+  "longest_shard_study_seconds": 909.6082264190002,
+  "artifact_result_bytes": 73072304,
+  "workflow_run": "https://github.com/leviitzhak/keep_and_lease/actions/runs/38597440889",
+  "operator_commit": "e0042cafebcbb6541916833697193786c3fe72ce",
+  "metrics": {
+    "total_contract_seconds": 6071.202554959,
+    "total_replay_audit_seconds": 4564.239267221,
+    "maximum_worker_rss_mib": 1614.36328125,
+    "largest_contract_ordinary_rows": 3307083,
+    "required_compressed_trade_bytes": 980614142
+  },
+  "engine_sha256": [
+    "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+  ],
+  "study_source_sha256": [
+    "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84"
+  ],
+  "contract_summaries": [
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-25JUN21",
+      "expiry": "2021-06-25T08:00:00+00:00",
+      "first_observation": "2020-09-25T08:08:28.389000+00:00",
+      "train_end": "2020-11-24T16:05:38.926000+00:00",
+      "end": "2021-04-26T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.06234418554045793,
+          "0.1": 0.06369228095811204,
+          "0.25": 0.06910561037470657,
+          "0.5": 0.07799861522638442,
+          "0.75": 0.08438127480271906,
+          "0.9": 0.09009651891598866,
+          "0.95": 0.09263692515090347
+        },
+        "covered_days": 60.33136616898148,
+        "max_carried_observation_seconds": 9689.068,
+        "observations": 176087
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.0725,
+          "low": 0.07
+        },
+        {
+          "high": 0.075,
+          "low": 0.07
+        },
+        {
+          "high": 0.08,
+          "low": 0.07
+        },
+        {
+          "high": 0.08,
+          "low": 0.0775
+        },
+        {
+          "high": 0.0825,
+          "low": 0.0775
+        },
+        {
+          "high": 0.0875,
+          "low": 0.0775
+        },
+        {
+          "high": 0.0875,
+          "low": 0.085
+        },
+        {
+          "high": 0.09,
+          "low": 0.085
+        },
+        {
+          "high": 0.095,
+          "low": 0.085
+        }
+      ],
+      "counts": {
+        "receipt_rows": 5185336,
+        "rows_after_study_end_not_loaded": 1875336,
+        "raw_rows_loaded": 3310000,
+        "final_mark_is_trade_price_fallback": 0,
+        "flagged_excluded": 203,
+        "rows_at_or_after_study_end": 2714,
+        "ordinary_rows": 3307083,
+        "compressed_trade_bytes": 55168635
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 27148
+      },
+      "metrics": {
+        "total_seconds": 283.65850518700006,
+        "replay_and_audit_seconds": 209.68023309699998,
+        "peak_process_rss_mib": 1614.36328125,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-25JUN27",
+      "expiry": "2027-06-25T08:00:00+00:00",
+      "first_observation": "2026-06-26T08:21:03.163000+00:00",
+      "train_end": "2026-07-31T08:24:04.981000+00:00",
+      "end": "2026-10-09T08:30:08.617000+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.038983658671109395,
+          "0.1": 0.0395042981166738,
+          "0.25": 0.04007921121661627,
+          "0.5": 0.04103195886899358,
+          "0.75": 0.04260886404629637,
+          "0.9": 0.04355074922370422,
+          "0.95": 0.04403092826404934
+        },
+        "covered_days": 35.00209858796296,
+        "max_carried_observation_seconds": 9628.585,
+        "observations": 21169
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.0425,
+          "low": 0.04
+        },
+        {
+          "high": 0.045,
+          "low": 0.04
+        },
+        {
+          "high": 0.045,
+          "low": 0.0425
+        },
+        {
+          "high": 0.0475,
+          "low": 0.0425
+        },
+        {
+          "high": 0.05,
+          "low": 0.04
+        },
+        {
+          "high": 0.0525,
+          "low": 0.0425
+        }
+      ],
+      "counts": {
+        "receipt_rows": 133665,
+        "raw_rows_loaded": 133665,
+        "final_mark_is_trade_price_fallback": 0,
+        "flagged_excluded": 21187,
+        "backdated_excluded": 5,
+        "ordinary_rows": 112473,
+        "compressed_trade_bytes": 2637474
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 4098
+      },
+      "metrics": {
+        "total_seconds": 8.006707369999958,
+        "replay_and_audit_seconds": 4.667015531999937,
+        "peak_process_rss_mib": 1614.36328125,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-27JUN25",
+      "expiry": "2025-06-27T08:00:00+00:00",
+      "first_observation": "2024-06-28T08:10:27.770000+00:00",
+      "train_end": "2024-09-27T00:06:58.513000+00:00",
+      "end": "2025-04-28T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.08121429655067615,
+          "0.1": 0.08284740384407074,
+          "0.25": 0.08897761877044182,
+          "0.5": 0.10287626752275196,
+          "0.75": 0.11037172606089309,
+          "0.9": 0.11708444985011592,
+          "0.95": 0.12062929439213078
+        },
+        "covered_days": 90.66423892361111,
+        "max_carried_observation_seconds": 17237.591,
+        "observations": 145145
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.0925,
+          "low": 0.09
+        },
+        {
+          "high": 0.095,
+          "low": 0.09
+        },
+        {
+          "high": 0.1,
+          "low": 0.09
+        },
+        {
+          "high": 0.105,
+          "low": 0.1025
+        },
+        {
+          "high": 0.1075,
+          "low": 0.1025
+        },
+        {
+          "high": 0.1125,
+          "low": 0.1025
+        },
+        {
+          "high": 0.1125,
+          "low": 0.11
+        },
+        {
+          "high": 0.115,
+          "low": 0.11
+        },
+        {
+          "high": 0.12,
+          "low": 0.11
+        }
+      ],
+      "counts": {
+        "receipt_rows": 3316963,
+        "rows_after_study_end_not_loaded": 866963,
+        "raw_rows_loaded": 2450000,
+        "final_mark_is_trade_price_fallback": 0,
+        "flagged_excluded": 76150,
+        "rows_at_or_after_study_end": 1270,
+        "ordinary_rows": 2372580,
+        "compressed_trade_bytes": 42677797
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 27011
+      },
+      "metrics": {
+        "total_seconds": 189.75547388500001,
+        "replay_and_audit_seconds": 139.2442663070001,
+        "peak_process_rss_mib": 1614.36328125,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-28JUN19",
+      "expiry": "2019-06-28T08:00:00+00:00",
+      "first_observation": "2018-12-21T14:10:16.122000+00:00",
+      "train_end": "2019-01-22T20:06:50.748000+00:00",
+      "end": "2019-04-29T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": -0.08872090451476486,
+          "0.1": -0.08587194664748822,
+          "0.25": -0.08027514598864947,
+          "0.5": -0.07222469724864428,
+          "0.75": -0.06399833509712322,
+          "0.9": -0.05790241869837628,
+          "0.95": -0.054886323038056614
+        },
+        "covered_days": 32.24761719907407,
+        "max_carried_observation_seconds": 2060.871,
+        "observations": 321956
+      },
+      "candidates": [
+        {
+          "high": -0.0775,
+          "low": -0.08
+        },
+        {
+          "high": -0.075,
+          "low": -0.08
+        },
+        {
+          "high": -0.07,
+          "low": -0.08
+        },
+        {
+          "high": -0.07,
+          "low": -0.0725
+        },
+        {
+          "high": -0.0675,
+          "low": -0.0725
+        },
+        {
+          "high": -0.0625,
+          "low": -0.0725
+        },
+        {
+          "high": -0.0625,
+          "low": -0.065
+        },
+        {
+          "high": -0.06,
+          "low": -0.065
+        },
+        {
+          "high": -0.055,
+          "low": -0.065
+        },
+        {
+          "high": 0.02,
+          "low": 0.01
+        }
+      ],
+      "counts": {
+        "receipt_rows": 2555691,
+        "rows_after_study_end_not_loaded": 1225691,
+        "raw_rows_loaded": 1330000,
+        "final_mark_is_trade_price_fallback": 0,
+        "rows_at_or_after_study_end": 7842,
+        "ordinary_rows": 1322158,
+        "compressed_trade_bytes": 20364375
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 4477
+      },
+      "metrics": {
+        "total_seconds": 98.13237709299999,
+        "replay_and_audit_seconds": 65.12681761200001,
+        "peak_process_rss_mib": 711.265625,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-30JUN17",
+      "expiry": "2017-06-30T08:00:00+00:00",
+      "first_observation": "2017-03-27T12:46:59.755000+00:00",
+      "train_end": "2017-03-28T11:11:19.836000+00:00",
+      "end": "2017-05-01T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.00022387919465814913,
+          "0.1": 0.007671153247385242,
+          "0.25": 0.01419489176714881,
+          "0.5": 0.021082889196146568,
+          "0.75": 0.05588487765755302,
+          "0.9": 0.05588487765755302,
+          "0.95": 0.05588487765755302
+        },
+        "covered_days": 0.9335599652777777,
+        "max_carried_observation_seconds": 22894.396,
+        "observations": 28
+      },
+      "candidates": [
+        {
+          "high": 0.0175,
+          "low": 0.015
+        },
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.02,
+          "low": 0.015
+        },
+        {
+          "high": 0.0225,
+          "low": 0.02
+        },
+        {
+          "high": 0.025,
+          "low": 0.015
+        },
+        {
+          "high": 0.025,
+          "low": 0.02
+        },
+        {
+          "high": 0.03,
+          "low": 0.02
+        },
+        {
+          "high": 0.0575,
+          "low": 0.055
+        },
+        {
+          "high": 0.06,
+          "low": 0.055
+        },
+        {
+          "high": 0.065,
+          "low": 0.055
+        }
+      ],
+      "counts": {
+        "receipt_rows": 72078,
+        "rows_after_study_end_not_loaded": 62078,
+        "raw_rows_loaded": 10000,
+        "mark_missing_or_invalid_trade_price_fallback": 5685,
+        "final_mark_is_trade_price_fallback": 1,
+        "rows_at_or_after_study_end": 4315,
+        "ordinary_rows": 5685,
+        "compressed_trade_bytes": 140801
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 415
+      },
+      "metrics": {
+        "total_seconds": 1.9873187800000025,
+        "replay_and_audit_seconds": 0.1669220990000042,
+        "peak_process_rss_mib": 85.91015625,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-30JUN23",
+      "expiry": "2023-06-30T08:00:00+00:00",
+      "first_observation": "2022-06-24T08:34:47.021000+00:00",
+      "train_end": "2022-09-25T08:23:11.347000+00:00",
+      "end": "2023-05-01T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.0028550250078547023,
+          "0.1": 0.0036278641267352995,
+          "0.25": 0.006010063288268188,
+          "0.5": 0.013967550105511366,
+          "0.75": 0.016564506372282302,
+          "0.9": 0.019066068688551548,
+          "0.95": 0.020292939329187482
+        },
+        "covered_days": 92.99194243055555,
+        "max_carried_observation_seconds": 51773.57,
+        "observations": 37517
+      },
+      "candidates": [
+        {
+          "high": 0.0075,
+          "low": 0.005
+        },
+        {
+          "high": 0.01,
+          "low": 0.005
+        },
+        {
+          "high": 0.015,
+          "low": 0.005
+        },
+        {
+          "high": 0.0175,
+          "low": 0.015
+        },
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.02,
+          "low": 0.015
+        },
+        {
+          "high": 0.02,
+          "low": 0.0175
+        },
+        {
+          "high": 0.0225,
+          "low": 0.0175
+        },
+        {
+          "high": 0.025,
+          "low": 0.015
+        },
+        {
+          "high": 0.0275,
+          "low": 0.0175
+        }
+      ],
+      "counts": {
+        "receipt_rows": 899161,
+        "rows_after_study_end_not_loaded": 369161,
+        "raw_rows_loaded": 530000,
+        "final_mark_is_trade_price_fallback": 0,
+        "flagged_excluded": 834,
+        "rows_at_or_after_study_end": 6101,
+        "ordinary_rows": 523065,
+        "compressed_trade_bytes": 9331476
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 95888
+      },
+      "metrics": {
+        "total_seconds": 46.69720918899998,
+        "replay_and_audit_seconds": 35.135953949,
+        "peak_process_rss_mib": 1614.36328125,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-24SEP21",
+      "expiry": "2021-09-24T08:00:00+00:00",
+      "first_observation": "2020-12-25T08:06:29.405000+00:00",
+      "train_end": "2021-02-23T16:04:19.603000+00:00",
+      "end": "2021-07-26T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.10974833055820579,
+          "0.1": 0.12183299764408902,
+          "0.25": 0.1344770553590486,
+          "0.5": 0.1508231942542782,
+          "0.75": 0.1712780737754418,
+          "0.9": 0.23875746190334254,
+          "0.95": 0.2529998448312675
+        },
+        "covered_days": 60.331825208333335,
+        "max_carried_observation_seconds": 4559.117,
+        "observations": 483910
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.1375,
+          "low": 0.135
+        },
+        {
+          "high": 0.14,
+          "low": 0.135
+        },
+        {
+          "high": 0.145,
+          "low": 0.135
+        },
+        {
+          "high": 0.1525,
+          "low": 0.15
+        },
+        {
+          "high": 0.155,
+          "low": 0.15
+        },
+        {
+          "high": 0.16,
+          "low": 0.15
+        },
+        {
+          "high": 0.175,
+          "low": 0.1725
+        },
+        {
+          "high": 0.1775,
+          "low": 0.1725
+        },
+        {
+          "high": 0.1825,
+          "low": 0.1725
+        }
+      ],
+      "counts": {
+        "receipt_rows": 4376742,
+        "rows_after_study_end_not_loaded": 1236742,
+        "raw_rows_loaded": 3140000,
+        "final_mark_is_trade_price_fallback": 0,
+        "flagged_excluded": 298,
+        "mark_missing_or_invalid_trade_price_fallback": 165,
+        "rows_at_or_after_study_end": 8718,
+        "ordinary_rows": 3130984,
+        "compressed_trade_bytes": 54210687
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 36614
+      },
+      "metrics": {
+        "total_seconds": 347.07510113399996,
+        "replay_and_audit_seconds": 275.804897591,
+        "peak_process_rss_mib": 1509.08203125,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-24SEP27",
+      "expiry": "2027-09-24T08:00:00+00:00",
+      "first_observation": "2026-09-24T08:06:05.976000+00:00",
+      "train_end": "2026-09-29T08:20:23.628000+00:00",
+      "end": "2026-10-09T08:48:58.934000+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.05092397004923756,
+          "0.1": 0.05101845477564697,
+          "0.25": 0.051520088194368284,
+          "0.5": 0.052217580120592307,
+          "0.75": 0.05323846410323971,
+          "0.9": 0.05354931799530038,
+          "0.95": 0.053690610680599805
+        },
+        "covered_days": 5.009920740740741,
+        "max_carried_observation_seconds": 14605.574,
+        "observations": 4278
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.055,
+          "low": 0.0525
+        },
+        {
+          "high": 0.0575,
+          "low": 0.0525
+        },
+        {
+          "high": 0.0625,
+          "low": 0.0525
+        }
+      ],
+      "counts": {
+        "receipt_rows": 9104,
+        "raw_rows_loaded": 9104,
+        "final_mark_is_trade_price_fallback": 0,
+        "flagged_excluded": 316,
+        "ordinary_rows": 8788,
+        "compressed_trade_bytes": 192080
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 441
+      },
+      "metrics": {
+        "total_seconds": 1.2972334520000004,
+        "replay_and_audit_seconds": 0.255130003999966,
+        "peak_process_rss_mib": 1509.08203125,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-26SEP25",
+      "expiry": "2025-09-26T08:00:00+00:00",
+      "first_observation": "2024-09-27T08:11:06.619000+00:00",
+      "train_end": "2024-12-27T00:07:24.412000+00:00",
+      "end": "2025-07-28T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.08307222889135243,
+          "0.1": 0.0846328922898224,
+          "0.25": 0.09032641473444164,
+          "0.5": 0.11171127276026634,
+          "0.75": 0.12704394426025056,
+          "0.9": 0.132009322717714,
+          "0.95": 0.1340675581191289
+        },
+        "covered_days": 90.66408903935185,
+        "max_carried_observation_seconds": 39990.831,
+        "observations": 169629
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.0925,
+          "low": 0.09
+        },
+        {
+          "high": 0.095,
+          "low": 0.09
+        },
+        {
+          "high": 0.1,
+          "low": 0.09
+        },
+        {
+          "high": 0.115,
+          "low": 0.1125
+        },
+        {
+          "high": 0.1175,
+          "low": 0.1125
+        },
+        {
+          "high": 0.1225,
+          "low": 0.1125
+        },
+        {
+          "high": 0.13,
+          "low": 0.1275
+        },
+        {
+          "high": 0.1325,
+          "low": 0.1275
+        },
+        {
+          "high": 0.1375,
+          "low": 0.1275
+        }
+      ],
+      "counts": {
+        "receipt_rows": 2756131,
+        "rows_after_study_end_not_loaded": 636131,
+        "raw_rows_loaded": 2120000,
+        "final_mark_is_trade_price_fallback": 0,
+        "flagged_excluded": 87981,
+        "rows_at_or_after_study_end": 4430,
+        "ordinary_rows": 2027589,
+        "compressed_trade_bytes": 37300761
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 11167
+      },
+      "metrics": {
+        "total_seconds": 234.30454699100005,
+        "replay_and_audit_seconds": 184.41351054599988,
+        "peak_process_rss_mib": 1509.08203125,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-27SEP19",
+      "expiry": "2019-09-27T08:00:00+00:00",
+      "first_observation": "2019-03-26T14:03:21.577000+00:00",
+      "train_end": "2019-04-26T12:02:14.384000+00:00",
+      "end": "2019-07-29T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": -0.023236452760448553,
+          "0.1": -0.02066609123173386,
+          "0.25": -0.01439475803487823,
+          "0.5": -0.002011346488370831,
+          "0.75": 0.0027032148626593036,
+          "0.9": 0.013665355428480939,
+          "0.95": 0.017109587332261908
+        },
+        "covered_days": 30.91588318287037,
+        "max_carried_observation_seconds": 6016.362,
+        "observations": 201090
+      },
+      "candidates": [
+        {
+          "high": -0.0125,
+          "low": -0.015
+        },
+        {
+          "high": -0.01,
+          "low": -0.015
+        },
+        {
+          "high": -0.005,
+          "low": -0.015
+        },
+        {
+          "high": 0.0,
+          "low": -0.0025
+        },
+        {
+          "high": 0.0025,
+          "low": -0.0025
+        },
+        {
+          "high": 0.005,
+          "low": 0.0025
+        },
+        {
+          "high": 0.0075,
+          "low": -0.0025
+        },
+        {
+          "high": 0.0075,
+          "low": 0.0025
+        },
+        {
+          "high": 0.0125,
+          "low": 0.0025
+        },
+        {
+          "high": 0.02,
+          "low": 0.01
+        }
+      ],
+      "counts": {
+        "receipt_rows": 3030369,
+        "rows_after_study_end_not_loaded": 810369,
+        "raw_rows_loaded": 2220000,
+        "final_mark_is_trade_price_fallback": 0,
+        "rows_at_or_after_study_end": 4563,
+        "ordinary_rows": 2215437,
+        "compressed_trade_bytes": 35358265
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 41908
+      },
+      "metrics": {
+        "total_seconds": 238.77821929200002,
+        "replay_and_audit_seconds": 186.29591514000003,
+        "peak_process_rss_mib": 1054.58984375,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-29SEP17",
+      "expiry": "2017-09-29T08:00:00+00:00",
+      "first_observation": "2017-05-26T21:34:47.053000+00:00",
+      "train_end": "2017-06-07T01:03:11.368000+00:00",
+      "end": "2017-07-31T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.04660744177165417,
+          "0.1": 0.05540349390401611,
+          "0.25": 0.08887821416715638,
+          "0.5": 0.12019164102921642,
+          "0.75": 0.14756698019195494,
+          "0.9": 0.2260493920181029,
+          "0.95": 0.24999641515328264
+        },
+        "covered_days": 11.144720081018518,
+        "max_carried_observation_seconds": 5075.115,
+        "observations": 19238
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.0925,
+          "low": 0.09
+        },
+        {
+          "high": 0.095,
+          "low": 0.09
+        },
+        {
+          "high": 0.1,
+          "low": 0.09
+        },
+        {
+          "high": 0.1225,
+          "low": 0.12
+        },
+        {
+          "high": 0.125,
+          "low": 0.12
+        },
+        {
+          "high": 0.13,
+          "low": 0.12
+        },
+        {
+          "high": 0.15,
+          "low": 0.1475
+        },
+        {
+          "high": 0.1525,
+          "low": 0.1475
+        },
+        {
+          "high": 0.1575,
+          "low": 0.1475
+        }
+      ],
+      "counts": {
+        "receipt_rows": 359795,
+        "rows_after_study_end_not_loaded": 269795,
+        "raw_rows_loaded": 90000,
+        "mark_missing_or_invalid_trade_price_fallback": 89856,
+        "final_mark_is_trade_price_fallback": 1,
+        "rows_at_or_after_study_end": 144,
+        "ordinary_rows": 89856,
+        "compressed_trade_bytes": 1351113
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 10570
+      },
+      "metrics": {
+        "total_seconds": 9.519075858000008,
+        "replay_and_audit_seconds": 5.582846522000011,
+        "peak_process_rss_mib": 125.42578125,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-29SEP23",
+      "expiry": "2023-09-29T08:00:00+00:00",
+      "first_observation": "2022-09-30T08:04:53.828000+00:00",
+      "train_end": "2022-12-30T00:03:15.885000+00:00",
+      "end": "2023-07-31T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": -0.013563654110772563,
+          "0.1": -0.009481793411668172,
+          "0.25": -0.005611084275948148,
+          "0.5": 0.0005537729799751268,
+          "0.75": 0.007876166158299372,
+          "0.9": 0.009646798936870059,
+          "0.95": 0.01038019703798787
+        },
+        "covered_days": 90.66552728009259,
+        "max_carried_observation_seconds": 74416.945,
+        "observations": 57360
+      },
+      "candidates": [
+        {
+          "high": -0.0025,
+          "low": -0.005
+        },
+        {
+          "high": 0.0,
+          "low": -0.005
+        },
+        {
+          "high": 0.0025,
+          "low": 0.0
+        },
+        {
+          "high": 0.005,
+          "low": -0.005
+        },
+        {
+          "high": 0.005,
+          "low": 0.0
+        },
+        {
+          "high": 0.01,
+          "low": 0.0
+        },
+        {
+          "high": 0.01,
+          "low": 0.0075
+        },
+        {
+          "high": 0.0125,
+          "low": 0.0075
+        },
+        {
+          "high": 0.0175,
+          "low": 0.0075
+        },
+        {
+          "high": 0.02,
+          "low": 0.01
+        }
+      ],
+      "counts": {
+        "receipt_rows": 838872,
+        "rows_after_study_end_not_loaded": 268872,
+        "raw_rows_loaded": 570000,
+        "final_mark_is_trade_price_fallback": 0,
+        "flagged_excluded": 712,
+        "rows_at_or_after_study_end": 842,
+        "ordinary_rows": 568446,
+        "compressed_trade_bytes": 10031946
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 24022
+      },
+      "metrics": {
+        "total_seconds": 78.63404969200008,
+        "replay_and_audit_seconds": 64.01853258799997,
+        "peak_process_rss_mib": 1509.08203125,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-26DEC25",
+      "expiry": "2025-12-26T08:00:00+00:00",
+      "first_observation": "2024-12-27T08:13:49.613000+00:00",
+      "train_end": "2025-03-28T08:09:13.075000+00:00",
+      "end": "2025-10-27T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.06119643002392614,
+          "0.1": 0.06447270039474845,
+          "0.25": 0.07537742274198188,
+          "0.5": 0.09334542505392643,
+          "0.75": 0.11433715914176996,
+          "0.9": 0.11773752680984358,
+          "0.95": 0.1201277500544985
+        },
+        "covered_days": 90.99679354166666,
+        "max_carried_observation_seconds": 13515.371,
+        "observations": 192326
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.0775,
+          "low": 0.075
+        },
+        {
+          "high": 0.08,
+          "low": 0.075
+        },
+        {
+          "high": 0.085,
+          "low": 0.075
+        },
+        {
+          "high": 0.095,
+          "low": 0.0925
+        },
+        {
+          "high": 0.0975,
+          "low": 0.0925
+        },
+        {
+          "high": 0.1025,
+          "low": 0.0925
+        },
+        {
+          "high": 0.1175,
+          "low": 0.115
+        },
+        {
+          "high": 0.12,
+          "low": 0.115
+        },
+        {
+          "high": 0.125,
+          "low": 0.115
+        }
+      ],
+      "counts": {
+        "receipt_rows": 3190307,
+        "rows_after_study_end_not_loaded": 1170307,
+        "raw_rows_loaded": 2020000,
+        "final_mark_is_trade_price_fallback": 0,
+        "flagged_excluded": 120963,
+        "mark_missing_or_invalid_trade_price_fallback": 1,
+        "rows_at_or_after_study_end": 7032,
+        "ordinary_rows": 1892005,
+        "compressed_trade_bytes": 35782340
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 11857
+      },
+      "metrics": {
+        "total_seconds": 235.37175492400002,
+        "replay_and_audit_seconds": 169.59320969600003,
+        "peak_process_rss_mib": 1334.1640625,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-27DEC19",
+      "expiry": "2019-12-27T08:00:00+00:00",
+      "first_observation": "2019-06-24T09:04:08.533000+00:00",
+      "train_end": "2019-07-26T00:42:45.688000+00:00",
+      "end": "2019-10-28T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.04408706200507623,
+          "0.1": 0.05215960926131805,
+          "0.25": 0.058816952103238875,
+          "0.5": 0.0783090802853541,
+          "0.75": 0.10071786560573223,
+          "0.9": 0.11025000335564854,
+          "0.95": 0.11708869714128901
+        },
+        "covered_days": 31.651813136574074,
+        "max_carried_observation_seconds": 2492.935,
+        "observations": 548956
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.0625,
+          "low": 0.06
+        },
+        {
+          "high": 0.065,
+          "low": 0.06
+        },
+        {
+          "high": 0.07,
+          "low": 0.06
+        },
+        {
+          "high": 0.08,
+          "low": 0.0775
+        },
+        {
+          "high": 0.0825,
+          "low": 0.0775
+        },
+        {
+          "high": 0.0875,
+          "low": 0.0775
+        },
+        {
+          "high": 0.1025,
+          "low": 0.1
+        },
+        {
+          "high": 0.105,
+          "low": 0.1
+        },
+        {
+          "high": 0.11,
+          "low": 0.1
+        }
+      ],
+      "counts": {
+        "receipt_rows": 3224802,
+        "rows_after_study_end_not_loaded": 1044802,
+        "raw_rows_loaded": 2180000,
+        "final_mark_is_trade_price_fallback": 0,
+        "rows_at_or_after_study_end": 1118,
+        "ordinary_rows": 2178882,
+        "compressed_trade_bytes": 34051794
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 53865
+      },
+      "metrics": {
+        "total_seconds": 204.46903912799996,
+        "replay_and_audit_seconds": 136.13242349,
+        "peak_process_rss_mib": 1055.6640625,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-29DEC17",
+      "expiry": "2017-12-29T08:00:00+00:00",
+      "first_observation": "2017-08-25T08:59:20.953000+00:00",
+      "train_end": "2017-09-06T00:39:33.968000+00:00",
+      "end": "2017-10-30T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.02570033521096821,
+          "0.1": 0.04898909235873903,
+          "0.25": 0.07669980210027728,
+          "0.5": 0.09916987368962744,
+          "0.75": 0.11295390941558964,
+          "0.9": 0.12562943537700713,
+          "0.95": 0.13232880360537838
+        },
+        "covered_days": 11.652922627314815,
+        "max_carried_observation_seconds": 11341.353,
+        "observations": 16323
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.08,
+          "low": 0.0775
+        },
+        {
+          "high": 0.0825,
+          "low": 0.0775
+        },
+        {
+          "high": 0.0875,
+          "low": 0.0775
+        },
+        {
+          "high": 0.1025,
+          "low": 0.1
+        },
+        {
+          "high": 0.105,
+          "low": 0.1
+        },
+        {
+          "high": 0.11,
+          "low": 0.1
+        },
+        {
+          "high": 0.115,
+          "low": 0.1125
+        },
+        {
+          "high": 0.1175,
+          "low": 0.1125
+        },
+        {
+          "high": 0.1225,
+          "low": 0.1125
+        }
+      ],
+      "counts": {
+        "receipt_rows": 1537774,
+        "rows_after_study_end_not_loaded": 1267774,
+        "raw_rows_loaded": 270000,
+        "mark_missing_or_invalid_trade_price_fallback": 262922,
+        "final_mark_is_trade_price_fallback": 1,
+        "invalid_contract_or_direction_excluded": 27,
+        "invalid_numeric_excluded": 3,
+        "rows_at_or_after_study_end": 7048,
+        "ordinary_rows": 262922,
+        "compressed_trade_bytes": 4077729
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 11466
+      },
+      "metrics": {
+        "total_seconds": 35.981508885000004,
+        "replay_and_audit_seconds": 20.916612071000003,
+        "peak_process_rss_mib": 201.48046875,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-29DEC23",
+      "expiry": "2023-12-29T08:00:00+00:00",
+      "first_observation": "2022-12-30T10:30:53.998000+00:00",
+      "train_end": "2023-03-31T09:40:35.998000+00:00",
+      "end": "2023-10-30T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.000679092771099832,
+          "0.1": 0.00437850321891404,
+          "0.25": 0.018841806365230918,
+          "0.5": 0.02449544329443397,
+          "0.75": 0.02889154551289619,
+          "0.9": 0.03238890737623053,
+          "0.95": 0.033528286268708
+        },
+        "covered_days": 90.96506365740741,
+        "max_carried_observation_seconds": 67225.658,
+        "observations": 86646
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.0225,
+          "low": 0.02
+        },
+        {
+          "high": 0.025,
+          "low": 0.02
+        },
+        {
+          "high": 0.0275,
+          "low": 0.025
+        },
+        {
+          "high": 0.03,
+          "low": 0.02
+        },
+        {
+          "high": 0.03,
+          "low": 0.025
+        },
+        {
+          "high": 0.0325,
+          "low": 0.03
+        },
+        {
+          "high": 0.035,
+          "low": 0.025
+        },
+        {
+          "high": 0.035,
+          "low": 0.03
+        },
+        {
+          "high": 0.04,
+          "low": 0.03
+        }
+      ],
+      "counts": {
+        "receipt_rows": 1396577,
+        "rows_after_study_end_not_loaded": 646577,
+        "raw_rows_loaded": 750000,
+        "final_mark_is_trade_price_fallback": 0,
+        "flagged_excluded": 2093,
+        "rows_at_or_after_study_end": 4593,
+        "ordinary_rows": 743314,
+        "compressed_trade_bytes": 13089497
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 24802
+      },
+      "metrics": {
+        "total_seconds": 95.80598320400009,
+        "replay_and_audit_seconds": 69.60446611700002,
+        "peak_process_rss_mib": 1334.1640625,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-31DEC21",
+      "expiry": "2021-12-31T08:00:00+00:00",
+      "first_observation": "2021-03-26T08:12:36.663000+00:00",
+      "train_end": "2021-05-28T00:08:24.442000+00:00",
+      "end": "2021-11-01T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.06767740415516997,
+          "0.1": 0.07658819312257577,
+          "0.25": 0.18511047744712208,
+          "0.5": 0.21216315718589193,
+          "0.75": 0.24251068172128776,
+          "0.9": 0.2690187821237122,
+          "0.95": 0.28821706044503026
+        },
+        "covered_days": 62.66374165509259,
+        "max_carried_observation_seconds": 4838.074,
+        "observations": 447947
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.1875,
+          "low": 0.185
+        },
+        {
+          "high": 0.19,
+          "low": 0.185
+        },
+        {
+          "high": 0.195,
+          "low": 0.185
+        },
+        {
+          "high": 0.215,
+          "low": 0.2125
+        },
+        {
+          "high": 0.2175,
+          "low": 0.2125
+        },
+        {
+          "high": 0.2225,
+          "low": 0.2125
+        },
+        {
+          "high": 0.245,
+          "low": 0.2425
+        },
+        {
+          "high": 0.2475,
+          "low": 0.2425
+        },
+        {
+          "high": 0.2525,
+          "low": 0.2425
+        }
+      ],
+      "counts": {
+        "receipt_rows": 3939155,
+        "rows_after_study_end_not_loaded": 1269155,
+        "raw_rows_loaded": 2670000,
+        "final_mark_is_trade_price_fallback": 0,
+        "flagged_excluded": 907,
+        "mark_missing_or_invalid_trade_price_fallback": 240,
+        "rows_at_or_after_study_end": 6314,
+        "ordinary_rows": 2662779,
+        "compressed_trade_bytes": 45284305
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 211
+      },
+      "metrics": {
+        "total_seconds": 298.762179706,
+        "replay_and_audit_seconds": 218.16314467899997,
+        "peak_process_rss_mib": 1334.1640625,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-25MAR22",
+      "expiry": "2022-03-25T08:00:00+00:00",
+      "first_observation": "2021-04-19T12:03:37.615000+00:00",
+      "train_end": "2021-07-11T18:42:25.076000+00:00",
+      "end": "2022-01-24T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.04621908924605292,
+          "0.1": 0.051846871419148344,
+          "0.25": 0.06270048785457757,
+          "0.5": 0.0729969710374156,
+          "0.75": 0.1903010109469454,
+          "0.9": 0.20823309973669535,
+          "0.95": 0.2155230811535901
+        },
+        "covered_days": 83.27693241898149,
+        "max_carried_observation_seconds": 11388.294,
+        "observations": 181934
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.065,
+          "low": 0.0625
+        },
+        {
+          "high": 0.0675,
+          "low": 0.0625
+        },
+        {
+          "high": 0.0725,
+          "low": 0.0625
+        },
+        {
+          "high": 0.075,
+          "low": 0.0725
+        },
+        {
+          "high": 0.0775,
+          "low": 0.0725
+        },
+        {
+          "high": 0.0825,
+          "low": 0.0725
+        },
+        {
+          "high": 0.1925,
+          "low": 0.19
+        },
+        {
+          "high": 0.195,
+          "low": 0.19
+        },
+        {
+          "high": 0.2,
+          "low": 0.19
+        }
+      ],
+      "counts": {
+        "receipt_rows": 2992101,
+        "rows_after_study_end_not_loaded": 1012101,
+        "raw_rows_loaded": 1980000,
+        "final_mark_is_trade_price_fallback": 0,
+        "flagged_excluded": 397,
+        "mark_missing_or_invalid_trade_price_fallback": 12,
+        "rows_at_or_after_study_end": 5993,
+        "ordinary_rows": 1973610,
+        "compressed_trade_bytes": 34502735
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 76075
+      },
+      "metrics": {
+        "total_seconds": 237.00623902600006,
+        "replay_and_audit_seconds": 191.528684128,
+        "peak_process_rss_mib": 1081.0390625,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-27MAR20",
+      "expiry": "2020-03-27T08:00:00+00:00",
+      "first_observation": "2019-09-20T08:01:57.883000+00:00",
+      "train_end": "2019-10-23T00:01:18.588000+00:00",
+      "end": "2020-01-27T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.023395772473106872,
+          "0.1": 0.025496403125773705,
+          "0.25": 0.031307064470928014,
+          "0.5": 0.03985555545285005,
+          "0.75": 0.04443914750462326,
+          "0.9": 0.09223881053559677,
+          "0.95": 0.09997756168849548
+        },
+        "covered_days": 32.66620607638889,
+        "max_carried_observation_seconds": 4513.828,
+        "observations": 379200
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.035,
+          "low": 0.0325
+        },
+        {
+          "high": 0.0375,
+          "low": 0.0325
+        },
+        {
+          "high": 0.0425,
+          "low": 0.0325
+        },
+        {
+          "high": 0.0425,
+          "low": 0.04
+        },
+        {
+          "high": 0.045,
+          "low": 0.04
+        },
+        {
+          "high": 0.0475,
+          "low": 0.045
+        },
+        {
+          "high": 0.05,
+          "low": 0.04
+        },
+        {
+          "high": 0.05,
+          "low": 0.045
+        },
+        {
+          "high": 0.055,
+          "low": 0.045
+        }
+      ],
+      "counts": {
+        "receipt_rows": 3565190,
+        "rows_after_study_end_not_loaded": 1735190,
+        "raw_rows_loaded": 1830000,
+        "final_mark_is_trade_price_fallback": 0,
+        "flagged_excluded": 8,
+        "rows_at_or_after_study_end": 3504,
+        "ordinary_rows": 1826488,
+        "compressed_trade_bytes": 28432987
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 68143
+      },
+      "metrics": {
+        "total_seconds": 197.051392397,
+        "replay_and_audit_seconds": 151.01879442300003,
+        "peak_process_rss_mib": 938.203125,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-27MAR26",
+      "expiry": "2026-03-27T08:00:00+00:00",
+      "first_observation": "2025-03-28T08:13:08.962000+00:00",
+      "train_end": "2025-06-27T16:08:45.974000+00:00",
+      "end": "2026-01-26T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.060704990464450534,
+          "0.1": 0.06204844562053309,
+          "0.25": 0.06490780305371677,
+          "0.5": 0.06807952630474631,
+          "0.75": 0.0710858024998109,
+          "0.9": 0.0758549971360389,
+          "0.95": 0.07915748412151077
+        },
+        "covered_days": 91.3302837037037,
+        "max_carried_observation_seconds": 18155.227,
+        "observations": 355341
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.0675,
+          "low": 0.065
+        },
+        {
+          "high": 0.07,
+          "low": 0.065
+        },
+        {
+          "high": 0.07,
+          "low": 0.0675
+        },
+        {
+          "high": 0.0725,
+          "low": 0.0675
+        },
+        {
+          "high": 0.0725,
+          "low": 0.07
+        },
+        {
+          "high": 0.075,
+          "low": 0.065
+        },
+        {
+          "high": 0.075,
+          "low": 0.07
+        },
+        {
+          "high": 0.0775,
+          "low": 0.0675
+        },
+        {
+          "high": 0.08,
+          "low": 0.07
+        }
+      ],
+      "counts": {
+        "receipt_rows": 3061610,
+        "rows_after_study_end_not_loaded": 1111610,
+        "raw_rows_loaded": 1950000,
+        "final_mark_is_trade_price_fallback": 0,
+        "flagged_excluded": 188910,
+        "rows_at_or_after_study_end": 3973,
+        "ordinary_rows": 1757117,
+        "compressed_trade_bytes": 34512091
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 36591
+      },
+      "metrics": {
+        "total_seconds": 201.43802584899993,
+        "replay_and_audit_seconds": 158.168582012,
+        "peak_process_rss_mib": 1081.0390625,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-29MAR24",
+      "expiry": "2024-03-29T08:00:00+00:00",
+      "first_observation": "2023-03-31T08:41:11.186000+00:00",
+      "train_end": "2023-06-30T08:27:27.457000+00:00",
+      "end": "2024-01-29T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.019417208317733567,
+          "0.1": 0.02114440857031781,
+          "0.25": 0.024174515879039835,
+          "0.5": 0.02769990285565699,
+          "0.75": 0.030641321859818074,
+          "0.9": 0.03782241241104636,
+          "0.95": 0.042595541636556856
+        },
+        "covered_days": 90.9904603125,
+        "max_carried_observation_seconds": 60316.035,
+        "observations": 24731
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.0275,
+          "low": 0.025
+        },
+        {
+          "high": 0.03,
+          "low": 0.025
+        },
+        {
+          "high": 0.03,
+          "low": 0.0275
+        },
+        {
+          "high": 0.0325,
+          "low": 0.0275
+        },
+        {
+          "high": 0.0325,
+          "low": 0.03
+        },
+        {
+          "high": 0.035,
+          "low": 0.025
+        },
+        {
+          "high": 0.035,
+          "low": 0.03
+        },
+        {
+          "high": 0.0375,
+          "low": 0.0275
+        },
+        {
+          "high": 0.04,
+          "low": 0.03
+        }
+      ],
+      "counts": {
+        "receipt_rows": 1880718,
+        "rows_after_study_end_not_loaded": 950718,
+        "raw_rows_loaded": 930000,
+        "final_mark_is_trade_price_fallback": 0,
+        "flagged_excluded": 4365,
+        "rows_at_or_after_study_end": 1949,
+        "ordinary_rows": 923686,
+        "compressed_trade_bytes": 16955418
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 1182
+      },
+      "metrics": {
+        "total_seconds": 124.91855624899995,
+        "replay_and_audit_seconds": 102.51529890200004,
+        "peak_process_rss_mib": 1081.0390625,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-30MAR18",
+      "expiry": "2018-03-30T08:00:00+00:00",
+      "first_observation": "2017-11-21T12:23:19.925000+00:00",
+      "train_end": "2017-12-04T10:55:33.283000+00:00",
+      "end": "2018-01-29T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.05288728989978441,
+          "0.1": 0.06425516743121391,
+          "0.25": 0.077299021432556,
+          "0.5": 0.09471854278514609,
+          "0.75": 0.11999825960226483,
+          "0.9": 0.14055897883320767,
+          "0.95": 0.1514128584777858
+        },
+        "covered_days": 12.939037708333334,
+        "max_carried_observation_seconds": 4408.09,
+        "observations": 168005
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.08,
+          "low": 0.0775
+        },
+        {
+          "high": 0.0825,
+          "low": 0.0775
+        },
+        {
+          "high": 0.0875,
+          "low": 0.0775
+        },
+        {
+          "high": 0.0975,
+          "low": 0.095
+        },
+        {
+          "high": 0.1,
+          "low": 0.095
+        },
+        {
+          "high": 0.105,
+          "low": 0.095
+        },
+        {
+          "high": 0.1225,
+          "low": 0.12
+        },
+        {
+          "high": 0.125,
+          "low": 0.12
+        },
+        {
+          "high": 0.13,
+          "low": 0.12
+        }
+      ],
+      "counts": {
+        "receipt_rows": 2304989,
+        "rows_after_study_end_not_loaded": 1044989,
+        "raw_rows_loaded": 1260000,
+        "final_mark_is_trade_price_fallback": 0,
+        "invalid_numeric_excluded": 17,
+        "invalid_contract_or_direction_excluded": 10,
+        "rows_at_or_after_study_end": 7594,
+        "ordinary_rows": 1252379,
+        "compressed_trade_bytes": 19775880
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 64233
+      },
+      "metrics": {
+        "total_seconds": 134.742222625,
+        "replay_and_audit_seconds": 102.795426194,
+        "peak_process_rss_mib": 654.6953125,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-24JUN22",
+      "expiry": "2022-06-24T08:00:00+00:00",
+      "first_observation": "2021-06-25T13:14:56.216000+00:00",
+      "train_end": "2021-09-24T03:29:57.477000+00:00",
+      "end": "2022-04-25T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.05467434858065846,
+          "0.1": 0.059679447615785,
+          "0.25": 0.06662533094983511,
+          "0.5": 0.08610756013615942,
+          "0.75": 0.09436205303989934,
+          "0.9": 0.10231361302299243,
+          "0.95": 0.10510198360170446
+        },
+        "covered_days": 90.59375880787037,
+        "max_carried_observation_seconds": 13483.076,
+        "observations": 131169
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.07,
+          "low": 0.0675
+        },
+        {
+          "high": 0.0725,
+          "low": 0.0675
+        },
+        {
+          "high": 0.0775,
+          "low": 0.0675
+        },
+        {
+          "high": 0.0875,
+          "low": 0.085
+        },
+        {
+          "high": 0.09,
+          "low": 0.085
+        },
+        {
+          "high": 0.095,
+          "low": 0.085
+        },
+        {
+          "high": 0.0975,
+          "low": 0.095
+        },
+        {
+          "high": 0.1,
+          "low": 0.095
+        },
+        {
+          "high": 0.105,
+          "low": 0.095
+        }
+      ],
+      "counts": {
+        "receipt_rows": 2205191,
+        "rows_after_study_end_not_loaded": 835191,
+        "raw_rows_loaded": 1370000,
+        "final_mark_is_trade_price_fallback": 0,
+        "mark_missing_or_invalid_trade_price_fallback": 1,
+        "flagged_excluded": 258,
+        "rows_at_or_after_study_end": 8767,
+        "ordinary_rows": 1360975,
+        "compressed_trade_bytes": 25166199
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 75285
+      },
+      "metrics": {
+        "total_seconds": 175.82206013399997,
+        "replay_and_audit_seconds": 132.69659508400002,
+        "peak_process_rss_mib": 1056.32421875,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-26JUN20",
+      "expiry": "2020-06-26T08:00:00+00:00",
+      "first_observation": "2019-12-20T09:02:55.291000+00:00",
+      "train_end": "2020-01-21T16:41:56.860000+00:00",
+      "end": "2020-04-27T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.04758764221467419,
+          "0.1": 0.06173040920053865,
+          "0.25": 0.07000540943713884,
+          "0.5": 0.07798593678492881,
+          "0.75": 0.08629586298793725,
+          "0.9": 0.09801928637398281,
+          "0.95": 0.10385963739481595
+        },
+        "covered_days": 32.318762372685185,
+        "max_carried_observation_seconds": 3252.473,
+        "observations": 248825
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.0725,
+          "low": 0.07
+        },
+        {
+          "high": 0.075,
+          "low": 0.07
+        },
+        {
+          "high": 0.08,
+          "low": 0.07
+        },
+        {
+          "high": 0.08,
+          "low": 0.0775
+        },
+        {
+          "high": 0.0825,
+          "low": 0.0775
+        },
+        {
+          "high": 0.0875,
+          "low": 0.0775
+        },
+        {
+          "high": 0.09,
+          "low": 0.0875
+        },
+        {
+          "high": 0.0925,
+          "low": 0.0875
+        },
+        {
+          "high": 0.0975,
+          "low": 0.0875
+        }
+      ],
+      "counts": {
+        "receipt_rows": 3581337,
+        "rows_after_study_end_not_loaded": 1371337,
+        "raw_rows_loaded": 2210000,
+        "final_mark_is_trade_price_fallback": 0,
+        "flagged_excluded": 19,
+        "rows_at_or_after_study_end": 4327,
+        "ordinary_rows": 2205654,
+        "compressed_trade_bytes": 35427346
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 24710
+      },
+      "metrics": {
+        "total_seconds": 229.15925500699998,
+        "replay_and_audit_seconds": 157.86173185200002,
+        "peak_process_rss_mib": 1056.32421875,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-26JUN26",
+      "expiry": "2026-06-26T08:00:00+00:00",
+      "first_observation": "2025-06-27T08:37:09.650000+00:00",
+      "train_end": "2025-09-26T00:24:46.433000+00:00",
+      "end": "2026-04-27T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.06372079011681506,
+          "0.1": 0.06599029216359435,
+          "0.25": 0.07212417832457725,
+          "0.5": 0.07544794587695236,
+          "0.75": 0.07966394462777575,
+          "0.9": 0.08265028851471029,
+          "0.95": 0.08473694962755046
+        },
+        "covered_days": 90.65805883101852,
+        "max_carried_observation_seconds": 20227.87,
+        "observations": 197192
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.075,
+          "low": 0.0725
+        },
+        {
+          "high": 0.0775,
+          "low": 0.0725
+        },
+        {
+          "high": 0.0775,
+          "low": 0.075
+        },
+        {
+          "high": 0.08,
+          "low": 0.075
+        },
+        {
+          "high": 0.0825,
+          "low": 0.0725
+        },
+        {
+          "high": 0.0825,
+          "low": 0.08
+        },
+        {
+          "high": 0.085,
+          "low": 0.075
+        },
+        {
+          "high": 0.085,
+          "low": 0.08
+        },
+        {
+          "high": 0.09,
+          "low": 0.08
+        }
+      ],
+      "counts": {
+        "receipt_rows": 2308892,
+        "rows_after_study_end_not_loaded": 468892,
+        "raw_rows_loaded": 1840000,
+        "final_mark_is_trade_price_fallback": 0,
+        "flagged_excluded": 137471,
+        "mark_missing_or_invalid_trade_price_fallback": 1,
+        "rows_at_or_after_study_end": 8947,
+        "ordinary_rows": 1693582,
+        "compressed_trade_bytes": 34389459
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 4926
+      },
+      "metrics": {
+        "total_seconds": 188.7760240099999,
+        "replay_and_audit_seconds": 140.89813925700003,
+        "peak_process_rss_mib": 1056.32421875,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-28JUN24",
+      "expiry": "2024-06-28T08:00:00+00:00",
+      "first_observation": "2023-06-23T08:24:30.064000+00:00",
+      "train_end": "2023-09-24T08:16:20.042000+00:00",
+      "end": "2024-04-29T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.04205889518494823,
+          "0.1": 0.044934010664516244,
+          "0.25": 0.0481469088906341,
+          "0.5": 0.052398747441703745,
+          "0.75": 0.05591057638442422,
+          "0.9": 0.060705785224722524,
+          "0.95": 0.062246336717755334
+        },
+        "covered_days": 92.99432266203704,
+        "max_carried_observation_seconds": 53725.646,
+        "observations": 21218
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.05,
+          "low": 0.0475
+        },
+        {
+          "high": 0.0525,
+          "low": 0.0475
+        },
+        {
+          "high": 0.055,
+          "low": 0.0525
+        },
+        {
+          "high": 0.0575,
+          "low": 0.0475
+        },
+        {
+          "high": 0.0575,
+          "low": 0.0525
+        },
+        {
+          "high": 0.0575,
+          "low": 0.055
+        },
+        {
+          "high": 0.06,
+          "low": 0.055
+        },
+        {
+          "high": 0.0625,
+          "low": 0.0525
+        },
+        {
+          "high": 0.065,
+          "low": 0.055
+        }
+      ],
+      "counts": {
+        "receipt_rows": 1876789,
+        "rows_after_study_end_not_loaded": 606789,
+        "raw_rows_loaded": 1270000,
+        "final_mark_is_trade_price_fallback": 0,
+        "flagged_excluded": 12983,
+        "rows_at_or_after_study_end": 4134,
+        "ordinary_rows": 1252883,
+        "compressed_trade_bytes": 24648959
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 5360
+      },
+      "metrics": {
+        "total_seconds": 158.21723209199996,
+        "replay_and_audit_seconds": 119.75878459,
+        "peak_process_rss_mib": 1056.32421875,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-29JUN18",
+      "expiry": "2018-06-29T08:00:00+00:00",
+      "first_observation": "2018-02-05T15:13:02.951000+00:00",
+      "train_end": "2018-02-22T20:48:41.967000+00:00",
+      "end": "2018-04-30T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.002712047279760559,
+          "0.1": 0.007851840010605743,
+          "0.25": 0.01782377660699901,
+          "0.5": 0.029125194080753584,
+          "0.75": 0.039264769094536765,
+          "0.9": 0.04833842829234072,
+          "0.95": 0.053591970695716855
+        },
+        "covered_days": 17.233084675925927,
+        "max_carried_observation_seconds": 8036.285,
+        "observations": 72179
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.02,
+          "low": 0.0175
+        },
+        {
+          "high": 0.0225,
+          "low": 0.0175
+        },
+        {
+          "high": 0.0275,
+          "low": 0.0175
+        },
+        {
+          "high": 0.0325,
+          "low": 0.03
+        },
+        {
+          "high": 0.035,
+          "low": 0.03
+        },
+        {
+          "high": 0.04,
+          "low": 0.03
+        },
+        {
+          "high": 0.0425,
+          "low": 0.04
+        },
+        {
+          "high": 0.045,
+          "low": 0.04
+        },
+        {
+          "high": 0.05,
+          "low": 0.04
+        }
+      ],
+      "counts": {
+        "receipt_rows": 1174470,
+        "rows_after_study_end_not_loaded": 584470,
+        "raw_rows_loaded": 590000,
+        "final_mark_is_trade_price_fallback": 0,
+        "invalid_contract_or_direction_excluded": 4,
+        "rows_at_or_after_study_end": 395,
+        "ordinary_rows": 589601,
+        "compressed_trade_bytes": 9031729
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 27194
+      },
+      "metrics": {
+        "total_seconds": 54.852522707,
+        "replay_and_audit_seconds": 33.382826748,
+        "peak_process_rss_mib": 337.78515625,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-25SEP20",
+      "expiry": "2020-09-25T08:00:00+00:00",
+      "first_observation": "2020-03-02T08:08:46.327000+00:00",
+      "train_end": "2020-04-09T16:05:50.884000+00:00",
+      "end": "2020-07-27T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": -0.023607335118220607,
+          "0.1": -0.019495816905156237,
+          "0.25": -0.005512366144088879,
+          "0.5": 0.009751959874056764,
+          "0.75": 0.0862105434460114,
+          "0.9": 0.1195212553573364,
+          "0.95": 0.12148154384847953
+        },
+        "covered_days": 38.33129695601852,
+        "max_carried_observation_seconds": 3103.004,
+        "observations": 375666
+      },
+      "candidates": [
+        {
+          "high": -0.0025,
+          "low": -0.005
+        },
+        {
+          "high": 0.0,
+          "low": -0.005
+        },
+        {
+          "high": 0.005,
+          "low": -0.005
+        },
+        {
+          "high": 0.0125,
+          "low": 0.01
+        },
+        {
+          "high": 0.015,
+          "low": 0.01
+        },
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.0875,
+          "low": 0.085
+        },
+        {
+          "high": 0.09,
+          "low": 0.085
+        },
+        {
+          "high": 0.095,
+          "low": 0.085
+        }
+      ],
+      "counts": {
+        "receipt_rows": 2230135,
+        "rows_after_study_end_not_loaded": 760135,
+        "raw_rows_loaded": 1470000,
+        "final_mark_is_trade_price_fallback": 0,
+        "flagged_excluded": 42,
+        "rows_at_or_after_study_end": 8674,
+        "ordinary_rows": 1461284,
+        "compressed_trade_bytes": 23570812
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 30053
+      },
+      "metrics": {
+        "total_seconds": 131.208275157,
+        "replay_and_audit_seconds": 95.11203887100001,
+        "peak_process_rss_mib": 764.49609375,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-25SEP26",
+      "expiry": "2026-09-25T08:00:00+00:00",
+      "first_observation": "2025-09-26T08:09:10.273000+00:00",
+      "train_end": "2025-12-26T00:06:06.848000+00:00",
+      "end": "2026-07-27T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.04763845550081699,
+          "0.1": 0.049134135595144804,
+          "0.25": 0.05218821300633624,
+          "0.5": 0.05947483314481204,
+          "0.75": 0.0697295592478705,
+          "0.9": 0.07650941807047937,
+          "0.95": 0.07834262474923086
+        },
+        "covered_days": 90.66453790509259,
+        "max_carried_observation_seconds": 11651.721,
+        "observations": 167167
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.055,
+          "low": 0.0525
+        },
+        {
+          "high": 0.0575,
+          "low": 0.0525
+        },
+        {
+          "high": 0.0625,
+          "low": 0.0525
+        },
+        {
+          "high": 0.0625,
+          "low": 0.06
+        },
+        {
+          "high": 0.065,
+          "low": 0.06
+        },
+        {
+          "high": 0.07,
+          "low": 0.06
+        },
+        {
+          "high": 0.0725,
+          "low": 0.07
+        },
+        {
+          "high": 0.075,
+          "low": 0.07
+        },
+        {
+          "high": 0.08,
+          "low": 0.07
+        }
+      ],
+      "counts": {
+        "receipt_rows": 2123730,
+        "rows_after_study_end_not_loaded": 713730,
+        "raw_rows_loaded": 1410000,
+        "final_mark_is_trade_price_fallback": 0,
+        "flagged_excluded": 91941,
+        "rows_at_or_after_study_end": 9675,
+        "ordinary_rows": 1308384,
+        "compressed_trade_bytes": 27144088
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 1363
+      },
+      "metrics": {
+        "total_seconds": 149.51126725999995,
+        "replay_and_audit_seconds": 116.45289980899997,
+        "peak_process_rss_mib": 782.34375,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-27SEP24",
+      "expiry": "2024-09-27T08:00:00+00:00",
+      "first_observation": "2023-09-29T12:20:33.150000+00:00",
+      "train_end": "2023-12-29T02:53:42.100000+00:00",
+      "end": "2024-07-29T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.04726120437422686,
+          "0.1": 0.04963094414683246,
+          "0.25": 0.053783934129588415,
+          "0.5": 0.07808691637336658,
+          "0.75": 0.08623588126373179,
+          "0.9": 0.09616114375364158,
+          "0.95": 0.10469346689385528
+        },
+        "covered_days": 90.60634780092593,
+        "max_carried_observation_seconds": 86833.849,
+        "observations": 74610
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.0575,
+          "low": 0.055
+        },
+        {
+          "high": 0.06,
+          "low": 0.055
+        },
+        {
+          "high": 0.065,
+          "low": 0.055
+        },
+        {
+          "high": 0.08,
+          "low": 0.0775
+        },
+        {
+          "high": 0.0825,
+          "low": 0.0775
+        },
+        {
+          "high": 0.0875,
+          "low": 0.0775
+        },
+        {
+          "high": 0.0875,
+          "low": 0.085
+        },
+        {
+          "high": 0.09,
+          "low": 0.085
+        },
+        {
+          "high": 0.095,
+          "low": 0.085
+        }
+      ],
+      "counts": {
+        "receipt_rows": 1724593,
+        "rows_after_study_end_not_loaded": 564593,
+        "raw_rows_loaded": 1160000,
+        "final_mark_is_trade_price_fallback": 0,
+        "flagged_excluded": 18633,
+        "rows_at_or_after_study_end": 3735,
+        "ordinary_rows": 1137632,
+        "compressed_trade_bytes": 23078570
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 19099
+      },
+      "metrics": {
+        "total_seconds": 142.79405889500003,
+        "replay_and_audit_seconds": 114.54294601499998,
+        "peak_process_rss_mib": 782.34375,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-28SEP18",
+      "expiry": "2018-09-28T08:00:00+00:00",
+      "first_observation": "2018-04-12T19:50:44.738000+00:00",
+      "train_end": "2018-05-08T07:53:49.825000+00:00",
+      "end": "2018-07-30T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": -0.009885647973250514,
+          "0.1": -0.007919248072492535,
+          "0.25": -0.0024487830495817046,
+          "0.5": 0.01137136087167505,
+          "0.75": 0.026493466659370243,
+          "0.9": 0.09088360200663897,
+          "0.95": 0.1039331073565734
+        },
+        "covered_days": 25.502136423611113,
+        "max_carried_observation_seconds": 5673.202,
+        "observations": 76818
+      },
+      "candidates": [
+        {
+          "high": 0.0,
+          "low": -0.0025
+        },
+        {
+          "high": 0.0025,
+          "low": -0.0025
+        },
+        {
+          "high": 0.0075,
+          "low": -0.0025
+        },
+        {
+          "high": 0.015,
+          "low": 0.0125
+        },
+        {
+          "high": 0.0175,
+          "low": 0.0125
+        },
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.0225,
+          "low": 0.0125
+        },
+        {
+          "high": 0.03,
+          "low": 0.0275
+        },
+        {
+          "high": 0.0325,
+          "low": 0.0275
+        },
+        {
+          "high": 0.0375,
+          "low": 0.0275
+        }
+      ],
+      "counts": {
+        "receipt_rows": 1138105,
+        "rows_after_study_end_not_loaded": 478105,
+        "raw_rows_loaded": 660000,
+        "final_mark_is_trade_price_fallback": 0,
+        "invalid_contract_or_direction_excluded": 5,
+        "rows_at_or_after_study_end": 9163,
+        "ordinary_rows": 650832,
+        "compressed_trade_bytes": 9643108
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 19610
+      },
+      "metrics": {
+        "total_seconds": 57.13303379099999,
+        "replay_and_audit_seconds": 39.51199573699999,
+        "peak_process_rss_mib": 359.83984375,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-30SEP22",
+      "expiry": "2022-09-30T08:00:00+00:00",
+      "first_observation": "2021-09-24T08:06:16.746000+00:00",
+      "train_end": "2021-12-26T08:04:11.164000+00:00",
+      "end": "2022-08-01T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.0802719638689546,
+          "0.1": 0.08214837640778438,
+          "0.25": 0.08725270059501666,
+          "0.5": 0.0996685727930006,
+          "0.75": 0.11707580046433003,
+          "0.9": 0.12205951024818608,
+          "0.95": 0.12425989941942124
+        },
+        "covered_days": 92.99854071759259,
+        "max_carried_observation_seconds": 11783.168,
+        "observations": 211959
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.09,
+          "low": 0.0875
+        },
+        {
+          "high": 0.0925,
+          "low": 0.0875
+        },
+        {
+          "high": 0.0975,
+          "low": 0.0875
+        },
+        {
+          "high": 0.1025,
+          "low": 0.1
+        },
+        {
+          "high": 0.105,
+          "low": 0.1
+        },
+        {
+          "high": 0.11,
+          "low": 0.1
+        },
+        {
+          "high": 0.12,
+          "low": 0.1175
+        },
+        {
+          "high": 0.1225,
+          "low": 0.1175
+        },
+        {
+          "high": 0.1275,
+          "low": 0.1175
+        }
+      ],
+      "counts": {
+        "receipt_rows": 1879349,
+        "rows_after_study_end_not_loaded": 359349,
+        "raw_rows_loaded": 1520000,
+        "final_mark_is_trade_price_fallback": 0,
+        "flagged_excluded": 1304,
+        "rows_at_or_after_study_end": 5401,
+        "ordinary_rows": 1513295,
+        "compressed_trade_bytes": 27523754
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 9530
+      },
+      "metrics": {
+        "total_seconds": 179.488094848,
+        "replay_and_audit_seconds": 144.28788123600003,
+        "peak_process_rss_mib": 782.34375,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-25DEC20",
+      "expiry": "2020-12-25T08:00:00+00:00",
+      "first_observation": "2020-04-24T08:12:07.416000+00:00",
+      "train_end": "2020-06-14T16:08:04.944000+00:00",
+      "end": "2020-10-26T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.01944048751539565,
+          "0.1": 0.02191500510384503,
+          "0.25": 0.02959659991901425,
+          "0.5": 0.03586716438422687,
+          "0.75": 0.044618609421298326,
+          "0.9": 0.05166554899486807,
+          "0.95": 0.05333832912102997
+        },
+        "covered_days": 51.33052115740741,
+        "max_carried_observation_seconds": 4451.629,
+        "observations": 217814
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.0325,
+          "low": 0.03
+        },
+        {
+          "high": 0.035,
+          "low": 0.03
+        },
+        {
+          "high": 0.0375,
+          "low": 0.035
+        },
+        {
+          "high": 0.04,
+          "low": 0.03
+        },
+        {
+          "high": 0.04,
+          "low": 0.035
+        },
+        {
+          "high": 0.045,
+          "low": 0.035
+        },
+        {
+          "high": 0.0475,
+          "low": 0.045
+        },
+        {
+          "high": 0.05,
+          "low": 0.045
+        },
+        {
+          "high": 0.055,
+          "low": 0.045
+        }
+      ],
+      "counts": {
+        "receipt_rows": 3442091,
+        "rows_after_study_end_not_loaded": 1942091,
+        "raw_rows_loaded": 1500000,
+        "final_mark_is_trade_price_fallback": 0,
+        "flagged_excluded": 18,
+        "rows_at_or_after_study_end": 5495,
+        "ordinary_rows": 1494487,
+        "compressed_trade_bytes": 24274440
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 47550
+      },
+      "metrics": {
+        "total_seconds": 186.24870500999998,
+        "replay_and_audit_seconds": 130.308008133,
+        "peak_process_rss_mib": 771.171875,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-25DEC26",
+      "expiry": "2026-12-25T08:00:00+00:00",
+      "first_observation": "2025-12-26T08:15:58.502000+00:00",
+      "train_end": "2026-03-27T08:10:39.001000+00:00",
+      "end": "2026-10-09T08:46:22.503000+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.03220616355421551,
+          "0.1": 0.03356340451907688,
+          "0.25": 0.03638689538849334,
+          "0.5": 0.04395524021807065,
+          "0.75": 0.050903372112045514,
+          "0.9": 0.0523502736931216,
+          "0.95": 0.05275534219787199
+        },
+        "covered_days": 90.99629628472222,
+        "max_carried_observation_seconds": 28838.659,
+        "observations": 192351
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.04,
+          "low": 0.0375
+        },
+        {
+          "high": 0.0425,
+          "low": 0.0375
+        },
+        {
+          "high": 0.0475,
+          "low": 0.0375
+        },
+        {
+          "high": 0.0475,
+          "low": 0.045
+        },
+        {
+          "high": 0.05,
+          "low": 0.045
+        },
+        {
+          "high": 0.0525,
+          "low": 0.05
+        },
+        {
+          "high": 0.055,
+          "low": 0.045
+        },
+        {
+          "high": 0.055,
+          "low": 0.05
+        },
+        {
+          "high": 0.06,
+          "low": 0.05
+        }
+      ],
+      "counts": {
+        "receipt_rows": 837453,
+        "raw_rows_loaded": 837453,
+        "final_mark_is_trade_price_fallback": 0,
+        "flagged_excluded": 50500,
+        "backdated_excluded": 16,
+        "ordinary_rows": 786937,
+        "compressed_trade_bytes": 16756222
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 62080
+      },
+      "metrics": {
+        "total_seconds": 90.745619025,
+        "replay_and_audit_seconds": 68.19625165700006,
+        "peak_process_rss_mib": 771.171875,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-27DEC24",
+      "expiry": "2024-12-27T08:00:00+00:00",
+      "first_observation": "2023-12-29T08:41:46.096000+00:00",
+      "train_end": "2024-03-29T08:27:50.730000+00:00",
+      "end": "2024-10-28T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.08990327666955736,
+          "0.1": 0.09191132695355944,
+          "0.25": 0.0953797772229749,
+          "0.5": 0.11918920638543846,
+          "0.75": 0.15026384733904563,
+          "0.9": 0.17035218052601875,
+          "0.95": 0.1808415649351128
+        },
+        "covered_days": 90.990325625,
+        "max_carried_observation_seconds": 37137.426,
+        "observations": 169900
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.0975,
+          "low": 0.095
+        },
+        {
+          "high": 0.1,
+          "low": 0.095
+        },
+        {
+          "high": 0.105,
+          "low": 0.095
+        },
+        {
+          "high": 0.1225,
+          "low": 0.12
+        },
+        {
+          "high": 0.125,
+          "low": 0.12
+        },
+        {
+          "high": 0.13,
+          "low": 0.12
+        },
+        {
+          "high": 0.1525,
+          "low": 0.15
+        },
+        {
+          "high": 0.155,
+          "low": 0.15
+        },
+        {
+          "high": 0.16,
+          "low": 0.15
+        }
+      ],
+      "counts": {
+        "receipt_rows": 2937202,
+        "rows_after_study_end_not_loaded": 1557202,
+        "raw_rows_loaded": 1380000,
+        "final_mark_is_trade_price_fallback": 0,
+        "flagged_excluded": 27278,
+        "rows_at_or_after_study_end": 4341,
+        "ordinary_rows": 1348381,
+        "compressed_trade_bytes": 26739267
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 44415
+      },
+      "metrics": {
+        "total_seconds": 180.84471332099997,
+        "replay_and_audit_seconds": 134.895079935,
+        "peak_process_rss_mib": 771.171875,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-28DEC18",
+      "expiry": "2018-12-28T08:00:00+00:00",
+      "first_observation": "2018-07-27T08:07:14.460000+00:00",
+      "train_end": "2018-08-17T08:04:49.640000+00:00",
+      "end": "2018-10-29T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": -0.02371669490490476,
+          "0.1": -0.020727606770788273,
+          "0.25": -0.01287015365977462,
+          "0.5": 0.0038760997731462172,
+          "0.75": 0.026029907941107964,
+          "0.9": 0.03675061447091071,
+          "0.95": 0.04143299782999146
+        },
+        "covered_days": 20.998318055555554,
+        "max_carried_observation_seconds": 5490.06,
+        "observations": 124827
+      },
+      "candidates": [
+        {
+          "high": -0.01,
+          "low": -0.0125
+        },
+        {
+          "high": -0.0075,
+          "low": -0.0125
+        },
+        {
+          "high": -0.0025,
+          "low": -0.0125
+        },
+        {
+          "high": 0.0075,
+          "low": 0.005
+        },
+        {
+          "high": 0.01,
+          "low": 0.005
+        },
+        {
+          "high": 0.015,
+          "low": 0.005
+        },
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.0275,
+          "low": 0.025
+        },
+        {
+          "high": 0.03,
+          "low": 0.025
+        },
+        {
+          "high": 0.035,
+          "low": 0.025
+        }
+      ],
+      "counts": {
+        "receipt_rows": 1354297,
+        "rows_after_study_end_not_loaded": 844297,
+        "raw_rows_loaded": 510000,
+        "final_mark_is_trade_price_fallback": 0,
+        "rows_at_or_after_study_end": 3086,
+        "ordinary_rows": 506914,
+        "compressed_trade_bytes": 8119631
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 5642
+      },
+      "metrics": {
+        "total_seconds": 57.080994385000004,
+        "replay_and_audit_seconds": 34.399626694999995,
+        "peak_process_rss_mib": 309.1484375,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-30DEC22",
+      "expiry": "2022-12-30T08:00:00+00:00",
+      "first_observation": "2021-12-31T08:10:20.957000+00:00",
+      "train_end": "2022-04-01T08:06:53.971000+00:00",
+      "end": "2022-10-31T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.0427713592565479,
+          "0.1": 0.04408273282798117,
+          "0.25": 0.04951694179711217,
+          "0.5": 0.059292786198493076,
+          "0.75": 0.06771668425296917,
+          "0.9": 0.07951649118692004,
+          "0.95": 0.08687502625747072
+        },
+        "covered_days": 90.99759854166666,
+        "max_carried_observation_seconds": 23856.251,
+        "observations": 77775
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.0525,
+          "low": 0.05
+        },
+        {
+          "high": 0.055,
+          "low": 0.05
+        },
+        {
+          "high": 0.06,
+          "low": 0.05
+        },
+        {
+          "high": 0.0625,
+          "low": 0.06
+        },
+        {
+          "high": 0.065,
+          "low": 0.06
+        },
+        {
+          "high": 0.07,
+          "low": 0.06
+        },
+        {
+          "high": 0.07,
+          "low": 0.0675
+        },
+        {
+          "high": 0.0725,
+          "low": 0.0675
+        },
+        {
+          "high": 0.0775,
+          "low": 0.0675
+        }
+      ],
+      "counts": {
+        "receipt_rows": 1197916,
+        "rows_after_study_end_not_loaded": 447916,
+        "raw_rows_loaded": 750000,
+        "final_mark_is_trade_price_fallback": 0,
+        "flagged_excluded": 1048,
+        "rows_at_or_after_study_end": 2481,
+        "ordinary_rows": 746471,
+        "compressed_trade_bytes": 13877091
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 13090
+      },
+      "metrics": {
+        "total_seconds": 100.546624318,
+        "replay_and_audit_seconds": 75.02376497,
+        "peak_process_rss_mib": 771.171875,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-26MAR21",
+      "expiry": "2021-03-26T08:00:00+00:00",
+      "first_observation": "2020-06-25T08:41:18.184000+00:00",
+      "train_end": "2020-08-25T16:27:32.122000+00:00",
+      "end": "2021-01-25T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.026595940929277796,
+          "0.1": 0.030112272311665755,
+          "0.25": 0.035448635875421845,
+          "0.5": 0.058021121735164084,
+          "0.75": 0.0864411804984743,
+          "0.9": 0.09544455938726354,
+          "0.95": 0.0995043219754254
+        },
+        "covered_days": 61.32376664351852,
+        "max_carried_observation_seconds": 4966.829,
+        "observations": 161454
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.0375,
+          "low": 0.035
+        },
+        {
+          "high": 0.04,
+          "low": 0.035
+        },
+        {
+          "high": 0.045,
+          "low": 0.035
+        },
+        {
+          "high": 0.06,
+          "low": 0.0575
+        },
+        {
+          "high": 0.0625,
+          "low": 0.0575
+        },
+        {
+          "high": 0.0675,
+          "low": 0.0575
+        },
+        {
+          "high": 0.09,
+          "low": 0.0875
+        },
+        {
+          "high": 0.0925,
+          "low": 0.0875
+        },
+        {
+          "high": 0.0975,
+          "low": 0.0875
+        }
+      ],
+      "counts": {
+        "receipt_rows": 5551417,
+        "rows_after_study_end_not_loaded": 2731417,
+        "raw_rows_loaded": 2820000,
+        "final_mark_is_trade_price_fallback": 0,
+        "flagged_excluded": 65,
+        "rows_at_or_after_study_end": 7500,
+        "ordinary_rows": 2812435,
+        "compressed_trade_bytes": 46316214
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 64384
+      },
+      "metrics": {
+        "total_seconds": 312.685969144,
+        "replay_and_audit_seconds": 251.069325614,
+        "peak_process_rss_mib": 1370.359375,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-26MAR27",
+      "expiry": "2027-03-26T08:00:00+00:00",
+      "first_observation": "2026-03-27T08:26:00.320000+00:00",
+      "train_end": "2026-05-31T16:31:58.710000+00:00",
+      "end": "2026-10-09T08:43:55.490000+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.02780090088671144,
+          "0.1": 0.028290200001272234,
+          "0.25": 0.02940658943949507,
+          "0.5": 0.030650303495773527,
+          "0.75": 0.033285737695759515,
+          "0.9": 0.035312240525605595,
+          "0.95": 0.036167593832196664
+        },
+        "covered_days": 65.3374755787037,
+        "max_carried_observation_seconds": 16179.473,
+        "observations": 50671
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.0325,
+          "low": 0.03
+        },
+        {
+          "high": 0.035,
+          "low": 0.03
+        },
+        {
+          "high": 0.035,
+          "low": 0.0325
+        },
+        {
+          "high": 0.0375,
+          "low": 0.0325
+        },
+        {
+          "high": 0.04,
+          "low": 0.03
+        },
+        {
+          "high": 0.0425,
+          "low": 0.0325
+        }
+      ],
+      "counts": {
+        "receipt_rows": 301404,
+        "raw_rows_loaded": 301404,
+        "final_mark_is_trade_price_fallback": 0,
+        "flagged_excluded": 14304,
+        "backdated_excluded": 2,
+        "ordinary_rows": 287098,
+        "compressed_trade_bytes": 5968149
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 8470
+      },
+      "metrics": {
+        "total_seconds": 22.683381672999985,
+        "replay_and_audit_seconds": 16.147313684999972,
+        "peak_process_rss_mib": 1370.359375,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-28MAR25",
+      "expiry": "2025-03-28T08:00:00+00:00",
+      "first_observation": "2024-03-29T08:29:22.993000+00:00",
+      "train_end": "2024-06-28T16:19:35.328000+00:00",
+      "end": "2025-01-27T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.08677887976624368,
+          "0.1": 0.08936478867335067,
+          "0.25": 0.099204479009698,
+          "0.5": 0.11427412561730312,
+          "0.75": 0.1358093753992566,
+          "0.9": 0.142581624928191,
+          "0.95": 0.1520902989345133
+        },
+        "covered_days": 91.32652586805555,
+        "max_carried_observation_seconds": 35347.781,
+        "observations": 88447
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.1025,
+          "low": 0.1
+        },
+        {
+          "high": 0.105,
+          "low": 0.1
+        },
+        {
+          "high": 0.11,
+          "low": 0.1
+        },
+        {
+          "high": 0.1175,
+          "low": 0.115
+        },
+        {
+          "high": 0.12,
+          "low": 0.115
+        },
+        {
+          "high": 0.125,
+          "low": 0.115
+        },
+        {
+          "high": 0.1375,
+          "low": 0.135
+        },
+        {
+          "high": 0.14,
+          "low": 0.135
+        },
+        {
+          "high": 0.145,
+          "low": 0.135
+        }
+      ],
+      "counts": {
+        "receipt_rows": 2777955,
+        "rows_after_study_end_not_loaded": 1017955,
+        "raw_rows_loaded": 1760000,
+        "final_mark_is_trade_price_fallback": 0,
+        "flagged_excluded": 20975,
+        "rows_at_or_after_study_end": 4564,
+        "ordinary_rows": 1734461,
+        "compressed_trade_bytes": 32743284
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 57052
+      },
+      "metrics": {
+        "total_seconds": 173.53019888699998,
+        "replay_and_audit_seconds": 134.56624229299996,
+        "peak_process_rss_mib": 1370.359375,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-29MAR19",
+      "expiry": "2019-03-29T08:00:00+00:00",
+      "first_observation": "2018-09-28T07:03:28.666000+00:00",
+      "train_end": "2018-10-28T23:22:19.110000+00:00",
+      "end": "2019-01-28T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": -0.016306720333231658,
+          "0.1": -0.013488147519812407,
+          "0.25": -0.00978965839432349,
+          "0.5": -0.005011101115835604,
+          "0.75": -2.5755015126178687e-05,
+          "0.9": 0.00254777811741271,
+          "0.95": 0.007282616752694216
+        },
+        "covered_days": 30.67974472222222,
+        "max_carried_observation_seconds": 3985.348,
+        "observations": 143509
+      },
+      "candidates": [
+        {
+          "high": -0.0075,
+          "low": -0.01
+        },
+        {
+          "high": -0.005,
+          "low": -0.01
+        },
+        {
+          "high": -0.0025,
+          "low": -0.005
+        },
+        {
+          "high": 0.0,
+          "low": -0.01
+        },
+        {
+          "high": 0.0,
+          "low": -0.005
+        },
+        {
+          "high": 0.0025,
+          "low": 0.0
+        },
+        {
+          "high": 0.005,
+          "low": -0.005
+        },
+        {
+          "high": 0.005,
+          "low": 0.0
+        },
+        {
+          "high": 0.01,
+          "low": 0.0
+        },
+        {
+          "high": 0.02,
+          "low": 0.01
+        }
+      ],
+      "counts": {
+        "receipt_rows": 1666074,
+        "rows_after_study_end_not_loaded": 296074,
+        "raw_rows_loaded": 1370000,
+        "final_mark_is_trade_price_fallback": 0,
+        "rows_at_or_after_study_end": 976,
+        "ordinary_rows": 1369024,
+        "compressed_trade_bytes": 21175788
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 16566
+      },
+      "metrics": {
+        "total_seconds": 123.98062076299999,
+        "replay_and_audit_seconds": 95.28251121800001,
+        "peak_process_rss_mib": 715.734375,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    },
+    {
+      "schema_version": 2,
+      "status": "independent_unit_probes_not_funded_portfolio",
+      "symbol": "BTC-31MAR23",
+      "expiry": "2023-03-31T08:00:00+00:00",
+      "first_observation": "2022-03-25T08:54:59.724000+00:00",
+      "train_end": "2022-06-27T00:36:39.816000+00:00",
+      "end": "2023-01-30T08:00:00+00:00",
+      "training": {
+        "quantiles": {
+          "0.05": 0.012347664263077733,
+          "0.1": 0.01675276086285609,
+          "0.25": 0.030455621637607292,
+          "0.5": 0.035441469932418444,
+          "0.75": 0.04720707043685986,
+          "0.9": 0.057989424412094426,
+          "0.95": 0.05965257100544726
+        },
+        "covered_days": 93.65393046296296,
+        "max_carried_observation_seconds": 40820.602,
+        "observations": 79196
+      },
+      "candidates": [
+        {
+          "high": 0.02,
+          "low": 0.01
+        },
+        {
+          "high": 0.0325,
+          "low": 0.03
+        },
+        {
+          "high": 0.035,
+          "low": 0.03
+        },
+        {
+          "high": 0.0375,
+          "low": 0.035
+        },
+        {
+          "high": 0.04,
+          "low": 0.03
+        },
+        {
+          "high": 0.04,
+          "low": 0.035
+        },
+        {
+          "high": 0.045,
+          "low": 0.035
+        },
+        {
+          "high": 0.05,
+          "low": 0.0475
+        },
+        {
+          "high": 0.0525,
+          "low": 0.0475
+        },
+        {
+          "high": 0.0575,
+          "low": 0.0475
+        }
+      ],
+      "counts": {
+        "receipt_rows": 1102662,
+        "rows_after_study_end_not_loaded": 562662,
+        "raw_rows_loaded": 540000,
+        "final_mark_is_trade_price_fallback": 0,
+        "flagged_excluded": 1097,
+        "rows_at_or_after_study_end": 2393,
+        "ordinary_rows": 536510,
+        "compressed_trade_bytes": 9789846
+      },
+      "audit": {
+        "status": "PASS",
+        "fills": 4614
+      },
+      "metrics": {
+        "total_seconds": 52.501184616000046,
+        "replay_and_audit_seconds": 39.01662112300005,
+        "peak_process_rss_mib": 1370.359375,
+        "cpu": "x86_64",
+        "python": "3.12.15"
+      },
+      "source_sha256": "d604be8db81ce4f5df0a72fb18c9accbd7c66c12da5cfecbbe70fea074b26b84",
+      "engine_sha256": "4962965b561e969a561bed21e06bcfb314ca35564333f01c12ec69c9c5ad4b66"
+    }
+  ]
+}

@@ -23,7 +23,7 @@ FACE = 10.0
 TICK = 2.5
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Trade:
     t: int
     price: float
@@ -117,12 +117,17 @@ class Experiment:
     This prevents retrospective fills even for d=0. Orders otherwise persist.
     """
     def __init__(self, expiry, start, end, high, low, delay=500, band=.01,
-                 participation=.1, fee_bp=1., proxy_expense=0., surcharge=0.):
+                 participation=.1, fee_bp=1., proxy_expense=0., surcharge=0.,
+                 future_fee_bp=None, proxy_fee_bp=None, tick=TICK):
         assert high > low and delay >= 0 and 0 < participation <= 1
         assert 0 <= proxy_expense < 1 and surcharge >= 0
         self.expiry, self.start, self.end = expiry, start, end
         self.high, self.low, self.delay, self.band = high, low, delay, band
         self.participation, self.fee = participation, fee_bp/10000
+        self.future_fee = (fee_bp if future_fee_bp is None else future_fee_bp)/10000
+        self.proxy_fee = (fee_bp if proxy_fee_bp is None else proxy_fee_bp)/10000
+        assert tick > 0
+        self.tick = tick
         self.expense, self.surcharge = proxy_expense, surcharge
         self.proxy_apr = proxy_expense/(1-proxy_expense)+surcharge
         self.cutoff = minus_months(expiry, 3)
@@ -137,6 +142,8 @@ class Experiment:
         self.fills, self.cycles, self.counts = [], [], Counter()
         self.proxy_hours = self.short_hours = self.pending_short_hours = 0.
         self.final_cycle_net = 0.
+        self.cycle_future_realized = self.cycle_fees = 0.
+        self.proxy_original = 0.
 
     def enqueue(self, t, kind, payload):
         self.serial += 1
@@ -166,8 +173,8 @@ class Experiment:
         else:
             rate = self.proxy_apr + (self.high if phase == 1 else self.low)
             price = row.index * (1+(self.expiry-t)/YEAR*rate)
-            limit = ((math.ceil(price/TICK-1e-12) if phase == 1 else
-                      math.floor(price/TICK+1e-12))*TICK)
+            limit = ((math.ceil(price/self.tick-1e-12) if phase == 1 else
+                      math.floor(price/self.tick+1e-12))*self.tick)
             distance = max(0., (limit-row.price)/row.price if phase == 1 else
                            (row.price-limit)/row.price)
             if self.band is not None and distance > self.band:
@@ -214,11 +221,12 @@ class Experiment:
             price = row.index  # first suitable post-arrival index; synthetic proxy
         self.accrue(row.t)
         fee = (FACE/price*row.index if phase in (1, 2) else
-               FACE if phase == 0 else self.proxy*price) * self.fee
+               FACE if phase == 0 else self.proxy*price) * (self.future_fee if phase in (1, 2) else self.proxy_fee)
         cash = -fee
         if phase == 0:
             self.proxy = FACE/price
             self.proxy_cost = FACE
+            self.proxy_original = self.proxy
             self.proxy_bought = row.t
             cash -= FACE
         elif phase == 1:
@@ -226,11 +234,15 @@ class Experiment:
         elif phase == 2:
             # Native BTC P&L of one inverse short; converted at the fill-time
             # index as an explicit normalization, no funded collateral claim.
-            cash += FACE*(1/price-1/self.entry)*row.index
+            realized = FACE*(1/price-1/self.entry)*row.index
+            cash += realized
+            self.cycle_future_realized += realized
             self.entry = None
         else:
+            proxy_parts = self.proxy_components(price, row.t)
             cash += self.proxy*price
             self.proxy = 0.
+        self.cycle_fees += fee
         self.cash += cash
         self.cycle_cash += cash
         self.fills.append(dict(cycle=self.cycle, phase=phase, t=row.t, trade_id=row.id,
@@ -243,12 +255,25 @@ class Experiment:
         if phase == 3:
             self.cycles.append(dict(cycle=self.cycle, start=self.proxy_bought, end=row.t,
                                     net_usd=self.cycle_cash,
+                                    future_realized_usd=self.cycle_future_realized,
+                                    fees_usd=self.cycle_fees, **proxy_parts,
                                     duration_days=(row.t-self.proxy_bought)/DAY))
             self.cycle += 1
             self.phase = 0
             self.cycle_cash = 0.
+            self.cycle_future_realized = self.cycle_fees = 0.
+            self.proxy_original = 0.
         else:
             self.phase += 1
+
+    def proxy_components(self, index, t):
+        if not self.proxy_original:
+            return dict(proxy_price_gain_usd=0., proxy_expense_effect_usd=0.,
+                        proxy_surcharge_effect_usd=0.)
+        expense_only = self.proxy_original*(1-self.expense)**((t-self.proxy_bought)/YEAR)
+        return dict(proxy_price_gain_usd=self.proxy_original*index-self.proxy_cost,
+                    proxy_expense_effect_usd=(expense_only-self.proxy_original)*index,
+                    proxy_surcharge_effect_usd=(self.proxy-expense_only)*index)
 
     def run(self, rows):
         selected = [r for r in rows if self.start <= r.t < self.end]
@@ -275,9 +300,27 @@ class Experiment:
         entries = [x['future_apr']-self.proxy_apr for x in self.fills if x['phase']==1]
         exits = [x['future_apr']-self.proxy_apr for x in self.fills if x['phase']==2]
         fees = sum(x['fee_usd'] for x in self.fills)
+        open_proxy = self.proxy_components(last.index, self.end)
+        open_future = FACE*(1/last.mark-1/self.entry)*last.index if self.entry is not None else 0.
+        unrealized = sum(open_proxy.values()) + open_future
+        completed = sum(c['net_usd'] for c in self.cycles)
+        unfinished_realized = self.cycle_future_realized-self.cycle_fees
+        assert abs(net-completed-unfinished_realized-unrealized) < 1e-8
+        pnl = dict(completed_cycle_realized_net_usd=completed,
+                   unfinished_cycle_realized_net_usd=unfinished_realized,
+                   unrealized_mark_net_usd=unrealized,
+                   unrealized_future_usd=open_future,
+                   **{'unrealized_'+k:v for k,v in open_proxy.items()},
+                   completed_cycle_future_realized_usd=sum(c['future_realized_usd'] for c in self.cycles),
+                   unfinished_cycle_future_realized_usd=self.cycle_future_realized,
+                   completed_cycle_fees_usd=sum(c['fees_usd'] for c in self.cycles),
+                   unfinished_cycle_fees_usd=self.cycle_fees,
+                   **{'completed_cycle_'+k:sum(c[k] for c in self.cycles) for k in open_proxy})
         return dict(high=self.high, low=self.low, gap=self.high-self.low,
                     delay_ms_each=self.delay, posting_band=self.band, participation=self.participation,
-                    fee_bp_each_leg=self.fee*10000, proxy_expense=self.expense,
+                    fee_bp_each_leg=self.fee*10000 if self.future_fee == self.proxy_fee == self.fee else None,
+                    future_fee_bp=self.future_fee*10000, proxy_fee_bp=self.proxy_fee*10000,
+                    tick_usd=self.tick, proxy_expense=self.expense, **pnl,
                     proxy_liquidity_surcharge=self.surcharge, **dict(self.counts),
                     completed_cycles=len(self.cycles), net_marked_usd_per_10_face=net,
                     total_transaction_fees_usd=fees,
@@ -340,6 +383,9 @@ def run_all(args):
     # Diagnostics on the entire already-frozen grid; no cherry-picked sensitivity winner.
     stresses = [('always_posted',dict(band=None)),('two_second_delays',dict(delay=2000)),
                 ('five_bp_fees',dict(fee_bp=5)),
+                ('no_fees',dict(fee_bp=0)),
+                ('maker_rebate',dict(future_fee_bp=-1,proxy_fee_bp=0)),
+                ('one_ms_delays',dict(delay=1)),
                 ('proxy_cost',dict(proxy_expense=.0025,surcharge=.005)),
                 ('one_percent_participation',dict(participation=.01))]
     for scenario, kwargs in stresses:

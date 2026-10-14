@@ -1,0 +1,26 @@
+{
+  "base": {
+    "completed_cycles": 2703,
+    "pre_short_proxy_gain_usd": -35.03087323755239,
+    "both_legs_open_gross_gain_usd": 10.061736515580257,
+    "post_short_close_proxy_gain_usd": -15.70194259732334,
+    "fees_usd": 10.786328250379393,
+    "completed_net_usd": -51.45740756967326
+  },
+  "one_ms_delays": {
+    "completed_cycles": 2401,
+    "pre_short_proxy_gain_usd": -38.7181068317071,
+    "both_legs_open_gross_gain_usd": 6.7515311792067845,
+    "post_short_close_proxy_gain_usd": -5.274003218452518,
+    "fees_usd": 9.5819249761068,
+    "completed_net_usd": -46.822503847058385
+  },
+  "two_second_delays": {
+    "completed_cycles": 3165,
+    "pre_short_proxy_gain_usd": -32.27799044431285,
+    "both_legs_open_gross_gain_usd": 0.7747502959597055,
+    "post_short_close_proxy_gain_usd": -27.023827919580498,
+    "fees_usd": 12.629831411645197,
+    "completed_net_usd": -71.15689947957708
+  }
+}

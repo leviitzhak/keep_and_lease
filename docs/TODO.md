@@ -68,6 +68,21 @@ This is a new opt-in strategy; application strategy not implemented. The example
   validate against original raw trades. Add 16 deterministic current-leg
   ladder/accounting/latency tests. These are not funded portfolio results. See
   [BTC_PRD_EXECUTION_CALIBRATION.md](BTC_PRD_EXECUTION_CALIBRATION.md).
+- [x] Separate completed-cycle realized P&L, realized items in unfinished cycles,
+  and remaining unrealized marks. Expose proxy price/expense/liquidity effects
+  and signed transaction fees; verify expense is not also debited via APR.
+- [x] Add independent future/proxy fees, zero-fee and conditional futures-maker
+  rebate scenarios, 1 ms per latency leg, and explicit `always_posted` meaning.
+  Reproduce the frozen 2026 grid: 416 cases, 20,475 audited fills and unchanged
+  results on all 208 overlapping legacy cases. Add offline replay/preparation
+  commands and measured local benchmarking. See
+  [BTC_PRD_EXTENDED_CALIBRATION.md](BTC_PRD_EXTENDED_CALIBRATION.md).
+- [x] Extend proxy/future unit calibration to all 42 eligible retained contracts
+  (March 2017-October 2026), with per-contract prior training and later held-out
+  execution: 3,256 scenarios and 1,173,177 audited fills from 55,954,166 ordinary
+  observations. Preserve missing-mark fallbacks, exclusions, incomplete cycles,
+  and unpaired proxy-interval P&L. Benchmark 1.58 GiB maximum worker RSS and
+  provide reproducible offline preparation/replay instructions. No funded optimum.
 - [ ] Complete calibration of H=L+w on prior data and held-out
   lifecycle runs; 2%/1% remain examples. Reconcile actual unequal-maturity P&L,
   costs, delayed fills and unfinished positions. Compare explicitly labeled

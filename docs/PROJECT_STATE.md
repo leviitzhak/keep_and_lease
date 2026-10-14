@@ -1,6 +1,6 @@
 # Keep & Lease — Project State
 
-_Last updated: 2026-10-13 (strategy design and initial execution calibration)_
+_Last updated: 2026-10-14 (PRD accounting, fee/latency and historical research extension)_
 
 ## Purpose
 
@@ -37,6 +37,16 @@ Build an interactive research and backtesting application for strategies that al
   removed. First calibration now includes 13 threshold candidates, 338 unit
   execution experiments, full raw-tape fill audit and 16 deterministic tests.
   See [BTC_PRD_EXECUTION_CALIBRATION.md](BTC_PRD_EXECUTION_CALIBRATION.md).
+  The October 14 extension adds separate completed-realized, unfinished-realized
+  and unrealized P&L, zero and negative futures fee sensitivities, and 1 ms delay
+  comparisons. The 416-case frozen-grid extension passes its independent audit;
+  all 208 overlapping earlier results are unchanged. Offline instructions and
+  benchmarks accompany [the extended report](BTC_PRD_EXTENDED_CALIBRATION.md).
+  Full eligible-history research now spans 42 contracts from March 2017 to
+  October 2026: 55.95 million ordinary observations, 3,256 scenarios and 1.17
+  million audited fills. All eight shards passed, with explicit missing-mark
+  fallback and separate unpaired proxy-interval attribution. Negative fixed
+  2%/1% unit results and incomplete cycles do not select a funded strategy.
   This is not a funded strategy result: cash/margin/band allocation, native
   account reconciliation and full rolling/restart replay remain to implement.
 

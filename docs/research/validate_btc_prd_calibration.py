@@ -59,10 +59,10 @@ def validate(old,new,output):
                 distance=max(0.,(expected-observed.price)/observed.price if phase==1 else
                              (observed.price-expected)/observed.price)
                 assert run['posting_band'] is None or distance<=run['posting_band']
-                fee=FACE/f['price']*r.index*run['fee_bp_each_leg']/10000
+                fee=FACE/f['price']*r.index*run.get('future_fee_bp',run['fee_bp_each_leg'])/10000
             else:
                 assert f['price']==r.index
-                fee=(FACE if phase==0 else proxy*r.index)*run['fee_bp_each_leg']/10000
+                fee=(FACE if phase==0 else proxy*r.index)*run.get('proxy_fee_bp',run['fee_bp_each_leg'])/10000
             delta=-fee
             if phase==0:
                 assert proxy==0 and entry is None

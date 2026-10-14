@@ -853,6 +853,33 @@ replace the new convention. Real net-of-expense price series need no duplicate
 expense debit. The surcharge forecasts liquidity costs; it is not proxy unit
 decay. Cash funding/opportunity cost is separately attributed.
 
+### Research accounting clarification (2026-10-14)
+
+The synthetic index starts gross of proxy expenses. The current unit experiments
+use `a_proxy` only in quote construction and reduce BTC-equivalent exposure once
+as `q(t)=q(0)*(1-e)^years`. They do not also debit the APR from cash. These are
+BTC-equivalent units represented by the holding, not an assertion that the
+number of actual ETF shares changes. A net-of-expense proxy price series would
+replace this explicit expense decay, not supplement it.
+
+The experimental `proxy_cost` sensitivity additionally multiplies those units by
+`exp(-c*years)` as a deliberately simplified liquidity-cost model. This is not
+observed margin turnover or a second expense-ratio charge. The funded strategy
+must replace that approximation with actual sale/rebuy/conversion/cash flows
+where modeled, and never charge both for the same economic cost.
+
+Reporting now requires three mutually reconciling buckets: completed-cycle
+realized net P&L; realized P&L and paid fees/rebates in the still-unfinished
+cycle; and unrealized marks of remaining holdings. Show proxy price change,
+expense effect, liquidity surcharge, native futures P&L and transaction fees
+separately. An unfinished cycle is not automatically wholly unrealized.
+
+Negative futures maker fees are conditional sensitivities with separately
+configured proxy costs. `always_posted` disables the near-market admission
+filter only; it does not bypass inventory, lifecycle, entry expiry or latency.
+The 1 ms comparison means 1 ms observation-to-decision plus 1 ms
+ decision-to-market. No monotonic gain in completed cycles is assumed.
+
 ## 9. Implementation map and preparation gates
 
 Inspection at the base commit establishes:

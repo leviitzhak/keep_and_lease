@@ -160,5 +160,77 @@ class ExecutionTests(unittest.TestCase):
         self.assertFalse(e.fills)
 
 
-if __name__ == '__main__':
+
+class ExtendedAccountingTests(unittest.TestCase):
+    def test_one_year_proxy_expense_is_charged_once(self):
+        e=Experiment(3*YEAR,0,YEAR,.02,.01,proxy_expense=.02,fee_bp=0)
+        e.proxy=e.proxy_original=.001;e.proxy_cost=10;e.proxy_bought=0
+        e.cash=e.cycle_cash=-10;e.phase=1
+        result=e.run([Trade(0,10000,10000,10000,100,'buy','a')])
+        self.assertAlmostEqual(e.proxy_apr,.02/.98)
+        self.assertAlmostEqual(result['net_marked_usd_per_10_face'],-.2)
+        self.assertAlmostEqual(result['unrealized_proxy_expense_effect_usd'],-.2)
+        self.assertAlmostEqual(result['unfinished_cycle_realized_net_usd'],0)
+
+    def test_fee_only_repricing_matches_a_fresh_replay_and_no_proxy_rebate(self):
+        from btc_prd_full_history import fee_sensitivity,audit_fills
+        rows=[Trade(t,p,10000,p,100,d,str(t)) for t,p,d in
+              [(0,10000,'buy'),(1001,10000,'buy'),(2002,10300,'buy'),
+               (3003,10000,'sell'),(4004,10000,'sell'),(5005,10000,'buy'),(6006,10300,'buy')]]
+        a=Experiment(YEAR,0,DAY,.02,.01,band=None);base=a.run(rows)
+        self.assertGreater(base['completed_cycles'],0)
+        audit_fills(a,rows,base)
+        b=Experiment(YEAR,0,DAY,.02,.01,future_fee_bp=-1,proxy_fee_bp=0,band=None);fresh=b.run(rows)
+        derived=fee_sensitivity(base,a.fills,-1,0)
+        for key in ('net_marked_usd_per_10_face','completed_cycle_realized_net_usd',
+                    'unfinished_cycle_realized_net_usd','unrealized_mark_net_usd'):
+            self.assertAlmostEqual(fresh[key],derived[key])
+        self.assertTrue(all(f['fee_usd']==0 for f in b.fills if f['phase'] in (0,3)))
+        self.assertTrue(all(f['fee_usd']<0 for f in b.fills if f['phase'] in (1,2)))
+
+    def test_closed_future_in_unfinished_cycle_is_realized(self):
+        rows=[Trade(t,p,10000,p,100,d,str(t)) for t,p,d in
+              [(0,10000,'buy'),(1001,10000,'buy'),(2002,10300,'buy'),(3003,10000,'sell')]]
+        e=Experiment(YEAR,0,DAY,.02,.01,band=None);r=e.run(rows)
+        self.assertEqual(r['unfinished_phase'],3)
+        self.assertGreater(r['unfinished_cycle_future_realized_usd'],0)
+        self.assertEqual(r['unrealized_future_usd'],0)
+        self.assertAlmostEqual(r['net_marked_usd_per_10_face'],r['completed_cycle_realized_net_usd']+
+                               r['unfinished_cycle_realized_net_usd']+r['unrealized_mark_net_usd'])
+
+    def test_one_ms_remains_two_distinct_latency_legs(self):
+        rows=[Trade(t,11000,10000,11000,100,'buy',str(t)) for t in range(10)]
+        e=Experiment(YEAR,0,DAY,.02,.01,delay=1);e.run(rows)
+        self.assertGreater(len(e.fills),0)
+        for f in e.fills:
+            self.assertEqual(f['decision']-f['observed'],1)
+            self.assertEqual(f['arrival']-f['decision'],1)
+            self.assertGreater(f['t'],f['arrival'])
+
+
+class HistoricalTapeTests(unittest.TestCase):
+    def test_missing_marks_retained_but_invalid_index_and_backdated_print_excluded(self):
+        import tempfile,json,gzip,hashlib
+        from pathlib import Path
+        from btc_prd_full_history import Archive,load_contract,JOB,PREFIX
+        with tempfile.TemporaryDirectory() as tmp:
+            a=Archive(tmp,offline=True)
+            raw=[dict(timestamp=t,price=100,index_price=index,mark_price=None,
+                      amount=10,direction='buy',instrument_name='BTC-TEST',trade_seq=i,trade_id=str(i))
+                 for i,(t,index) in enumerate([(1000,100),(999,100),(1500,0),(2000,100)],1)]
+            b=gzip.compress(b''.join((json.dumps(x)+'\n').encode() for x in raw),mtime=0)
+            key=PREFIX+'/objects/example/trades.jsonl.gz';path=Path(tmp)/key;path.parent.mkdir(parents=True);path.write_bytes(b)
+            receipt=dict(status='COMPLETE',instrument='BTC-TEST',first_seq=1,last_seq=4,rows=4,
+                         min_timestamp=999,max_timestamp=2000,
+                         objects=[dict(key=key,bytes=len(b),sha256=hashlib.sha256(b).hexdigest())])
+            path=Path(tmp)/f'{JOB}/receipts/BTC-TEST/000000000001-000000000004.json'
+            path.parent.mkdir(parents=True);path.write_text(json.dumps(receipt))
+            rows,counts,_=load_contract(a,dict(instrument='BTC-TEST',first_available_seq=1,last_available_seq=4),5000)
+            self.assertEqual([r.id for r in rows],['1','4'])
+            self.assertEqual([r.mark for r in rows],[100,100])
+            self.assertEqual(counts['backdated_excluded'],1)
+            self.assertEqual(counts['invalid_numeric_excluded'],1)
+            self.assertEqual(counts['mark_missing_or_invalid_trade_price_fallback'],2)
+
+if __name__ == "__main__":
     unittest.main()

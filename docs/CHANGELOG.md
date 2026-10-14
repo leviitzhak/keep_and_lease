@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-10-14 — PRD accounting and execution sensitivity extension
+
+- Use proxy APR for quote construction and accrue expense only once through
+  synthetic BTC-equivalent exposure. Separate completed-cycle realized P&L,
+  realized items in unfinished cycles and open marks, with cost attribution.
+- Separate future/proxy signed fees, add zero fees, conditional maker rebates
+  and 1 ms per delay leg. Preserve the original frozen grid; 416 cases and
+  20,475 raw-tape fill audits pass, reproducing 208 overlapping earlier cases.
+- Complete the 42-contract eligible-history study: 55,954,166 ordinary rows,
+  3,256 scenarios and 1,173,177 audited fills. All eight shards pass. Attribute
+  fixed-reference cycles to before-short, paired and after-short intervals;
+  retain losses and unfinished holdings. No funded H/L winner is selected.
+- Add full-eligible-history research, explicit early missing-mark fallback,
+  hash-checked offline cache preparation/replay and hardware benchmarking.
+  Scope remains independent unit probes; no funded strategy or deployment.
+
 ## 2026-10-13 — Initial BTC PRD execution calibration
 
 - Adopt owner clarification: current pair PRD equals the executed APR difference
