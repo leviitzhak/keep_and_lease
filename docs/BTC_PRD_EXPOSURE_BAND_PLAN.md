@@ -110,12 +110,15 @@ observations. The gap measures targeted APR-spread convergence; its location
 determines entry/exit frequency, time holding inventory, and roll frequency.
 It does not alone determine actual paired P&L for unequal maturities.
 
-Owner clarification, 14 October: both location and gap must come from recent
-observations and update while the strategy runs. The fixed-grid studies do not
-implement this requirement. [Live calibration and market-simulation research](BTC_PRD_ADAPTIVE_MARKET_RESEARCH.md)
-specifies a proposed causal estimator, policy-selection schedule, inventory
-transitions and competing-agent feasibility plan. Numerical windows/cadences,
-adaptive held-exit behavior and ladder transitions remain research choices.
+Owner reconsideration, 15 October: evaluate PRD jointly with execution time and
+quantity, allow exposure-dependent patience, and consider initial calibration
+followed by fill-driven ladders instead of periodic refitting. Startup calibration
+with a fixed base is now the recommended first experiment; its precise policies
+remain under discussion. [Execution horizons and calibration choices](BTC_PRD_ADAPTIVE_MARKET_RESEARCH.md)
+distinguishes new-long urgency from short catch-up, convergence targets from
+native profit, and inventory adaptation from market-regime adaptation. The
+competing-agent simulation is set aside. The 14 October live-refit alternative
+is retained for possible later comparison, not treated as the current mandate.
 
 For equal-BTC USD-linear legs and quantity q, before costs:
 
@@ -133,9 +136,10 @@ long-A/short-B pair loses $150 before costs despite the one-point PRD narrowing.
 This is an algebraic illustration, not an observed result. Native inverse
 contracts require their actual BTC cash-flow/P&L accounting, not this formula.
 
-Calibrate on chronologically prior windows; freeze the adaptive algorithm on
-each evaluation window, allowing numerical H/L updates from information already
-received exactly as in live operation. Screen eligible pairs' causal APR/PRD distributions, then
+Calibrate on chronologically prior windows. For the proposed first experiment,
+initialize base thresholds/ladders once and carry inventory forward continuously;
+newly eligible pairs initialize from then-available data and restarts restore
+persisted settings. Screen eligible pairs' causal PRD/time/quantity distributions, then
 measure H/L combinations with actual strict-through fills, both latency legs,
 partial positions, costs, funding, bootstrap, ladder and roll/exit rules. Compare
 net P&L, drawdown, capital utilization, time to close, censored unfinished pairs
@@ -178,8 +182,9 @@ calibrate portfolio returns by itself.
    occupied, duration, exit/roll losses and unfinished positions. Include every
    attempted trade; mark residual inventory. Return per capital-day is a useful
    diagnostic, not a reason to ignore unmatched losses or unused cash.
-6. Select the adaptive rule on prior training/validation blocks and evaluate
-   that rule unchanged on later blocks, permitting causal numerical refits.
+6. Select the initialization, ladder and waiting policy on prior development
+   blocks and evaluate unchanged on later blocks. Any future periodic-refit
+   comparison must freeze its algorithm and use only then-available data.
    A starting example is six months for development and the next
    three months for testing, repeated chronologically; extend blocks if too few
    completed/rolled cycles are observed. Training must not use an eventual exit
@@ -190,13 +195,13 @@ calibrate portfolio returns by itself.
    blocks, over an isolated historical maximum. Check costs, delays, fills,
    proxy assumptions and maturity ceiling around the chosen region. A lack of
    stable candidates is a valid result; no profitable H/L pair is presumed.
-   The owner now requires live refitting of location and gap. Preserve executed
-   tranche anchors and committed catch-up obligations. The current proposal
-   compares adaptive ordinary closing targets with entry-frozen targets and
-   rebuilds ladder qualification from remaining fills under each new base.
-   Threshold updates must retain actual risk inventory and reservations;
-   retirement escalation remains explicit. See the adaptive research design
-   for the proposed cash-P&L guard and unresolved transition choices.
+   The owner's latest proposal favors initial calibration and inventory-driven
+   ladders. Preserve executed tranche anchors, committed catch-up obligations,
+   all risk inventory and reservations. Compare a fixed common closing L with
+   a lot-relative gap below actual executed PRD, with native cash-P&L checks;
+   neither annual PRD narrowing nor an unfilled second-leg quote guarantees
+   profit. Retirement escalation remains explicit. Reinitialization triggers
+   are unselected; no periodic recentering is assumed in the first experiment.
 
 The immediate next research output can be eligible PRD distributions and
 coarse fill/holding-time screens. Selecting final H/L needs the isolated funded
@@ -762,7 +767,7 @@ ladder is derived from those records, not lifetime turnover, accumulated roll
 profits or a separately transferable credit balance. Account/strategy/long
 symbol/short symbol define a pair; transfer lineage is stored separately.
 
-Use `H_k(t) = H_0(t) + k * increment_pp`, with a configured reference BTC amount per
+Use `H_k = H_0 + k * increment_pp`, with a configured reference BTC amount per
 rung. Frozen entry reference quantities avoid rung changes merely from BTC
 price movements. Risk accounting still uses current native positions and marks.
 A replacement lot is treated by exactly the same executed-PRD rule as another
@@ -796,11 +801,12 @@ This research convention resolves the reconstruction algorithm for tests;
 exact pending-order reservations and import seeding still belong to the funded
 replay. The first empirical execution calibration disables ladder increments
 so level/location effects can be measured before capacity/ladder interaction.
-For adaptive H_0, the proposed versioned transition rebuilds qualification against
-the new thresholds while retaining every remaining lot and risk reservation.
-Unqualified inventory does not disappear or free account capacity. Exact update
-cadence and held-exit semantics are in the adaptive research design and have not
-been selected as production defaults.
+The proposed first experiment keeps H_0 fixed after initialization; occupied
+rungs change with remaining fills. New pairs calibrate when first eligible,
+while restarts restore persisted settings. A future base-change alternative
+must explicitly rebuild qualification without erasing unqualified inventory
+or freeing account risk capacity. Numerical levels, waiting horizons and exact
+held-exit semantics remain research choices.
 
 ## 8. Optional proxy as the long leg
 
@@ -1019,7 +1025,7 @@ separately labeled 100% BTC comparison. The exposure band changes that benchmark
 | D10 | Proxy | e/(1-e), any eligible partner, synthetic 24/7 near-spot execution, optional annual margin-liquidity surcharge confirmed; numerical costs/offset model to choose |
 | D11 | Research sequence | Direct raw-data analysis before integration; raw preflight, full-catalog maturity history and first chronological unit execution calibration completed; capital-constrained strategy replay pending |
 | D12 | Price drift | No active reduction solely for price-driven excess above maximum; stop new longs; expiry/funding actions remain separate |
-| D13 | Calibration | 2%/1% are examples; infer both location and gap from recent observations and update live; select a causal adaptive rule using actual net P&L, delays, costs and incomplete trades; held-target transitions remain proposed |
+| D13 | Calibration | 2%/1% are examples; latest owner proposal is initial calibration with fill-driven ladders and exposure-dependent execution patience; estimate PRD/time/quantity surfaces and actual net P&L; periodic refitting is no longer the assumed first policy |
 | D14 | Updated PRD/netting | Each affected pair updates when rolls or new openings close a leg; immutable fills plus actual current-leg executed PRD confirmed; no completed-leg credit or phantom opposite positions |
 
 "Ownership, accounting and execution rules" means concrete mechanics:
@@ -1051,7 +1057,7 @@ engineering proposals and need to be visible before coding.
 | Retirement fallback | Start around three months; target before 60 days; optional 65-day working target; persist exit-relaxation clock | Schedule, cap and final no-fill response remain choices; the 60-day target itself is now settled |
 | Funding and proxy | Native inverse payoff/collateral adapter for native claims; explicit cash reserve, fees and proxy liquidity cost/offset assumptions | A gross leverage cap does not specify when collateral must be funded or proxy sold |
 | Recovery without pair history | Import actual positions/orders, infer feasible labeled allocations and ladder seed without inventing past profits | Required before application integration; cash-start research may precede this adapter |
-| Calibration objective and refit | Live updates of location and gap confirmed; propose recent weighted quantiles plus causal policy selection, versioned ladder rebuilding and cash-aware adaptive held exits; entry-frozen exits as control | Maximizing raw total return, turnover or matched-only P&L can select different rules; target changes affect held inventory and working orders |
+| Calibration and execution horizon | Prefer startup-calibrated base/ladders, PRD/time/quantity completion distributions and exposure-dependent patience; native-P&L check for ordinary exits; reinitialization unselected | Inventory ladders do not identify a changed market center; short catch-up near maximum can be more urgent even when new longs can wait |
 
 Numerical configuration can remain adjustable rather than requiring one
 permanent answer: capital, band, leverage, rung size/increment, optional slicing,

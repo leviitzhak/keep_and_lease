@@ -1,19 +1,152 @@
-# BTC PRD: live calibration and competing-agent market research
+# BTC PRD: execution horizons and calibration choices
 
-Research design, 14 October 2026. Owner requirement: infer both PRD location
-and opening/closing gap from recent historical observations and update them
-while trading. The numerical policy and inventory-transition rules below are
-proposals for testing, not selected production defaults. No adaptive trading
-engine or competing-agent simulator is implemented by this document.
+## Current direction — 15 October 2026
 
-The [full-history study](BTC_PRD_EXTENDED_CALIBRATION.md) trained each contract's
-grid once and held it fixed. It did not test live recalibration. The requested
-adaptive policy supersedes that fixed-grid approach as the intended strategy.
-Historical fixed-grid results remain useful controls. The earlier proposal to
-freeze every held closing target is replaced here by an explicit comparison of
-adaptive and entry-frozen exits; the owner has not selected those semantics.
+The owner has put the competing-agent exchange simulation aside and asks to
+evaluate PRD jointly with execution time, ordinary exits relative to executed
+PRD, and initial calibration followed by inventory-driven ladders. The recommended
+first experiment is now startup calibration with fixed base levels, rather than
+the periodic refit proposed on 14 October. This records a recommendation under
+discussion, not approval of numerical settings or a newly implemented strategy.
+The older live-refit proposal and simulation feasibility analysis are retained
+below as historical alternatives; they are not the current implementation queue.
 
-## 1. Separate market adaptation from execution decisions
+### PRD, quantity and time to execution
+
+APR/PRD is defined from prices, index and time remaining to expiry. The PRD
+that can be achieved with a chosen probability depends on how long execution
+is allowed, order size, starting state and execution policy. Estimate:
+
+```
+F_open(h, t, q | X) = P(T_matched_open(h, q) <= t | starting state X)
+```
+
+Here h is target PRD, q the required matched quantity in a declared unit, and
+X includes the pair, remaining tenors, observed market conditions, exposure,
+pending orders and latency. Run the actual strict-through/aggressor/volume
+policy, not merely a historical PRD crossing. Keep the same initial state,
+start times and data across candidate targets for comparisons. Start the clock
+at the decision and include both configured delays; record physical completion
+and notification time separately. Full matching must reach q on both legs;
+report partial matched quantity and unmatched risk too.
+
+Estimate separately time to first fill, first-fill-to-match duration, full
+matched opening, and subsequent closing/roll time conditional on the executed
+entry. Waiting before any fill and waiting with an exposed leg have different
+risks. Retain no-fill probability: unfinished samples at the data boundary are
+censored, not dropped or given an invented eventual fill. A policy cancellation
+or retirement exit is an explicit outcome, not automatically independent censoring.
+Use common start samples, report uncertainty and thinly sampled regions, and
+do not treat overlapping windows as independent trials. Larger horizons give
+nondecreasing completion probability for the same continuing policy; changing
+target/catch-up paths need not yield a monotone cross-target comparison.
+
+For a declared probability p, the surface can identify the highest admissible
+opening PRD with adequate probability of matching q within t. Choose the actual
+levels/gaps using native net P&L, close-time distribution and capital usage as
+well, since fill probability alone rewards unprofitable trades. No numerical
+completion probability or execution deadline has been selected.
+
+### Exposure-dependent patience
+
+The owner's direction is sensible for **new exposure-increasing longs**. One
+candidate schedule is `t_new(x)=t_fast+(t_slow-t_fast)*u^gamma`, where
+`u=clip((x-x_min)/(x_max-x_min),0,1)` and gamma>0. Near the upper band, less
+urgency permits seeking a better entry; at/above the maximum do not admit a new
+long. Actual quantity still comes from exposure headroom, leverage, funding and
+reservations, so q must vary explicitly with the state rather than holding an
+infeasible size constant.
+
+The important exceptions are:
+
+- Below the minimum, acquire an eligible minimum-APR long using the baseline
+  policy, with short openings suppressed. Do not wait for a profitable pair to
+  restore the required long exposure. A short time budget is not a fill guarantee;
+  any fallback to more aggressive execution must be a separately declared rule.
+- A short completing an already-filled long **reduces** net long exposure.
+  Near the maximum that completion can warrant greater urgency, not a longer
+  unmatched wait. Retain its committed PRD unless an explicit recovery policy
+  changes it; exposure urgency alone does not authorize silent target relaxation.
+- Stage closing/rolling orders according to the direction of their intermediate
+  exposure change, not the label 'opening' or 'closing'. Pair occupancy and net
+  exposure are distinct: a matched pair may occupy a rung with little net delta.
+
+For the fixed-start experiment, use the initial PRD-time-quantity surfaces to
+calibrate the whole rung schedule and a declared state-dependent waiting policy.
+Runtime patience/admission can vary without continually recentering the ladder.
+A deadline does not by itself lower a committed threshold. If reaching a short
+deadline requires changing H, that is an explicit alternative policy to test.
+
+### Ordinary closing targets and profitability
+
+For the convergence strategy, a lot-relative target can be
+`L_lot = D_executed_lot - gap_lot`, with gap_lot>0, rather than comparing a close
+with today's opening threshold. Use actual current-leg executed APRs, preserving
+anchors and updating affected pairs on rolls/netting as already specified.
+This lot-relative rule and the size of its gap remain proposals; a fixed common
+L below all qualifying entries is another consistent comparison.
+
+Lower closing PRD is **not sufficient** for a positive cash P&L and is not
+mathematically necessary for every profitable trade. For equal-BTC linear legs,
+before fees, `PnL/q = (F_B_entry-F_A_entry)-(F_B_exit-F_A_exit)`, whereas
+`F_B-F_A = S*(APR_B*tau_B-APR_A*tau_A)`. The two APRs and tenors matter separately.
+The unequal-tenor counterexample in the main plan narrows PRD from 2% to 1%
+yet loses $150 per BTC at unchanged spot, before costs. Conversely, constant
+spot with a zero-cost proxy and a linear future premium of 3% over 0.5 years
+has a 1.5% price premium; later 4% over 0.25 years is only a 1% price premium.
+That short-future/proxy cycle gains 0.5% before costs despite wider annual PRD.
+These are algebraic examples, not empirical results or native-inverse formulas.
+
+An inverse-contract counterexample also holds. Keep spot at $100,000 and take
+$100,000 USD face long A and short B. Initially A has 0.75 years remaining at
+3% APR (price $102,250), and B has 1 year at 5% (price $105,000). After 0.10 year,
+A has 0.65 years at 10% ($106,500), and B 0.90 years at 11% ($109,900).
+PRD narrows from 2% to 1%, but BTC P&L before costs is
+`100000*(1/102250-1/106500+1/109900-1/105000) = -0.0034348711 BTC`, or about
+-$343.49 at the unchanged spot. This is a calculated illustration with
+simultaneous fills and equal USD face amounts, not a backtest.
+
+Ordinary profit-seeking exits should therefore also evaluate native lot cash
+flows after fees, expense decay and other costs, in the chosen reporting currency.
+Deribit inverse futures settle profit/loss in BTC, with USD face amounts; use
+the inverse payoff rather than substituting the linear example [6]. Pending
+second-leg execution makes prospective net proceeds conditional until both fills
+occur. Profit-only exits cannot override mandatory expiry/funding recovery;
+record any resulting loss explicitly and preserve the before-60-day objective.
+
+### What a fixed-start ladder does and does not adapt to
+
+For the first experiment, initialize pair H0, rung thresholds/amounts and closing
+rules from preceding data. Keep the base fixed and let remaining qualified fills
+raise the next opening level; closes restore lower levels. Dollar limit prices
+still update with the causal index and remaining maturity. Preserve executed
+anchors, and do not replace actual execution PRDs with statistical estimates.
+
+This accompanies **inventory accumulation and release**. It does not estimate a
+new market center: a persistent upward shift can leave lower closing targets
+unreached and inventory full, while a downward shift can leave entries inactive.
+The ladder must still obey capital limits when market opportunities exceed its
+capacity. Monitor PRD-time behavior and saturation/idleness without automatic
+refitting in this baseline; do not assume a ladder eliminates regime risk.
+
+Calibrate newly eligible pairs and new roll destinations with data available
+when they appear. Restore persisted calibration on restart; neither a process
+restart nor an ordinary completed cycle should silently initialize a new base.
+When moving existing lots to a newly calibrated destination, derive occupancy
+from their actual current-leg PRDs and retain all risk quantities. Reinitializing
+an existing pair, the no-fill response to a waiting deadline, and choosing a
+lot-relative versus common closing L remain policies to settle before testing.
+
+Next empirical output: PRD/time/quantity completion surfaces, first-leg and
+catch-up durations, closure distributions and net P&L, followed by a continuous
+cash-start replay of the initial ladder. No new backtest result is claimed here.
+
+## 1. Earlier live-refit alternative — 14 October 2026
+
+The [full-history study](BTC_PRD_EXTENDED_CALIBRATION.md) fitted grids once and
+held them fixed; it did not test periodic live recalibration. The following
+alternative is retained for possible later comparison, not the preferred first
+experiment after the owner's 15 October reconsideration.
 
 For an oriented pair with long A and short B, define `D = APR_B - APR_A` and
 `H0(t) = L(t) + w(t)`, with `w(t) > 0`. Directions follow APR opportunities;
@@ -131,7 +264,7 @@ of prints or overlapping cycles are not hundreds of independent observations.
 If evidence is weak, retain a still-valid incumbent policy or suppress new
 discretionary risk under a declared rule, rather than forcing an optimum.
 
-## 2. What changes when a calibration version changes
+## 2. Earlier live-refit transition proposal
 
 | State | Proposed behavior |
 |---|---|
@@ -163,7 +296,10 @@ an update, sparse feeds, regime shifts, unknown imported lots, threshold changes
 without new fills, retirement during refit, and deterministic restart. The funded
 multi-pair ledger is still needed before claiming strategy-level calibration.
 
-## 3. Feasibility of a market populated by competing PRD agents
+## 3. Deferred: market populated by competing PRD agents
+
+Set aside by the owner on 15 October 2026. This retained analysis does not
+authorize simulator work, collection jobs or background experiments.
 
 This is technically feasible as a discrete-event market simulation. It can
 measure competition for fills, speed advantage, adverse selection, crowding,
@@ -335,3 +471,5 @@ methods and feed descriptions, not profitability of this proposed strategy.
 4. Deribit, [market data collection guide](https://docs.deribit.com/articles/market-data-collection-best-practices).
 5. Huang, Lehalle and Rosenbaum, [Simulating and analyzing order book data:
    the queue-reactive model](https://arxiv.org/abs/1312.0563).
+6. Deribit, [Inverse Futures](https://support.deribit.com/hc/en-us/articles/31424938981533-Inverse-Futures), checked 15 October 2026.
+7. Deribit, [Position Builder](https://support.deribit.com/hc/en-us/articles/31238900906781-Position-Builder), inverse payoff formula, checked 15 October 2026.

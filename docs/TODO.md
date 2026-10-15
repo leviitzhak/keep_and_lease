@@ -89,11 +89,20 @@ This is a new opt-in strategy; application strategy not implemented. The example
   180-file workload scan: 462,642 ordinary trades imply 46,264,200 deliveries
   to 100 agents subscribed to every trade. This is not a simulator benchmark.
   See [BTC_PRD_ADAPTIVE_MARKET_RESEARCH.md](BTC_PRD_ADAPTIVE_MARKET_RESEARCH.md).
-- [ ] Implement and evaluate recent-data H/L updates, policy/version persistence,
-  sparse-data handling and causal shadow selection. Compare adaptation memories,
-  update cadence and existing-pair exit policies; choose ladder transitions and
-  explicit cash-P&L/retirement overrides. Freeze the algorithm, not numerical
-  thresholds, on evaluation paths; no live adaptive engine is implemented yet.
+- [x] Record the 15 October reconsideration: defer the exchange simulation,
+  estimate PRD jointly with matching time/quantity, distinguish new-long patience
+  from short catch-up urgency, and recommend initial calibration plus remaining-
+  inventory ladders as the first experiment. Numerical policies remain proposed.
+- [ ] Estimate opening PRD/time/quantity completion distributions from common
+  initial states and causal strict-through trials; retain nonfills, partials,
+  first-fill/catch-up durations, censored boundaries and cancellation outcomes.
+  Estimate closing time/net P&L conditional on actual executed entry lots.
+- [ ] Calibrate initial H0, rung amounts/levels and closing gaps from preceding
+  data; test exposure-dependent waiting with the existing baseline acquisition
+  rule below minimum. Preserve catch-up targets and restart state; initialize
+  new pairs causally. Decide common versus lot-relative closing L, waiting-
+  deadline actions and any later reinitialization trigger. Automatic periodic
+  refitting is deferred as an alternative, not required for the first POC.
 - [ ] Complete calibration of H=L+w on prior data and held-out
   lifecycle runs; 2%/1% remain examples. Reconcile actual unequal-maturity P&L,
   costs, delayed fills and unfinished positions. Compare explicitly labeled
@@ -105,15 +114,15 @@ This is a new opt-in strategy; application strategy not implemented. The example
   ladder, pair-aware rolls, explicit funding/costs and full P&L reconciliation.
   Compare delay, participation and proxy surcharge/margin-offset assumptions.
   Obtain raw windows containing 30%-eligible dated pairs and retirement/rolls;
-  both current local dated-pair samples fail even the 30% rule. Evaluate causal
-  refitting of both location and gap with explicit held-inventory transitions.
+  both current local dated-pair samples fail even the 30% rule. Evaluate the
+  startup-calibrated ladder continuously without resetting inventory each cycle.
   The July–September execution-test slice is now examined, not untouched.
-- [ ] Prototype a shared matching-engine market with a small mixed population,
+- [ ] **Deferred by owner, 15 October:** prototype a shared matching-engine market with a small mixed population,
   three dated books and proxy reference; compare agent delays and adaptation
   under finite shared liquidity. Audit unique counterparties, priority, latency,
   cancel races, signed cash/margin and symmetric-agent outcomes. Benchmark event
   throughput and memory before increasing agents or historical duration.
-- [ ] Obtain suitable depth/flow observations or explicitly bracket synthetic
+- [ ] **Deferred with exchange simulation:** obtain suitable depth/flow observations or explicitly bracket synthetic
   assumptions; calibrate/validate background liquidity independently of strategy
   profits. Historical trades alone cannot identify cancellations, queue rank or
   private latency. Preserve strict-through replay as a separate comparison.

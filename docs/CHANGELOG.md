@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-10-15 — Execution horizons and initial calibration reconsideration
+
+- Defer the competing-agent exchange simulation at the owner's request.
+- Specify proposed PRD/time/quantity completion distributions, nonfill/partial
+  accounting and separate first-leg, catch-up and close-time measurements.
+- Recommend startup-calibrated bases with inventory-driven ladders as the first
+  experiment; distinguish new-long patience from short catch-up urgency and
+  preserve baseline acquisition, restart state and retirement obligations.
+- Explain why lower closing APR difference is a convergence target rather than
+  a guarantee of native cash profit. All changes are research documentation;
+  no numerical policy, new backtest or application deployment is claimed.
+
 ## 2026-10-14 — Adaptive PRD and competing-market research design
 
 - Record the owner's requirement to update both location and gap from recent

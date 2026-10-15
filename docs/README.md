@@ -17,7 +17,7 @@ Start with [PROJECT_STATE.md](PROJECT_STATE.md).
 - [BTC PRD raw-data preflight](BTC_PRD_BAND_DATA_PREFLIGHT.md) — verified input coverage, maturity eligibility and a preliminary delayed strict-through quote screen; not a portfolio backtest.
 - [BTC PRD execution calibration](BTC_PRD_EXECUTION_CALIBRATION.md) — first chronological threshold grid, strict-through unit experiments, execution audit and current-leg ladder tests; not funded portfolio optimization.
 - [BTC PRD extended calibration](BTC_PRD_EXTENDED_CALIBRATION.md) — proxy cost reconciliation, separate realized/unrealized results, fee rebates, 1 ms comparisons and longer-history method.
-- [Adaptive PRD and competing-market research](BTC_PRD_ADAPTIVE_MARKET_RESEARCH.md) — proposed live location/gap updates, held-inventory transitions, competing-agent simulator feasibility and verified trade-workload sizing.
+- [PRD execution horizons and calibration choices](BTC_PRD_ADAPTIVE_MARKET_RESEARCH.md) — proposed PRD/time/quantity distributions, startup-calibrated ladders and closing-profit conditions; earlier periodic-refit and deferred exchange-simulation alternatives retained.
 - [Offline BTC PRD testing](BTC_PRD_OFFLINE_TESTING.md) — cache preparation, exact replay commands, measured runtime and local environment sizing.
 - [BTC maturity-separation history](BTC_MATURITY_SEPARATION_HISTORY.md) — full saved catalog, daily minima, monthly tables and exact windows passing 25%; metadata feasibility, not execution results.
 - [Empirical BTC lease execution](EMPIRICAL_LEASE_EXECUTION.md) — waiting-time/slippage calibration, funded execution budgets and the separate ten-day evaluation.

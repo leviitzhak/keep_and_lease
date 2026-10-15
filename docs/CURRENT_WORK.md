@@ -1,8 +1,20 @@
 # Current work
 
+## BTC PRD execution horizons and initial ladders — 2026-10-15
+
+The owner has set aside exchange-agent simulation and proposes PRD/time
+distributions, exposure-dependent execution patience, and initial calibration
+followed by fill-driven ladders. The recommended first experiment now keeps each
+pair's calibrated base fixed, preserving state across restarts; new pairs use
+then-available history. Distinguish new-long patience from short catch-up urgency,
+and PRD narrowing from actual native profit. The updated
+[calibration design](BTC_PRD_ADAPTIVE_MARKET_RESEARCH.md) records these proposals,
+their regime-shift limits and remaining choices. No new execution result or
+implementation is claimed; periodic refitting is an optional later comparison.
+
 ## BTC PRD live adaptation and market feasibility — 2026-10-14
 
-The owner requires both location and gap to adapt from recent observations
+Historical proposal, reconsidered on 15 October above. The owner requested both location and gap to adapt from recent observations
 while trading. [The research design](BTC_PRD_ADAPTIVE_MARKET_RESEARCH.md) proposes
 recent weighted statistics, causal policy selection, versioned lot/ladder/order
 transitions, and an interacting market with agents having different delays.
