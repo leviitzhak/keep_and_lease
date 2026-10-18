@@ -1,6 +1,6 @@
 # BTC PRD strategy with an exposure band
 
-Date: 2026-10-13. Status: **revised after owner clarification; application strategy not implemented**.
+Updated: 2026-10-18. Status: **revised after owner clarification; application strategy not implemented**.
 
 Prepared against GitHub master `80be0fc4c30904a0f4dfb16e097de2a001424e64`
 on `docs/btc-prd-exposure-band-plan`. This is a new opt-in strategy, not a
@@ -24,11 +24,22 @@ The first raw-data execution calibration is recorded in
 [BTC_PRD_EXECUTION_CALIBRATION.md](BTC_PRD_EXECUTION_CALIBRATION.md). No final
 H/L values or funded portfolio-performance findings exist yet.
 
+Latest clarification, 18 October: the owner proposes funding regular linear
+futures through expiry with spot purchases for expired longs and spot sales
+for expired shorts. [Funded expiry completion](BTC_PRD_FUNDED_EXPIRY.md) derives
+the price-based completion gain, chronological backing and separate margin
+liquidity requirements. Ordinary closing now targets executed price-spread
+profit rather than PRD alone. Earlier low-PRD exit proposals below are retained
+as historical calibration context, not the current standalone profit rule.
+The relationship between this settlement route and the earlier before-60-day
+retirement target remains to be specified before a funded replay.
+
 ## 1. Requested behavior
 
 - Configure minimum and maximum capital proportions in long BTC exposure /
   holdings, for example 30% and 60%, and a maximum leverage on total positions.
-- Configure high opening PRD and low closing PRD, for example 2% and 1%.
+- Configure high opening PRD; the original low closing PRD (2%/1% examples)
+  is superseded as a standalone exit rule by executed price-spread profit.
 - Calibrate both the opening/closing gap and its absolute level against data;
   the example rates are placeholders, not fixed experiment settings.
 - Optionally raise the opening PRD with active opening inventory; closing
@@ -41,8 +52,12 @@ H/L values or funded portfolio-performance findings exist yet.
   default. Preserve 25% as a historical comparison.
 - Post opening pair limits at high PRD while long exposure and leverage permit.
   Permit shorts to lag executed longs within the maximum net-long exposure.
-- Post closing limits at low PRD for pairs with inventory, up to the smaller
-  available position in the two legs.
+- Post ordinary closing limits based on actual entry price spread and net-profit
+  target, up to the smaller unreserved position in the two legs. PRD remains
+  an opening/ladder diagnostic; a lower closing PRD alone does not prove profit.
+- Back every expiry spot purchase or sale with available cash or underlying,
+  including explicitly allocated, funded receipts from earlier expiries. Check
+  all chronological obligations and margin liquidity, without double pledging.
 - Admit the optional proxy as a long instrument with APR `e / (1 - e)` plus an
   optional annualized margin-liquidity cost term. It is eligible with any dated
   future otherwise eligible; it has no maturity-separation restriction.
@@ -51,9 +66,11 @@ H/L values or funded portfolio-performance findings exist yet.
   counterpart and the maturity-separation constraint where possible. Stop new
   openings in retiring pairs; aim to have the old positions removed strictly
   before 60 days to maturity. Three months remains the opening/retirement-start
-  boundary; 60 days is the owner's current completion target.
-- When no permissible roll exists, progressively increase closing PRD from L
-  over time. Move actual surviving/replacement lots to the resulting pair;
+  boundary; 60 days is the earlier completion target. Its status as an objective
+  versus a mandatory exit must now be reconciled with funded expiry completion.
+- When no permissible roll exists, progressively relax the closing target.
+  The original PRD escalation from L now needs translation into price/profit
+  terms and reconciliation with funded settlement. Move surviving/replacement lots to the resulting pair;
   derive its ladder from their current executed APR differences. Do not add
   cumulative credit from completed legs.
 - Every affected pair keeps updated executed PRD and immutable execution
@@ -86,8 +103,10 @@ D_p(t)   = a_B(t) - a_A(t)
 `A` is the instrument bought at opening and `B` the instrument sold at opening.
 Keep that orientation for the lifetime of the pair. `a` is simple annualized
 futures premium, not the project's cash-yield-minus-premium lease return.
-Opening buys A and sells B when executable D is at least H; closing sells A
-and buys B when executable D is at most L. A closing trade's sell-minus-buy
+Opening buys A and sells B when executable D is at least H, subject to funding
+and the proposed net completion-gain check. The original D <= L exit is now
+historical: ordinary closing sells A and buys B against a price-spread/net-profit
+target. A closing trade's sell-minus-buy
 APR is therefore `-D`, not `+D`. Store both side-based and fixed-orientation
 diagnostics with distinct names. Store 2% as 0.02 and a 0.1 percentage-point
 increment as 0.001, never as a relative 0.1% increase of H.
@@ -98,11 +117,17 @@ the owned A/B roles when market APRs cross. Closing reverses owned inventory,
 not a fresh negative-PRD opening experiment. Simultaneous conflicting virtual
 positions in one actual contract require the netting rules in section 6.
 
-H > L is required. Report actual currency P&L separately: a change from 2% to
+For the earlier H/L comparison, H > L is required. Report actual currency P&L
+separately: a change from 2% to
 1% PRD is not a guaranteed 1% return on capital, particularly with unequal
 maturities, changing spot, funding, fees and asynchronous execution.
 
 ### Calibrate both the gap and its location
+
+The H/L grid below describes the earlier APR-target experiments. Under the
+18 October refinement, retain historical entry PRD/time/quantity calibration
+but calibrate ordinary exits in executed price-spread/net-profit space. Do not
+silently carry over APR closing gaps as guaranteed returns.
 
 The owner's 2%/1% values are placeholders. Parameterize `H = L + w`, with
 positive entry/exit gap w, and calibrate both w and L to causal historical
@@ -267,6 +292,13 @@ blocked, but reserved short catch-up may proceed down to the lower band.
 
 ### Cash bootstrap and arbitrary-state recovery
 
+Additional 18 October requirement: startup/import must construct the dated
+cash and underlying backing schedule in [funded expiry completion](BTC_PRD_FUNDED_EXPIRY.md).
+Reserve earlier covered short proceeds and funded long receipts only once,
+preserve availability times, and revalidate downstream obligations after any
+upstream close/roll. The completion plan and actual variation-margin cash
+ledger must reconcile without booking synthetic delivery totals twice.
+
 The first portfolio proof of concept starts with cash and zero positions,
 orders and borrowing. This starts below a positive minimum exposure; it is an
 explicit ACQUIRING state, not an invalid input or an invented initial BTC fill.
@@ -398,10 +430,12 @@ observations and risk capacity. When a held future approaches the three-month
 boundary, initiate the roll described below and cancel unused opening capacity.
 Once marked RETIRING, a pair accepts no new discretionary opening quantity even
 if a partial retirement lowers its ladder. Resolve pending/late fills explicitly.
-Complete removal of the approaching-expiry instrument before
+The earlier retirement policy required removal of the approaching-expiry instrument before
 `expiry - 60 * 86400 seconds`; this replaces any implication that every roll
-must finish at the three-month instant. Imported positions already beyond the
-target enter urgent recovery. It is a strategy deadline, not exchange expiry.
+must finish at the three-month instant. Under that policy, imported positions
+beyond the target enter urgent recovery. The 18 October expiry-completion
+route requires deciding whether this is still mandatory or an early-exit
+objective with funded settlement permitted. It is not exchange expiry.
 Exits stay allowed. Losing the configured ratio alone stops new openings; whether it
 also triggers an early roll is a remaining policy choice. Perpetuals are outside
 this dated-futures rule. The proxy is exempt from maturity/separation tests;
@@ -431,8 +465,8 @@ Proposed refinements:
 - When enabled, include the proxy in long-replacement candidates using its
   expense-plus-liquidity APR and its maturity exemption. It may preserve the
   short counterpart when no suitable dated long exists. It cannot replace a
-  short leg because the proxy is long-only. A compulsory roll need not wait
-  for the ordinary low-PRD closing threshold or qualify as a new high-PRD entry.
+  short leg because the proxy is long-only. A compulsory roll need not satisfy
+  the ordinary closing-profit target or qualify as a new high-PRD entry.
 - Reserve old and replacement orders jointly. Close-first temporarily changes
   net exposure; replace-first temporarily increases gross futures notional and
   margin. Choose the sequence whose possible partial fills fit available
@@ -470,7 +504,13 @@ roll unless the joint alternative has a documented advantage.
 
 ### No-roll exit escalation
 
-Owner-confirmed: when a pair must be retired and no permissible roll is found,
+The following is the previously agreed PRD-based escalation, retained as design
+history. With price-based ordinary exits, translate relaxation into decreasing
+required net profit/increasing the acceptable exit price spread; determine its
+schedule and final action alongside the funded-settlement policy. Do not apply
+the old APR schedule as a guarantee of price-based profit.
+
+Previously owner-confirmed: when a pair must be retired and no permissible roll is found,
 begin closing at the ordinary low PRD L and progressively **increase** the
 allowed closing PRD. With the original orientation `D = APR(short)-APR(long)`,
 the close condition is `D <= L_exit`; raising L_exit makes it less restrictive.
@@ -609,11 +649,16 @@ F_A* = S * (1 + tau_A * (a_B - D*))
 F_B* = S * (1 + tau_B * (a_A + D*))
 ```
 
-Open with buy A / sell B at H; close with sell A / buy B at L. Round every
+Use these PRD boundaries for opening buy A / sell B at H. The old closing-at-L
+rule is superseded: for ordinary closing, let R be the maximum exit price
+spread allowed by actual entry prices, quantity, costs and the net-profit
+target. Require X_B-X_A <= R. After selling A at X_A, the B buy limit is at
+most X_A+R; after buying B at X_B, the A sell limit is at least X_B-R. Use
+each actually executed partial tranche and preserve total costs once. Round every
 buy limit down and every sell limit up to the historical tick to preserve the
 desired inequality. Reject nonpositive prices and unsupported native sizes.
 
-After the first fill of a tranche, freeze its actual execution APR and the
+After the first fill of an opening tranche, freeze its actual execution APR and the
 tranche's original target. If A filled, counterpart target is a_B*=a_A_fill+D*;
 if B filled, a_A*=a_B_fill-D*. Recompute the remaining leg's dollar limit using
 current causal S and its decreasing tau. Do not keep referencing an unexecuted
@@ -1016,17 +1061,19 @@ separately labeled 100% BTC comparison. The exposure band changes that benchmark
 | D1 | Exposure | Proxy/direct holdings count alongside signed futures; current-NAV delta definition proposed |
 | D2 | Leverage | Exclude paid proxy; use gross futures notional / NAV; choose cap, venue/payoff and separate margin/cash model |
 | D3 | Startup/restart | Cash-only first POC; acquire lowest-APR longs below minimum and suppress short openings; arbitrary allowed-product holdings/orders before integration; baseline outside ladder proposed |
-| D4 | Pair direction/maturity | APR determines sides; no near/far restriction; retire around three months and target exit before 60 days remaining; no new openings in retiring pairs; calendar-month interpretation and ratio-only early rolls remain proposed |
+| D4 | Pair direction/maturity | APR determines sides; no near/far restriction; no new openings in retiring pairs; earlier three-month retirement/before-60-day target now needs reconciliation with funded settlement; calendar-month interpretation and ratio-only early rolls remain proposed |
 | D5 | Asynchrony | Shorts may lag within exposure capacity; long-first at floor and safe either-leg-first inside band proposed |
 | D6 | Ladder | Per-pair confirmed; open positions raise levels, closes restore them; derive occupancy from current-leg executed APR differences in remaining per-pair lots; no separate transfer credit; contiguous-rung reconstruction is the declared research policy |
 | D7 | Latency/sizing | Two equal configurable delays; quantity derives from exposure headroom, leverage/funding and reservations; no arbitrary child cap or selected numerical age filter; broad near-market posting required |
 | D8 | Catch-up PRD | Executed-leg APR anchor proposed; common-time diagnostic separate; no silent relaxation |
-| D9 | Rolling/recovery | Lowest-APR long / highest-APR short preserving counterpart ratio where possible; target before 60 days; no-roll exits raise closing PRD over time from L; slope/step, cap, buffer and final missed-deadline action remain to choose |
+| D9 | Rolling/recovery | Lowest-APR long / highest-APR short preserving counterpart ratio where possible; translate earlier no-roll PRD relaxation into price/profit targets; slope/step, cap, buffer and retirement-versus-settlement fallback remain to choose |
 | D10 | Proxy | e/(1-e), any eligible partner, synthetic 24/7 near-spot execution, optional annual margin-liquidity surcharge confirmed; numerical costs/offset model to choose |
 | D11 | Research sequence | Direct raw-data analysis before integration; raw preflight, full-catalog maturity history and first chronological unit execution calibration completed; capital-constrained strategy replay pending |
 | D12 | Price drift | No active reduction solely for price-driven excess above maximum; stop new longs; expiry/funding actions remain separate |
 | D13 | Calibration | 2%/1% are examples; latest owner proposal is initial calibration with fill-driven ladders and exposure-dependent execution patience; estimate PRD/time/quantity surfaces and actual net P&L; periodic refitting is no longer the assumed first policy |
 | D14 | Updated PRD/netting | Each affected pair updates when rolls or new openings close a leg; immutable fills plus actual current-leg executed PRD confirmed; no completed-leg credit or phantom opposite positions |
+| D15 | Funded expiry completion | Regular linear futures plus expiry spot trades; allocate cash/underlying chronologically, including funded earlier receipts; price-gap gain is distinct from APR difference; actual margin/settlement timing remains explicit |
+| D16 | Price-based exits and lifecycle | Ordinary exits use actual price-spread profit, superseding PRD-only exits; calibrate net-profit targets and reconcile funded settlement permission with the earlier before-60-day retirement target |
 
 "Ownership, accounting and execution rules" means concrete mechanics:
 
@@ -1054,8 +1101,8 @@ engineering proposals and need to be visible before coding.
 | Shared actual contracts | Net opposing actual quantities and transfer affected pair allocations; FIFO proposed | User permits openings that close existing legs; choice of old lot changes remaining PRDs, cost attribution and ladder state |
 | Price anchor and feed health | Retain executed APR; refresh causal index/time; numerical age cutoff optional and unselected; record sparse trade age separately from outage | An old resting order or old print is not automatically invalid; bad/missing data must not create assumed current prices |
 | Posting proximity | Broad passive price-distance band, with optional wider removal band | Bounds live orders but can miss jumps during latency; compare against always-posted reference, not a guarantee of all fills |
-| Retirement fallback | Start around three months; target before 60 days; optional 65-day working target; persist exit-relaxation clock | Schedule, cap and final no-fill response remain choices; the 60-day target itself is now settled |
-| Funding and proxy | Native inverse payoff/collateral adapter for native claims; explicit cash reserve, fees and proxy liquidity cost/offset assumptions | A gross leverage cap does not specify when collateral must be funded or proxy sold |
+| Retirement fallback | Earlier target: start around three months and finish before 60 days; now distinguish an early-exit objective from permitted funded settlement | A mandatory early exit and a guaranteed available hold-to-expiry fallback cannot both be assumed; escalation must also translate to the new price-based exit rule |
+| Funding and proxy | Regular linear model for the current completion argument; native inverse adapter for inverse claims; dated backing, actual margin cash, proxy decay and liquidity costs | A gross leverage cap does not specify when cash/underlying becomes available; the same receipts cannot back multiple commitments |
 | Recovery without pair history | Import actual positions/orders, infer feasible labeled allocations and ladder seed without inventing past profits | Required before application integration; cash-start research may precede this adapter |
 | Calibration and execution horizon | Prefer startup-calibrated base/ladders, PRD/time/quantity completion distributions and exposure-dependent patience; native-P&L check for ordinary exits; reinitialization unselected | Inventory ladders do not identify a changed market center; short catch-up near maximum can be more urgent even when new longs can wait |
 

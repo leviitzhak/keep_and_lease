@@ -1,6 +1,17 @@
 # BTC PRD: execution horizons and calibration choices
 
-## Current direction — 15 October 2026
+## Current clarification — 18 October 2026
+
+The owner now specifies funded expiry spot purchases/sales for regular linear
+futures and ordinary exits based on the actual price-spread change. See
+[funded expiry completion](BTC_PRD_FUNDED_EXPIRY.md) for the derived cash flows,
+chronological backing, margin liquidity and retirement-policy interaction.
+The lot-relative closing-PRD proposals below are historical alternatives;
+they are superseded as the standalone ordinary exit rule. PRD/time/quantity
+entry calibration and per-pair fill-driven ladders remain relevant. No new
+implementation, calibration run or funded profitability finding is claimed.
+
+## Previous direction — 15 October 2026
 
 The owner has put the competing-agent exchange simulation aside and asks to
 evaluate PRD jointly with execution time, ordinary exits relative to executed

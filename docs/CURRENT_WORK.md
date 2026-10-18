@@ -1,5 +1,18 @@
 # Current work
 
+## BTC PRD funded expiry completion — 2026-10-18
+
+On `docs/btc-prd-exposure-band-plan`, record the owner's regular-linear futures
+completion route: funded spot purchases at long expiry and inventory-backed
+sales at short expiry. [The accounting note](BTC_PRD_FUNDED_EXPIRY.md) derives
+the locked nominal price difference, both expiry orders, actual price-spread
+early exits and chronological cash/underlying reservations. Separate this
+economic completion plan from real variation-margin liquidity and proxy decay.
+Clarify that positive APR difference alone does not ensure positive net carry.
+The earlier before-60-day objective must be reconciled with permission to
+complete at expiry. This is documentation/preparation only; no new replay,
+application implementation or deployment is claimed.
+
 ## BTC PRD execution horizons and initial ladders — 2026-10-15
 
 The owner has set aside exchange-agent simulation and proposes PRD/time

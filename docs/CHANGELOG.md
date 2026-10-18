@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-10-18 — Funded expiry completion and price-based exits
+
+- Record spot purchases at long expiry and inventory-backed spot sales at short
+  expiry for regular linear futures; derive both expiry orders and distinguish
+  secured nominal price difference from annualized PRD and net benchmark return.
+- Replace PRD-only ordinary exit proposals with executed price-spread profit;
+  retain PRD for entry calibration and per-pair ladders. Explain when early
+  closing realizes part, more than all, or a loss relative to the initial gap.
+- Specify chronological backing without duplicate claims, downstream close/roll
+  dependencies, proxy decay and separate actual margin/settlement cash flows.
+  Flag the interaction with the earlier before-60-day retirement target.
+- Update the research TODO and decision register. This is accounting/design
+  preparation; no strategy implementation, new backtest or deployment.
+
 ## 2026-10-15 — Execution horizons and initial calibration reconsideration
 
 - Defer the competing-agent exchange simulation at the owner's request.

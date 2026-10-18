@@ -14,6 +14,7 @@ Start with [PROJECT_STATE.md](PROJECT_STATE.md).
 - [Scoring](SCORING.md) — contract ranking formulas.
 - [Parameters](PARAMETERS.md) — configuration reference.
 - [BTC PRD exposure-band plan](BTC_PRD_EXPOSURE_BAND_PLAN.md) — proposed multi-pair opening/closing strategy, exposure/leverage accounting and decisions required before implementation.
+- [BTC PRD funded expiry completion](BTC_PRD_FUNDED_EXPIRY.md) — regular-linear expiry spot trades, price-gap profit, chronological backing, margin liquidity and interaction with retirement targets.
 - [BTC PRD raw-data preflight](BTC_PRD_BAND_DATA_PREFLIGHT.md) — verified input coverage, maturity eligibility and a preliminary delayed strict-through quote screen; not a portfolio backtest.
 - [BTC PRD execution calibration](BTC_PRD_EXECUTION_CALIBRATION.md) — first chronological threshold grid, strict-through unit experiments, execution audit and current-leg ladder tests; not funded portfolio optimization.
 - [BTC PRD extended calibration](BTC_PRD_EXTENDED_CALIBRATION.md) — proxy cost reconciliation, separate realized/unrealized results, fee rebates, 1 ms comparisons and longer-history method.

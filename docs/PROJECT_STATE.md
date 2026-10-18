@@ -1,6 +1,6 @@
 # Keep & Lease — Project State
 
-_Last updated: 2026-10-15 (PRD execution horizons and startup-calibrated ladders)_
+_Last updated: 2026-10-18 (funded PRD expiry completion and price-based exits)_
 
 ## Purpose
 
@@ -9,7 +9,7 @@ Build an interactive research and backtesting application for strategies that al
 ## Current scope
 
 - **Planned, not implemented:** BTC PRD pair strategy with configurable long
-  exposure band, maximum gross futures leverage, high/low opening/closing PRD,
+  exposure band, maximum gross futures leverage, opening PRD and price-based exits,
   lagging shorts, reversible opening ladder, pair-aware rolls and proxy long leg.
   Cash-start raw-data research precedes integration; arbitrary-state recovery
   is required before application acceptance. See
@@ -30,7 +30,8 @@ Build an interactive research and backtesting application for strategies that al
   A concrete calibration protocol and material unresolved policies are recorded
   in the internal implementation plan.
   Further confirmed rules: per-pair ladders; no new openings while retiring;
-  completion target before 60 days to maturity; updated PRDs and occupancy
+  earlier completion target before 60 days to maturity (now to reconcile with
+  funded expiry completion); updated PRDs and occupancy
   across rolls/netting openings; headroom-derived size and broad near-market
   posting. Latest owner rule uses actual current-leg executed APR differences
   and remaining fill records for per-pair ladders; cumulative roll credit is
@@ -55,6 +56,14 @@ Build an interactive research and backtesting application for strategies that al
   inventory adaptation from regime tracking and lower PRD from native profit.
   Exchange-agent simulation is deferred; periodic refitting is retained as an
   optional later comparison. No new replay or simulator has been implemented.
+  The 18 October clarification adds funded expiry spot purchases/sales for
+  regular linear futures, chronological cash/underlying backing and ordinary
+  exits based on executed price-spread profit. The secured nominal completion
+  gain is the price difference, not the APR gap. Separate variation-margin
+  liquidity, actual settlement times and proxy decay; no double-counted backing.
+  [Funded expiry completion](BTC_PRD_FUNDED_EXPIRY.md) records the derivation and
+  remaining retirement-policy choice. Existing inverse historical results do
+  not validate this regular-linear funded model.
 
 - Optional rolling worst-lease execution for amortized ranking is implemented
   on `agent/rolling-worst-lease-execution`: trailing observed price-pair bounds,

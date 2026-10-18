@@ -13,6 +13,24 @@ Specification and decision register:
 This is a new opt-in strategy; application strategy not implemented. The example
 30–60% exposure band and 2%/1% PRDs are not approved defaults.
 
+- [x] Record the 18 October funded-expiry clarification for regular linear
+  futures: spot at expiry reproduces effective executed purchase/sale prices;
+  completion gain is the price difference, not annualized PRD. Ordinary exits
+  target executed price-spread profit. See
+  [BTC_PRD_FUNDED_EXPIRY.md](BTC_PRD_FUNDED_EXPIRY.md).
+- [ ] Implement dated cash/underlying commitments with funded earlier long
+  receipts and covered earlier short receipts; preserve availability times,
+  proxy decay, no double pledging and downstream revalidation after partial
+  closes/rolls. Link to actual variation-margin/spot cash flows without posting
+  delivery-equivalent totals twice; preserve both views across restart.
+- [ ] Calibrate price-spread net-profit exits from real executed lots and a
+  completion-gain admission check; distinguish positive APR difference from
+  positive net carry. Reconcile the funded settlement route with the earlier
+  before-60-day target and translate exit escalation into price/profit terms.
+  Keep both expiry orders, insufficient proceeds and interim liquidity stresses
+  in the funded acceptance cases. Existing inverse unit results are not a
+  validation of this regular-linear completion model.
+
 - [x] Record the requested exposure band, maximum total-position leverage,
   high/low PRD opening/closing orders, optional opening-level increments,
   three-month / 25%-separation maturity filters, lagging short fills and
@@ -59,8 +77,9 @@ This is a new opt-in strategy; application strategy not implemented. The example
 - [ ] Resolve remaining research choices: baseline-ladder treatment,
   account/payoff and margin/cash model, actual leverage, exposure allocation,
   pending/unknown-PRD ladder reservations and import seeding,
-  posting band/feed-health policy, old-lot selection, and exit escalation
-  step/interval/cap/operational buffer/final no-fill response before 60 days.
+  posting band/feed-health policy, old-lot selection, and price-based exit
+  escalation step/interval/cap/operational buffer/final no-fill response.
+  Reconcile retirement deadlines with funded expiry completion as noted above.
   Keep proposed defaults distinct from owner requirements.
 - [x] Start raw-data execution calibration: 13 training-derived H/L candidates,
   338 independent unit proxy/future experiments, chronological validation/test
@@ -100,11 +119,13 @@ This is a new opt-in strategy; application strategy not implemented. The example
 - [ ] Calibrate initial H0, rung amounts/levels and closing gaps from preceding
   data; test exposure-dependent waiting with the existing baseline acquisition
   rule below minimum. Preserve catch-up targets and restart state; initialize
-  new pairs causally. Decide common versus lot-relative closing L, waiting-
-  deadline actions and any later reinitialization trigger. Automatic periodic
+  new pairs causally. Calibrate price-spread profit exits (superseding the
+  common-versus-lot-relative closing-L choice), waiting-deadline actions and
+  any later reinitialization trigger. Automatic periodic
   refitting is deferred as an alternative, not required for the first POC.
-- [ ] Complete calibration of H=L+w on prior data and held-out
-  lifecycle runs; 2%/1% remain examples. Reconcile actual unequal-maturity P&L,
+- [ ] Complete entry-PRD and price-spread exit calibration on prior data and
+  held-out lifecycle runs; the former H=L+w grid remains historical comparison,
+  and 2%/1% remain examples. Reconcile actual unequal-maturity P&L,
   costs, delayed fills and unfinished positions. Compare explicitly labeled
   maturity-ceiling sensitivities; retain 25% as the original reference and
   examine 30% as the recommended first research setting.
