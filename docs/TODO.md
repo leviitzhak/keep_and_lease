@@ -9,9 +9,19 @@ remaining items below are not implicitly completed by that batch.
 ## BTC PRD strategy with an exposure band — calibration started (2026-10-13)
 
 Specification and decision register:
-[BTC_PRD_EXPOSURE_BAND_PLAN.md](BTC_PRD_EXPOSURE_BAND_PLAN.md).
+[BTC_PRD_FUNDED_STRATEGY.md](BTC_PRD_FUNDED_STRATEGY.md), the single current
+strategy description. The earlier exposure-band plan is historical detail.
 This is a new opt-in strategy; application strategy not implemented. The example
 30–60% exposure band and 2%/1% PRDs are not approved defaults.
+
+- [x] Consolidate the complete funded strategy, including cash/underlying
+  schedules, exposure-dependent waiting, per-pair ladders, execution, price-based
+  exits, rolling after actual netting, restart and reporting. Explain the $250
+  example and settlement versus entry-price conversion. Funded expiry completion
+  is permitted; the before-60-day target is an early review objective.
+- [ ] Freeze the numerical research configuration in section 18 of the
+  consolidated specification; waiting-time examples and optional unequal-size
+  unit targeting are not selected production policies.
 
 - [x] Record the 18 October funded-expiry clarification for regular linear
   futures: spot at expiry reproduces effective executed purchase/sale prices;
@@ -25,8 +35,8 @@ This is a new opt-in strategy; application strategy not implemented. The example
   delivery-equivalent totals twice; preserve both views across restart.
 - [ ] Calibrate price-spread net-profit exits from real executed lots and a
   completion-gain admission check; distinguish positive APR difference from
-  positive net carry. Reconcile the funded settlement route with the earlier
-  before-60-day target and translate exit escalation into price/profit terms.
+  positive net carry. Implement permitted funded settlement after the earlier
+  before-60-day review objective and translate exit escalation into price/profit terms.
   Keep both expiry orders, insufficient proceeds and interim liquidity stresses
   in the funded acceptance cases. Existing inverse unit results are not a
   validation of this regular-linear completion model.
@@ -79,7 +89,7 @@ This is a new opt-in strategy; application strategy not implemented. The example
   pending/unknown-PRD ladder reservations and import seeding,
   posting band/feed-health policy, old-lot selection, and price-based exit
   escalation step/interval/cap/operational buffer/final no-fill response.
-  Reconcile retirement deadlines with funded expiry completion as noted above.
+  Preserve permitted funded expiry completion after retirement review.
   Keep proposed defaults distinct from owner requirements.
 - [x] Start raw-data execution calibration: 13 training-derived H/L candidates,
   338 independent unit proxy/future experiments, chronological validation/test

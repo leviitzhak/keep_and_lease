@@ -1,6 +1,11 @@
 # BTC PRD strategy with an exposure band
 
-Updated: 2026-10-18. Status: **revised after owner clarification; application strategy not implemented**.
+**Current consolidated specification:** [BTC_PRD_FUNDED_STRATEGY.md](BTC_PRD_FUNDED_STRATEGY.md).
+Use that single document for current rules, including waiting policies, rolls
+checked after netting, and permitted funded expiry completion. The before-60-day
+target is now a review objective, not a mandatory liquidation deadline.
+
+Updated: 2026-10-18. Status: **historical design/detail record; superseded where the consolidated specification differs; application strategy not implemented**.
 
 Prepared against GitHub master `80be0fc4c30904a0f4dfb16e097de2a001424e64`
 on `docs/btc-prd-exposure-band-plan`. This is a new opt-in strategy, not a

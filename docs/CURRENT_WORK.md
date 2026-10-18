@@ -1,5 +1,18 @@
 # Current work
 
+## Consolidated funded BTC PRD specification — 2026-10-18
+
+[BTC_PRD_FUNDED_STRATEGY.md](BTC_PRD_FUNDED_STRATEGY.md) is the single current
+strategy description. It covers startup/import, dated backing, exposure and
+leverage, calibrated waiting horizons, openings, ladders, price-based exits,
+rolls evaluated after netting, and funded expiry completion. The latest owner
+request makes the before-60-day target an early review objective rather than
+an unconditional exit. Numerical waiting examples and optional unit-targeted
+unequal sizing remain clearly labeled. The cash example, waiting interpolation,
+unit-targeted quantities and cash-ledger reconciliation were checked with
+decimal arithmetic. A downloadable PDF was rendered and visually inspected.
+This remains preparation: no new funded engine, backtest or deployment.
+
 ## BTC PRD funded expiry completion — 2026-10-18
 
 On `docs/btc-prd-exposure-band-plan`, record the owner's regular-linear futures

@@ -1,5 +1,11 @@
 # BTC PRD: funded completion through expiry
 
+**Current complete strategy:** [BTC_PRD_FUNDED_STRATEGY.md](BTC_PRD_FUNDED_STRATEGY.md).
+This note retains the derivation. The latest owner request permits funded
+hold-to-expiry completion, with 60 days serving as an earlier review objective.
+The consolidated document also explains entry versus settlement conversion
+prices and rolls as opening transformations after actual position netting.
+
 Date: 2026-10-18. Status: design clarification; no strategy implementation or
 new backtest. This note concerns regular, cash-settled **linear** futures.
 The historical inverse-contract unit experiments retain their original scope.
@@ -146,13 +152,12 @@ sale/rebuy for margin must reduce and subsequently restore real available backin
 
 ## Relationship to retirement and remaining preparation
 
-The earlier owner target was to remove positions strictly before 60 days to
-maturity. Funded completion is now requested as the economic backing route.
-If the old rule remains a mandatory forced exit, holding to expiry cannot be
-claimed as an executable fallback. A precise lifecycle policy must distinguish
-an early roll/close objective from permission to retain fully funded positions
-through settlement. Record this choice explicitly before the next funded replay;
-do not silently report a mandatory-retirement test as a hold-to-expiry strategy.
+The latest owner request includes holding until expiry when early closing or
+rolling has not completed. Accordingly the earlier before-60-day target is a
+planning/review objective. Fully funded settlement is permitted; funding failure
+still requires recovery. Stop new openings in retiring contracts. Preserve this
+explicit policy in the next funded replay rather than silently retaining the
+older mandatory-liquidation interpretation.
 
 Minimum acceptance cases for the later implementation:
 

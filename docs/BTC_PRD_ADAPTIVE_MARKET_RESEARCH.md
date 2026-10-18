@@ -1,5 +1,10 @@
 # BTC PRD: execution horizons and calibration choices
 
+The current complete rules are consolidated in
+[BTC_PRD_FUNDED_STRATEGY.md](BTC_PRD_FUNDED_STRATEGY.md), including separate
+new-long/catch-up/close horizons and funded expiry completion. This file retains
+the research alternatives and their historical decision context.
+
 ## Current clarification — 18 October 2026
 
 The owner now specifies funded expiry spot purchases/sales for regular linear

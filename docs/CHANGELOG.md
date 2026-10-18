@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-10-18 — Single funded strategy specification
+
+- Consolidate the complete strategy into `BTC_PRD_FUNDED_STRATEGY.md`: startup,
+  initial calibration, band/leverage, dated backing and actual margin cash,
+  exposure-dependent waiting, execution, ladders, price-based exits and reporting.
+- Treat rolls as opening transformations checked against the resulting actual
+  portfolio after netting; preserve upstream/downstream funding dependencies.
+- Incorporate the latest hold-until-expiry request: the earlier before-60-day
+  target is a planning/review objective with fully funded settlement permitted.
+- Explain the $250 lifetime cash deficit, entry versus settlement prices, and
+  the optional unequal-size alternative for targeting extra underlying units.
+  Check arithmetic and produce a visually reviewed downloadable PDF. Numerical
+  illustrations are not live defaults; no implementation, replay or deployment.
+
 ## 2026-10-18 — Funded expiry completion and price-based exits
 
 - Record spot purchases at long expiry and inventory-backed spot sales at short
