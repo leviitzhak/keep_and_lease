@@ -4,6 +4,9 @@
 Use that single document for current rules, including waiting policies, rolls
 checked after netting, and permitted funded expiry completion. The before-60-day
 target is now a review objective, not a mandatory liquidation deadline.
+The 19 October revision proposes return-gated entries without the old
+three-month/retirement entry ban, side-specific funded price-slope limits and
+matched-only ladders; the rules below are historical where they differ.
 
 Updated: 2026-10-18. Status: **historical design/detail record; superseded where the consolidated specification differs; application strategy not implemented**.
 

@@ -14,14 +14,33 @@ strategy description. The earlier exposure-band plan is historical detail.
 This is a new opt-in strategy; application strategy not implemented. The example
 30–60% exposure band and 2%/1% PRDs are not approved defaults.
 
+- [x] Replace the long specification with a concise execution flow (19 October):
+  Treasury-matched backing, proposed unannualized net-return gate, direction-aware
+  price-slope quotes, separate pair/conditional wait clocks and completed-match
+  ladder occupancy. Keep partial inventory in funding/risk reservations.
+- [x] Analyze the single-leg alternative separately in
+  [BTC_FUNDED_SINGLE_LEG_STUDY.md](BTC_FUNDED_SINGLE_LEG_STUDY.md), including a
+  controlled comparison and the need for independent economic valuation/ladder
+  semantics. No new funded replay or performance finding.
+- [ ] Compare the three-month floor with net absolute-return admission; restore
+  near-expiry observations previously excluded. Do not recreate the floor via
+  a fixed retirement-entry ban. Retain executable settlement/latency constraints.
+- [ ] Jointly calibrate d_long/d_short ladders, rung sizes, W_pair and conditional
+  catch-up clocks to net outcomes, exposure occupancy and feasible utilization.
+  Validate quote signs for both expiry orders and Treasury discounting. A lone
+  long does not occupy a completed rung; preserve its resource reservations.
+- [ ] Compare paired and single-leg execution on one funded engine, identical
+  initial resources and a shared economic gate; isolate scheduling first with
+  incremental ladders disabled, then compare separately defined ladder policies.
+
 - [x] Consolidate the complete funded strategy, including cash/underlying
   schedules, exposure-dependent waiting, per-pair ladders, execution, price-based
   exits, rolling after actual netting, restart and reporting. Explain the $250
   example and settlement versus entry-price conversion. Funded expiry completion
   is permitted; the before-60-day target is an early review objective.
-- [ ] Freeze the numerical research configuration in section 18 of the
-  consolidated specification; waiting-time examples and optional unequal-size
-  unit targeting are not selected production policies.
+- [ ] Freeze the numerical research configuration listed at the end of the
+  concise algorithm; return floor, d units/normalization, waiting and margin
+  choices remain research parameters, not selected production defaults.
 
 - [x] Record the 18 October funded-expiry clarification for regular linear
   futures: spot at expiry reproduces effective executed purchase/sale prices;
@@ -122,30 +141,30 @@ This is a new opt-in strategy; application strategy not implemented. The example
   estimate PRD jointly with matching time/quantity, distinguish new-long patience
   from short catch-up urgency, and recommend initial calibration plus remaining-
   inventory ladders as the first experiment. Numerical policies remain proposed.
-- [ ] Estimate opening PRD/time/quantity completion distributions from common
+- [ ] Estimate funded d/time/quantity completion distributions from common
   initial states and causal strict-through trials; retain nonfills, partials,
   first-fill/catch-up durations, censored boundaries and cancellation outcomes.
   Estimate closing time/net P&L conditional on actual executed entry lots.
-- [ ] Calibrate initial H0, rung amounts/levels and closing gaps from preceding
+- [ ] Calibrate initial side-specific d bases, rung amounts and profit exits from preceding
   data; test exposure-dependent waiting with the existing baseline acquisition
   rule below minimum. Preserve catch-up targets and restart state; initialize
   new pairs causally. Calibrate price-spread profit exits (superseding the
   common-versus-lot-relative closing-L choice), waiting-deadline actions and
   any later reinitialization trigger. Automatic periodic
   refitting is deferred as an alternative, not required for the first POC.
-- [ ] Complete entry-PRD and price-spread exit calibration on prior data and
+- [ ] Complete funded entry-slope and package-profit exit calibration on prior data and
   held-out lifecycle runs; the former H=L+w grid remains historical comparison,
   and 2%/1% remain examples. Reconcile actual unequal-maturity P&L,
   costs, delayed fills and unfinished positions. Compare explicitly labeled
-  maturity-ceiling sensitivities; retain 25% as the original reference and
-  examine 30% as the recommended first research setting.
+  maturity-separation sensitivities, including 30% and one-third, separately
+  from replacing the remaining-maturity floor with the net-return gate.
 - [ ] Run the direct raw-data, capital-constrained research POC before
   application integration: strict-through future fills, synthetic near-spot
   proxy, cash startup, delayed fill knowledge, global reservations, reversible
   ladder, pair-aware rolls, explicit funding/costs and full P&L reconciliation.
   Compare delay, participation and proxy surcharge/margin-offset assumptions.
-  Obtain raw windows containing 30%-eligible dated pairs and retirement/rolls;
-  both current local dated-pair samples fail even the 30% rule. Evaluate the
+  Include near-expiry observations and funded settlement/rolls, and distinguish
+  separation-filter scenarios from total-return eligibility. Evaluate the
   startup-calibrated ladder continuously without resetting inventory each cycle.
   The July–September execution-test slice is now examined, not untouched.
 - [ ] **Deferred by owner, 15 October:** prototype a shared matching-engine market with a small mixed population,
@@ -163,8 +182,10 @@ This is a new opt-in strategy; application strategy not implemented. The example
 - [ ] Implement concurrent pair inventory, bounded lagging shorts, closing/roll
   reservations, strict-through fills with shared tape-volume budgets, actual
   delayed fill knowledge, tranche catch-up targets and reversible per-pair
-  ladders. Add atomic pair transfer/netting updates with current-leg executed PRD,
-  no retired-pair reopening, capacity-based sizing and near-market posting.
+  ladders. Add atomic pair transfer/netting updates with current-leg executed
+  funded d and preserved valuation bases, capacity sizing and near-market posting.
+  Operationally retired contracts stay closed to entries; the new return-gated
+  variant has no automatic three-month retirement ban.
 - [ ] Define and validate arbitrary-position/order import and pause/restart:
   reconcile actual account state, restore pair/rung lineage where available,
   explicitly classify missing historical metadata and repair infeasible states.

@@ -13,7 +13,8 @@ Start with [PROJECT_STATE.md](PROJECT_STATE.md).
 - [Strategy](STRATEGY.md) — portfolio construction and trading rules.
 - [Scoring](SCORING.md) — contract ranking formulas.
 - [Parameters](PARAMETERS.md) — configuration reference.
-- [Funded BTC PRD strategy](BTC_PRD_FUNDED_STRATEGY.md) — single current step-by-step specification: backing, exposure-dependent waiting, execution, ladders, price-based exits, rolls and permitted expiry completion.
+- [Funded futures execution algorithm](BTC_PRD_FUNDED_STRATEGY.md) — concise flowchart and eight steps: Treasury backing, return-based admission, side-specific limits, separate waiting clocks, matched ladders and expiry completion.
+- [Funded single-leg study](BTC_FUNDED_SINGLE_LEG_STUDY.md) — separate analytical alternative: successive individual longs/shorts, global funding, economic valuation and controlled comparison with pairs.
 - [BTC PRD exposure-band plan](BTC_PRD_EXPOSURE_BAND_PLAN.md) — historical design detail and prior decisions; the consolidated funded strategy governs current behavior.
 - [BTC PRD funded expiry completion](BTC_PRD_FUNDED_EXPIRY.md) — regular-linear expiry spot trades, price-gap profit, chronological backing, margin liquidity and interaction with retirement targets.
 - [BTC PRD raw-data preflight](BTC_PRD_BAND_DATA_PREFLIGHT.md) — verified input coverage, maturity eligibility and a preliminary delayed strict-through quote screen; not a portfolio backtest.

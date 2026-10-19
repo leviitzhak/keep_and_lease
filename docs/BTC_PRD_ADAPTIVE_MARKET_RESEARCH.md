@@ -4,6 +4,9 @@ The current complete rules are consolidated in
 [BTC_PRD_FUNDED_STRATEGY.md](BTC_PRD_FUNDED_STRATEGY.md), including separate
 new-long/catch-up/close horizons and funded expiry completion. This file retains
 the research alternatives and their historical decision context.
+The 19 October algorithm now distinguishes W_pair from W_short_given_long,
+uses proposed funded price slopes instead of APR gaps for entry, and separates
+the [single-leg alternative](BTC_FUNDED_SINGLE_LEG_STUDY.md) from pair scheduling.
 
 ## Current clarification — 18 October 2026
 

@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-10-19 — Execution flow and separate single-leg study
+
+- Condense the funded specification to a four-page algorithm with a flowchart
+  and eight steps. Add explicit matched-maturity Treasury backing.
+- Investigate net unannualized return in place of a maturity floor, raw slope
+  units/direction invariance and Treasury-adjusted side limits for both expiry
+  orders. Keep actual variation funding separate from the planning PV screen.
+- Separate initial pair waiting from conditional catch-up; unmatched longs
+  reserve resources but fill no completed ladder quantity. Calibrate both side
+  ladders jointly with exposure occupancy and useful capital utilization.
+- Author a three-page single-leg alternative study, defining valuation needs,
+  ladder differences and controlled comparisons. Validate arithmetic and both
+  rendered documents; no new funded backtest, implementation or deployment.
+
 ## 2026-10-18 — Single funded strategy specification
 
 - Consolidate the complete strategy into `BTC_PRD_FUNDED_STRATEGY.md`: startup,

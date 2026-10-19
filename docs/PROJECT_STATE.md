@@ -1,6 +1,6 @@
 # Keep & Lease — Project State
 
-_Last updated: 2026-10-18 (consolidated funded PRD strategy and expiry fallback)_
+_Last updated: 2026-10-19 (concise funded algorithm and single-leg study)_
 
 ## Purpose
 
@@ -8,64 +8,32 @@ Build an interactive research and backtesting application for strategies that al
 
 ## Current scope
 
-- **Planned, not implemented:** BTC PRD pair strategy with configurable long
-  exposure band, maximum gross futures leverage, opening PRD and price-based exits,
-  lagging shorts, reversible opening ladder, pair-aware rolls and proxy long leg.
-  Cash-start raw-data research precedes integration; arbitrary-state recovery
-  is required before application acceptance. See
-  [BTC_PRD_FUNDED_STRATEGY.md](BTC_PRD_FUNDED_STRATEGY.md) for the complete
-  current specification, required accounting work and remaining numerical choices.
-  Existing runtime/default strategies remain unchanged. Direct raw-input
-  preflight and a hypothetical delayed strict-through quote screen are recorded
-  in [BTC_PRD_BAND_DATA_PREFLIGHT.md](BTC_PRD_BAND_DATA_PREFLIGHT.md); they are not
-  a capital-constrained portfolio replay. The completed full archive's 540-contract
-  metadata yields only five 25%-eligible windows (about 618 hours); daily minima
-  and coverage caveats are in [BTC_MATURITY_SEPARATION_HISTORY.md](BTC_MATURITY_SEPARATION_HISTORY.md).
-  Design now includes minimum-APR acquisition below the floor, no compulsory
-  price-drift rebalance, escalating no-roll exit PRD and qualifying roll ladder
-  occupancy. Both H/L location and gap require data calibration.
-  Owner now proposes considering 30% maturity separation; it admits pairs on
-  about 67–68% of recent daily samples and is recommended for first research,
-  with 25% and one-third comparisons. No parameter or strategy is deployed.
-  A concrete calibration protocol and material unresolved policies are recorded
-  in the internal implementation plan.
-  Further confirmed rules: per-pair ladders; no new openings while retiring;
-  earlier before-60-day target now serving as a planning/review objective with
-  funded expiry completion permitted; updated PRDs and occupancy
-  across rolls/netting openings; headroom-derived size and broad near-market
-  posting. Latest owner rule uses actual current-leg executed APR differences
-  and remaining fill records for per-pair ladders; cumulative roll credit is
-  removed. First calibration now includes 13 threshold candidates, 338 unit
-  execution experiments, full raw-tape fill audit and 16 deterministic tests.
-  See [BTC_PRD_EXECUTION_CALIBRATION.md](BTC_PRD_EXECUTION_CALIBRATION.md).
-  The October 14 extension adds separate completed-realized, unfinished-realized
-  and unrealized P&L, zero and negative futures fee sensitivities, and 1 ms delay
-  comparisons. The 416-case frozen-grid extension passes its independent audit;
-  all 208 overlapping earlier results are unchanged. Offline instructions and
-  benchmarks accompany [the extended report](BTC_PRD_EXTENDED_CALIBRATION.md).
-  Full eligible-history research now spans 42 contracts from March 2017 to
-  October 2026: 55.95 million ordinary observations, 3,256 scenarios and 1.17
-  million audited fills. All eight shards passed, with explicit missing-mark
-  fallback and separate unpaired proxy-interval attribution. Negative fixed
-  2%/1% unit results and incomplete cycles do not select a funded strategy.
-  This is not a funded strategy result: cash/margin/band allocation, native
-  account reconciliation and full rolling/restart replay remain to implement.
-  The 15 October proposal favors initial calibration and fill-driven ladders,
-  PRD/time/quantity execution distributions and exposure-dependent patience.
-  [Calibration choices](BTC_PRD_ADAPTIVE_MARKET_RESEARCH.md) distinguishes
-  inventory adaptation from regime tracking and lower PRD from native profit.
-  Exchange-agent simulation is deferred; periodic refitting is retained as an
-  optional later comparison. No new replay or simulator has been implemented.
-  The 18 October clarification adds funded expiry spot purchases/sales for
-  regular linear futures, chronological cash/underlying backing and ordinary
-  exits based on executed price-spread profit. The secured nominal completion
-  gain is the price difference, not the APR gap. Separate variation-margin
-  liquidity, actual settlement times and proxy decay; no double-counted backing.
-  [The consolidated specification](BTC_PRD_FUNDED_STRATEGY.md) includes
-  exposure-dependent waiting, rolls checked after netting, the cash/underlying
-  ledger and expiry fallback. Existing inverse historical results do not validate
-  this regular-linear funded model. Numerical horizons and optional unequal-size
-  unit targeting remain unselected; no new funded result is claimed.
+- **Planned, not implemented:** the [funded futures algorithm](BTC_PRD_FUNDED_STRATEGY.md)
+  is now a concise flowchart with eight execution steps. It holds matching
+  Treasury cash flows alongside futures obligations, updates the portfolio-wide
+  cash/underlying schedule on every event, and permits funded expiry completion.
+  The 19 October research revision proposes a net unannualized-return gate in
+  place of the three-month maturity floor, side-specific Treasury-adjusted price
+  slopes, distinct pair/conditional wait clocks, and completed-match-only ladders.
+  New longs are favored near the exposure floor and shorts near the ceiling;
+  sizing still obeys funding, gross futures leverage, margin and pending fills.
+  Rolls are checked after netting, including supported intermediate states.
+  [The single-leg study](BTC_FUNDED_SINGLE_LEG_STUDY.md) examines sequential
+  individual longs/shorts with the same funding engine and a controlled comparison.
+  It is analytical design, not new historical performance evidence. The PDFs
+  are four and three pages; formula and funding-order examples were checked.
+  Numerical thresholds, valuation/normalization, waiting and margin policies
+  remain to calibrate. Runtime strategies and deployment are unchanged.
+
+  Earlier research remains available: [maturity availability](BTC_MATURITY_SEPARATION_HISTORY.md),
+  [initial calibration](BTC_PRD_EXECUTION_CALIBRATION.md),
+  [extended results](BTC_PRD_EXTENDED_CALIBRATION.md), and
+  [offline testing](BTC_PRD_OFFLINE_TESTING.md). The full eligible-history unit
+  study used 42 contracts, 55.95 million ordinary observations, 3,256 scenarios
+  and 1.17 million audited fills. It did not implement this funded linear
+  portfolio, near-expiry admission policy, paired/single-leg comparison, or
+  full settlement/restart scheduler. Historical inverse results must retain
+  that scope. The competing-agent exchange simulation remains deferred.
 
 - Optional rolling worst-lease execution for amortized ranking is implemented
   on `agent/rolling-worst-lease-execution`: trailing observed price-pair bounds,

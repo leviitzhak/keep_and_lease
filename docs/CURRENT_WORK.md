@@ -1,5 +1,17 @@
 # Current work
 
+## Concise algorithm and single-leg alternative — 2026-10-19
+
+The current [funded algorithm](BTC_PRD_FUNDED_STRATEGY.md) is now an execution
+flow with eight detailed steps. It proposes replacing the maturity floor with
+a net unannualized-return gate; uses direction-aware, Treasury-adjusted price
+slopes; separates pair and conditional waiting; and fills ladder quantity only
+after matching. Rolls rebuild the global schedule after netting and require a
+valid execution sequence/bridge. [The separate single-leg study](BTC_FUNDED_SINGLE_LEG_STUDY.md)
+provides analytic findings and a controlled comparison plan, not new P&L.
+The PDFs are four and three pages. Quote algebra, return-floor examples and
+funding-order/bridge cases were checked. No strategy code or deployment changed.
+
 ## Consolidated funded BTC PRD specification — 2026-10-18
 
 [BTC_PRD_FUNDED_STRATEGY.md](BTC_PRD_FUNDED_STRATEGY.md) is the single current
