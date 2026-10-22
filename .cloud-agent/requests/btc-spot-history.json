@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "action": "download-binance-spot-missing-history",
+  "job_id": "btc-spot-20261022-binance-full",
+  "sequence": 1
+}
