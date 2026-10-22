@@ -1,0 +1,80 @@
+name: Download missing BTC spot history
+run-name: BTC spot history - ${{ github.event.head_commit.message }}
+on:
+  push:
+    branches: [agent/cloud-autonomous-access]
+    paths: [.cloud-agent/requests/btc-spot-history.json]
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: btc-spot-history
+  cancel-in-progress: false
+jobs:
+  prepare:
+    if: github.ref == 'refs/heads/agent/cloud-autonomous-access'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check source selection, missing-date planning and resume integrity
+        run: python -m unittest discover -s research/spot_history -p 'test_*.py' -v
+      - run: python -m pip install 'google-cloud-storage>=2.18,<4'
+      - uses: google-github-actions/auth@v2
+        with:
+          project_id: keep-and-lease
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com
+      - name: Freeze missing spot dates against existing futures and spot manifests
+        run: python -u research/spot_history/download_spot_history.py --mode plan
+  download:
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'google-cloud-storage>=2.18,<4'
+      - uses: google-github-actions/auth@v2
+        with:
+          project_id: keep-and-lease
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com
+      - name: Download and persist checksum-verified daily archives
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: python -u research/spot_history/download_spot_history.py --mode download --shard "$SHARD"
+  summarize:
+    needs: [prepare, download]
+    if: always() && needs.prepare.result == 'success' && !cancelled()
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'google-cloud-storage>=2.18,<4'
+      - uses: google-github-actions/auth@v2
+        with:
+          project_id: keep-and-lease
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: keep-lease-codex-operator@keep-and-lease.iam.gserviceaccount.com
+      - name: Save coverage, source gaps and resume status
+        run: python -u research/spot_history/download_spot_history.py --mode finish
