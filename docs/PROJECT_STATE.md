@@ -1,5 +1,10 @@
 # Keep & Lease — Project State
 
+## Post-decision value research — 25 October 2026
+
+Standalone implementation on `agent/btc-post-decision-value-v1`: signed linear/inverse commodity accounting, delayed observable/exchange replay, constrained candidate search and complete-outcome value learning. No application deployment or integration into existing strategy defaults. See [POST_DECISION_VALUE_V1.md](POST_DECISION_VALUE_V1.md) for conventions, commands, acceptance scope and research limitations. Historical pilot results are recorded separately under `docs/research/post_decision_value/`.
+
+
 _Last updated: 2026-09-24_
 
 ## Purpose

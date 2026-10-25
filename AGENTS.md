@@ -142,3 +142,7 @@ wait for the stable deployment workflow or repeat stable health/GUI checks unles
 the user explicitly requests stable verification. This exception applies to the
 stable target; the preview verification requirements above remain in effect.
 Existing automated stable deployment checks may still run without agent follow-up.
+
+## Research-only value-learning branch
+
+`agent/btc-post-decision-value-v1` is explicitly excluded from GCP deployment on push and guarded against manual deployment by its workflow. Its authorized workflow is local testing and bounded historical research, followed by a research push with `[skip ci]`. Do not deploy this branch. See `docs/POST_DECISION_VALUE_V1.md`.

@@ -1,0 +1,4 @@
+# Isolated research environment; does not alter application requirements.
+# CPU wheel: pip install torch==2.14.1 --index-url https://download.pytorch.org/whl/cpu
+torch==2.14.1
+numpy>=2.0,<3
