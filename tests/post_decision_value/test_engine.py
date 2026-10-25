@@ -102,3 +102,27 @@ class EngineTests(unittest.TestCase):
         e=self.make();x=e.observe();x.time=100
         self.assertAlmostEqual(features(x,e.goal,e.instruments)['global_'][1],900/86400000)
         x.time=200;self.assertAlmostEqual(features(x,e.goal,e.instruments)['global_'][1],800/86400000)
+    def test_failed_path_is_kept_and_emergency_does_not_erase_it(self):
+        e=self.make();e.hidden.ledger.balances['USD']=89999
+        e.observable.ledger.balances['USD']=89999
+        e._check()
+        actions,audit=CandidateGenerator().generate(e.observe(),e.goal,e.instruments)
+        self.assertEqual(actions,[Instruction('emergency',targets=())])
+        e.submit(actions[0]);e.advance(1000)
+        result=e.outcome();self.assertTrue(result['done']);self.assertTrue(result['failed'])
+        self.assertLess(result['utility'],-1.);self.assertTrue(result['failures'])
+    def test_target_transition_period_is_not_rejected(self):
+        e=self.make();e.goal.mode='target';e.goal.maintain_band=True;e.goal.target_deadline=500
+        self.assertTrue(admissible(e.observe(),Instruction(),e.goal,e.instruments)[0])
+        e.advance(600)
+        self.assertEqual(admissible(e.observe(),Instruction(),e.goal,e.instruments)[1],'target_band')
+    def test_seed_age_and_instrument_identity_are_preserved(self):
+        e=self.make();obs=e.observe();self.assertEqual(obs.market['F']['received'],0)
+        self.assertEqual(obs.time,1)
+        old=features(obs,e.goal,e.instruments)
+        ins=dict(reversed(list(e.instruments.items())))
+        self.assertEqual(old,features(obs,e.goal,ins))
+    def test_emergency_cannot_bypass_risk_admission(self):
+        e=self.make()
+        with self.assertRaises(ValueError):e.submit(Instruction('emergency',(Order('o','F',100.,100000),)))
+        self.assertFalse(e.hidden.orders)

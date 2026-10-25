@@ -145,6 +145,12 @@ def admissible(obs, action, goal, instruments, async_cap=.02):
     try:
         if action.kind not in ("wait", "create", "amend", "cancel", "emergency"):
             return False, "unsupported_instruction"
+        if action.kind in ("wait", "cancel", "emergency") and action.orders:
+            return False, "invalid_instruction_shape"
+        if action.kind == "wait" and action.targets:
+            return False, "invalid_instruction_shape"
+        if action.kind == "amend" and (not action.orders or any(o.identifier not in action.targets or o.identifier not in obs.uncertain for o in action.orders)):
+            return False, "unknown_amendment"
         if len({o.identifier for o in action.orders}) != len(action.orders):
             return False, "duplicate_order_id"
         for o in action.orders:
@@ -292,6 +298,8 @@ class Engine:
         return deepcopy(self.observable)
 
     def submit(self, action):
+        if action.kind == "emergency" and action.orders:
+            raise ValueError("Emergency may only cancel orders")
         ok, reason = admissible(self.observable, action, self.goal, self.instruments, self.async_cap)
         if not ok and action.kind != "emergency":
             raise ValueError(reason)

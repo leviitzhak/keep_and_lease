@@ -20,8 +20,9 @@ def features(obs, goal, instruments):
     """Only observable arguments; fixed economic scaling, no fitted future stats."""
     ref = goal.reference['BTC']
     hold = obs.ledger.holdings(instruments)
+    drop = sum(goal.drawdown.values()) / 2 if isinstance(goal.drawdown, dict) else goal.drawdown
     g = [obs.time/1e12, (goal.horizon-obs.time)/86400000, (goal.resolution-obs.time)/31557600000,
-         (obs.time-obs.last_decision)/60000, goal.drawdown, goal.failure_penalty, goal.composition_penalty,
+         (obs.time-obs.last_decision)/60000, drop, goal.failure_penalty, goal.composition_penalty,
          float(goal.mode=='target'), float(goal.mode=='btc'), goal.tolerance,
          (goal.target_deadline-obs.time)/86400000, float(goal.maintain_band),
          obs.ledger.credit_limit/ref, obs.ledger.debt_principal/ref, len(obs.pending)/6,
@@ -31,6 +32,14 @@ def features(obs, goal, instruments):
         g.extend([goal.initial[c]*goal.reference[c]/ref, hold[c]/scale, goal.floor(c)/scale,
                   obs.ledger.balances[c]/scale, obs.ledger.collateral[c]/scale,
                   obs.reserved[c]/scale, goal.target[c], goal.reference[c]/ref])
+    # Explicit past-only summaries: never difference prices across instruments.
+    returns=[];previous={};usd_volume=0.
+    for row in obs.history:
+        symbol=row["symbol"]
+        if symbol in previous:returns.append(math.log(row["price"]/previous[symbol]))
+        previous[symbol]=row["price"]
+        usd_volume+=row["amount"]*(row["price"] if instruments[symbol].source_payoff=="linear" else 1.)
+    g.extend([float(np.std(returns)) if returns else 0.,math.log1p(usd_volume)/20])
     items = []
     for symbol, ins in sorted(instruments.items()):
         market = obs.market.get(symbol)
@@ -91,7 +100,7 @@ class ValueNetwork(nn.Module):
         self.position=nn.Parameter(torch.zeros(64,width))
         layer=nn.TransformerEncoderLayer(width,heads,dim_feedforward=width*2,dropout=0.,batch_first=True,activation='gelu')
         self.encoder=nn.TransformerEncoder(layer,layers,enable_nested_tensor=False)
-        self.readout=nn.Sequential(nn.Linear(width*2+32,width),nn.Tanh(),nn.Linear(width,5))
+        self.readout=nn.Sequential(nn.Linear(width*2+34,width),nn.Tanh(),nn.Linear(width,5))
         self.register_buffer('label_mean',torch.zeros(3))
         self.register_buffer('label_scale',torch.ones(3))
         self.continuation='unfitted'

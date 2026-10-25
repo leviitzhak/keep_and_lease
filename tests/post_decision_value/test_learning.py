@@ -30,7 +30,7 @@ class LearningTests(unittest.TestCase):
         return records
     def test_price_dependent_dominant_action_predicted_and_realized(self):
         records=self.tiny();torch.manual_seed(5);model=ValueNetwork(width=32,layers=2,heads=4)
-        optimizer,rng,info=fit(model,records,updates=350,seed=3)
+        optimizer,rng,info=fit(model,records,updates=600,seed=3)
         pred=model.predict([r['features'] for r in records[:4]])
         real=np.array([r['outcome']['utility'] for r in records[:4]])
         self.assertEqual(int(np.argmax(real)),1);self.assertEqual(int(np.argmax(pred['objective'])),1)

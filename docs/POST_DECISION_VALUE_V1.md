@@ -63,7 +63,7 @@ receipts. These finite scenarios do not prove universal path safety. Reservation
 are restrictions, not deductions from holdings. Fees and floors are checked
 after every actual partial fill, not only after both legs finish.
 
-Each positive initial commodity has a 90% initial-quantity floor; this is not a
+Each positive initial commodity has a 90% initial-quantity floor by default; `Goal.drawdown` also accepts a BTC/USD dictionary for distinct allowances; this is not a
 high-water mark. Zero quantities require explicit absolute floors and positive
 normalizers; negative initial positions are excluded. Target composition uses
 fixed reference prices, a deadline, tolerances and optional band maintenance.
@@ -111,7 +111,7 @@ and penalized. There is no invented emergency market liquidity.
 
 `model.py`: shared instrument/order/obligation item encoder, stable identity
 features, masked item pooling, 64 received-history steps, two causal transformer
-layers of width 64 with four attention heads. Features use fixed economic scales;
+layers of width 64 with four attention heads. Explicit trailing volatility and native-to-USD volume summaries use received history only. Features use fixed economic scales;
 label normalization is fitted only on training outcomes. Price offsets are
 encoded relative to the received price so small posted-price differences are
 visible to the learner. The optional MLP history mode is available for ablation.

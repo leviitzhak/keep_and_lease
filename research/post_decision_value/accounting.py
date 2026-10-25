@@ -211,7 +211,7 @@ class Ledger:
     def funding_headroom(self, instruments, spot, resolution, stress=(.5, 1., 2.), bridge_bps=10.):
         """Finite scenario test of interim VM, margin and dated bridges.
 
-        Run independent adverse settlement prices per expiry. Available spot is
+        Run three parallel price stresses through every expiry. Available spot is
         not monetized to fund a USD deficit. Future credit is never presumed.
         """
         if any(i.expiry > resolution for s, i in instruments.items() if s in self.positions):
@@ -251,7 +251,7 @@ class Goal:
     initial: dict
     horizon: int
     resolution: int
-    drawdown: float = .1
+    drawdown: float | dict = .1
     absolute_floors: dict = field(default_factory=dict)
     scales: dict = field(default_factory=dict)
     mode: str = "basket"
@@ -264,12 +264,17 @@ class Goal:
     composition_penalty: float = 1.
 
     def __post_init__(self):
-        if self.mode not in ("basket", "target", "btc") or not 0 <= self.drawdown <= 1:
+        drops = self.drawdown.values() if isinstance(self.drawdown, dict) else [self.drawdown]
+        if self.mode not in ("basket", "target", "btc") or any(not 0 <= d <= 1 for d in drops):
             raise ValueError("Invalid goal")
+        if isinstance(self.drawdown, dict) and set(self.drawdown) != {"BTC", "USD"}:
+            raise ValueError("Per-commodity drawdowns must cover BTC and USD")
         if self.resolution < self.horizon:
             raise ValueError("Claim resolution precedes horizon")
         if set(self.initial) != {"BTC", "USD"} or any(v < 0 for v in self.initial.values()):
             raise ValueError("v1 requires nonnegative BTC/USD quantities")
+        if not any(v > 0 for v in self.initial.values()):
+            raise ValueError("At least one positive initial holding required")
         for c, v in self.initial.items():
             if not math.isfinite(v):
                 raise ValueError("Nonfinite initial holding")
@@ -277,7 +282,9 @@ class Goal:
                 raise ValueError("Zero initial holding requires absolute floor and positive scale")
         if self.mode == "btc" and self.initial["BTC"] <= 0:
             raise ValueError("BTC objective needs positive initial BTC")
-        if abs(sum(self.target.values()) - 1) > EPS or any(v <= 0 for v in self.reference.values()):
+        if set(self.target) != {"BTC", "USD"} or set(self.reference) != {"BTC", "USD"}:
+            raise ValueError("BTC/USD target and reference required")
+        if any(not 0 <= v <= 1 for v in self.target.values()) or abs(sum(self.target.values()) - 1) > EPS or any(not math.isfinite(v) or v <= 0 for v in self.reference.values()):
             raise ValueError("Invalid composition/reference")
         if not 0 <= self.tolerance < 1 or min(self.failure_penalty, self.composition_penalty) < 0:
             raise ValueError("Invalid goal penalties/tolerance")
@@ -285,7 +292,8 @@ class Goal:
             self.target_deadline = self.horizon
 
     def floor(self, currency):
-        return (1 - self.drawdown) * self.initial[currency] if self.initial[currency] > 0 else self.absolute_floors[currency]
+        drop = self.drawdown[currency] if isinstance(self.drawdown, dict) else self.drawdown
+        return (1 - drop) * self.initial[currency] if self.initial[currency] > 0 else self.absolute_floors[currency]
 
     def scale(self, currency):
         return self.initial[currency] or self.scales[currency]

@@ -83,3 +83,18 @@ class AccountingTests(unittest.TestCase):
         p=Ledger({'BTC':1.,'USD':100000.});p.fill(ins,.1,100000);p.variation(ins,110000)
         self.assertEqual(p.fees['USD'],10.)
         self.assertEqual(p.holdings({'F':ins})['USD'],89990.)
+    def test_short_inverse_bridge_and_full_cross_expiry_bridge(self):
+        p=Ledger({'BTC':2.,'USD':100000.});p.fill(self.inverse,-10000,100000)
+        before=p.holdings(self.ins);p.bridge(self.inverse,80000,80000,observed=True)
+        for c in before:self.assertAlmostEqual(p.balances[c],before[c])
+        a=Instrument('a',1000,fee_bps=0);b=Instrument('b',2000,fee_bps=0);ins={'a':a,'b':b}
+        p=Ledger({'BTC':1.,'USD':100000.});p.fill(a,.1,100000);p.fill(b,-.1,101000)
+        before=p.holdings(ins);self.assertGreaterEqual(p.funding_headroom(ins,100000,2000),0)
+        p.bridge(a,120000,120000,observed=True)
+        self.assertAlmostEqual(p.balances['BTC'],1.1);self.assertAlmostEqual(p.balances['USD'],90000)
+        p.bridge(b,80000,80000,observed=True)
+        for c in before:self.assertAlmostEqual(p.balances[c],before[c])
+    def test_per_commodity_floors_and_invalid_zero_basket(self):
+        g=Goal({'BTC':1.,'USD':100000.},100,1000,drawdown={'BTC':.05,'USD':.2})
+        self.assertEqual(g.floor('BTC'),.95);self.assertEqual(g.floor('USD'),80000)
+        with self.assertRaises(ValueError):Goal({'BTC':0.,'USD':0.},100,1000,absolute_floors={'BTC':0,'USD':0},scales={'BTC':1,'USD':1})
