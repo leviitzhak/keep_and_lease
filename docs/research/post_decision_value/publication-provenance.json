@@ -1,0 +1,24 @@
+{
+  "reason": "Direct Git push lacked authentication; published identical Git blobs and trees through connected GitHub access. Commit identities differ because GitHub supplies author/committer metadata.",
+  "base_commit": "80be0fc4c30904a0f4dfb16e097de2a001424e64",
+  "commits": [
+    {
+      "local_commit": "532c2e3f64d1c5ec09a0fe7d7cfc12d05110af0d",
+      "remote_equivalent_commit": "09e05678950da3dcd21ec54597d44eb92b8124eb",
+      "verified_identical_tree": "2c125d9291859d4a8bb5800c903aad63ab71d3e1"
+    },
+    {
+      "local_commit": "6b6865daf8b0691b934706229d8c281ca6dda507",
+      "remote_equivalent_commit": "a38ce43b62c906b69cdc68b4d30ebd8299688795",
+      "verified_identical_tree": "0613091ac7c50af78825b430e0eaf07afb0162bd"
+    },
+    {
+      "local_commit": "1b7712e11ffc33f0434328a6c88698b67952f00b",
+      "remote_equivalent_commit": "ef901b0854138705d676c7efa5064408aa196c8d",
+      "verified_identical_tree": "d46575605ef2eb49ab1a522c2a51738cf985e730"
+    }
+  ],
+  "pilot_source_remote_equivalent": "a38ce43b62c906b69cdc68b4d30ebd8299688795",
+  "immutable_run_identity": "Original local execution commit and source fingerprint are retained in the pilot metadata/checkpoints.",
+  "publication_date": "2026-10-25"
+}
