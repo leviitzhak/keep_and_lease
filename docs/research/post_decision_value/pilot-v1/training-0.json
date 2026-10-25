@@ -1,0 +1,8 @@
+{
+  "continuation": "exploratory_v1",
+  "first_loss": 1.1845662593841553,
+  "last_loss": 0.28731769323349,
+  "normalization": "training-only label moments",
+  "seconds": 4.797616992997064,
+  "updates": 160
+}

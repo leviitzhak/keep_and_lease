@@ -1,0 +1,36 @@
+{
+  "cadence_ms": 120000,
+  "candidate_budget": 96,
+  "dates": [
+    "2026-06-06",
+    "2026-06-07",
+    "2026-06-08",
+    "2026-06-09",
+    "2026-06-10",
+    "2026-06-11",
+    "2026-06-12",
+    "2026-06-13"
+  ],
+  "delays": {
+    "congestion": 0.5,
+    "decision": 10,
+    "delivery": 100,
+    "jitter": 0.5,
+    "observation": 100,
+    "report": 100
+  },
+  "episode_minutes": 60,
+  "event_cap": 30000,
+  "initial_btc": 1.0,
+  "initial_usd": 100000.0,
+  "offset_minutes": 60,
+  "optimizer_updates_per_stage": 160,
+  "participation": 0.1,
+  "pilot_seconds": 3600,
+  "reference_btc": 100000.0,
+  "seeds": [
+    11,
+    29
+  ],
+  "transition_cap": 20000
+}

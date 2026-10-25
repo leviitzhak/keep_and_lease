@@ -1,0 +1,46 @@
+[
+  {
+    "block": "2026-06-12",
+    "continuation": "collect_greedy_v1_eps015:exploratory_v1",
+    "holdings_rmse": [
+      0.05337759892692287,
+      3328.4945267827256
+    ],
+    "score_bias": -0.052675023674964905,
+    "score_mae": 0.052675023674964905,
+    "seed": 11
+  },
+  {
+    "block": "2026-06-12",
+    "continuation": "collect_greedy_v1_eps015:exploratory_v1",
+    "holdings_rmse": [
+      0.04807520317672285,
+      2986.8843080055085
+    ],
+    "score_bias": -0.04728791490197182,
+    "score_mae": 0.04728791490197182,
+    "seed": 29
+  },
+  {
+    "block": "2026-06-13",
+    "continuation": "collect_greedy_v1_eps015:exploratory_v1",
+    "holdings_rmse": [
+      0.05072192911862371,
+      3233.9523431820253
+    ],
+    "score_bias": -0.05010338872671127,
+    "score_mae": 0.05010338872671127,
+    "seed": 11
+  },
+  {
+    "block": "2026-06-13",
+    "continuation": "collect_greedy_v1_eps015:exploratory_v1",
+    "holdings_rmse": [
+      0.04568345352204715,
+      2902.9560580915495
+    ],
+    "score_bias": -0.04504578188061714,
+    "score_mae": 0.04504578188061714,
+    "seed": 29
+  }
+]

@@ -1,0 +1,1817 @@
+[
+  {
+    "key": "btc/trades/ranges/52ef7ab51def1e37fc774f96bd94697ed90ad286d6885c72f69de84c285c9912/manifest.json",
+    "sha256": "52ef7ab51def1e37fc774f96bd94697ed90ad286d6885c72f69de84c285c9912",
+    "bytes": 220730
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/ranges/missing-mar27/8961a8ad2393dae09fa7d8ccb87d172ed2276c527b63c091f701f31eeab5ec12/manifest.json",
+    "sha256": "8961a8ad2393dae09fa7d8ccb87d172ed2276c527b63c091f701f31eeab5ec12",
+    "bytes": 64519
+  },
+  {
+    "key": "btc/trades/v1/f13d86f8d923f5084fae15e51393f75b1517f676e05d11139627b76fd5c56c04/manifest.json",
+    "sha256": "f13d86f8d923f5084fae15e51393f75b1517f676e05d11139627b76fd5c56c04",
+    "bytes": 17681
+  },
+  {
+    "key": "btc/trades/v1/3453edcaa03f06151b16970875c9a2278131149cbe2ee164bf0b6e1952313c65/manifest.json",
+    "sha256": "3453edcaa03f06151b16970875c9a2278131149cbe2ee164bf0b6e1952313c65",
+    "bytes": 17699
+  },
+  {
+    "key": "btc/trades/v1/a57618897fff3983fe3142ac877c7148ee01e6486f0cc4181d4d9018a6825369/manifest.json",
+    "sha256": "a57618897fff3983fe3142ac877c7148ee01e6486f0cc4181d4d9018a6825369",
+    "bytes": 17235
+  },
+  {
+    "key": "btc/trades/v1/b26d66f6cc955d5df86a98c5e9a4f0665a7b7257b69f40c283b43bc4bfaa96ce/manifest.json",
+    "sha256": "b26d66f6cc955d5df86a98c5e9a4f0665a7b7257b69f40c283b43bc4bfaa96ce",
+    "bytes": 16879
+  },
+  {
+    "key": "btc/trades/v1/4e18803266d5f968f71f607cca2cf33d0a305bfc9669948ae267cac1a3a31d22/manifest.json",
+    "sha256": "4e18803266d5f968f71f607cca2cf33d0a305bfc9669948ae267cac1a3a31d22",
+    "bytes": 16880
+  },
+  {
+    "key": "btc/trades/v1/ce8b6cf421bbc9e48da095c26af0a4065298024d402e8ce7f04fea31d809b63f/manifest.json",
+    "sha256": "ce8b6cf421bbc9e48da095c26af0a4065298024d402e8ce7f04fea31d809b63f",
+    "bytes": 17325
+  },
+  {
+    "key": "btc/trades/v1/d596840a514e112408948773de48e03b6b55a0c367a145eb1f781145f0d1e8ed/manifest.json",
+    "sha256": "d596840a514e112408948773de48e03b6b55a0c367a145eb1f781145f0d1e8ed",
+    "bytes": 17699
+  },
+  {
+    "key": "btc/trades/v1/aadb587d9958811402864be29999bd8e9893f637d44d1825413b4d1aa3200bdd/manifest.json",
+    "sha256": "aadb587d9958811402864be29999bd8e9893f637d44d1825413b4d1aa3200bdd",
+    "bytes": 17715
+  },
+  {
+    "key": "btc/raw/sha256/0657e1d43c33cdf1a4654785184f3a0a67620d5d793dd796b72ea379512e0724/BTC-25DEC26.jsonl.gz",
+    "sha256": "0657e1d43c33cdf1a4654785184f3a0a67620d5d793dd796b72ea379512e0724",
+    "bytes": 69456
+  },
+  {
+    "key": "btc/raw/sha256/92388a0d5bae7018e118e55268f969d3736632154746f6a26f005297f920b774/BTC-25DEC26.jsonl.gz",
+    "sha256": "92388a0d5bae7018e118e55268f969d3736632154746f6a26f005297f920b774",
+    "bytes": 17092
+  },
+  {
+    "key": "btc/raw/sha256/515a8e2ad6fe08d1a7f2b1072ff1854c4b0effbc380bd52ac291f3c0674b1f2c/BTC-25DEC26.jsonl.gz",
+    "sha256": "515a8e2ad6fe08d1a7f2b1072ff1854c4b0effbc380bd52ac291f3c0674b1f2c",
+    "bytes": 30747
+  },
+  {
+    "key": "btc/raw/sha256/4fd566e803903a11ed7d4effff0d54d734f15de39d8d9a53b2177fc845dcd30d/BTC-25DEC26.jsonl.gz",
+    "sha256": "4fd566e803903a11ed7d4effff0d54d734f15de39d8d9a53b2177fc845dcd30d",
+    "bytes": 37268
+  },
+  {
+    "key": "btc/raw/sha256/bad7857b29885bba4fd11459025650c0d5560cd1119cb2bcbe9382ca8906333b/BTC-25DEC26.jsonl.gz",
+    "sha256": "bad7857b29885bba4fd11459025650c0d5560cd1119cb2bcbe9382ca8906333b",
+    "bytes": 51892
+  },
+  {
+    "key": "btc/raw/sha256/96898066da47c6f535dc88848381201b575ae4cd42d6687bd79b678312fd0774/BTC-25DEC26.jsonl.gz",
+    "sha256": "96898066da47c6f535dc88848381201b575ae4cd42d6687bd79b678312fd0774",
+    "bytes": 41644
+  },
+  {
+    "key": "btc/trades/v1/dfcbaccff5e7b4142e0fd98c5ef89dbd5f3c906d14087a3a2bd67cdcedba66d2/manifest.json",
+    "sha256": "dfcbaccff5e7b4142e0fd98c5ef89dbd5f3c906d14087a3a2bd67cdcedba66d2",
+    "bytes": 17685
+  },
+  {
+    "key": "btc/raw/sha256/931528b58bca4770d6beb8cbd38208d0298deac631029aa386e75df442c87a6a/BTC-25DEC26.jsonl.gz",
+    "sha256": "931528b58bca4770d6beb8cbd38208d0298deac631029aa386e75df442c87a6a",
+    "bytes": 67134
+  },
+  {
+    "key": "btc/raw/sha256/dfa06e919b8f3caa5a87ad43cec8c1a2887761c2fb126aaccafda615ed907f5f/BTC-25DEC26.jsonl.gz",
+    "sha256": "dfa06e919b8f3caa5a87ad43cec8c1a2887761c2fb126aaccafda615ed907f5f",
+    "bytes": 221778
+  },
+  {
+    "key": "btc/trades/v1/11fa55eedfe223d07ccf0ec8a08f6844871362a9f8e9e7c8ae157589946227b2/manifest.json",
+    "sha256": "11fa55eedfe223d07ccf0ec8a08f6844871362a9f8e9e7c8ae157589946227b2",
+    "bytes": 17691
+  },
+  {
+    "key": "btc/trades/v1/e845166a23314b9205f570af9dda087aea92643e721a3bcc3835d56dfaa530be/manifest.json",
+    "sha256": "e845166a23314b9205f570af9dda087aea92643e721a3bcc3835d56dfaa530be",
+    "bytes": 17318
+  },
+  {
+    "key": "btc/trades/v1/8b5df9e2ec1dc403d9228dd25df9b47e1925c4b411d4006eb5b6ca3050eb960c/manifest.json",
+    "sha256": "8b5df9e2ec1dc403d9228dd25df9b47e1925c4b411d4006eb5b6ca3050eb960c",
+    "bytes": 17686
+  },
+  {
+    "key": "btc/trades/v1/f10993ca85399b81f2724ce053226a3d0a8e9e974e91193c4a05cd0f887897e1/manifest.json",
+    "sha256": "f10993ca85399b81f2724ce053226a3d0a8e9e974e91193c4a05cd0f887897e1",
+    "bytes": 17873
+  },
+  {
+    "key": "btc/trades/v1/44028b3215b82f34bf903fb9c73a819fe61f460978f199b8b8026abbde4951c0/manifest.json",
+    "sha256": "44028b3215b82f34bf903fb9c73a819fe61f460978f199b8b8026abbde4951c0",
+    "bytes": 17239
+  },
+  {
+    "key": "btc/trades/v1/5df605b2a88b07b98c20942473ea82843f073acf6e28a282beed510e149b7911/manifest.json",
+    "sha256": "5df605b2a88b07b98c20942473ea82843f073acf6e28a282beed510e149b7911",
+    "bytes": 16865
+  },
+  {
+    "key": "btc/trades/v1/28604814cda2284cf94e0c3ac4a8f3bb348f341d964868ea0c9f6475719db666/manifest.json",
+    "sha256": "28604814cda2284cf94e0c3ac4a8f3bb348f341d964868ea0c9f6475719db666",
+    "bytes": 16879
+  },
+  {
+    "key": "btc/raw/sha256/305e9991f7b21a72b929567685de21d4f3695f7625516a3d079e866213002158/BTC-25DEC26.jsonl.gz",
+    "sha256": "305e9991f7b21a72b929567685de21d4f3695f7625516a3d079e866213002158",
+    "bytes": 30954
+  },
+  {
+    "key": "btc/raw/sha256/2c96ccce7b5d444acd6f745bdf58f378dd329f5e08b171d587e82f30bc55d866/BTC-25DEC26.jsonl.gz",
+    "sha256": "2c96ccce7b5d444acd6f745bdf58f378dd329f5e08b171d587e82f30bc55d866",
+    "bytes": 55363
+  },
+  {
+    "key": "btc/raw/sha256/5ce4e2102e1e7de89e93da36bcd78eaa7094c54b60e0485ff9b9d41d07b54908/BTC-25DEC26.jsonl.gz",
+    "sha256": "5ce4e2102e1e7de89e93da36bcd78eaa7094c54b60e0485ff9b9d41d07b54908",
+    "bytes": 20137
+  },
+  {
+    "key": "btc/raw/sha256/864585855b20a79cb121ff7d0e6403bd13bbe263f7cc9bb718b73d2bfb9fd5b0/BTC-25DEC26.jsonl.gz",
+    "sha256": "864585855b20a79cb121ff7d0e6403bd13bbe263f7cc9bb718b73d2bfb9fd5b0",
+    "bytes": 43673
+  },
+  {
+    "key": "btc/raw/sha256/43eef98d4ca70d4cc92f21ab331f6985cd574e117a7234e4599c343f8df672a6/BTC-25DEC26.jsonl.gz",
+    "sha256": "43eef98d4ca70d4cc92f21ab331f6985cd574e117a7234e4599c343f8df672a6",
+    "bytes": 46537
+  },
+  {
+    "key": "btc/raw/sha256/06da0c13e182850c02ba636b3da4d57b72c5b1d37cb9790ee0985db3380fa296/BTC-25DEC26.jsonl.gz",
+    "sha256": "06da0c13e182850c02ba636b3da4d57b72c5b1d37cb9790ee0985db3380fa296",
+    "bytes": 52635
+  },
+  {
+    "key": "btc/trades/v1/db5e6fad2d819c9e0e03e91aad2f5c4ac0b7e9b482c09995a5db36d51f0206e2/manifest.json",
+    "sha256": "db5e6fad2d819c9e0e03e91aad2f5c4ac0b7e9b482c09995a5db36d51f0206e2",
+    "bytes": 17265
+  },
+  {
+    "key": "btc/raw/sha256/02685040dcd6da59def7f67c903953bc2366e192ec915be9fa9e5909cd871def/BTC-25DEC26.jsonl.gz",
+    "sha256": "02685040dcd6da59def7f67c903953bc2366e192ec915be9fa9e5909cd871def",
+    "bytes": 15633
+  },
+  {
+    "key": "btc/raw/sha256/c257bc6adfffd666297d95f2143ce9fd1b45584c6191d31bcde5d36f3abd3028/BTC-25DEC26.jsonl.gz",
+    "sha256": "c257bc6adfffd666297d95f2143ce9fd1b45584c6191d31bcde5d36f3abd3028",
+    "bytes": 13584
+  },
+  {
+    "key": "btc/trades/v1/978479d7bfab003fd0486903187454628da677a9d2a183b936a0cfab8d104d0c/manifest.json",
+    "sha256": "978479d7bfab003fd0486903187454628da677a9d2a183b936a0cfab8d104d0c",
+    "bytes": 17229
+  },
+  {
+    "key": "btc/trades/v1/5af7cb90310536b692c0981da76795657c82d5de448a249b6316be8dda558ea6/manifest.json",
+    "sha256": "5af7cb90310536b692c0981da76795657c82d5de448a249b6316be8dda558ea6",
+    "bytes": 17678
+  },
+  {
+    "key": "btc/trades/v1/7f4d047638f0f02f1ada9ab8de9e61b456c63449ddcc73f19e08e00823b2644d/manifest.json",
+    "sha256": "7f4d047638f0f02f1ada9ab8de9e61b456c63449ddcc73f19e08e00823b2644d",
+    "bytes": 16867
+  },
+  {
+    "key": "btc/trades/v1/d8ae775af6f5b1fd10433a18662b5f115a713b04ebf26996cc9f8305d08e8caa/manifest.json",
+    "sha256": "d8ae775af6f5b1fd10433a18662b5f115a713b04ebf26996cc9f8305d08e8caa",
+    "bytes": 16873
+  },
+  {
+    "key": "btc/trades/v1/8de374803395d4d5026cac6b9c1a7fab47b018c9d13f32eb7023c19e8553f1c5/manifest.json",
+    "sha256": "8de374803395d4d5026cac6b9c1a7fab47b018c9d13f32eb7023c19e8553f1c5",
+    "bytes": 17345
+  },
+  {
+    "key": "btc/trades/v1/1252290c08e386cd1390550c76a6deb71ad318b72ca67f5d1de469377edc1a04/manifest.json",
+    "sha256": "1252290c08e386cd1390550c76a6deb71ad318b72ca67f5d1de469377edc1a04",
+    "bytes": 17691
+  },
+  {
+    "key": "btc/trades/v1/a9a60c39836d2bf5b049d1f2d25af5c53fb7af5751b36c19d2425206f2190869/manifest.json",
+    "sha256": "a9a60c39836d2bf5b049d1f2d25af5c53fb7af5751b36c19d2425206f2190869",
+    "bytes": 33992
+  },
+  {
+    "key": "btc/raw/sha256/36b5da835b940cf348717c3b63befcd13378d7cce9bd64c3ba9b6002350b8fb8/BTC-25DEC26.jsonl.gz",
+    "sha256": "36b5da835b940cf348717c3b63befcd13378d7cce9bd64c3ba9b6002350b8fb8",
+    "bytes": 43030
+  },
+  {
+    "key": "btc/raw/sha256/bb3741ae47264208f2543f3e6b6e53a981245ece639fa946aa19f839a2d7edb6/BTC-25DEC26.jsonl.gz",
+    "sha256": "bb3741ae47264208f2543f3e6b6e53a981245ece639fa946aa19f839a2d7edb6",
+    "bytes": 55013
+  },
+  {
+    "key": "btc/raw/sha256/098d08215321858a690326fbbedd0c1d8abf50ef86bc21cef2f39398b0d6289d/BTC-25DEC26.jsonl.gz",
+    "sha256": "098d08215321858a690326fbbedd0c1d8abf50ef86bc21cef2f39398b0d6289d",
+    "bytes": 35937
+  },
+  {
+    "key": "btc/raw/sha256/4cf93717e154df0c89ad771fd1bfa8e2034989e84ade5b9a37f4a41d13710007/BTC-25DEC26.jsonl.gz",
+    "sha256": "4cf93717e154df0c89ad771fd1bfa8e2034989e84ade5b9a37f4a41d13710007",
+    "bytes": 37114
+  },
+  {
+    "key": "btc/trades/v1/afd636294f0d0514f65cbe181d33585e6944c039902efa509883c792fdf654fb/manifest.json",
+    "sha256": "afd636294f0d0514f65cbe181d33585e6944c039902efa509883c792fdf654fb",
+    "bytes": 16862
+  },
+  {
+    "key": "btc/raw/sha256/680631422b3319e45a95e43fb672c3144af9d21ed6e6cffed1811666a499c372/BTC-25DEC26.jsonl.gz",
+    "sha256": "680631422b3319e45a95e43fb672c3144af9d21ed6e6cffed1811666a499c372",
+    "bytes": 70750
+  },
+  {
+    "key": "btc/raw/sha256/af99fde1c87afbbbca5a3a75d97e055c101c097d31c9908ab78d8fa991587ed9/BTC-25DEC26.jsonl.gz",
+    "sha256": "af99fde1c87afbbbca5a3a75d97e055c101c097d31c9908ab78d8fa991587ed9",
+    "bytes": 73765
+  },
+  {
+    "key": "btc/raw/sha256/7f8edff4bc997748fee7406c8e0b1f0a0ade921127139606c8b5779fabbaff8b/BTC-25DEC26.jsonl.gz",
+    "sha256": "7f8edff4bc997748fee7406c8e0b1f0a0ade921127139606c8b5779fabbaff8b",
+    "bytes": 64693
+  },
+  {
+    "key": "btc/raw/sha256/6a8b127f059c46cbe1285d04f716b568b8c85a528e85c65e9ea405b4efb54401/BTC-25DEC26.jsonl.gz",
+    "sha256": "6a8b127f059c46cbe1285d04f716b568b8c85a528e85c65e9ea405b4efb54401",
+    "bytes": 153504
+  },
+  {
+    "key": "btc/trades/v1/5712af926e807843cd1baed89c000cdd84e2f6376ed750db7fb4b7f953fe3e29/manifest.json",
+    "sha256": "5712af926e807843cd1baed89c000cdd84e2f6376ed750db7fb4b7f953fe3e29",
+    "bytes": 17228
+  },
+  {
+    "key": "btc/trades/v1/3d7f94cefae47fde19d6ee07b61c4a5488952fc1e53b3e453fd8f40619e21eaa/manifest.json",
+    "sha256": "3d7f94cefae47fde19d6ee07b61c4a5488952fc1e53b3e453fd8f40619e21eaa",
+    "bytes": 17316
+  },
+  {
+    "key": "btc/trades/v1/948ed953e73553b19ff2f0bb088fe51b3d4782ebcf7b88ebe4bf71f4463254bb/manifest.json",
+    "sha256": "948ed953e73553b19ff2f0bb088fe51b3d4782ebcf7b88ebe4bf71f4463254bb",
+    "bytes": 17665
+  },
+  {
+    "key": "btc/trades/v1/b861269c835adac9055ba0a78f87c08036b63127e132cda2f16fc75572d7e46e/manifest.json",
+    "sha256": "b861269c835adac9055ba0a78f87c08036b63127e132cda2f16fc75572d7e46e",
+    "bytes": 16853
+  },
+  {
+    "key": "btc/trades/v1/0ee9e1005de0cd25081ca2fec9d0ace096f666e4437ea9260c4ee20bef0b04c1/manifest.json",
+    "sha256": "0ee9e1005de0cd25081ca2fec9d0ace096f666e4437ea9260c4ee20bef0b04c1",
+    "bytes": 17679
+  },
+  {
+    "key": "btc/trades/v1/8bc5777829af4b1db975ee19704d403daf014409670d3d5c9b0005ada2b6c7eb/manifest.json",
+    "sha256": "8bc5777829af4b1db975ee19704d403daf014409670d3d5c9b0005ada2b6c7eb",
+    "bytes": 17665
+  },
+  {
+    "key": "btc/trades/v1/1d66e8fdb7c8b2aeb9f03a2d18ca36ec4488da6c59bcf9eda3d45877eea186a7/manifest.json",
+    "sha256": "1d66e8fdb7c8b2aeb9f03a2d18ca36ec4488da6c59bcf9eda3d45877eea186a7",
+    "bytes": 16852
+  },
+  {
+    "key": "btc/raw/sha256/0b402acbbd0e90b112e996b394c9173af013c967a9ba3d522c9324440d43ac5c/BTC-25DEC26.jsonl.gz",
+    "sha256": "0b402acbbd0e90b112e996b394c9173af013c967a9ba3d522c9324440d43ac5c",
+    "bytes": 31687
+  },
+  {
+    "key": "btc/raw/sha256/1b557a015113be541677d1227d5bb639d0e7d78dab6d5dc84089a0196d21881c/BTC-25DEC26.jsonl.gz",
+    "sha256": "1b557a015113be541677d1227d5bb639d0e7d78dab6d5dc84089a0196d21881c",
+    "bytes": 66086
+  },
+  {
+    "key": "btc/raw/sha256/e7393848cfcbe47ce46f2bb5b5e40911a00d49dee34fa4f0656d82a0049587c7/BTC-25DEC26.jsonl.gz",
+    "sha256": "e7393848cfcbe47ce46f2bb5b5e40911a00d49dee34fa4f0656d82a0049587c7",
+    "bytes": 27122
+  },
+  {
+    "key": "btc/raw/sha256/4d21cfcf8f433d0dcab636d29081b538a97562d441e1f8be3494172a620b6be1/BTC-25DEC26.jsonl.gz",
+    "sha256": "4d21cfcf8f433d0dcab636d29081b538a97562d441e1f8be3494172a620b6be1",
+    "bytes": 96071
+  },
+  {
+    "key": "btc/trades/v1/36d329be9394a6f12204537789ac62ed99c5eb5f08872be9b043c375e6016fc3/manifest.json",
+    "sha256": "36d329be9394a6f12204537789ac62ed99c5eb5f08872be9b043c375e6016fc3",
+    "bytes": 16855
+  },
+  {
+    "key": "btc/raw/sha256/eb6719d5d2911cd2ad2324a0b7dc1d2afe6ed31f5f4ba82c789e6341a3f10c89/BTC-25DEC26.jsonl.gz",
+    "sha256": "eb6719d5d2911cd2ad2324a0b7dc1d2afe6ed31f5f4ba82c789e6341a3f10c89",
+    "bytes": 17937
+  },
+  {
+    "key": "btc/raw/sha256/37604211433d4301b06f4f203b9c42780c13ef9258a03b0f2ab5e7c2950331d1/BTC-25DEC26.jsonl.gz",
+    "sha256": "37604211433d4301b06f4f203b9c42780c13ef9258a03b0f2ab5e7c2950331d1",
+    "bytes": 111087
+  },
+  {
+    "key": "btc/raw/sha256/50dc853206085d4f1837d1c18f215db6c65a5ffcda36cf3e740a1bb217853ab5/BTC-25DEC26.jsonl.gz",
+    "sha256": "50dc853206085d4f1837d1c18f215db6c65a5ffcda36cf3e740a1bb217853ab5",
+    "bytes": 36690
+  },
+  {
+    "key": "btc/raw/sha256/0c6340b8e54e3f204b4b7e9826976917d858fbbeb9885a3f38e7d6631ab10f9f/BTC-25DEC26.jsonl.gz",
+    "sha256": "0c6340b8e54e3f204b4b7e9826976917d858fbbeb9885a3f38e7d6631ab10f9f",
+    "bytes": 57828
+  },
+  {
+    "key": "btc/trades/v1/338a56c4b1227ca9c5978a9fe1b3c666ff9df18754626a55fb018940c1351951/manifest.json",
+    "sha256": "338a56c4b1227ca9c5978a9fe1b3c666ff9df18754626a55fb018940c1351951",
+    "bytes": 16033
+  },
+  {
+    "key": "btc/trades/v1/9d4bfa314d81b5d491ccbf8181e87c429013e77ac9a378d3957cd48d94c9ae24/manifest.json",
+    "sha256": "9d4bfa314d81b5d491ccbf8181e87c429013e77ac9a378d3957cd48d94c9ae24",
+    "bytes": 16878
+  },
+  {
+    "key": "btc/trades/v1/58441619a17ccc8555eb1f7ddb3574e3f1a3b0a758b8ed5cd165bae9ff553eaa/manifest.json",
+    "sha256": "58441619a17ccc8555eb1f7ddb3574e3f1a3b0a758b8ed5cd165bae9ff553eaa",
+    "bytes": 16401
+  },
+  {
+    "key": "btc/trades/v1/6288d036a1e253f8be2ad0cd0a912d629757a8593a6bf15e1f1e2e19709215bb/manifest.json",
+    "sha256": "6288d036a1e253f8be2ad0cd0a912d629757a8593a6bf15e1f1e2e19709215bb",
+    "bytes": 16849
+  },
+  {
+    "key": "btc/trades/v1/1f5940b5997bd6c55f68560a5f48281fbfda0d7c046da94410bbbc0601fe1da4/manifest.json",
+    "sha256": "1f5940b5997bd6c55f68560a5f48281fbfda0d7c046da94410bbbc0601fe1da4",
+    "bytes": 16847
+  },
+  {
+    "key": "btc/trades/v1/b60aaa0ffd80519ecd1bc369a42f6e24772844bd2f414cc4c7eb25fd7c7c35f5/manifest.json",
+    "sha256": "b60aaa0ffd80519ecd1bc369a42f6e24772844bd2f414cc4c7eb25fd7c7c35f5",
+    "bytes": 16861
+  },
+  {
+    "key": "btc/trades/v1/f45fe8dd46c91ca48157895048c5133f47165780104def842225f97a70302fb1/manifest.json",
+    "sha256": "f45fe8dd46c91ca48157895048c5133f47165780104def842225f97a70302fb1",
+    "bytes": 16040
+  },
+  {
+    "key": "btc/raw/sha256/4ccf05eeedfa5ab96d47aa8e5d102a4bb415a02ebbde1d38237fbaea9433e1e1/BTC-25DEC26.jsonl.gz",
+    "sha256": "4ccf05eeedfa5ab96d47aa8e5d102a4bb415a02ebbde1d38237fbaea9433e1e1",
+    "bytes": 35848
+  },
+  {
+    "key": "btc/raw/sha256/3f95c468e4b069793939f5b9b9c123698236f2d5b361aff78555301d635f0eda/BTC-25DEC26.jsonl.gz",
+    "sha256": "3f95c468e4b069793939f5b9b9c123698236f2d5b361aff78555301d635f0eda",
+    "bytes": 33865
+  },
+  {
+    "key": "btc/raw/sha256/ddd1e9c73f62729d0225594d4fc09457e0b50b432908fa24b3a25d09b242f74d/BTC-25DEC26.jsonl.gz",
+    "sha256": "ddd1e9c73f62729d0225594d4fc09457e0b50b432908fa24b3a25d09b242f74d",
+    "bytes": 19174
+  },
+  {
+    "key": "btc/raw/sha256/558885fbba026aa3242c4a279c18a60cc86a31b1a3219c2a3e69cfdaaa0fcc32/BTC-25DEC26.jsonl.gz",
+    "sha256": "558885fbba026aa3242c4a279c18a60cc86a31b1a3219c2a3e69cfdaaa0fcc32",
+    "bytes": 59935
+  },
+  {
+    "key": "btc/trades/v1/a680e8b4ed18ef0472ff62985d289d28b9ca0648f85662cd862ac365f4f46ea2/manifest.json",
+    "sha256": "a680e8b4ed18ef0472ff62985d289d28b9ca0648f85662cd862ac365f4f46ea2",
+    "bytes": 16872
+  },
+  {
+    "key": "btc/raw/sha256/f93c0efb2745d4ef8ddefe00e36bf2cda7dc91c556cd7cc6254b008467c26d1a/BTC-25DEC26.jsonl.gz",
+    "sha256": "f93c0efb2745d4ef8ddefe00e36bf2cda7dc91c556cd7cc6254b008467c26d1a",
+    "bytes": 21123
+  },
+  {
+    "key": "btc/raw/sha256/e7d54094ceb83f2acc995b8284690c8b88cc8944beaf52117a88408a3ac1f184/BTC-25DEC26.jsonl.gz",
+    "sha256": "e7d54094ceb83f2acc995b8284690c8b88cc8944beaf52117a88408a3ac1f184",
+    "bytes": 49027
+  },
+  {
+    "key": "btc/raw/sha256/6e50c984e068d43aba8aa5f39bc1182f9e611e6cd90ef863451d8b678ca327dc/BTC-25DEC26.jsonl.gz",
+    "sha256": "6e50c984e068d43aba8aa5f39bc1182f9e611e6cd90ef863451d8b678ca327dc",
+    "bytes": 42506
+  },
+  {
+    "key": "btc/raw/sha256/0195aa801699da9b2ec6102d61778f98dc6fd272cbdd328838b54355beca7370/BTC-25DEC26.jsonl.gz",
+    "sha256": "0195aa801699da9b2ec6102d61778f98dc6fd272cbdd328838b54355beca7370",
+    "bytes": 55109
+  },
+  {
+    "key": "btc/trades/v1/0683697234d79a7568f13a3b28d73df3c2cc59edb61bcb8fa934c5294b1c1091/manifest.json",
+    "sha256": "0683697234d79a7568f13a3b28d73df3c2cc59edb61bcb8fa934c5294b1c1091",
+    "bytes": 16843
+  },
+  {
+    "key": "btc/trades/v1/635517c6d77cb19773350a4feeef0d0f43a400c8a7d1e161d39e52c5698a3775/manifest.json",
+    "sha256": "635517c6d77cb19773350a4feeef0d0f43a400c8a7d1e161d39e52c5698a3775",
+    "bytes": 16490
+  },
+  {
+    "key": "btc/trades/v1/5d948847a4db94606f4b24b8602f9be7b7806495933e6c0d669c9ce1182709d6/manifest.json",
+    "sha256": "5d948847a4db94606f4b24b8602f9be7b7806495933e6c0d669c9ce1182709d6",
+    "bytes": 16842
+  },
+  {
+    "key": "btc/trades/v1/7e789f0cfecd7c0a90f26413b840f08950cf9e5ee20d69eb6d88ccec062305e3/manifest.json",
+    "sha256": "7e789f0cfecd7c0a90f26413b840f08950cf9e5ee20d69eb6d88ccec062305e3",
+    "bytes": 29743
+  },
+  {
+    "key": "btc/trades/v1/a54dede8e3775a0b8cdb17028b35d321a3ac56abc0c94b396a7543ad534c9914/manifest.json",
+    "sha256": "a54dede8e3775a0b8cdb17028b35d321a3ac56abc0c94b396a7543ad534c9914",
+    "bytes": 16025
+  },
+  {
+    "key": "btc/trades/v1/bcd15309243fb5ff29903c1263044a7b312129b45e5358c4f3c6416509bf14ae/manifest.json",
+    "sha256": "bcd15309243fb5ff29903c1263044a7b312129b45e5358c4f3c6416509bf14ae",
+    "bytes": 16383
+  },
+  {
+    "key": "btc/trades/v1/6354ed4ed6841508dd66c60906210d8e5c2be6222e7fd07bdcfdaf6838e5bc2e/manifest.json",
+    "sha256": "6354ed4ed6841508dd66c60906210d8e5c2be6222e7fd07bdcfdaf6838e5bc2e",
+    "bytes": 16492
+  },
+  {
+    "key": "btc/raw/sha256/47f33f577a695b9b97c7f8b98d875bfd1f3ce5e2b1d7190ed611ac3f0d9cf2ca/BTC-25DEC26.jsonl.gz",
+    "sha256": "47f33f577a695b9b97c7f8b98d875bfd1f3ce5e2b1d7190ed611ac3f0d9cf2ca",
+    "bytes": 38526
+  },
+  {
+    "key": "btc/raw/sha256/1aba0c1696a3f278b7982ce568cf5e4773f87b4dd386bff2e8401af6a0475529/BTC-25DEC26.jsonl.gz",
+    "sha256": "1aba0c1696a3f278b7982ce568cf5e4773f87b4dd386bff2e8401af6a0475529",
+    "bytes": 45459
+  },
+  {
+    "key": "btc/raw/sha256/1e6a3ed8b7811161a841a3d9e09c70cc711a922d8101fb23ce4cc455611794f2/BTC-25DEC26.jsonl.gz",
+    "sha256": "1e6a3ed8b7811161a841a3d9e09c70cc711a922d8101fb23ce4cc455611794f2",
+    "bytes": 16796
+  },
+  {
+    "key": "btc/raw/sha256/704962ee799eec669431f0bd657951be013ce87f14ff47ce8bdabfdc5389afd8/BTC-25DEC26.jsonl.gz",
+    "sha256": "704962ee799eec669431f0bd657951be013ce87f14ff47ce8bdabfdc5389afd8",
+    "bytes": 17956
+  },
+  {
+    "key": "btc/trades/v1/d4f7eec901cae1f055c2485d15e41b7732f66b05685c4fe46f61f511327bb8ea/manifest.json",
+    "sha256": "d4f7eec901cae1f055c2485d15e41b7732f66b05685c4fe46f61f511327bb8ea",
+    "bytes": 16841
+  },
+  {
+    "key": "btc/raw/sha256/20d78559cbb3289f24cd41ff8b9fa0cb24539be31724370a3be2c31621e400ea/BTC-25DEC26.jsonl.gz",
+    "sha256": "20d78559cbb3289f24cd41ff8b9fa0cb24539be31724370a3be2c31621e400ea",
+    "bytes": 58917
+  },
+  {
+    "key": "btc/raw/sha256/5173956ee72818e21246978cdcb6dcf1f55854abace585373edfc495b9934000/BTC-25DEC26.jsonl.gz",
+    "sha256": "5173956ee72818e21246978cdcb6dcf1f55854abace585373edfc495b9934000",
+    "bytes": 38985
+  },
+  {
+    "key": "btc/trades/v1/9d967851de1b7ff8b35d28169478c0d57a165b3fd26b0ce57b1c476655955500/manifest.json",
+    "sha256": "9d967851de1b7ff8b35d28169478c0d57a165b3fd26b0ce57b1c476655955500",
+    "bytes": 16398
+  },
+  {
+    "key": "btc/raw/sha256/847e0fae11616f166ae8edf18f76ed567e282ac621c673ee0c478c90d3bcc1be/BTC-25DEC26.jsonl.gz",
+    "sha256": "847e0fae11616f166ae8edf18f76ed567e282ac621c673ee0c478c90d3bcc1be",
+    "bytes": 64787
+  },
+  {
+    "key": "btc/trades/v1/e2d66c7ae9aa5de1e58116fcb45a392fbafabd379905d78537790c81cd1a137b/manifest.json",
+    "sha256": "e2d66c7ae9aa5de1e58116fcb45a392fbafabd379905d78537790c81cd1a137b",
+    "bytes": 16871
+  },
+  {
+    "key": "btc/trades/v1/df89c87456fa69e2f8bffa01644860029377bd45854f48a4015c79cc9aad365d/manifest.json",
+    "sha256": "df89c87456fa69e2f8bffa01644860029377bd45854f48a4015c79cc9aad365d",
+    "bytes": 31773
+  },
+  {
+    "key": "btc/trades/v1/b65671764a91d0992c0598d51583713e19315b252bcff0c6029db47c7327b4a7/manifest.json",
+    "sha256": "b65671764a91d0992c0598d51583713e19315b252bcff0c6029db47c7327b4a7",
+    "bytes": 16043
+  },
+  {
+    "key": "btc/trades/v1/e751e5b37e135488d464627a5aee78c59e2dfe67f7dc0c702546d60471048115/manifest.json",
+    "sha256": "e751e5b37e135488d464627a5aee78c59e2dfe67f7dc0c702546d60471048115",
+    "bytes": 16038
+  },
+  {
+    "key": "btc/trades/v1/95af6c21ef558358faf38354b764e97f9b697a6e13725a60f27a805a4ce8982c/manifest.json",
+    "sha256": "95af6c21ef558358faf38354b764e97f9b697a6e13725a60f27a805a4ce8982c",
+    "bytes": 16487
+  },
+  {
+    "key": "btc/raw/sha256/ef111d31e3f0dfe7fe63548507149473f01ef650f5f91e1f49af262d9faf8408/BTC-25DEC26.jsonl.gz",
+    "sha256": "ef111d31e3f0dfe7fe63548507149473f01ef650f5f91e1f49af262d9faf8408",
+    "bytes": 106710
+  },
+  {
+    "key": "btc/trades/v1/4808dda2406e91d7180733e110c7d1d9cacb10c6d22973e91250321123efe6f0/manifest.json",
+    "sha256": "4808dda2406e91d7180733e110c7d1d9cacb10c6d22973e91250321123efe6f0",
+    "bytes": 16857
+  },
+  {
+    "key": "btc/raw/sha256/8826c947217a470d52a387fd9c8827b74a4d1c618f62f7f6cc2f374396d98584/BTC-25DEC26.jsonl.gz",
+    "sha256": "8826c947217a470d52a387fd9c8827b74a4d1c618f62f7f6cc2f374396d98584",
+    "bytes": 38464
+  },
+  {
+    "key": "btc/raw/sha256/e501cb4f8219a4377ceb6449136c582bf786d9701745dbc07adbd1ad27f62d4b/BTC-25DEC26.jsonl.gz",
+    "sha256": "e501cb4f8219a4377ceb6449136c582bf786d9701745dbc07adbd1ad27f62d4b",
+    "bytes": 28404
+  },
+  {
+    "key": "btc/raw/sha256/87da2e23c244fb3907054bcc353f8ef323e7c76f5ae8f34cf9d326af7b2e382b/BTC-25DEC26.jsonl.gz",
+    "sha256": "87da2e23c244fb3907054bcc353f8ef323e7c76f5ae8f34cf9d326af7b2e382b",
+    "bytes": 78083
+  },
+  {
+    "key": "btc/trades/v1/a533038a3d3ae1c2869a11d001d146aa0f249b40253b0fc2c8d005afbb5801ca/manifest.json",
+    "sha256": "a533038a3d3ae1c2869a11d001d146aa0f249b40253b0fc2c8d005afbb5801ca",
+    "bytes": 16835
+  },
+  {
+    "key": "btc/raw/sha256/137094b9f5b9a5122ce31c6674e5e6642ac43d84812292ad2114452f5c950f8d/BTC-25DEC26.jsonl.gz",
+    "sha256": "137094b9f5b9a5122ce31c6674e5e6642ac43d84812292ad2114452f5c950f8d",
+    "bytes": 127597
+  },
+  {
+    "key": "btc/trades/v1/4e45fe3f2b6cb727c2c437820e05fc406c3625fd8cdba75f4e32bdabb98f6891/manifest.json",
+    "sha256": "4e45fe3f2b6cb727c2c437820e05fc406c3625fd8cdba75f4e32bdabb98f6891",
+    "bytes": 16372
+  },
+  {
+    "key": "btc/raw/sha256/17972cacf8131130ba01baa645da38078f8acf6ad5a413fc366b8ad59df52986/BTC-25DEC26.jsonl.gz",
+    "sha256": "17972cacf8131130ba01baa645da38078f8acf6ad5a413fc366b8ad59df52986",
+    "bytes": 79789
+  },
+  {
+    "key": "btc/trades/v1/89f500cd91fde9687d34e99cf85fc05a549d7cc9da55d708fc94d83a21bfaab4/manifest.json",
+    "sha256": "89f500cd91fde9687d34e99cf85fc05a549d7cc9da55d708fc94d83a21bfaab4",
+    "bytes": 16031
+  },
+  {
+    "key": "btc/raw/sha256/6fdd1bd779a385e615bdc986fe75ca1cdabcf454c5f144e90bf0ba726bf62a0e/BTC-25DEC26.jsonl.gz",
+    "sha256": "6fdd1bd779a385e615bdc986fe75ca1cdabcf454c5f144e90bf0ba726bf62a0e",
+    "bytes": 75815
+  },
+  {
+    "key": "btc/trades/v1/46fff21a6efa2c307edae0eaa9c2529a5f6ed0f5d33d548b87dc8f64dd7df1ac/manifest.json",
+    "sha256": "46fff21a6efa2c307edae0eaa9c2529a5f6ed0f5d33d548b87dc8f64dd7df1ac",
+    "bytes": 16827
+  },
+  {
+    "key": "btc/raw/sha256/c7f469b1f961d3ca60507c8b5a0c6343f79de80bbdb4fb6565245ef07f275447/BTC-25DEC26.jsonl.gz",
+    "sha256": "c7f469b1f961d3ca60507c8b5a0c6343f79de80bbdb4fb6565245ef07f275447",
+    "bytes": 48583
+  },
+  {
+    "key": "btc/trades/v1/b106339390fd7956d751658a933219ee81d7b4f4873c4d84c31bda11248003e0/manifest.json",
+    "sha256": "b106339390fd7956d751658a933219ee81d7b4f4873c4d84c31bda11248003e0",
+    "bytes": 16024
+  },
+  {
+    "key": "btc/trades/v1/2d8cc77fc551e805f4d4e92332dfb0ed5ace897fc1de8d928e82e785775b68f8/manifest.json",
+    "sha256": "2d8cc77fc551e805f4d4e92332dfb0ed5ace897fc1de8d928e82e785775b68f8",
+    "bytes": 16026
+  },
+  {
+    "key": "btc/trades/v1/1362cad795befa72ff24e3235a867893510f6ada9c8aee8f2fc5c915130c3fbc/manifest.json",
+    "sha256": "1362cad795befa72ff24e3235a867893510f6ada9c8aee8f2fc5c915130c3fbc",
+    "bytes": 16030
+  },
+  {
+    "key": "btc/raw/sha256/58bb586e7f165a88b66762657436c1c5fc897762a93091458c0f1b470519c876/BTC-25DEC26.jsonl.gz",
+    "sha256": "58bb586e7f165a88b66762657436c1c5fc897762a93091458c0f1b470519c876",
+    "bytes": 76314
+  },
+  {
+    "key": "btc/raw/sha256/17f7a2b69bb12929c5b96fafc6ad3afbbc6583c3ed92f7e84d236d8fd13dd281/BTC-25DEC26.jsonl.gz",
+    "sha256": "17f7a2b69bb12929c5b96fafc6ad3afbbc6583c3ed92f7e84d236d8fd13dd281",
+    "bytes": 25029
+  },
+  {
+    "key": "btc/trades/v1/8409a62c56c89810530a983a33904dbcf6605d9258511d0a29b315f3966be8bd/manifest.json",
+    "sha256": "8409a62c56c89810530a983a33904dbcf6605d9258511d0a29b315f3966be8bd",
+    "bytes": 15999
+  },
+  {
+    "key": "btc/raw/sha256/59f5138c4c85092413d4bd90e884fd46b05e38c93acba2b53bc23dc529efc7ca/BTC-25DEC26.jsonl.gz",
+    "sha256": "59f5138c4c85092413d4bd90e884fd46b05e38c93acba2b53bc23dc529efc7ca",
+    "bytes": 73322
+  },
+  {
+    "key": "btc/raw/sha256/24c30fdd17b5ad0f3e3c23c4918bf44c73658a45500cba4da9cf90487dbbb147/BTC-25DEC26.jsonl.gz",
+    "sha256": "24c30fdd17b5ad0f3e3c23c4918bf44c73658a45500cba4da9cf90487dbbb147",
+    "bytes": 81086
+  },
+  {
+    "key": "btc/trades/v1/65cd8751a49354887db7c936235d216f4980cef0f62304acad81683d7f1c4fe9/manifest.json",
+    "sha256": "65cd8751a49354887db7c936235d216f4980cef0f62304acad81683d7f1c4fe9",
+    "bytes": 15568
+  },
+  {
+    "key": "btc/trades/v1/63554ad04e7f868ee40e3653d3cf12c7e08f2ad834c5f4a6023b718b4954add2/manifest.json",
+    "sha256": "63554ad04e7f868ee40e3653d3cf12c7e08f2ad834c5f4a6023b718b4954add2",
+    "bytes": 16000
+  },
+  {
+    "key": "btc/raw/sha256/edc0e8d9795440333978d6d84f430230ed48aa88dd3d38d19d326c2b91cd0b90/BTC-25DEC26.jsonl.gz",
+    "sha256": "edc0e8d9795440333978d6d84f430230ed48aa88dd3d38d19d326c2b91cd0b90",
+    "bytes": 86033
+  },
+  {
+    "key": "btc/raw/sha256/3f66e6ccaea0790cf258fbd2d4dc18c7423777665746d0962dd36698e34763d3/BTC-25DEC26.jsonl.gz",
+    "sha256": "3f66e6ccaea0790cf258fbd2d4dc18c7423777665746d0962dd36698e34763d3",
+    "bytes": 48244
+  },
+  {
+    "key": "btc/trades/v1/7ccb3f1bcf330098ef8ba3266660d012d1691a24923d027eef1b345c3793f282/manifest.json",
+    "sha256": "7ccb3f1bcf330098ef8ba3266660d012d1691a24923d027eef1b345c3793f282",
+    "bytes": 15196
+  },
+  {
+    "key": "btc/trades/v1/58a68bb137b190e6d92183499892b09eab5e6d9965e50bfb45fb94f687a2b6a8/manifest.json",
+    "sha256": "58a68bb137b190e6d92183499892b09eab5e6d9965e50bfb45fb94f687a2b6a8",
+    "bytes": 15209
+  },
+  {
+    "key": "btc/trades/v1/c35295ffe6ee006f2f43e0672ff1ae61d93dd0990f5e1c56585b3896be50db14/manifest.json",
+    "sha256": "c35295ffe6ee006f2f43e0672ff1ae61d93dd0990f5e1c56585b3896be50db14",
+    "bytes": 15673
+  },
+  {
+    "key": "btc/raw/sha256/7c6f4f1bb7511fbb9b218b6fdc8ca948488ed08211a178f5dbe073dd114e007a/BTC-25DEC26.jsonl.gz",
+    "sha256": "7c6f4f1bb7511fbb9b218b6fdc8ca948488ed08211a178f5dbe073dd114e007a",
+    "bytes": 179664
+  },
+  {
+    "key": "btc/raw/sha256/766ebf7655f712699e2f76d676326bd484d140c475c6023af3df9cfb680f404e/BTC-25DEC26.jsonl.gz",
+    "sha256": "766ebf7655f712699e2f76d676326bd484d140c475c6023af3df9cfb680f404e",
+    "bytes": 9349
+  },
+  {
+    "key": "btc/raw/sha256/4ca67e1b5718956772c7f16f4d123cecbeee71de7868a8502723ccec49549400/BTC-25DEC26.jsonl.gz",
+    "sha256": "4ca67e1b5718956772c7f16f4d123cecbeee71de7868a8502723ccec49549400",
+    "bytes": 11632
+  },
+  {
+    "key": "btc/raw/sha256/e030e77bad5e381f6a3b3ea991c6593044a5e5e8045a8ba4448cb5ffc67a744a/BTC-25DEC26.jsonl.gz",
+    "sha256": "e030e77bad5e381f6a3b3ea991c6593044a5e5e8045a8ba4448cb5ffc67a744a",
+    "bytes": 121505
+  },
+  {
+    "key": "btc/trades/v1/65e5449467c16e1aa4feba4aeaecbba145bc7acc1e67ef04f822df6228a6bcd6/manifest.json",
+    "sha256": "65e5449467c16e1aa4feba4aeaecbba145bc7acc1e67ef04f822df6228a6bcd6",
+    "bytes": 16041
+  },
+  {
+    "key": "btc/trades/v1/d61df5102daa7bf38bcc561e3bdbd440e010f0427917e75282d3656526208a76/manifest.json",
+    "sha256": "d61df5102daa7bf38bcc561e3bdbd440e010f0427917e75282d3656526208a76",
+    "bytes": 15576
+  },
+  {
+    "key": "btc/trades/v1/8dcf53958c6c04d494a22c2fd5a0e659f50dc5b998867a25199c0478266285f7/manifest.json",
+    "sha256": "8dcf53958c6c04d494a22c2fd5a0e659f50dc5b998867a25199c0478266285f7",
+    "bytes": 16004
+  },
+  {
+    "key": "btc/raw/sha256/5a5e371e5cb989f6df24c90285bda2b997ac6d45a1862f09afd721bcee66ad5c/BTC-25DEC26.jsonl.gz",
+    "sha256": "5a5e371e5cb989f6df24c90285bda2b997ac6d45a1862f09afd721bcee66ad5c",
+    "bytes": 50299
+  },
+  {
+    "key": "btc/raw/sha256/30b62486716520ae3ff6468922f833df3d7acaf0bca4c61f7f394866d5fade67/BTC-25DEC26.jsonl.gz",
+    "sha256": "30b62486716520ae3ff6468922f833df3d7acaf0bca4c61f7f394866d5fade67",
+    "bytes": 40448
+  },
+  {
+    "key": "btc/trades/v1/e04ef033c488cecc5a509149ff554feed82b3f9d71f05ad6c8ca35296065f6a2/manifest.json",
+    "sha256": "e04ef033c488cecc5a509149ff554feed82b3f9d71f05ad6c8ca35296065f6a2",
+    "bytes": 15212
+  },
+  {
+    "key": "btc/trades/v1/2b00bd355fc31314d9893c4ce426ae723666c1eaabca7740fa540727f37bd010/manifest.json",
+    "sha256": "2b00bd355fc31314d9893c4ce426ae723666c1eaabca7740fa540727f37bd010",
+    "bytes": 16014
+  },
+  {
+    "key": "btc/raw/sha256/2ee9ca38e2423d56351e67d68d92c11f232845f144f1b57aad9743dc9fef4909/BTC-25DEC26.jsonl.gz",
+    "sha256": "2ee9ca38e2423d56351e67d68d92c11f232845f144f1b57aad9743dc9fef4909",
+    "bytes": 53207
+  },
+  {
+    "key": "btc/raw/sha256/ee515bb60d04719e4065c1992a069f6b14f63d2fc2d90237f6d22f4dc4ca954b/BTC-25DEC26.jsonl.gz",
+    "sha256": "ee515bb60d04719e4065c1992a069f6b14f63d2fc2d90237f6d22f4dc4ca954b",
+    "bytes": 37678
+  },
+  {
+    "key": "btc/trades/v1/2f98dab61e0f3989342a20401df87363d0df7e9f8690840eabd1674c4f37932e/manifest.json",
+    "sha256": "2f98dab61e0f3989342a20401df87363d0df7e9f8690840eabd1674c4f37932e",
+    "bytes": 15209
+  },
+  {
+    "key": "btc/trades/v1/451ca870cbcc966d89e416a27129d2b07628ea651b3753b36d79fdbe975497c4/manifest.json",
+    "sha256": "451ca870cbcc966d89e416a27129d2b07628ea651b3753b36d79fdbe975497c4",
+    "bytes": 15235
+  },
+  {
+    "key": "btc/trades/v1/f1129ee0f7800e6c15ed9fe194e05c5e270bde6289906d5754002460e7cb3383/manifest.json",
+    "sha256": "f1129ee0f7800e6c15ed9fe194e05c5e270bde6289906d5754002460e7cb3383",
+    "bytes": 27546
+  },
+  {
+    "key": "btc/raw/sha256/ee7dae592b958e1b561bf7634c52d45b0b48a38cb5e84ebf35c85e55c820a95d/BTC-25DEC26.jsonl.gz",
+    "sha256": "ee7dae592b958e1b561bf7634c52d45b0b48a38cb5e84ebf35c85e55c820a95d",
+    "bytes": 6339
+  },
+  {
+    "key": "btc/raw/sha256/78e06fd89548badacaa70362d614ea36f779e6a8ae0009f21fd3579e65595bf7/BTC-25DEC26.jsonl.gz",
+    "sha256": "78e06fd89548badacaa70362d614ea36f779e6a8ae0009f21fd3579e65595bf7",
+    "bytes": 24178
+  },
+  {
+    "key": "btc/raw/sha256/5ea2cf49322db74d7d84c333c05047189fa3595e91e9d46e24f143335b1654d9/BTC-25DEC26.jsonl.gz",
+    "sha256": "5ea2cf49322db74d7d84c333c05047189fa3595e91e9d46e24f143335b1654d9",
+    "bytes": 11743
+  },
+  {
+    "key": "btc/raw/sha256/d096f22dfdbc30c0ae71648ceb5297c1e0fbece50d1c199f810ec9d189f1d313/BTC-25DEC26.jsonl.gz",
+    "sha256": "d096f22dfdbc30c0ae71648ceb5297c1e0fbece50d1c199f810ec9d189f1d313",
+    "bytes": 54026
+  },
+  {
+    "key": "btc/trades/v1/705936d2fc40630110a5e03e7ae845f8fe385ec475361e73c4be474899c260e0/manifest.json",
+    "sha256": "705936d2fc40630110a5e03e7ae845f8fe385ec475361e73c4be474899c260e0",
+    "bytes": 27690
+  },
+  {
+    "key": "btc/trades/v1/479e61037b4b2b49b3ec5bd2571f20ed86f0b342917a3253e7c6b3e13b9ccc18/manifest.json",
+    "sha256": "479e61037b4b2b49b3ec5bd2571f20ed86f0b342917a3253e7c6b3e13b9ccc18",
+    "bytes": 27623
+  },
+  {
+    "key": "btc/trades/v1/9180408dc76df0bc38815945b63af899568912714dc5a3248f31d4694a023482/manifest.json",
+    "sha256": "9180408dc76df0bc38815945b63af899568912714dc5a3248f31d4694a023482",
+    "bytes": 25516
+  },
+  {
+    "key": "btc/raw/sha256/006e4676b2cd925513cbb081640cbfa68f102989e052eea8e5cd2dafb459bd3f/BTC-25DEC26.jsonl.gz",
+    "sha256": "006e4676b2cd925513cbb081640cbfa68f102989e052eea8e5cd2dafb459bd3f",
+    "bytes": 20296
+  },
+  {
+    "key": "btc/trades/v1/4cc6bd281c171a00aaa6577b48fb3e70872f5645b3eec4ff6606c6446e40894c/manifest.json",
+    "sha256": "4cc6bd281c171a00aaa6577b48fb3e70872f5645b3eec4ff6606c6446e40894c",
+    "bytes": 25901
+  },
+  {
+    "key": "btc/trades/v1/256bc2a8c341f374780c94e80a39530dbc05c73b84ba2bc9358510c80a50f567/manifest.json",
+    "sha256": "256bc2a8c341f374780c94e80a39530dbc05c73b84ba2bc9358510c80a50f567",
+    "bytes": 25278
+  },
+  {
+    "key": "btc/raw/sha256/7c9250f2e9ddf72c5be170791b565ca9eeb4e89d074410dca6f11c666c560411/BTC-25DEC26.jsonl.gz",
+    "sha256": "7c9250f2e9ddf72c5be170791b565ca9eeb4e89d074410dca6f11c666c560411",
+    "bytes": 116641
+  },
+  {
+    "key": "btc/trades/v1/d5e6c5f38773daf01d0bd1332fc54867019a2fd64674ef9433c2b477941a1b87/manifest.json",
+    "sha256": "d5e6c5f38773daf01d0bd1332fc54867019a2fd64674ef9433c2b477941a1b87",
+    "bytes": 14383
+  },
+  {
+    "key": "btc/raw/sha256/ae1a8c8384b29aef6fe118c48b1790777b1a96b53ac1932857dea19b32b9b44b/BTC-25DEC26.jsonl.gz",
+    "sha256": "ae1a8c8384b29aef6fe118c48b1790777b1a96b53ac1932857dea19b32b9b44b",
+    "bytes": 95640
+  },
+  {
+    "key": "btc/raw/sha256/45812fe36e7f003197f1cd1b128cc6dbfad80f07ab4442417675ee3ca16a0f29/BTC-25DEC26.jsonl.gz",
+    "sha256": "45812fe36e7f003197f1cd1b128cc6dbfad80f07ab4442417675ee3ca16a0f29",
+    "bytes": 279177
+  },
+  {
+    "key": "btc/raw/sha256/e04d01de67a6e67f05738dbdf0b019854ed61f469a7596f25a700271ea431178/BTC-25DEC26.jsonl.gz",
+    "sha256": "e04d01de67a6e67f05738dbdf0b019854ed61f469a7596f25a700271ea431178",
+    "bytes": 342332
+  },
+  {
+    "key": "btc/raw/sha256/98777d51f64923ce2a8b4026d19c96398b434c4344bef7367cc5436166fee88d/BTC-25DEC26.jsonl.gz",
+    "sha256": "98777d51f64923ce2a8b4026d19c96398b434c4344bef7367cc5436166fee88d",
+    "bytes": 145839
+  },
+  {
+    "key": "btc/trades/v1/4b9ae1d3699a5f99ab164b7a2ee84e97abaa4d27ed9e7dadf0cc5eb1fbf30f8f/manifest.json",
+    "sha256": "4b9ae1d3699a5f99ab164b7a2ee84e97abaa4d27ed9e7dadf0cc5eb1fbf30f8f",
+    "bytes": 25226
+  },
+  {
+    "key": "btc/trades/v1/38c3d356e993b4e02444809026a9bbcf317c75678238c9c00d907dc832eb7eeb/manifest.json",
+    "sha256": "38c3d356e993b4e02444809026a9bbcf317c75678238c9c00d907dc832eb7eeb",
+    "bytes": 14365
+  },
+  {
+    "key": "btc/raw/sha256/8bbfc04f19d37dae2e6b3172b80940b033a19ce3f70c3ececc7e829a56fa2a8e/BTC-25DEC26.jsonl.gz",
+    "sha256": "8bbfc04f19d37dae2e6b3172b80940b033a19ce3f70c3ececc7e829a56fa2a8e",
+    "bytes": 147680
+  },
+  {
+    "key": "btc/trades/v1/8aa9a138fe5ca25eecff2b104dc6f3ec3bd37bc019e01cfc9e46cdccd6efe679/manifest.json",
+    "sha256": "8aa9a138fe5ca25eecff2b104dc6f3ec3bd37bc019e01cfc9e46cdccd6efe679",
+    "bytes": 25231
+  },
+  {
+    "key": "btc/raw/sha256/88dab932377138aa178239063f2f3dbba0bb2ec9fa5007d1fb228334433cec66/BTC-25DEC26.jsonl.gz",
+    "sha256": "88dab932377138aa178239063f2f3dbba0bb2ec9fa5007d1fb228334433cec66",
+    "bytes": 89188
+  },
+  {
+    "key": "btc/raw/sha256/8d6953d7d2adaf928b3882670f2041a59bd857967b2e838c5471a76ded8bc47c/BTC-25DEC26.jsonl.gz",
+    "sha256": "8d6953d7d2adaf928b3882670f2041a59bd857967b2e838c5471a76ded8bc47c",
+    "bytes": 196773
+  },
+  {
+    "key": "btc/trades/v1/8d0718bc47f38cd0eec1096a35cade1e3876c9addcd9b2e7c1bec67244eff220/manifest.json",
+    "sha256": "8d0718bc47f38cd0eec1096a35cade1e3876c9addcd9b2e7c1bec67244eff220",
+    "bytes": 13909
+  },
+  {
+    "key": "btc/trades/v1/c1703a405011264cca8c660e7ebce38894da6b9d9a3d836e802b3969b8dc0b34/manifest.json",
+    "sha256": "c1703a405011264cca8c660e7ebce38894da6b9d9a3d836e802b3969b8dc0b34",
+    "bytes": 13083
+  },
+  {
+    "key": "btc/trades/v1/40e20450665cab604907eb19bc7a323541aa45b9cc131dbd8e2fdf9d52674715/manifest.json",
+    "sha256": "40e20450665cab604907eb19bc7a323541aa45b9cc131dbd8e2fdf9d52674715",
+    "bytes": 19077
+  },
+  {
+    "key": "btc/trades/v1/14c8ee70b90b082cf4603619177d258b1293b5d9be337674d01028292d08b7a6/manifest.json",
+    "sha256": "14c8ee70b90b082cf4603619177d258b1293b5d9be337674d01028292d08b7a6",
+    "bytes": 17083
+  },
+  {
+    "key": "btc/raw/sha256/57acd964c30dd5c550a60a595855c87c69a48a36ead61de026b084f18153edd3/BTC-25DEC26.jsonl.gz",
+    "sha256": "57acd964c30dd5c550a60a595855c87c69a48a36ead61de026b084f18153edd3",
+    "bytes": 66684
+  },
+  {
+    "key": "btc/raw/sha256/28babdfdf91f2528472c2cb33901e4cfca9303c78bcdc0cde8f417088f5df94b/BTC-25DEC26.jsonl.gz",
+    "sha256": "28babdfdf91f2528472c2cb33901e4cfca9303c78bcdc0cde8f417088f5df94b",
+    "bytes": 23370
+  },
+  {
+    "key": "btc/raw/sha256/b40a6487633e61723d3edd661f91f3e5024097bcc52ed618162d3b89e6e4f782/BTC-25DEC26.jsonl.gz",
+    "sha256": "b40a6487633e61723d3edd661f91f3e5024097bcc52ed618162d3b89e6e4f782",
+    "bytes": 70718
+  },
+  {
+    "key": "btc/raw/sha256/ab4cacf1e57c7aa1712cc29ae4a64110f9024cfb41c8db45199baa647e535682/BTC-25DEC26.jsonl.gz",
+    "sha256": "ab4cacf1e57c7aa1712cc29ae4a64110f9024cfb41c8db45199baa647e535682",
+    "bytes": 60100
+  },
+  {
+    "key": "btc/raw/sha256/6b06602c0a21513f0962524cbdbc1a0693a1cd20068e932c5870ef9ab524fc3a/BTC-25DEC26.jsonl.gz",
+    "sha256": "6b06602c0a21513f0962524cbdbc1a0693a1cd20068e932c5870ef9ab524fc3a",
+    "bytes": 71020
+  },
+  {
+    "key": "btc/raw/sha256/4b1a99b42e3ac4cc5ac503fc3246600a2691ec0a405d225dea48599ba759e800/BTC-25DEC26.jsonl.gz",
+    "sha256": "4b1a99b42e3ac4cc5ac503fc3246600a2691ec0a405d225dea48599ba759e800",
+    "bytes": 101950
+  },
+  {
+    "key": "btc/raw/sha256/0550789c72e3246daeebc94bbb67577d84a9e514029b2258d31444a552310573/BTC-25DEC26.jsonl.gz",
+    "sha256": "0550789c72e3246daeebc94bbb67577d84a9e514029b2258d31444a552310573",
+    "bytes": 48714
+  },
+  {
+    "key": "btc/raw/sha256/156fb9e70fa8f38f03e60e379d24e64fbf4750cafc344214eb6fe3b302315b2d/BTC-25DEC26.jsonl.gz",
+    "sha256": "156fb9e70fa8f38f03e60e379d24e64fbf4750cafc344214eb6fe3b302315b2d",
+    "bytes": 94790
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-06-11.json",
+    "sha256": "781229d833abbe76510484b04693e90beadddcbd5e9b13761330f525d8433774",
+    "bytes": 2595
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-06-08.json",
+    "sha256": "687ffdc15396c2448b6c84f02755be40684c9205d297624eaddf69b8a2f1eef0",
+    "bytes": 2596
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-06-13.json",
+    "sha256": "2ebc4232e4ff8e659ba113be46dcf0f97fbad44199bdd5794f2f1bb4bc5e9583",
+    "bytes": 2592
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-06-07.json",
+    "sha256": "ef5966e1f11cec1c5999aee7aaed875bc85788079b1e4e5df848b85fcf7cf507",
+    "bytes": 2599
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-06-09.json",
+    "sha256": "fd7cc6a847c2a990ace7ddbe6a9b2c50cb3959e258b70ae2a36a5e3ec824b9de",
+    "bytes": 2596
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-06-12.json",
+    "sha256": "28b444970e4adab75633c6f86372305adfda01265bf91b699e46bf3f532c9ec4",
+    "bytes": 2595
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-06-06.json",
+    "sha256": "94b29f386d2768e904aafa157a868956e5e71318e5d6b373fa2b4b97b6af340d",
+    "bytes": 2640
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-06-10.json",
+    "sha256": "69ca9bbf9d3ef6b99fb0d56afd10b2064f298edfff74fe151de44631267aa104",
+    "bytes": 2635
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/84aee04ed65f5798469193e6773e21a879066e1b1ad0808ae14bb60c151c0cba/BTC-26MAR27.jsonl.gz",
+    "sha256": "84aee04ed65f5798469193e6773e21a879066e1b1ad0808ae14bb60c151c0cba",
+    "bytes": 9930
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/af50f466d4871bab82a1e50dd0595e7b147d135d698c2a61ec971b74dc475808/BTC-26MAR27.jsonl.gz",
+    "sha256": "af50f466d4871bab82a1e50dd0595e7b147d135d698c2a61ec971b74dc475808",
+    "bytes": 25679
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/846bdc19eb030883c2558e7b78afd01a254bbbbba7c53f345104a363501676db/BTC-26MAR27.jsonl.gz",
+    "sha256": "846bdc19eb030883c2558e7b78afd01a254bbbbba7c53f345104a363501676db",
+    "bytes": 34843
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/24d8c60f7b0984f4b301f281e25a0e391912712913bce74f977f690e1ce08962/BTC-26MAR27.jsonl.gz",
+    "sha256": "24d8c60f7b0984f4b301f281e25a0e391912712913bce74f977f690e1ce08962",
+    "bytes": 28157
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/5d4ae57b7182e48d9feb8aa5b91e1f8d8bb07e6a5927aea193c8aefb89918fd7/BTC-26MAR27.jsonl.gz",
+    "sha256": "5d4ae57b7182e48d9feb8aa5b91e1f8d8bb07e6a5927aea193c8aefb89918fd7",
+    "bytes": 41599
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/7194e9ee32edea79ca9bedbbf49f3f878ae958b24119acea1e985cb0f17a03bc/BTC-26MAR27.jsonl.gz",
+    "sha256": "7194e9ee32edea79ca9bedbbf49f3f878ae958b24119acea1e985cb0f17a03bc",
+    "bytes": 40046
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-06-14.json",
+    "sha256": "0d71eeeae891e3ffcb54869dc178f0dc943f981abf8f41eca48b780f680f5fe0",
+    "bytes": 2595
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-06-16.json",
+    "sha256": "6638398cbf69fd1705dfc8b4a4bad7bfc90102dd5eac33745950bc274c6b4edd",
+    "bytes": 2595
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-06-15.json",
+    "sha256": "26e6fccf63c902ed86a9cb09432081436f204ec6ae023281ea632f29efbbd07d",
+    "bytes": 2596
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-06-17.json",
+    "sha256": "2e3c97b6334f92d152eceebba1542b8bd92d101a4a96bb64f95254455096cf13",
+    "bytes": 2636
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-06-18.json",
+    "sha256": "e592161bab5a0da5b60fd048361b679a403d7c6ea10435db5bff9386fe64d1f7",
+    "bytes": 2596
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/7a9d5b4ee7771d080752e26f34e804b59d4575a89b9d3aab77e2e1aa428b8440/BTC-26MAR27.jsonl.gz",
+    "sha256": "7a9d5b4ee7771d080752e26f34e804b59d4575a89b9d3aab77e2e1aa428b8440",
+    "bytes": 78692
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-06-19.json",
+    "sha256": "c363f2701be18940f250a3b2343f3c489694ddb73e2bf5ea22fb19cca6c15d4a",
+    "bytes": 2593
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-06-20.json",
+    "sha256": "912d374a20ffca2ac35fca0e0107ff4056e6dacdbece7b95da8a1eaa602e4398",
+    "bytes": 2594
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/4ff3f6e0ed2269fae32d0d3cdf3c849c522d9b93dec730fc55a29b995f249bb8/BTC-26MAR27.jsonl.gz",
+    "sha256": "4ff3f6e0ed2269fae32d0d3cdf3c849c522d9b93dec730fc55a29b995f249bb8",
+    "bytes": 127171
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/ef0a6878727da5c21f129832c14060d0bc572a47cb78a02e110c9a4acef4196a/BTC-26MAR27.meta.json",
+    "sha256": "ef0a6878727da5c21f129832c14060d0bc572a47cb78a02e110c9a4acef4196a",
+    "bytes": 1553
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/977222c94fd16b79cbe02acc92d6eee6da435eecd7b48d458b5023d9481e5cf2/BTC-26MAR27.jsonl.gz",
+    "sha256": "977222c94fd16b79cbe02acc92d6eee6da435eecd7b48d458b5023d9481e5cf2",
+    "bytes": 21382
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/c80ad9997956f3c68c0b86f3c73e3997949a63d35c29c26e9906bbed7fc73c60/BTC-26MAR27.jsonl.gz",
+    "sha256": "c80ad9997956f3c68c0b86f3c73e3997949a63d35c29c26e9906bbed7fc73c60",
+    "bytes": 28296
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/dc9920c3ec6b4d06e6d7f0b0f5503416f66d7797152724b210e81365e957f9d1/BTC-26MAR27.jsonl.gz",
+    "sha256": "dc9920c3ec6b4d06e6d7f0b0f5503416f66d7797152724b210e81365e957f9d1",
+    "bytes": 25400
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/12c3d14bfc2aec4f2a964915a0abc57466aeb41bd993f5cffa3c4010c2a9252c/BTC-26MAR27.jsonl.gz",
+    "sha256": "12c3d14bfc2aec4f2a964915a0abc57466aeb41bd993f5cffa3c4010c2a9252c",
+    "bytes": 38980
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/c4172e2a521914a2d3b03429c0edb31ec6df869af18adbc6dbc6e75d5777fd39/BTC-26MAR27.jsonl.gz",
+    "sha256": "c4172e2a521914a2d3b03429c0edb31ec6df869af18adbc6dbc6e75d5777fd39",
+    "bytes": 41622
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/d902a04aa98bdf430ad4b5ac1d80b99f0e42155d89ff3eacbd2383433204c057/BTC-26MAR27.jsonl.gz",
+    "sha256": "d902a04aa98bdf430ad4b5ac1d80b99f0e42155d89ff3eacbd2383433204c057",
+    "bytes": 18640
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-06-22.json",
+    "sha256": "c00b580eec324961c2a7d0e6eb418798aa949c42fca75b7ba984a914e070f87f",
+    "bytes": 2594
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-06-23.json",
+    "sha256": "db3cb0f5eaf933e967f30155a490ea144b5df92814f6239a567feddbee6be521",
+    "bytes": 2596
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-06-24.json",
+    "sha256": "bf683a64e25dc4855c841b1d3daaec0ccaa59d56cc4e6b26ccd04628426923df",
+    "bytes": 2597
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/b60b8b2c68238efd1210b7a49818f54fb9e4b52759c1a36b1cc6cc46c7b04768/BTC-26MAR27.jsonl.gz",
+    "sha256": "b60b8b2c68238efd1210b7a49818f54fb9e4b52759c1a36b1cc6cc46c7b04768",
+    "bytes": 12681
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-06-25.json",
+    "sha256": "bf59fe10ae7dc198b567c8f7ec0f26370ac8f8a1eb133b9bbeeaa9c133470492",
+    "bytes": 2599
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-06-26.json",
+    "sha256": "33a988d85cb8907462324f17f61b4c32c436e6b8c32b79e26a4dc7c938c2b0a7",
+    "bytes": 2603
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-06-27.json",
+    "sha256": "c1fe0f72913dd398bf013f012c9c89547d35dea560049ad54226e0c35874f827",
+    "bytes": 2602
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-06-28.json",
+    "sha256": "a4a0fa3f4834731059ec6a1f7cd52cfecaa34c15db59d0013f38d31cb4c00ea3",
+    "bytes": 2602
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-06-21.json",
+    "sha256": "9db7279fbdf2d91fa0ac0af83b37acf357134cb8cece1a8c7892ba02cfd3e4df",
+    "bytes": 2594
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/cdfa8019c0c1667049a80be7414f003e1b12ac6a26decde610e416987500647b/BTC-26MAR27.jsonl.gz",
+    "sha256": "cdfa8019c0c1667049a80be7414f003e1b12ac6a26decde610e416987500647b",
+    "bytes": 13605
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/a08b0a8c9310d602c40c0e5efffe9371da3398f4812cdec13d685481c7c57b46/BTC-26MAR27.jsonl.gz",
+    "sha256": "a08b0a8c9310d602c40c0e5efffe9371da3398f4812cdec13d685481c7c57b46",
+    "bytes": 17693
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/dddf3ab247995b41c423e3b59b3c20cfda503218350a930f4bb786126e36e14c/BTC-26MAR27.jsonl.gz",
+    "sha256": "dddf3ab247995b41c423e3b59b3c20cfda503218350a930f4bb786126e36e14c",
+    "bytes": 21618
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/2bdedf1c5efe3d19b54d3a50ed9442a66f457c812cc3b24f3778afda737a791c/BTC-26MAR27.jsonl.gz",
+    "sha256": "2bdedf1c5efe3d19b54d3a50ed9442a66f457c812cc3b24f3778afda737a791c",
+    "bytes": 37458
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/ae7938ac7296cb95c965dfc9b212b235d88aad118e3c7bd1503f4d6daed2b143/BTC-26MAR27.jsonl.gz",
+    "sha256": "ae7938ac7296cb95c965dfc9b212b235d88aad118e3c7bd1503f4d6daed2b143",
+    "bytes": 40483
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-06-30.json",
+    "sha256": "e4f717ec46438b26fbd06289784e79c6d579726812bb6f6d8f7e17a9a2e014e9",
+    "bytes": 2642
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-07-01.json",
+    "sha256": "4201f3b0926b832767bd31516d5178d54ca1ffa3eea9202ee051e412f2f03884",
+    "bytes": 2642
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/208802b356b914a7b39e17cc6ea08e27f397b9d24f422d913151477554bbcffa/BTC-26MAR27.jsonl.gz",
+    "sha256": "208802b356b914a7b39e17cc6ea08e27f397b9d24f422d913151477554bbcffa",
+    "bytes": 39269
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-07-02.json",
+    "sha256": "146cb25fe110f7a82bf6f36c7de76937bd146150c539b5daef158eaad6f31758",
+    "bytes": 2601
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/4a0d13103827c29d7afbd90105303361fdb1563bb49ccf0d2c28d482550de26a/BTC-26MAR27.jsonl.gz",
+    "sha256": "4a0d13103827c29d7afbd90105303361fdb1563bb49ccf0d2c28d482550de26a",
+    "bytes": 23517
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/f46d8644928af52a86f12015295342cbfd08157e0a08b591211ac2e46326b5ca/BTC-26MAR27.jsonl.gz",
+    "sha256": "f46d8644928af52a86f12015295342cbfd08157e0a08b591211ac2e46326b5ca",
+    "bytes": 66513
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-07-04.json",
+    "sha256": "36d6e4532bbae055da0c5437eba84023c2eaf06364a23cf55ed783b172fddbde",
+    "bytes": 2602
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-07-03.json",
+    "sha256": "d20f8f9216fbba61f70ed883d66b4daaea9652e3a9e2af1df6ed36aa01850f8c",
+    "bytes": 2601
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-06-29.json",
+    "sha256": "da3bbc699da72e815b39d0145cf5cdac97d26fbd694fcdaaba26f0552cf08e22",
+    "bytes": 2641
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-07-05.json",
+    "sha256": "53b4aaa9c12e20782209c1267d5ccf6f93d603d868a7c368ff9b654f3aed8f97",
+    "bytes": 2599
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-07-06.json",
+    "sha256": "d2720aca59bce3bec73f2b77b68f244633939c9d29b135cbe6324ff310d8e73d",
+    "bytes": 2602
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/90b5ad987e1d3512a0eb87838838da988932e98a571244d8a686ed76360ff5e7/BTC-26MAR27.jsonl.gz",
+    "sha256": "90b5ad987e1d3512a0eb87838838da988932e98a571244d8a686ed76360ff5e7",
+    "bytes": 41759
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/6f2186a95a34181e64406ef80ae0fd9994286c3cf7820c011c6b188ea24adf04/BTC-26MAR27.jsonl.gz",
+    "sha256": "6f2186a95a34181e64406ef80ae0fd9994286c3cf7820c011c6b188ea24adf04",
+    "bytes": 48854
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/321c7d24a9ecb223033fa96c4d74802d77fda4b679f138462bfc527f939b4db5/BTC-26MAR27.jsonl.gz",
+    "sha256": "321c7d24a9ecb223033fa96c4d74802d77fda4b679f138462bfc527f939b4db5",
+    "bytes": 49199
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/f75a42cea2fb7f49f91b2a0252d531e835929b50de06cf9b863369861a781628/BTC-26MAR27.jsonl.gz",
+    "sha256": "f75a42cea2fb7f49f91b2a0252d531e835929b50de06cf9b863369861a781628",
+    "bytes": 46361
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/81f1e0462138597689eac9187c8093e4b9278aa9e73c74bf859eb445b436a5e4/BTC-26MAR27.jsonl.gz",
+    "sha256": "81f1e0462138597689eac9187c8093e4b9278aa9e73c74bf859eb445b436a5e4",
+    "bytes": 21954
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/2ef472c2b8bbdceec74cab275f95fa6bb64b4ab8b51d80d8b0545397f715b660/BTC-26MAR27.jsonl.gz",
+    "sha256": "2ef472c2b8bbdceec74cab275f95fa6bb64b4ab8b51d80d8b0545397f715b660",
+    "bytes": 20907
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-07-08.json",
+    "sha256": "86385d0cce910cc8da07491147fec5062f78d742295b0573e5059312f540c230",
+    "bytes": 2601
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-07-09.json",
+    "sha256": "2a42129a8134981db0e1d3ef065d4b3a75391bd927c5416b1ec28945b466b450",
+    "bytes": 2601
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-07-10.json",
+    "sha256": "34ed1a045614090468e07b2d1c61e812f247feb230e95905e6f27083c5526df0",
+    "bytes": 2602
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/752ce5061e80ebb97527f98fbfd4b4e72cf039a19301fca20af56e2e5b2c771a/BTC-26MAR27.jsonl.gz",
+    "sha256": "752ce5061e80ebb97527f98fbfd4b4e72cf039a19301fca20af56e2e5b2c771a",
+    "bytes": 18012
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-07-12.json",
+    "sha256": "b713d306348fde2c255a9af0be2c71669053cc97101d7768f226ab8c1dc06667",
+    "bytes": 2599
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-07-11.json",
+    "sha256": "39852cc5420da2cde23d564c968fb955cca4f76c2968d5fde82ba8dd1524cffa",
+    "bytes": 2598
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/5cfa92c7c8cd04d314fea76fdb67382bbb9ffb14f1db39d71de6144cd12d5620/BTC-26MAR27.jsonl.gz",
+    "sha256": "5cfa92c7c8cd04d314fea76fdb67382bbb9ffb14f1db39d71de6144cd12d5620",
+    "bytes": 47266
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-07-07.json",
+    "sha256": "30a6cdeaf2cf4f3e8509b247c17563cdf9b287e8b181ec44f3a7b5b21083257b",
+    "bytes": 2601
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-07-13.json",
+    "sha256": "90ac701e817e446cebc2b7190c4cebed5f8062f5b62f5cc3a9d968aac30ad400",
+    "bytes": 2601
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-07-14.json",
+    "sha256": "26e4fa4735caa24327d00a1760d47d996b1236220b8ad2452e5b3ebc6057113d",
+    "bytes": 2640
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/27a20876458ce7c7534590283f78abe1ae561f1df6b70953983a876557f50eb5/BTC-26MAR27.jsonl.gz",
+    "sha256": "27a20876458ce7c7534590283f78abe1ae561f1df6b70953983a876557f50eb5",
+    "bytes": 24886
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/2712aec09f9df4fba3656a2cd508d533848628b93e9843e27a272ef8036b56db/BTC-26MAR27.jsonl.gz",
+    "sha256": "2712aec09f9df4fba3656a2cd508d533848628b93e9843e27a272ef8036b56db",
+    "bytes": 26240
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/4538902884417309e19752ba9471a591c4686561d2bce4dbd68e5fd514064144/BTC-26MAR27.jsonl.gz",
+    "sha256": "4538902884417309e19752ba9471a591c4686561d2bce4dbd68e5fd514064144",
+    "bytes": 25193
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/bba26ad3cd3055163c47e8b7992dc1878b94d3cb4a1ced884a82bf0bf1525497/BTC-26MAR27.jsonl.gz",
+    "sha256": "bba26ad3cd3055163c47e8b7992dc1878b94d3cb4a1ced884a82bf0bf1525497",
+    "bytes": 31075
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/42fbed5d8fd057b5045dc14a1c6838c7173a15522d37c983c3530eb09616eeb6/BTC-26MAR27.jsonl.gz",
+    "sha256": "42fbed5d8fd057b5045dc14a1c6838c7173a15522d37c983c3530eb09616eeb6",
+    "bytes": 16560
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-07-16.json",
+    "sha256": "e5e6d1a524f723b998e8681d3be4a671c257f6525e16f27e2d92e1a834d39649",
+    "bytes": 2601
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/8b7e9e4b4929fd6bad0a05a486a8bc786d11368235b2a6c5eb782c3be45ec5a1/BTC-26MAR27.jsonl.gz",
+    "sha256": "8b7e9e4b4929fd6bad0a05a486a8bc786d11368235b2a6c5eb782c3be45ec5a1",
+    "bytes": 10229
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-07-17.json",
+    "sha256": "c892b3410a47c369cf2d1b27a101726bdf1f16fbebff783ea64a474b47e009ee",
+    "bytes": 2602
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-07-18.json",
+    "sha256": "abcfe04ef467b5a827776b262e1a3052358195d769449137fb034906c203e1b5",
+    "bytes": 2599
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-07-20.json",
+    "sha256": "dd2318c8f46e0955f2ede02188d925efb8cc10846f635f1ac84c3236cfa374ef",
+    "bytes": 2603
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-07-19.json",
+    "sha256": "fa20c579340234e0a230a0ca7e8c3331a14a6fbdb753ee4f921cd4ad8d98f8dc",
+    "bytes": 2599
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/b7a5e1ebb441875703335df03a5cbe296d553d109aa8046cf3a096056bc5dc23/BTC-26MAR27.jsonl.gz",
+    "sha256": "b7a5e1ebb441875703335df03a5cbe296d553d109aa8046cf3a096056bc5dc23",
+    "bytes": 36823
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-07-15.json",
+    "sha256": "ec42f26d8a95b77a6b48db06c63b39eec6e4193946d2fa3a87a216667dd5667f",
+    "bytes": 2641
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/e74dd273631cb1d7ab00b51c27ae85ae9dd97177e84a060da8338cdca3aca697/BTC-26MAR27.jsonl.gz",
+    "sha256": "e74dd273631cb1d7ab00b51c27ae85ae9dd97177e84a060da8338cdca3aca697",
+    "bytes": 51383
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/e8bb0fc5831a40a228a98db87ead0a1f5b516ae11da1225c34ffec89dc31eae1/BTC-26MAR27.jsonl.gz",
+    "sha256": "e8bb0fc5831a40a228a98db87ead0a1f5b516ae11da1225c34ffec89dc31eae1",
+    "bytes": 16642
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-07-21.json",
+    "sha256": "7f8ba5e6eef4856866764fb6a0229de76aba8f86a0ec5230f8e52e5119e1ed8d",
+    "bytes": 2643
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-07-22.json",
+    "sha256": "e71e4f80d9da81861435018bc2e2d1eb954566332c709fc350d7e8b5533710fd",
+    "bytes": 2602
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-07-23.json",
+    "sha256": "2caa86110a66b289a7076cdc847f699deffa25e9756f2d1cf46462768e3ef7e6",
+    "bytes": 2601
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/5e5cb59f330ba8700ac6dfc68d599f718e08a747513deb20c9264e2429d3b340/BTC-26MAR27.jsonl.gz",
+    "sha256": "5e5cb59f330ba8700ac6dfc68d599f718e08a747513deb20c9264e2429d3b340",
+    "bytes": 37416
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/74964c0842f0961f2ec006e6967137c53fc8e2def8af74e8ec9cce57e222d6c1/BTC-26MAR27.jsonl.gz",
+    "sha256": "74964c0842f0961f2ec006e6967137c53fc8e2def8af74e8ec9cce57e222d6c1",
+    "bytes": 40586
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/50a7f67b82752587d6a1a1b4310bede4301fc91677d6b834c980f802aac2c9c6/BTC-26MAR27.jsonl.gz",
+    "sha256": "50a7f67b82752587d6a1a1b4310bede4301fc91677d6b834c980f802aac2c9c6",
+    "bytes": 14982
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/d1ef1197ee25d1baf0e4e9873a78a04ee38774c858606172f6574600930467d2/BTC-26MAR27.jsonl.gz",
+    "sha256": "d1ef1197ee25d1baf0e4e9873a78a04ee38774c858606172f6574600930467d2",
+    "bytes": 35882
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/549317446ae8b323f11d3720684e0e19fe4fdd4a4b0c954852626c13a29cdce7/BTC-26MAR27.jsonl.gz",
+    "sha256": "549317446ae8b323f11d3720684e0e19fe4fdd4a4b0c954852626c13a29cdce7",
+    "bytes": 41305
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-07-24.json",
+    "sha256": "0485e2bfb9867bf3097fe1f93d4714d9d6d3491de8af7aa35d1d7c9319f19e0b",
+    "bytes": 2603
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-07-26.json",
+    "sha256": "b4a269a66a1f7cac696830b996149ca798178c5e8d1354f06a70c907a20748a2",
+    "bytes": 2599
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-07-28.json",
+    "sha256": "2269631a848749c0876906afed758f902da55823e4e092ae3809d96446558b13",
+    "bytes": 2601
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-07-27.json",
+    "sha256": "aba27f5c753fa47832d0fcd2738639ad6bd84bd2bafd456818e43d072d3c090b",
+    "bytes": 2601
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/448817a9ae8a045f5a1fd652ce4bc0b4456c76e944978460b93e794d704523dd/BTC-26MAR27.jsonl.gz",
+    "sha256": "448817a9ae8a045f5a1fd652ce4bc0b4456c76e944978460b93e794d704523dd",
+    "bytes": 67353
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-07-25.json",
+    "sha256": "e944342852d79dbfdd8d96a271ccc1e02124e9f9dc1faa94816951c403887125",
+    "bytes": 2596
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/14abeb080b477144cb5443186455cf37a297624e38471debf4e31d3cbb832f1f/BTC-26MAR27.jsonl.gz",
+    "sha256": "14abeb080b477144cb5443186455cf37a297624e38471debf4e31d3cbb832f1f",
+    "bytes": 54380
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/34d774b9d63365af5a65ae0827d7d36166119874a9ccb1ae8eea6c5557be18ba/BTC-26MAR27.jsonl.gz",
+    "sha256": "34d774b9d63365af5a65ae0827d7d36166119874a9ccb1ae8eea6c5557be18ba",
+    "bytes": 34161
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/f1c244b034cee5b130c59f5f71cc8d1ecfed464c7ee670a6f0d795b01bde7317/BTC-26MAR27.jsonl.gz",
+    "sha256": "f1c244b034cee5b130c59f5f71cc8d1ecfed464c7ee670a6f0d795b01bde7317",
+    "bytes": 34681
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-07-29.json",
+    "sha256": "eba7e5048bca94fbad0fe3c65861eec4e7aadfb3ce856f84f06d31cc3d96df74",
+    "bytes": 2602
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-07-31.json",
+    "sha256": "a9ca0b3b5d7ffd34ecd7e8e5127b7f991972c2dbc97170ffb8848b2e69eb6ecc",
+    "bytes": 2603
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-07-30.json",
+    "sha256": "e9f026208f64b6e96d602956d3868c3400063f6239ab265b7b62d06eb0797bc5",
+    "bytes": 2642
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-08-01.json",
+    "sha256": "5b522fe7e4fbae02b148ba43a3ddfd8d81e028de920219e3ed59d5a57b220f5e",
+    "bytes": 2595
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/31a64ebea32d39e6acf0890714b020a48adcb642887a0e37fc74c019e7dd51d7/BTC-26MAR27.jsonl.gz",
+    "sha256": "31a64ebea32d39e6acf0890714b020a48adcb642887a0e37fc74c019e7dd51d7",
+    "bytes": 7435
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/492521067915c784cecce1d84bf3002a956c5ddd00ce631fe0ad40573471897f/BTC-26MAR27.jsonl.gz",
+    "sha256": "492521067915c784cecce1d84bf3002a956c5ddd00ce631fe0ad40573471897f",
+    "bytes": 16030
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/74b156c21a11c2788aba823bae0917e40fc07a62211f04b5be81e5f48377975a/BTC-26MAR27.jsonl.gz",
+    "sha256": "74b156c21a11c2788aba823bae0917e40fc07a62211f04b5be81e5f48377975a",
+    "bytes": 10280
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/3aa18f5cbfeadedc9850699cfbc5bbd46411376c827ece46117260d24b44abb0/BTC-26MAR27.jsonl.gz",
+    "sha256": "3aa18f5cbfeadedc9850699cfbc5bbd46411376c827ece46117260d24b44abb0",
+    "bytes": 53972
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/55d72dd46d8634d58369bca6d73d0570d4d5679d076dae25e668226e6de1fb46/BTC-26MAR27.jsonl.gz",
+    "sha256": "55d72dd46d8634d58369bca6d73d0570d4d5679d076dae25e668226e6de1fb46",
+    "bytes": 48993
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-08-02.json",
+    "sha256": "d1f14ee26ca7551d151761cc8951da02ebdb64f33810d31cb83c2cd4e618239b",
+    "bytes": 2601
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-08-03.json",
+    "sha256": "42b82c665dfd94a3292438e2b8182c9186de0dba7a047ac03cb0794ea16a7e9d",
+    "bytes": 2600
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-08-05.json",
+    "sha256": "e6b698672b58724cc42ff7ec4e81e515d25a248b42d81e7a8a565fcb23c8b0e8",
+    "bytes": 2601
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-08-06.json",
+    "sha256": "ee828f254d46928cc915b7d4102c616c88cd85cc08fd7c5e23ab68985c3c5b4d",
+    "bytes": 2600
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/0a497555a9c108f4e264836d3e2357314d282209310afe47ff361436198945f9/BTC-26MAR27.jsonl.gz",
+    "sha256": "0a497555a9c108f4e264836d3e2357314d282209310afe47ff361436198945f9",
+    "bytes": 26854
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/b66dfb3bab32dbbf6611fbaf734d3c6453c5f7186897e32750a6ea9c077870ca/BTC-26MAR27.jsonl.gz",
+    "sha256": "b66dfb3bab32dbbf6611fbaf734d3c6453c5f7186897e32750a6ea9c077870ca",
+    "bytes": 64184
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-08-04.json",
+    "sha256": "a56934414a732f68770199d477d10a36e5c0e9dc348bce6413898f2b2ef8856f",
+    "bytes": 2600
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/fad0610c93f7857f95de0251db72df4cc71248b4501f38961c4bfb05c5edb5af/BTC-26MAR27.jsonl.gz",
+    "sha256": "fad0610c93f7857f95de0251db72df4cc71248b4501f38961c4bfb05c5edb5af",
+    "bytes": 49064
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-08-07.json",
+    "sha256": "80c90777b029d46fda97ddfb7f33a14599b7ce7a1f36006e8696d36dc1dd7c9d",
+    "bytes": 2602
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-08-08.json",
+    "sha256": "25ee4e0f4191b4e9ed0a862723a8c41a04326dd062ca43f54a0bc10b8d2582bd",
+    "bytes": 2595
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-08-09.json",
+    "sha256": "2ea5117e7c25eba0c986d4cf31514bc858d601186d2cc03677322cb964debdaf",
+    "bytes": 2596
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/8ce970c209356e71e123a25039e37887d0c72cafbddc4cd7d8d016175534c133/BTC-26MAR27.jsonl.gz",
+    "sha256": "8ce970c209356e71e123a25039e37887d0c72cafbddc4cd7d8d016175534c133",
+    "bytes": 67765
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/6b8f47fb051897e9fa5b5810cac9e4ba51cb245c983eb278c9161937c4c7a02d/BTC-26MAR27.jsonl.gz",
+    "sha256": "6b8f47fb051897e9fa5b5810cac9e4ba51cb245c983eb278c9161937c4c7a02d",
+    "bytes": 23293
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-08-11.json",
+    "sha256": "83723b93f753b8977ffee58943043aa05dcb583d7f2b4181deeb838d01c60a16",
+    "bytes": 2601
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/dbe85121a6c9b179ae18e2cf3571583156826534df68233751555357a845acdb/BTC-26MAR27.jsonl.gz",
+    "sha256": "dbe85121a6c9b179ae18e2cf3571583156826534df68233751555357a845acdb",
+    "bytes": 20201
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-08-10.json",
+    "sha256": "d7bb079cdc066e70e5fb4d66e36829e67b26f9755a7bfd4296664b7691cf47ef",
+    "bytes": 2599
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/79b85c204c5edd7666054411ff08031a9fdbf208786e3ea701a167b1f6f3cd55/BTC-26MAR27.jsonl.gz",
+    "sha256": "79b85c204c5edd7666054411ff08031a9fdbf208786e3ea701a167b1f6f3cd55",
+    "bytes": 23102
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/ff3c16247e202bf2561f4389808b94db600437d18d97ecbac9a459da0d623692/BTC-26MAR27.jsonl.gz",
+    "sha256": "ff3c16247e202bf2561f4389808b94db600437d18d97ecbac9a459da0d623692",
+    "bytes": 33161
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/b2e3ecb65e55951604b1e8b6e35625c2364f5b587f6fe39b7c84f519b425ec63/BTC-26MAR27.jsonl.gz",
+    "sha256": "b2e3ecb65e55951604b1e8b6e35625c2364f5b587f6fe39b7c84f519b425ec63",
+    "bytes": 15772
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-08-12.json",
+    "sha256": "3c5437153e63226c7f1f9715ed2567c607826d4325ed07275f48bab495bf1aa0",
+    "bytes": 2598
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/7a3aa8492bd2572c204ffee1d33d1967b251e34b061c8d821321df305e6b570b/BTC-26MAR27.jsonl.gz",
+    "sha256": "7a3aa8492bd2572c204ffee1d33d1967b251e34b061c8d821321df305e6b570b",
+    "bytes": 19030
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-08-13.json",
+    "sha256": "d92697abaab314c2e25e62c9031ce4951445759399892867835eecf7e9ccb02e",
+    "bytes": 2642
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-08-15.json",
+    "sha256": "04a9ae9aca5897695af471225b6d96c49c90b455b7023d85e8e45aba08b782be",
+    "bytes": 2596
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-08-16.json",
+    "sha256": "8b7c4bb6d888a988561225e4658a5fe55b3cb76a1d44c8d2aef6f5367e18bc54",
+    "bytes": 2597
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/065ec4606270896e2c4ff52afb60cd3cc65916a22b473a7993429f20fc3b5c08/BTC-26MAR27.jsonl.gz",
+    "sha256": "065ec4606270896e2c4ff52afb60cd3cc65916a22b473a7993429f20fc3b5c08",
+    "bytes": 5999
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-08-14.json",
+    "sha256": "6ec6fa9c0dab1ac04551c9460ef679cb6d8ebabf5aad11bc1497d41a0a1aa1dc",
+    "bytes": 2600
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/1ff0d270ad226f58c8c39f4ba2ac275c19e285fe36ea499be0329bcb786c5dff/BTC-26MAR27.jsonl.gz",
+    "sha256": "1ff0d270ad226f58c8c39f4ba2ac275c19e285fe36ea499be0329bcb786c5dff",
+    "bytes": 6811
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/93dcd97906701c04e9d859cfb262f75e44c8a4af9a399f2ee3fde0a09cf99175/BTC-26MAR27.jsonl.gz",
+    "sha256": "93dcd97906701c04e9d859cfb262f75e44c8a4af9a399f2ee3fde0a09cf99175",
+    "bytes": 8099
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-08-17.json",
+    "sha256": "926a29c688f3b3b3338b71d8efff569b748f0fed54a8d6956c9d68a4f46d0965",
+    "bytes": 2602
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-08-18.json",
+    "sha256": "ccb826b90285131fd4b9878a4fa8bbae7fe08f0eac10aa83cfabdb4ce9826e33",
+    "bytes": 2598
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/436c26cafbf3a72948defb22d28a45415aa445dcc42a031f625728ec259355f0/BTC-26MAR27.jsonl.gz",
+    "sha256": "436c26cafbf3a72948defb22d28a45415aa445dcc42a031f625728ec259355f0",
+    "bytes": 16610
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-08-19.json",
+    "sha256": "00bc4fd47d00eac0c94c7fa889d4be4ba99bfd6fdbfcb36b8322ec06196cc354",
+    "bytes": 2642
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/9cc42c83a95ba5cba8d41bc8a55977b58e0f9a1fc991028f2177e720ca6662fa/BTC-26MAR27.jsonl.gz",
+    "sha256": "9cc42c83a95ba5cba8d41bc8a55977b58e0f9a1fc991028f2177e720ca6662fa",
+    "bytes": 11980
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-08-20.json",
+    "sha256": "b11ea5fb86f54abc8410b78c7093e552a48988e455dc22d12f8a20f034ae14c6",
+    "bytes": 2604
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/18b2df6855b073c0c7596edeca6c95fdf251c67967305e4cca98d952d78a0440/BTC-26MAR27.jsonl.gz",
+    "sha256": "18b2df6855b073c0c7596edeca6c95fdf251c67967305e4cca98d952d78a0440",
+    "bytes": 33794
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/f746cce8dc43a2d1926ce1a3c3485f9bd060e363857bf934a8f23f9c19fc5625/BTC-26MAR27.jsonl.gz",
+    "sha256": "f746cce8dc43a2d1926ce1a3c3485f9bd060e363857bf934a8f23f9c19fc5625",
+    "bytes": 27054
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/6060ab8e8f6d56e635e2a3937d4de32d5d126d26e9e5d94a33e18a4f06be6fc2/BTC-26MAR27.jsonl.gz",
+    "sha256": "6060ab8e8f6d56e635e2a3937d4de32d5d126d26e9e5d94a33e18a4f06be6fc2",
+    "bytes": 4094
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/5afdc3bad0f7f90167ba1cb2b09021f117527dfe507b06f3f50ea79d53393143/BTC-26MAR27.jsonl.gz",
+    "sha256": "5afdc3bad0f7f90167ba1cb2b09021f117527dfe507b06f3f50ea79d53393143",
+    "bytes": 42000
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-08-21.json",
+    "sha256": "ac6c3135fad809f37f57ef8f348bc7ae366225cf868700fb9e3a843813bd732a",
+    "bytes": 2607
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-08-22.json",
+    "sha256": "85825c702384eec18fc3e23dd9a7c04ed7bd242fb510949bbc1e8a12f6a4d620",
+    "bytes": 2604
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-08-24.json",
+    "sha256": "9eabbcb7911654706c76e1d50af6f83d6b55050910fbb2e7a10d5024bbf9354e",
+    "bytes": 2605
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-08-23.json",
+    "sha256": "afa49b765900572ddafb22e2a158b9eb22a3ef3c3764e389807f8096a39da3b1",
+    "bytes": 2604
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/270832fb19dbc07a90ebccefa4ce310335939c24680067178e6b05d620fb592b/BTC-26MAR27.jsonl.gz",
+    "sha256": "270832fb19dbc07a90ebccefa4ce310335939c24680067178e6b05d620fb592b",
+    "bytes": 5274
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/9f6fba5fa40ac47bad5f67a70c08487c4f6d44d8d1ca06ba0a36c92f4bbaa922/BTC-26MAR27.jsonl.gz",
+    "sha256": "9f6fba5fa40ac47bad5f67a70c08487c4f6d44d8d1ca06ba0a36c92f4bbaa922",
+    "bytes": 23812
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-08-26.json",
+    "sha256": "ad335c7c4b3e4397ef803cf22092fdf91fd34bac9286e154a97d40e5f046a4f8",
+    "bytes": 2603
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-08-27.json",
+    "sha256": "d5de3213be5bd85fbd2695145240b74b7b6d2c631877bcafe565fd1c24c557a2",
+    "bytes": 2602
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-08-25.json",
+    "sha256": "54301270f603c365df8248a8e08f6ae496f612444e78dbb2f6f6ac4b6bb030f2",
+    "bytes": 2646
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/6c7df079c4abc4ed999bace6bcdcbbffeacfc60e257732ab87e9016bab0ed70e/BTC-26MAR27.jsonl.gz",
+    "sha256": "6c7df079c4abc4ed999bace6bcdcbbffeacfc60e257732ab87e9016bab0ed70e",
+    "bytes": 81672
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/b5cef870b63e3ac9ce8eb0dc6552c744878d664bdce5c6dd141e2366a2e525f1/BTC-26MAR27.jsonl.gz",
+    "sha256": "b5cef870b63e3ac9ce8eb0dc6552c744878d664bdce5c6dd141e2366a2e525f1",
+    "bytes": 61853
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/16ef61da711c33d63cbb89dd013b05bbe78935700065cb65dd44cb7be24cc948/BTC-26MAR27.jsonl.gz",
+    "sha256": "16ef61da711c33d63cbb89dd013b05bbe78935700065cb65dd44cb7be24cc948",
+    "bytes": 59949
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-08-28.json",
+    "sha256": "32615875966e519370343169ca5bfea0a256d81b8a3f05cdf29e033d159961b9",
+    "bytes": 2642
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-08-29.json",
+    "sha256": "8a5e7b5c8f7d6aceed50ae7d5e0f9219fb5708a9dc8735424b936009d1e16d35",
+    "bytes": 2597
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/a0ce5ef8193fdde62c642f577113aaecaff8a8b487e569e3e18f6919193729d7/BTC-26MAR27.jsonl.gz",
+    "sha256": "a0ce5ef8193fdde62c642f577113aaecaff8a8b487e569e3e18f6919193729d7",
+    "bytes": 87196
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-08-30.json",
+    "sha256": "ff7c9a16f8ffefc01242afd2f90fbc33bdda58f91749bc86e79153fe59502ecd",
+    "bytes": 2599
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/250d8453dfbb8f35cd842b769fe180853d0c5aaa62a37c536b59ad4d94a9e9d5/BTC-26MAR27.jsonl.gz",
+    "sha256": "250d8453dfbb8f35cd842b769fe180853d0c5aaa62a37c536b59ad4d94a9e9d5",
+    "bytes": 176881
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-08-31.json",
+    "sha256": "31ad990bd9625b33b6153ba0a2108dbb4c2aa74ef9e2a30f8c0c53596e1b9c1f",
+    "bytes": 2602
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/f59194bc77126b8a111c018690994780e490940442f8bcc19f6bab5671ed1420/BTC-26MAR27.jsonl.gz",
+    "sha256": "f59194bc77126b8a111c018690994780e490940442f8bcc19f6bab5671ed1420",
+    "bytes": 40802
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/1708276600bda1a17b0909c0ecdc76e7e9654a7873f8c3eadc233cc960644dd3/BTC-26MAR27.jsonl.gz",
+    "sha256": "1708276600bda1a17b0909c0ecdc76e7e9654a7873f8c3eadc233cc960644dd3",
+    "bytes": 41471
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/cdabbe2d3f3320203eb20758bb7aa4e750b457fc587b598c9760b4bf3b361724/BTC-26MAR27.jsonl.gz",
+    "sha256": "cdabbe2d3f3320203eb20758bb7aa4e750b457fc587b598c9760b4bf3b361724",
+    "bytes": 117775
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-09-01.json",
+    "sha256": "5c832b86b6e85f301f1e920d000d79c9d8dc2b4b160d5da7eb4018abe7864db0",
+    "bytes": 2600
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/5e23e49b5318a67b58845971b6ce6209155077e6bda3e8b49f6f97febf54abcf/BTC-26MAR27.jsonl.gz",
+    "sha256": "5e23e49b5318a67b58845971b6ce6209155077e6bda3e8b49f6f97febf54abcf",
+    "bytes": 12642
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-09-02.json",
+    "sha256": "5a2685cc0774af29ee2e27922642f32d6430c7849de58c085a30e224eaa79ee5",
+    "bytes": 2597
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/receipts/missing-mar27/2026-09-03.json",
+    "sha256": "9cf4e55f9690d45e148576cc12630557778dcc4bfcde990062f707bb8f1f0449",
+    "bytes": 2600
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/08e1662b933e8278acf23001ab425957a39d1f88e1278cc536b41f17da6bd261/BTC-26MAR27.jsonl.gz",
+    "sha256": "08e1662b933e8278acf23001ab425957a39d1f88e1278cc536b41f17da6bd261",
+    "bytes": 17506
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/32337a37b2ee8d5677861b1205708f7b622999d4690315d3857b39d281e8f5e8/BTC-26MAR27.jsonl.gz",
+    "sha256": "32337a37b2ee8d5677861b1205708f7b622999d4690315d3857b39d281e8f5e8",
+    "bytes": 6962
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/9f782fd615bbf82bfd1f213b9094366450f52f0d7891ab303dc5611c5d205f03/BTC-26MAR27.jsonl.gz",
+    "sha256": "9f782fd615bbf82bfd1f213b9094366450f52f0d7891ab303dc5611c5d205f03",
+    "bytes": 35517
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/fe959174fc5a64fd61121af546c2ff7317e26eb918f567917b4d8439f359b558/BTC-26MAR27.jsonl.gz",
+    "sha256": "fe959174fc5a64fd61121af546c2ff7317e26eb918f567917b4d8439f359b558",
+    "bytes": 26207
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/92d69aeebd67eaf9bcf378505b591fecfc36274227e77ffdeb5a6db3c6046d93/BTC-26MAR27.jsonl.gz",
+    "sha256": "92d69aeebd67eaf9bcf378505b591fecfc36274227e77ffdeb5a6db3c6046d93",
+    "bytes": 9340
+  },
+  {
+    "key": "btc/research/deribit-history-extension-v1/objects/5c57a2068496c209426a01b0bfb5d6a9558a83e4bb54c9d24e74124f6fadc1d0/BTC-26MAR27.jsonl.gz",
+    "sha256": "5c57a2068496c209426a01b0bfb5d6a9558a83e4bb54c9d24e74124f6fadc1d0",
+    "bytes": 17417
+  }
+]

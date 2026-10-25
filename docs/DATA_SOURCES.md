@@ -128,3 +128,7 @@ Flag duplicate contracts, non-positive prices, impossible maturities, abrupt ide
 ## Reproducibility
 
 Each backtest result should record data-source identifiers, extraction date, input-file hashes or version references, date range, and derivation-code version.
+
+## Post-decision research provenance (25 October 2026)
+
+The [post-decision value pilot](research/post_decision_value/RESULTS.md) verifies 16 native inverse Deribit trade objects for BTC-25DEC26 and BTC-26MAR27 on June 6–13. Its linear-futures results are counterfactual, with source USD amounts converted to declared BTC participation capacity. No spot executions or observed expiry settlements are claimed. Existing Binance individual-trade acquisition run 39736701767 is complete with early-source gaps and raw archives not yet parsed; this does not imply a replay-ready extended spot dataset. Full source hashes, operator evidence and limitations are saved with the report.

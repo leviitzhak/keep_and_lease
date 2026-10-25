@@ -1,0 +1,136 @@
+{
+  "source_identity": {
+    "config_sha256": "d7e94120d22517ffdef65ad3c9fc2b408aa112e8ef4234bdd5046e72add3d808",
+    "data_sha256": "d75a465b9318d41b1d2577def7591f19697b18658b0a4849a8b1596d0368689f",
+    "simulator": "post-decision-v1",
+    "source_commit": "6b6865daf8b0691b934706229d8c281ca6dda507",
+    "source_sha256": "04fd862b10efeb8f4876acfe34d92599bc0d0aa9909237b400b5cd19bb21ffe6"
+  },
+  "files": [
+    {
+      "path": "audit.json",
+      "bytes": 400,
+      "sha256": "65226c28f28819447c5002bff51ccebbb616e33eeb34e1e1d29b3c84fb7a1c77"
+    },
+    {
+      "path": "calibration.json",
+      "bytes": 1100,
+      "sha256": "86e18699ba3e286458a6acfef7c93d15ef2aedf2d6b0d49e11719a5b13e2df0d"
+    },
+    {
+      "path": "configuration.json",
+      "bytes": 653,
+      "sha256": "be42e764c1095d7200fa91245b8b919f4debae0fc44a3ac402286611ce913d32"
+    },
+    {
+      "path": "data-manifest.json",
+      "bytes": 8785,
+      "sha256": "b7999323d65fd43dcd8e33826b51f37cb360df8201b1b4ee0386222302dc1a74"
+    },
+    {
+      "path": "environment.json",
+      "bytes": 124,
+      "sha256": "a9c34e806b438a4c1ca5b6eb36f0312bd0065ff94d88b176697193a4dcf61e1c"
+    },
+    {
+      "path": "episodes-0.json.gz",
+      "bytes": 57910,
+      "sha256": "cc86aaa071240d517d757361e944cde5c3f3797ceafe6a4072bba3152f8bbb4d"
+    },
+    {
+      "path": "episodes-1.json.gz",
+      "bytes": 91106,
+      "sha256": "929e4defa013bac7232cbde451cb6590c2951a72b63ffd6b98507e92b83513ad"
+    },
+    {
+      "path": "evaluation.json.gz",
+      "bytes": 165482,
+      "sha256": "2602a5e7b3ebd8387a5d0afbae239790f1c78e4c35e84d0edd1f0ab8a81b617a"
+    },
+    {
+      "path": "identity.json",
+      "bytes": 359,
+      "sha256": "deaa242aa48e1e12c5c0a734ff9f270f16fe9596aefe80bc0e228e56a99665de"
+    },
+    {
+      "path": "input-metadata/input_coverage.json",
+      "bytes": 32333,
+      "sha256": "1deec1539c7f220d5895d51b0f7ed77f8e15d6a067a41eedfc5d04701a63021d"
+    },
+    {
+      "path": "input-metadata/seeds.json",
+      "bytes": 539,
+      "sha256": "82b424dd8d2a135c3c42fc92c2e33be30a32194a285cc5dbb8e6f7e3be664c1b"
+    },
+    {
+      "path": "input-metadata/source_receipts.json",
+      "bytes": 82297,
+      "sha256": "bfdfdbce4b9f302a98039db4deff38f8cd8c1cf698d315e57e59ecca3123d720"
+    },
+    {
+      "path": "input-metadata/specification.json",
+      "bytes": 131,
+      "sha256": "f3dcdaedfa8e910f846c715087af89dd7bd471180b3c9fc6cac060f164c9f9f9"
+    },
+    {
+      "path": "model-0.pt",
+      "bytes": 1102432,
+      "sha256": "b3d5892f3c939fb3d2df11e65a92c9fd73fa0d64ac3cbb0cfb07d7b421d83dda"
+    },
+    {
+      "path": "model-1.pt",
+      "bytes": 1102432,
+      "sha256": "ace27f558bdc8a2976321673a8fa7e265b6a2e2dda2fc7c5840b8fd70f7da59f"
+    },
+    {
+      "path": "report.json",
+      "bytes": 137686,
+      "sha256": "ec7c1a139dd1644718e6103422e2a34126f14d52608d435ac8c8b7a5240044a3"
+    },
+    {
+      "path": "splits.json",
+      "bytes": 1130,
+      "sha256": "248afd1a39c9b38c417ec166fae36c108c2b6860f6b03ae263364c96997dcac4"
+    },
+    {
+      "path": "tests-existing.txt",
+      "bytes": 14906,
+      "sha256": "9c8170113ef22cea5ff79da5ea497521ab7a8e9df3b61b393a8b44bec3db2614"
+    },
+    {
+      "path": "tests-new.txt",
+      "bytes": 5236,
+      "sha256": "dc86b0188371fc351d8c5093fb5dbab970399dc3f0cca479704509397482a20a"
+    },
+    {
+      "path": "training-0.json",
+      "bytes": 207,
+      "sha256": "298959cee3b2733ef80b42b77fea6dead2f1b5b478e345d5be8b66a502d3e8a4"
+    },
+    {
+      "path": "training-1.json",
+      "bytes": 232,
+      "sha256": "ecb00329803dd0389cd174cad7731d942cb7b55a6f31e8adfaa921dfd46cee87"
+    },
+    {
+      "path": "transitions-0.json.gz",
+      "bytes": 155963,
+      "sha256": "21d99b63c1df2ef2f5ee32311484ab346ae808c8a22f2913a1891e3e9912c797"
+    },
+    {
+      "path": "transitions-1.json.gz",
+      "bytes": 155974,
+      "sha256": "fcd6221f01831031a032a2c1bc0ef0a90abc220c3672094de96b1c7a1e7c8e3c"
+    },
+    {
+      "path": "validation.json.gz",
+      "bytes": 46791,
+      "sha256": "8112981ec337553218bd891bb315a38518f08ea86d86cbb1f61961a5619482d8"
+    }
+  ],
+  "policies": {
+    "value_v1": "model-0.pt",
+    "value_v2": "model-1.pt",
+    "collect_greedy_v1_eps015": "model-0.pt greedy + 0.15 random feasible candidates"
+  }
+}

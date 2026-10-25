@@ -1,0 +1,48 @@
+test_borrow_and_collateral_never_create_wealth (test_accounting.AccountingTests.test_borrow_and_collateral_never_create_wealth) ... ok
+test_bridges_and_basis_risk (test_accounting.AccountingTests.test_bridges_and_basis_risk) ... ok
+test_cross_expiry_net_exposure_is_not_funding (test_accounting.AccountingTests.test_cross_expiry_net_exposure_is_not_funding) ... ok
+test_expected_utility_not_utility_of_mean (test_accounting.AccountingTests.test_expected_utility_not_utility_of_mean) ... ok
+test_fee_once (test_accounting.AccountingTests.test_fee_once) ... ok
+test_floor_boundary_initial_not_high_water (test_accounting.AccountingTests.test_floor_boundary_initial_not_high_water) ... ok
+test_funded_long_not_double_counted (test_accounting.AccountingTests.test_funded_long_not_double_counted) ... ok
+test_inverse_harmonic_basis (test_accounting.AccountingTests.test_inverse_harmonic_basis) ... ok
+test_inverse_repeated_settlement_identity (test_accounting.AccountingTests.test_inverse_repeated_settlement_identity) ... ok
+test_linear_repeated_variation (test_accounting.AccountingTests.test_linear_repeated_variation) ... ok
+test_per_commodity_floors_and_invalid_zero_basket (test_accounting.AccountingTests.test_per_commodity_floors_and_invalid_zero_basket) ... ok
+test_resolution_must_cover_claims (test_accounting.AccountingTests.test_resolution_must_cover_claims) ... ok
+test_short_and_sign_flip (test_accounting.AccountingTests.test_short_and_sign_flip) ... ok
+test_short_inverse_bridge_and_full_cross_expiry_bridge (test_accounting.AccountingTests.test_short_inverse_bridge_and_full_cross_expiry_bridge) ... ok
+test_target_necessary_wealth (test_accounting.AccountingTests.test_target_necessary_wealth) ... ok
+test_treasury_receipts_counted_once (test_accounting.AccountingTests.test_treasury_receipts_counted_once) ... ok
+test_zero_initial_and_btc_goal (test_accounting.AccountingTests.test_zero_initial_and_btc_goal) ... ok
+test_amend_not_effective_at_submission (test_engine.EngineTests.test_amend_not_effective_at_submission) ... ok
+test_async_and_floor_masks_use_partial_subsets (test_engine.EngineTests.test_async_and_floor_masks_use_partial_subsets) ... ok
+test_cancel_before_print (test_engine.EngineTests.test_cancel_before_print) ... ok
+test_cancel_race_and_release_after_report (test_engine.EngineTests.test_cancel_race_and_release_after_report) ... ok
+test_candidate_prices_rounded_and_budgeted (test_engine.EngineTests.test_candidate_prices_rounded_and_budgeted) ... ok
+test_emergency_cannot_bypass_risk_admission (test_engine.EngineTests.test_emergency_cannot_bypass_risk_admission) ... ok
+test_failed_path_is_kept_and_emergency_does_not_erase_it (test_engine.EngineTests.test_failed_path_is_kept_and_emergency_does_not_erase_it) ... ok
+test_fixed_horizon_and_no_independent_maxima (test_engine.EngineTests.test_fixed_horizon_and_no_independent_maxima) ... ok
+test_hidden_future_and_latency_do_not_change_features (test_engine.EngineTests.test_hidden_future_and_latency_do_not_change_features) ... ok
+test_inverse_native_bounded_fixture (test_engine.EngineTests.test_inverse_native_bounded_fixture) ... ok
+test_live_unacknowledged_and_filled_unreported (test_engine.EngineTests.test_live_unacknowledged_and_filled_unreported) ... ok
+test_missing_settlement_is_not_realized (test_engine.EngineTests.test_missing_settlement_is_not_realized) ... ok
+test_no_fill_before_arrival_and_strict_through (test_engine.EngineTests.test_no_fill_before_arrival_and_strict_through) ... ok
+test_observed_expiry_bridge_and_delayed_report (test_engine.EngineTests.test_observed_expiry_bridge_and_delayed_report) ... ok
+test_pure_post_state_does_not_fill_or_cancel (test_engine.EngineTests.test_pure_post_state_does_not_fill_or_cancel) ... ok
+test_runtime_truncation_has_no_terminal_label (test_engine.EngineTests.test_runtime_truncation_has_no_terminal_label) ... ok
+test_seed_age_and_instrument_identity_are_preserved (test_engine.EngineTests.test_seed_age_and_instrument_identity_are_preserved) ... ok
+test_seeded_replay_and_resume (test_engine.EngineTests.test_seeded_replay_and_resume) ... ok
+test_source_capacity_partial_and_conservation (test_engine.EngineTests.test_source_capacity_partial_and_conservation) ... ok
+test_split_purges_full_label_tail (test_engine.EngineTests.test_split_purges_full_label_tail) ... ok
+test_target_transition_period_is_not_rejected (test_engine.EngineTests.test_target_transition_period_is_not_rejected) ... ok
+test_causal_attention_future_token_cannot_change_prefix (test_learning.LearningTests.test_causal_attention_future_token_cannot_change_prefix) ... ok
+test_continuation_and_truncation_rejected (test_learning.LearningTests.test_continuation_and_truncation_rejected) ... ok
+test_price_dependent_dominant_action_predicted_and_realized (test_learning.LearningTests.test_price_dependent_dominant_action_predicted_and_realized) ... ok
+test_scalar_not_derived_from_commodity_predictions (test_learning.LearningTests.test_scalar_not_derived_from_commodity_predictions) ... ok
+test_training_resume_exact_weights_and_rng (test_learning.LearningTests.test_training_resume_exact_weights_and_rng) ... ok
+
+----------------------------------------------------------------------
+Ran 43 tests in 3.315s
+
+OK

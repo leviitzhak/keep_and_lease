@@ -1,0 +1,8 @@
+{
+  "continuation": "collect_greedy_v1_eps015:exploratory_v1",
+  "first_loss": 1.3022507429122925,
+  "last_loss": 0.40235635638237,
+  "normalization": "training-only label moments",
+  "seconds": 4.958597324999573,
+  "updates": 160
+}

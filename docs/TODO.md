@@ -2,7 +2,7 @@
 
 ## Post-decision value research — 25 October 2026
 
-Standalone implementation on `agent/btc-post-decision-value-v1`: signed linear/inverse commodity accounting, delayed observable/exchange replay, constrained candidate search and complete-outcome value learning. No application deployment or integration into existing strategy defaults. See [POST_DECISION_VALUE_V1.md](POST_DECISION_VALUE_V1.md) for conventions, commands, acceptance scope and research limitations. Historical pilot results are recorded separately under `docs/research/post_decision_value/`.
+Standalone implementation on `agent/btc-post-decision-value-v1`: signed linear/inverse commodity accounting, delayed observable/exchange replay, constrained candidate search and complete-outcome value learning. No application deployment or integration into existing strategy defaults. See [POST_DECISION_VALUE_V1.md](POST_DECISION_VALUE_V1.md) for conventions, commands, acceptance scope and research limitations. The [final pilot](research/post_decision_value/RESULTS.md) and independent audit are complete: 43 new tests and 83 existing tests pass. The learned policy underperforms hold (-2.095% joint held-out growth versus 0%), so historical profitability and promotion remain unaccepted. Artifacts are retained under `docs/research/post_decision_value/`.
 
 
 This checklist reflects the current Google Cloud / GCS implementation and the remaining research, product, data, and engineering work. Completed items are retained when they document important implemented behavior.

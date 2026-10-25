@@ -187,6 +187,10 @@ and individual engine journals additionally support exact continuation (tested).
 Only trusted tensor-only model checkpoints are loaded. Runtime/data truncation
 is explicitly incomplete and receives no invented terminal target.
 
+## Final pilot result
+
+See [the final report](research/post_decision_value/RESULTS.md): 43 new tests and 83 existing regression tests passed. The final 49-second counterfactual historical pilot underperformed hold (joint held-out growth -2.095% versus 0%). The learner is not accepted for trading. The existing spot acquisition was verified as complete with source gaps but unparsed; see the report for the distinction between raw coverage and execution-ready data.
+
 ## Acceptance scope and remaining extensions
 
 Tests cover signed payoffs, repeated variation, funded cash/long, borrowing,

@@ -1,0 +1,7 @@
+{
+  "config_sha256": "d7e94120d22517ffdef65ad3c9fc2b408aa112e8ef4234bdd5046e72add3d808",
+  "data_sha256": "d75a465b9318d41b1d2577def7591f19697b18658b0a4849a8b1596d0368689f",
+  "simulator": "post-decision-v1",
+  "source_commit": "532c2e3f64d1c5ec09a0fe7d7cfc12d05110af0d",
+  "source_sha256": "56a6dce4d566291a5995818d006b973698d018117baf46120647ead1ee211504"
+}

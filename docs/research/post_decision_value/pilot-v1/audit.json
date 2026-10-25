@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "verified_source_files": 16,
+  "verified_source_rows": 45756,
+  "audited_episodes": 48,
+  "audited_fills": 274,
+  "complete_training_labels": 480,
+  "matched_test_scenarios": 8,
+  "calibration_episodes": 4,
+  "calibration_note": "Separate fixed-continuation diagnostics; not counted as audited fill tapes here",
+  "source_commit": "6b6865daf8b0691b934706229d8c281ca6dda507"
+}

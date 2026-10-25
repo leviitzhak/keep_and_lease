@@ -1,0 +1,5397 @@
+{
+  "fixed_continuation_calibration": [
+    {
+      "block": "2026-06-12",
+      "continuation": "collect_greedy_v1_eps015:exploratory_v1",
+      "holdings_rmse": [
+        0.05337759892692287,
+        3328.4945267827256
+      ],
+      "score_bias": -0.052675023674964905,
+      "score_mae": 0.052675023674964905,
+      "seed": 11
+    },
+    {
+      "block": "2026-06-12",
+      "continuation": "collect_greedy_v1_eps015:exploratory_v1",
+      "holdings_rmse": [
+        0.04807520317672285,
+        2986.8843080055085
+      ],
+      "score_bias": -0.04728791490197182,
+      "score_mae": 0.04728791490197182,
+      "seed": 29
+    },
+    {
+      "block": "2026-06-13",
+      "continuation": "collect_greedy_v1_eps015:exploratory_v1",
+      "holdings_rmse": [
+        0.05072192911862371,
+        3233.9523431820253
+      ],
+      "score_bias": -0.05010338872671127,
+      "score_mae": 0.05010338872671127,
+      "seed": 11
+    },
+    {
+      "block": "2026-06-13",
+      "continuation": "collect_greedy_v1_eps015:exploratory_v1",
+      "holdings_rmse": [
+        0.04568345352204715,
+        2902.9560580915495
+      ],
+      "score_bias": -0.04504578188061714,
+      "score_mae": 0.04504578188061714,
+      "seed": 29
+    }
+  ],
+  "identity": {
+    "config_sha256": "d7e94120d22517ffdef65ad3c9fc2b408aa112e8ef4234bdd5046e72add3d808",
+    "data_sha256": "d75a465b9318d41b1d2577def7591f19697b18658b0a4849a8b1596d0368689f",
+    "simulator": "post-decision-v1",
+    "source_commit": "6b6865daf8b0691b934706229d8c281ca6dda507",
+    "source_sha256": "04fd862b10efeb8f4876acfe34d92599bc0d0aa9909237b400b5cd19bb21ffe6"
+  },
+  "interpretation": "Counterfactual linear futures on verified historical inverse trade prints; contractual endpoint, no observed settlement tail",
+  "limitations": [
+    "Two held-out market days are a smoke test, not profitability evidence.",
+    "No spot execution, order-book depth, observed queue position or historical account margin schedule.",
+    "Trade participation, fees, ticks/lots, stress set and latency are explicit research assumptions.",
+    "Terminal predictions refer to their versioned training continuation; greedy improvement changes continuation and requires subsequent collection.",
+    "Prediction error against the improved policy is on-policy diagnostic, not unbiased fixed-continuation calibration.",
+    "Target-composition objective is configured and tested separately; primary pilot uses basket growth.",
+    "GCS source receipts verified from existing local export; live full-archive and extended spot inventory not refreshed."
+  ],
+  "per_block": [
+    {
+      "block": "2026-06-06",
+      "delay_multiplier": 1.0,
+      "end": 1780711200000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1780711200000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1780711200000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 99996.36131139999
+        },
+        "composition_error": 0.09989376070306455,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.1436886
+        },
+        "fills": 10,
+        "fixed_reference_value": 199997.5048114,
+        "full_fills": 2,
+        "growth": {
+          "BTC": 0.00019999999999997797,
+          "USD": -0.0002249518860000535
+        },
+        "holding_status": "contractual/projected",
+        "holdings": {
+          "BTC": 1.0002,
+          "USD": 99977.5048114
+        },
+        "live_orders": 2,
+        "marked_wealth": {
+          "BTC": 2.6373765959174182,
+          "USD": 161062.47881139998,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.09999999999999998,
+          "USD": 9270.308288125001
+        },
+        "min_funding_usd": 60667.959264,
+        "no_fill_orders": 10,
+        "package_completion": [
+          {
+            "completion_ms": null,
+            "group": "g-4",
+            "status": "partial"
+          },
+          {
+            "completion_ms": null,
+            "group": "g-9",
+            "status": "none"
+          },
+          {
+            "completion_ms": null,
+            "group": "g-11",
+            "status": "none"
+          },
+          {
+            "completion_ms": null,
+            "group": "g-15",
+            "status": "none"
+          },
+          {
+            "completion_ms": null,
+            "group": "g-17",
+            "status": "none"
+          }
+        ],
+        "partial_fills": 8,
+        "peak_async_btc": 0.01,
+        "pending_messages": 0,
+        "schedule": [
+          {
+            "claims": {
+              "BTC": -0.0048000000000000004,
+              "USD": 298.956
+            },
+            "date": 1798185600000,
+            "identifier": "BTC-25DEC26",
+            "kind": "funded_expiry_bridge"
+          },
+          {
+            "claims": {
+              "BTC": 0.005,
+              "USD": -317.8125
+            },
+            "date": 1806048000000,
+            "identifier": "BTC-26MAR27",
+            "kind": "funded_expiry_bridge"
+          }
+        ],
+        "score_is_surrogate": false,
+        "submitted_orders": 14,
+        "terminal_prediction_error": null,
+        "truncated": false,
+        "turnover_btc": 0.0228,
+        "turnover_usd": 1436.886,
+        "utility": -0.0002249518860000535,
+        "wait_ms": [
+          4479,
+          9583,
+          10806,
+          32564,
+          38337,
+          121516,
+          121536,
+          121541,
+          71450,
+          71453
+        ]
+      },
+      "policy": "exploratory_v1",
+      "seed": 11,
+      "split": "train",
+      "start": 1780707600000
+    },
+    {
+      "block": "2026-06-06",
+      "delay_multiplier": 1.0,
+      "end": 1780711200000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1780711200000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1780711200000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 99999.8342248
+        },
+        "composition_error": 0.09854816108265141,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.1657752
+        },
+        "fills": 7,
+        "fixed_reference_value": 200138.8612248,
+        "full_fills": 3,
+        "growth": {
+          "BTC": 0.0035999999999998256,
+          "USD": -0.0022113877520000096
+        },
+        "holding_status": "contractual/projected",
+        "holdings": {
+          "BTC": 1.0035999999999998,
+          "USD": 99778.8612248
+        },
+        "live_orders": 1,
+        "marked_wealth": {
+          "BTC": 2.6374231646198085,
+          "USD": 161065.3227248,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.09999999999999998,
+          "USD": 9148.89922729999
+        },
+        "min_funding_usd": 60960.57,
+        "no_fill_orders": 7,
+        "package_completion": [
+          {
+            "completion_ms": null,
+            "group": "g-0",
+            "status": "none"
+          },
+          {
+            "completion_ms": null,
+            "group": "g-3",
+            "status": "partial"
+          }
+        ],
+        "partial_fills": 4,
+        "peak_async_btc": 0.0014,
+        "pending_messages": 0,
+        "schedule": [
+          {
+            "claims": {
+              "BTC": 0.015,
+              "USD": -939.3625000000002
+            },
+            "date": 1798185600000,
+            "identifier": "BTC-25DEC26",
+            "kind": "funded_expiry_bridge"
+          },
+          {
+            "claims": {
+              "BTC": -0.0114,
+              "USD": 718.3895
+            },
+            "date": 1806048000000,
+            "identifier": "BTC-26MAR27",
+            "kind": "funded_expiry_bridge"
+          }
+        ],
+        "score_is_surrogate": false,
+        "submitted_orders": 11,
+        "terminal_prediction_error": null,
+        "truncated": false,
+        "turnover_btc": 0.0264,
+        "turnover_usd": 1657.752,
+        "utility": -0.0022113877520000096,
+        "wait_ms": [
+          228396,
+          238027,
+          238044,
+          69202,
+          69169,
+          69186,
+          65909
+        ]
+      },
+      "policy": "exploratory_v1",
+      "seed": 29,
+      "split": "train",
+      "start": 1780707600000
+    },
+    {
+      "block": "2026-06-07",
+      "delay_multiplier": 1.0,
+      "end": 1780797600000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1780797600000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1780797600000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 99991.774406725
+        },
+        "composition_error": 0.09993872776063106,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.125593275
+        },
+        "fills": 7,
+        "fixed_reference_value": 199995.491656725,
+        "full_fills": 2,
+        "growth": {
+          "BTC": 9.999999999998899e-05,
+          "USD": -0.0001450834327499615
+        },
+        "holding_status": "contractual/projected",
+        "holdings": {
+          "BTC": 1.0001,
+          "USD": 99985.491656725
+        },
+        "live_orders": 2,
+        "marked_wealth": {
+          "BTC": 2.626952718108938,
+          "USD": 161451.305656725,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.08999999999999997,
+          "USD": 9985.491656725004
+        },
+        "min_funding_usd": 60372.942299999995,
+        "no_fill_orders": 12,
+        "package_completion": [
+          {
+            "completion_ms": null,
+            "group": "g-5",
+            "status": "none"
+          },
+          {
+            "completion_ms": null,
+            "group": "g-12",
+            "status": "none"
+          },
+          {
+            "completion_ms": null,
+            "group": "g-14",
+            "status": "none"
+          },
+          {
+            "completion_ms": null,
+            "group": "g-16",
+            "status": "partial"
+          },
+          {
+            "completion_ms": null,
+            "group": "g-19",
+            "status": "none"
+          }
+        ],
+        "partial_fills": 5,
+        "peak_async_btc": 0.0001,
+        "pending_messages": 0,
+        "schedule": [
+          {
+            "claims": {
+              "BTC": 0.0001,
+              "USD": -6.28275
+            },
+            "date": 1798185600000,
+            "identifier": "BTC-25DEC26",
+            "kind": "funded_expiry_bridge"
+          }
+        ],
+        "score_is_surrogate": false,
+        "submitted_orders": 15,
+        "terminal_prediction_error": null,
+        "truncated": false,
+        "turnover_btc": 0.0201,
+        "turnover_usd": 1255.9327500000002,
+        "utility": -0.0001450834327499615,
+        "wait_ms": [
+          233744,
+          235544,
+          235635,
+          235639,
+          6349,
+          14696,
+          79101
+        ]
+      },
+      "policy": "exploratory_v1",
+      "seed": 11,
+      "split": "train",
+      "start": 1780794000000
+    },
+    {
+      "block": "2026-06-07",
+      "delay_multiplier": 1.0,
+      "end": 1780797600000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1780797600000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1780797600000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 99996.98333020523
+        },
+        "composition_error": 0.10068885541218126,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.30276190000000003
+        },
+        "fills": 12,
+        "fixed_reference_value": 199935.4532381,
+        "full_fills": 5,
+        "growth": {
+          "BTC": -0.0016999999999999238,
+          "USD": 0.00105453238099959
+        },
+        "holding_status": "contractual/projected",
+        "holdings": {
+          "BTC": 0.9983000000000001,
+          "USD": 100105.45323809996
+        },
+        "live_orders": 2,
+        "marked_wealth": {
+          "BTC": 2.6270060797412405,
+          "USD": 161454.58523809997,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.09829999999999994,
+          "USD": 9481.09068059997
+        },
+        "min_funding_usd": 60743.82,
+        "no_fill_orders": 10,
+        "package_completion": [
+          {
+            "completion_ms": null,
+            "group": "g-0",
+            "status": "none"
+          },
+          {
+            "completion_ms": null,
+            "group": "g-8",
+            "status": "none"
+          },
+          {
+            "completion_ms": null,
+            "group": "g-12",
+            "status": "partial"
+          },
+          {
+            "completion_ms": null,
+            "group": "g-17",
+            "status": "none"
+          },
+          {
+            "completion_ms": null,
+            "group": "g-19",
+            "status": "none"
+          }
+        ],
+        "partial_fills": 7,
+        "peak_async_btc": 0.01,
+        "pending_messages": 0,
+        "schedule": [
+          {
+            "claims": {
+              "BTC": 0.003299999999999999,
+              "USD": -207.4175921052631
+            },
+            "date": 1798185600000,
+            "identifier": "BTC-25DEC26",
+            "kind": "funded_expiry_bridge"
+          },
+          {
+            "claims": {
+              "BTC": -0.005,
+              "USD": 315.88750000000005
+            },
+            "date": 1806048000000,
+            "identifier": "BTC-26MAR27",
+            "kind": "funded_expiry_bridge"
+          }
+        ],
+        "score_is_surrogate": false,
+        "submitted_orders": 16,
+        "terminal_prediction_error": null,
+        "truncated": false,
+        "turnover_btc": 0.0483,
+        "turnover_usd": 3027.619,
+        "utility": -0.0016999999999999238,
+        "wait_ms": [
+          64954,
+          64954,
+          7469,
+          7497,
+          12347,
+          86232,
+          86233,
+          86233,
+          5507,
+          5507,
+          70962,
+          96280
+        ]
+      },
+      "policy": "exploratory_v1",
+      "seed": 29,
+      "split": "train",
+      "start": 1780794000000
+    },
+    {
+      "block": "2026-06-08",
+      "delay_multiplier": 1.0,
+      "end": 1780884000000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1780884000000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1780884000000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 99998.9320375
+        },
+        "composition_error": 0.10411368264251297,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.1929625
+        },
+        "fills": 7,
+        "fixed_reference_value": 199642.5320375,
+        "full_fills": 3,
+        "growth": {
+          "BTC": -0.010000000000000009,
+          "USD": 0.00642532037500001
+        },
+        "holding_status": "contractual/projected",
+        "holdings": {
+          "BTC": 0.99,
+          "USD": 100642.5320375
+        },
+        "live_orders": 1,
+        "marked_wealth": {
+          "BTC": 2.5831363801635647,
+          "USD": 163151.7720375,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.08999999999999997,
+          "USD": 9998.9963975
+        },
+        "min_funding_usd": 62130.2022,
+        "no_fill_orders": 6,
+        "package_completion": [
+          {
+            "completion_ms": null,
+            "group": "g-4",
+            "status": "partial"
+          },
+          {
+            "completion_ms": null,
+            "group": "g-10",
+            "status": "partial"
+          }
+        ],
+        "partial_fills": 4,
+        "peak_async_btc": 0.02,
+        "pending_messages": 0,
+        "schedule": [
+          {
+            "claims": {
+              "BTC": -0.01,
+              "USD": 643.6
+            },
+            "date": 1806048000000,
+            "identifier": "BTC-26MAR27",
+            "kind": "funded_expiry_bridge"
+          }
+        ],
+        "score_is_surrogate": false,
+        "submitted_orders": 9,
+        "terminal_prediction_error": null,
+        "truncated": false,
+        "turnover_btc": 0.030000000000000002,
+        "turnover_usd": 1929.625,
+        "utility": -0.010000000000000009,
+        "wait_ms": [
+          54906,
+          54906,
+          109517,
+          91552,
+          117707,
+          181831,
+          79845
+        ]
+      },
+      "policy": "exploratory_v1",
+      "seed": 11,
+      "split": "train",
+      "start": 1780880400000
+    },
+    {
+      "block": "2026-06-08",
+      "delay_multiplier": 1.0,
+      "end": 1780884000000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1780884000000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1780884000000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 99995.40393363335
+        },
+        "composition_error": 0.09793791261111218,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.22639969999999993
+        },
+        "fills": 11,
+        "fixed_reference_value": 200174.44560030004,
+        "full_fills": 5,
+        "growth": {
+          "BTC": 0.0050000000000001155,
+          "USD": -0.003255543996999768
+        },
+        "holding_status": "contractual/projected",
+        "holdings": {
+          "BTC": 1.0050000000000001,
+          "USD": 99674.44560030002
+        },
+        "live_orders": 1,
+        "marked_wealth": {
+          "BTC": 2.583143719623739,
+          "USD": 163152.23560030002,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.09999999999999998,
+          "USD": 9032.090718750012
+        },
+        "min_funding_usd": 62704.72,
+        "no_fill_orders": 8,
+        "package_completion": [
+          {
+            "completion_ms": null,
+            "group": "g-0",
+            "status": "none"
+          }
+        ],
+        "partial_fills": 6,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [
+          {
+            "claims": {
+              "BTC": 0.01,
+              "USD": -645.2083333333334
+            },
+            "date": 1798185600000,
+            "identifier": "BTC-25DEC26",
+            "kind": "funded_expiry_bridge"
+          },
+          {
+            "claims": {
+              "BTC": -0.004999999999999998,
+              "USD": 324.24999999999994
+            },
+            "date": 1806048000000,
+            "identifier": "BTC-26MAR27",
+            "kind": "funded_expiry_bridge"
+          }
+        ],
+        "score_is_surrogate": false,
+        "submitted_orders": 13,
+        "terminal_prediction_error": null,
+        "truncated": false,
+        "turnover_btc": 0.035,
+        "turnover_usd": 2263.997,
+        "utility": -0.003255543996999768,
+        "wait_ms": [
+          65822,
+          86918,
+          86919,
+          61831,
+          79848,
+          79848,
+          79848,
+          79849,
+          109925,
+          58380,
+          66836
+        ]
+      },
+      "policy": "exploratory_v1",
+      "seed": 29,
+      "split": "train",
+      "start": 1780880400000
+    },
+    {
+      "block": "2026-06-09",
+      "delay_multiplier": 1.0,
+      "end": 1780970400000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1780970400000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1780970400000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 99998.88455444999
+        },
+        "composition_error": 0.10229246910221201,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.09194555
+        },
+        "fills": 8,
+        "fixed_reference_value": 199796.05255445,
+        "full_fills": 1,
+        "growth": {
+          "BTC": -0.005600000000000049,
+          "USD": 0.0035605255444999782
+        },
+        "holding_status": "contractual/projected",
+        "holdings": {
+          "BTC": 0.9944,
+          "USD": 100356.05255445
+        },
+        "live_orders": 1,
+        "marked_wealth": {
+          "BTC": 2.5928287383862205,
+          "USD": 162777.65855445,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.08999999999999997,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 61909.6995,
+        "no_fill_orders": 4,
+        "package_completion": [],
+        "partial_fills": 7,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [
+          {
+            "claims": {
+              "BTC": -0.0056000000000000025,
+              "USD": 357.1680000000001
+            },
+            "date": 1798185600000,
+            "identifier": "BTC-25DEC26",
+            "kind": "funded_expiry_bridge"
+          }
+        ],
+        "score_is_surrogate": false,
+        "submitted_orders": 7,
+        "terminal_prediction_error": null,
+        "truncated": false,
+        "turnover_btc": 0.0144,
+        "turnover_usd": 919.4555,
+        "utility": -0.005600000000000049,
+        "wait_ms": [
+          146147,
+          356204,
+          113291,
+          50902,
+          50903,
+          50921,
+          52576,
+          52589
+        ]
+      },
+      "policy": "exploratory_v1",
+      "seed": 11,
+      "split": "train",
+      "start": 1780966800000
+    },
+    {
+      "block": "2026-06-09",
+      "delay_multiplier": 1.0,
+      "end": 1780970400000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1780970400000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1780970400000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 99999.778605925
+        },
+        "composition_error": 0.09427481902875101,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.11639407500000003
+        },
+        "fills": 7,
+        "fixed_reference_value": 200504.154855925,
+        "full_fills": 2,
+        "growth": {
+          "BTC": 0.014000000000000012,
+          "USD": -0.008958451440749924
+        },
+        "holding_status": "contractual/projected",
+        "holdings": {
+          "BTC": 1.014,
+          "USD": 99104.15485592501
+        },
+        "live_orders": 1,
+        "marked_wealth": {
+          "BTC": 2.5928654746606994,
+          "USD": 162779.96485592498,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.09999999999999998,
+          "USD": 9104.154855925008
+        },
+        "min_funding_usd": 62535.05,
+        "no_fill_orders": 6,
+        "package_completion": [
+          {
+            "completion_ms": null,
+            "group": "g-0",
+            "status": "none"
+          },
+          {
+            "completion_ms": null,
+            "group": "g-12",
+            "status": "partial"
+          }
+        ],
+        "partial_fills": 5,
+        "peak_async_btc": 0.0011,
+        "pending_messages": 0,
+        "schedule": [
+          {
+            "claims": {
+              "BTC": 0.013999999999999999,
+              "USD": -895.6237500000001
+            },
+            "date": 1798185600000,
+            "identifier": "BTC-25DEC26",
+            "kind": "funded_expiry_bridge"
+          }
+        ],
+        "score_is_surrogate": false,
+        "submitted_orders": 10,
+        "terminal_prediction_error": null,
+        "truncated": false,
+        "turnover_btc": 0.0182,
+        "turnover_usd": 1163.94075,
+        "utility": -0.008958451440749924,
+        "wait_ms": [
+          70764,
+          11153,
+          113291,
+          552515,
+          290902,
+          290903,
+          290921
+        ]
+      },
+      "policy": "exploratory_v1",
+      "seed": 29,
+      "split": "train",
+      "start": 1780966800000
+    },
+    {
+      "block": "2026-06-06",
+      "delay_multiplier": 1.0,
+      "end": 1780711200000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1780711200000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1780711200000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 99997.44143637503
+        },
+        "composition_error": 0.10456609015372087,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.196063625
+        },
+        "fills": 10,
+        "fixed_reference_value": 199562.440186375,
+        "full_fills": 2,
+        "growth": {
+          "BTC": -0.011300000000000088,
+          "USD": 0.006924401863750245
+        },
+        "holding_status": "contractual/projected",
+        "holdings": {
+          "BTC": 0.9886999999999999,
+          "USD": 100692.44018637502
+        },
+        "live_orders": 0,
+        "marked_wealth": {
+          "BTC": 2.6373268429318713,
+          "USD": 161059.44043637504,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.08869999999999989,
+          "USD": 9680.54263625
+        },
+        "min_funding_usd": 59966.912709000004,
+        "no_fill_orders": 11,
+        "package_completion": [
+          {
+            "completion_ms": null,
+            "group": "g-10",
+            "status": "partial"
+          }
+        ],
+        "partial_fills": 8,
+        "peak_async_btc": 0.01,
+        "pending_messages": 0,
+        "schedule": [
+          {
+            "claims": {
+              "BTC": -0.016300000000000002,
+              "USD": 1011.99875
+            },
+            "date": 1798185600000,
+            "identifier": "BTC-25DEC26",
+            "kind": "funded_expiry_bridge"
+          },
+          {
+            "claims": {
+              "BTC": 0.004999999999999999,
+              "USD": -316.99999999999994
+            },
+            "date": 1806048000000,
+            "identifier": "BTC-26MAR27",
+            "kind": "funded_expiry_bridge"
+          }
+        ],
+        "score_is_surrogate": false,
+        "submitted_orders": 15,
+        "terminal_prediction_error": 0.010800238080509094,
+        "truncated": false,
+        "turnover_btc": 0.0313,
+        "turnover_usd": 1960.63625,
+        "utility": -0.011300000000000088,
+        "wait_ms": [
+          9560,
+          9560,
+          3681,
+          82561,
+          105857,
+          105857,
+          105860,
+          17116,
+          98356,
+          98394
+        ]
+      },
+      "policy": "collect_greedy_v1_eps015",
+      "seed": 11,
+      "split": "train",
+      "start": 1780707600000
+    },
+    {
+      "block": "2026-06-06",
+      "delay_multiplier": 1.0,
+      "end": 1780711200000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1780711200000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1780711200000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 99999.78338737502
+        },
+        "composition_error": 0.11413049827671867,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.216612625
+        },
+        "fills": 12,
+        "fixed_reference_value": 198715.90963737504,
+        "full_fills": 5,
+        "growth": {
+          "BTC": -0.034499999999999975,
+          "USD": 0.021659096373750217
+        },
+        "holding_status": "contractual/projected",
+        "holdings": {
+          "BTC": 0.9655,
+          "USD": 102165.90963737502
+        },
+        "live_orders": 1,
+        "marked_wealth": {
+          "BTC": 2.6373115193481333,
+          "USD": 161058.504637375,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.0655,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 58958.93335,
+        "no_fill_orders": 11,
+        "package_completion": [],
+        "partial_fills": 7,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [
+          {
+            "claims": {
+              "BTC": -0.0345,
+              "USD": 2166.12625
+            },
+            "date": 1806048000000,
+            "identifier": "BTC-26MAR27",
+            "kind": "funded_expiry_bridge"
+          }
+        ],
+        "score_is_surrogate": false,
+        "submitted_orders": 18,
+        "terminal_prediction_error": 0.03375323222608614,
+        "truncated": false,
+        "turnover_btc": 0.0345,
+        "turnover_usd": 2166.12625,
+        "utility": -0.034499999999999975,
+        "wait_ms": [
+          9560,
+          9560,
+          1080,
+          17048,
+          17052,
+          31245,
+          35983,
+          35983,
+          35983,
+          74510,
+          74510,
+          78003
+        ]
+      },
+      "policy": "collect_greedy_v1_eps015",
+      "seed": 29,
+      "split": "train",
+      "start": 1780707600000
+    },
+    {
+      "block": "2026-06-07",
+      "delay_multiplier": 1.0,
+      "end": 1780797600000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1780797600000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1780797600000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 99999.50914020003
+        },
+        "composition_error": 0.1322093878751801,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.4908598
+        },
+        "fills": 22,
+        "fixed_reference_value": 197118.10714020004,
+        "full_fills": 12,
+        "growth": {
+          "BTC": -0.07789999999999997,
+          "USD": 0.049081071402000236
+        },
+        "holding_status": "contractual/projected",
+        "holdings": {
+          "BTC": 0.9221,
+          "USD": 104908.10714020002
+        },
+        "live_orders": 1,
+        "marked_wealth": {
+          "BTC": 2.626472247273573,
+          "USD": 161421.77614020003,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.02210000000000001,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 56632.311222000004,
+        "no_fill_orders": 4,
+        "package_completion": [],
+        "partial_fills": 10,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [
+          {
+            "claims": {
+              "BTC": -0.07790000000000001,
+              "USD": 4908.598
+            },
+            "date": 1806048000000,
+            "identifier": "BTC-26MAR27",
+            "kind": "funded_expiry_bridge"
+          }
+        ],
+        "score_is_surrogate": false,
+        "submitted_orders": 18,
+        "terminal_prediction_error": 0.07746653673822677,
+        "truncated": false,
+        "turnover_btc": 0.0779,
+        "turnover_usd": 4908.598,
+        "utility": -0.07789999999999997,
+        "wait_ms": [
+          26631,
+          31978,
+          36246,
+          61414,
+          13208,
+          54162,
+          5733,
+          18223,
+          7448,
+          7449,
+          86232,
+          86233,
+          86233,
+          19865,
+          19880,
+          188985,
+          64379,
+          11697,
+          1398,
+          5708,
+          81860,
+          212507
+        ]
+      },
+      "policy": "collect_greedy_v1_eps015",
+      "seed": 11,
+      "split": "train",
+      "start": 1780794000000
+    },
+    {
+      "block": "2026-06-07",
+      "delay_multiplier": 1.0,
+      "end": 1780797600000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1780797600000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1780797600000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 99999.55103662501
+        },
+        "composition_error": 0.1295171360466052,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.44896337500000005
+        },
+        "fills": 21,
+        "fixed_reference_value": 197329.184786625,
+        "full_fills": 8,
+        "growth": {
+          "BTC": -0.0716,
+          "USD": 0.04489184786625003
+        },
+        "holding_status": "contractual/projected",
+        "holdings": {
+          "BTC": 0.9284,
+          "USD": 104489.184786625
+        },
+        "live_orders": 0,
+        "marked_wealth": {
+          "BTC": 2.6265461112566904,
+          "USD": 161426.31578662503,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.02839999999999998,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 56984.941332,
+        "no_fill_orders": 9,
+        "package_completion": [],
+        "partial_fills": 13,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [
+          {
+            "claims": {
+              "BTC": -0.0313,
+              "USD": 1955.71625
+            },
+            "date": 1798185600000,
+            "identifier": "BTC-25DEC26",
+            "kind": "funded_expiry_bridge"
+          },
+          {
+            "claims": {
+              "BTC": -0.0403,
+              "USD": 2533.9175
+            },
+            "date": 1806048000000,
+            "identifier": "BTC-26MAR27",
+            "kind": "funded_expiry_bridge"
+          }
+        ],
+        "score_is_surrogate": false,
+        "submitted_orders": 19,
+        "terminal_prediction_error": 0.07144945806208998,
+        "truncated": false,
+        "turnover_btc": 0.0716,
+        "turnover_usd": 4489.63375,
+        "utility": -0.0716,
+        "wait_ms": [
+          26631,
+          31978,
+          36246,
+          61414,
+          13208,
+          54162,
+          5733,
+          18223,
+          7469,
+          17689,
+          17739,
+          17771,
+          86232,
+          86233,
+          86233,
+          86233,
+          86233,
+          26261,
+          81430,
+          28551,
+          73467
+        ]
+      },
+      "policy": "collect_greedy_v1_eps015",
+      "seed": 29,
+      "split": "train",
+      "start": 1780794000000
+    },
+    {
+      "block": "2026-06-08",
+      "delay_multiplier": 1.0,
+      "end": 1780884000000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1780884000000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1780884000000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 99999.73531409998
+        },
+        "composition_error": 0.1169639148409326,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.26468590000000003
+        },
+        "fills": 14,
+        "fixed_reference_value": 198556.5943141,
+        "full_fills": 3,
+        "growth": {
+          "BTC": -0.04090000000000005,
+          "USD": 0.026465943140999735
+        },
+        "holding_status": "contractual/projected",
+        "holdings": {
+          "BTC": 0.9591,
+          "USD": 102646.59431409997
+        },
+        "live_orders": 1,
+        "marked_wealth": {
+          "BTC": 2.583012303513565,
+          "USD": 163143.93531409994,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.05909999999999993,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 60429.41905799999,
+        "no_fill_orders": 9,
+        "package_completion": [
+          {
+            "completion_ms": null,
+            "group": "g-10",
+            "status": "none"
+          }
+        ],
+        "partial_fills": 11,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [
+          {
+            "claims": {
+              "BTC": -0.04090000000000001,
+              "USD": 2646.8590000000004
+            },
+            "date": 1806048000000,
+            "identifier": "BTC-26MAR27",
+            "kind": "funded_expiry_bridge"
+          }
+        ],
+        "score_is_surrogate": false,
+        "submitted_orders": 16,
+        "terminal_prediction_error": 0.03717295758109544,
+        "truncated": false,
+        "turnover_btc": 0.0409,
+        "turnover_usd": 2646.859,
+        "utility": -0.04090000000000005,
+        "wait_ms": [
+          66153,
+          66227,
+          54904,
+          54905,
+          92855,
+          22660,
+          22660,
+          22661,
+          22662,
+          79848,
+          79848,
+          79848,
+          79849,
+          83510
+        ]
+      },
+      "policy": "collect_greedy_v1_eps015",
+      "seed": 11,
+      "split": "train",
+      "start": 1780880400000
+    },
+    {
+      "block": "2026-06-08",
+      "delay_multiplier": 1.0,
+      "end": 1780884000000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1780884000000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1780884000000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 99999.75470309997
+        },
+        "composition_error": 0.11571186477949852,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.2452969
+        },
+        "fills": 13,
+        "fixed_reference_value": 198662.72370309997,
+        "full_fills": 3,
+        "growth": {
+          "BTC": -0.037900000000000045,
+          "USD": 0.024527237030999675
+        },
+        "holding_status": "contractual/projected",
+        "holdings": {
+          "BTC": 0.9621,
+          "USD": 102452.72370309997
+        },
+        "live_orders": 0,
+        "marked_wealth": {
+          "BTC": 2.5830354096114743,
+          "USD": 163145.39470309997,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.06209999999999993,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 60617.389509,
+        "no_fill_orders": 8,
+        "package_completion": [],
+        "partial_fills": 10,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [
+          {
+            "claims": {
+              "BTC": -0.03790000000000001,
+              "USD": 2452.9690000000005
+            },
+            "date": 1806048000000,
+            "identifier": "BTC-26MAR27",
+            "kind": "funded_expiry_bridge"
+          }
+        ],
+        "score_is_surrogate": false,
+        "submitted_orders": 14,
+        "terminal_prediction_error": 0.034341148935506785,
+        "truncated": false,
+        "turnover_btc": 0.0379,
+        "turnover_usd": 2452.969,
+        "utility": -0.037900000000000045,
+        "wait_ms": [
+          66153,
+          66227,
+          54904,
+          54905,
+          92855,
+          22660,
+          22660,
+          22661,
+          22662,
+          79848,
+          79848,
+          79848,
+          79849
+        ]
+      },
+      "policy": "collect_greedy_v1_eps015",
+      "seed": 29,
+      "split": "train",
+      "start": 1780880400000
+    },
+    {
+      "block": "2026-06-09",
+      "delay_multiplier": 1.0,
+      "end": 1780970400000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1780970400000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1780970400000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 99999.55288717498
+        },
+        "composition_error": 0.12896364982465258,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.447112825
+        },
+        "fills": 13,
+        "fixed_reference_value": 197500.68113717498,
+        "full_fills": 6,
+        "growth": {
+          "BTC": -0.0697000000000001,
+          "USD": 0.044706811371749935
+        },
+        "holding_status": "contractual/projected",
+        "holdings": {
+          "BTC": 0.9302999999999999,
+          "USD": 104470.681137175
+        },
+        "live_orders": 2,
+        "marked_wealth": {
+          "BTC": 2.592379065882897,
+          "USD": 162749.42813717498,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.030299999999999883,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 58317.96728099999,
+        "no_fill_orders": 13,
+        "package_completion": [
+          {
+            "completion_ms": null,
+            "group": "g-10",
+            "status": "partial"
+          },
+          {
+            "completion_ms": null,
+            "group": "g-28",
+            "status": "none"
+          }
+        ],
+        "partial_fills": 7,
+        "peak_async_btc": 0.0097,
+        "pending_messages": 0,
+        "schedule": [
+          {
+            "claims": {
+              "BTC": -0.0097,
+              "USD": 616.6532500000001
+            },
+            "date": 1798185600000,
+            "identifier": "BTC-25DEC26",
+            "kind": "funded_expiry_bridge"
+          },
+          {
+            "claims": {
+              "BTC": -0.060000000000000005,
+              "USD": 3854.475
+            },
+            "date": 1806048000000,
+            "identifier": "BTC-26MAR27",
+            "kind": "funded_expiry_bridge"
+          }
+        ],
+        "score_is_surrogate": false,
+        "submitted_orders": 20,
+        "terminal_prediction_error": 0.06483188073566813,
+        "truncated": false,
+        "turnover_btc": 0.0697,
+        "turnover_usd": 4471.128250000001,
+        "utility": -0.0697000000000001,
+        "wait_ms": [
+          30639,
+          93103,
+          26098,
+          1235,
+          15368,
+          21338,
+          49874,
+          4329,
+          100269,
+          107712,
+          9765,
+          64290,
+          64290
+        ]
+      },
+      "policy": "collect_greedy_v1_eps015",
+      "seed": 11,
+      "split": "train",
+      "start": 1780966800000
+    },
+    {
+      "block": "2026-06-09",
+      "delay_multiplier": 1.0,
+      "end": 1780970400000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1780970400000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1780970400000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 99999.69759732496
+        },
+        "composition_error": 0.11949871188385375,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.302402675
+        },
+        "fills": 11,
+        "fixed_reference_value": 198313.72434732495,
+        "full_fills": 5,
+        "growth": {
+          "BTC": -0.04710000000000003,
+          "USD": 0.030237243473249544
+        },
+        "holding_status": "contractual/projected",
+        "holdings": {
+          "BTC": 0.9529,
+          "USD": 103023.72434732495
+        },
+        "live_orders": 1,
+        "marked_wealth": {
+          "BTC": 2.5925302639986967,
+          "USD": 162758.92034732498,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.05289999999999995,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 59740.083468,
+        "no_fill_orders": 12,
+        "package_completion": [],
+        "partial_fills": 6,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [
+          {
+            "claims": {
+              "BTC": -0.0021000000000000003,
+              "USD": 133.43925000000002
+            },
+            "date": 1798185600000,
+            "identifier": "BTC-25DEC26",
+            "kind": "funded_expiry_bridge"
+          },
+          {
+            "claims": {
+              "BTC": -0.045000000000000005,
+              "USD": 2890.5875
+            },
+            "date": 1806048000000,
+            "identifier": "BTC-26MAR27",
+            "kind": "funded_expiry_bridge"
+          }
+        ],
+        "score_is_surrogate": false,
+        "submitted_orders": 18,
+        "terminal_prediction_error": 0.04227569846939298,
+        "truncated": false,
+        "turnover_btc": 0.0471,
+        "turnover_usd": 3024.0267500000004,
+        "utility": -0.04710000000000003,
+        "wait_ms": [
+          30639,
+          93103,
+          26098,
+          1235,
+          15368,
+          21338,
+          49874,
+          4329,
+          11153,
+          32420,
+          32438
+        ]
+      },
+      "policy": "collect_greedy_v1_eps015",
+      "seed": 29,
+      "split": "train",
+      "start": 1780966800000
+    },
+    {
+      "block": "2026-06-10",
+      "delay_multiplier": 1.0,
+      "end": 1781056800000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1781056800000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1781056800000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 99999.869951675
+        },
+        "composition_error": 0.10840739589124815,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.13004832500000002
+        },
+        "fills": 14,
+        "fixed_reference_value": 199250.353201675,
+        "full_fills": 1,
+        "growth": {
+          "BTC": -0.020499999999999963,
+          "USD": 0.013003532016750105
+        },
+        "holding_status": "contractual/projected",
+        "holdings": {
+          "BTC": 0.9795,
+          "USD": 101300.35320167501
+        },
+        "live_orders": 0,
+        "marked_wealth": {
+          "BTC": 2.621448106872599,
+          "USD": 161667.69320167502,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.07950000000000002,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 60406.88163,
+        "no_fill_orders": 8,
+        "package_completion": [],
+        "partial_fills": 13,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [
+          {
+            "claims": {
+              "BTC": -0.0205,
+              "USD": 1300.4832500000002
+            },
+            "date": 1806048000000,
+            "identifier": "BTC-26MAR27",
+            "kind": "funded_expiry_bridge"
+          }
+        ],
+        "score_is_surrogate": false,
+        "submitted_orders": 12,
+        "terminal_prediction_error": 0.017598832336875262,
+        "truncated": false,
+        "turnover_btc": 0.0205,
+        "turnover_usd": 1300.48325,
+        "utility": -0.020499999999999963,
+        "wait_ms": [
+          4891,
+          7544,
+          9761,
+          12068,
+          77906,
+          77906,
+          77906,
+          77906,
+          77910,
+          20739,
+          63992,
+          67993,
+          78932,
+          87717
+        ]
+      },
+      "policy": "value_v1",
+      "seed": 11,
+      "split": "validation",
+      "start": 1781053200000
+    },
+    {
+      "block": "2026-06-10",
+      "delay_multiplier": 1.0,
+      "end": 1781056800000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1781056800000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1781056800000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 99999.869951675
+        },
+        "composition_error": 0.10840739589124815,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.13004832500000002
+        },
+        "fills": 14,
+        "fixed_reference_value": 199250.353201675,
+        "full_fills": 1,
+        "growth": {
+          "BTC": -0.020499999999999963,
+          "USD": 0.013003532016750105
+        },
+        "holding_status": "contractual/projected",
+        "holdings": {
+          "BTC": 0.9795,
+          "USD": 101300.35320167501
+        },
+        "live_orders": 0,
+        "marked_wealth": {
+          "BTC": 2.621448106872599,
+          "USD": 161667.69320167502,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.07950000000000002,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 60406.88163,
+        "no_fill_orders": 8,
+        "package_completion": [],
+        "partial_fills": 13,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [
+          {
+            "claims": {
+              "BTC": -0.0205,
+              "USD": 1300.4832500000002
+            },
+            "date": 1806048000000,
+            "identifier": "BTC-26MAR27",
+            "kind": "funded_expiry_bridge"
+          }
+        ],
+        "score_is_surrogate": false,
+        "submitted_orders": 12,
+        "terminal_prediction_error": 0.017621573767314318,
+        "truncated": false,
+        "turnover_btc": 0.0205,
+        "turnover_usd": 1300.48325,
+        "utility": -0.020499999999999963,
+        "wait_ms": [
+          4891,
+          7544,
+          9761,
+          12068,
+          77906,
+          77906,
+          77906,
+          77906,
+          77910,
+          20739,
+          63992,
+          67993,
+          78932,
+          87717
+        ]
+      },
+      "policy": "value_v1",
+      "seed": 29,
+      "split": "validation",
+      "start": 1781053200000
+    },
+    {
+      "block": "2026-06-11",
+      "delay_multiplier": 1.0,
+      "end": 1781143200000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1781143200000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1781143200000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 99999.92685860001
+        },
+        "composition_error": 0.10473850817071995,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.0731414
+        },
+        "fills": 3,
+        "fixed_reference_value": 199571.34085860002,
+        "full_fills": 0,
+        "growth": {
+          "BTC": -0.011600000000000055,
+          "USD": 0.007313408586000151
+        },
+        "holding_status": "contractual/projected",
+        "holdings": {
+          "BTC": 0.9884,
+          "USD": 100731.34085860002
+        },
+        "live_orders": 1,
+        "marked_wealth": {
+          "BTC": 2.6083486820050137,
+          "USD": 162169.25385860002,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.08839999999999992,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 61388.287136,
+        "no_fill_orders": 8,
+        "package_completion": [],
+        "partial_fills": 3,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [
+          {
+            "claims": {
+              "BTC": -0.0116,
+              "USD": 731.414
+            },
+            "date": 1798185600000,
+            "identifier": "BTC-25DEC26",
+            "kind": "funded_expiry_bridge"
+          }
+        ],
+        "score_is_surrogate": false,
+        "submitted_orders": 10,
+        "terminal_prediction_error": 0.007270994278043563,
+        "truncated": false,
+        "turnover_btc": 0.0116,
+        "turnover_usd": 731.414,
+        "utility": -0.011600000000000055,
+        "wait_ms": [
+          30696,
+          30840,
+          108287
+        ]
+      },
+      "policy": "value_v1",
+      "seed": 11,
+      "split": "validation",
+      "start": 1781139600000
+    },
+    {
+      "block": "2026-06-11",
+      "delay_multiplier": 1.0,
+      "end": 1781143200000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1781143200000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1781143200000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 99999.92685860001
+        },
+        "composition_error": 0.10473850817071995,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.0731414
+        },
+        "fills": 3,
+        "fixed_reference_value": 199571.34085860002,
+        "full_fills": 0,
+        "growth": {
+          "BTC": -0.011600000000000055,
+          "USD": 0.007313408586000151
+        },
+        "holding_status": "contractual/projected",
+        "holdings": {
+          "BTC": 0.9884,
+          "USD": 100731.34085860002
+        },
+        "live_orders": 1,
+        "marked_wealth": {
+          "BTC": 2.6083486820050137,
+          "USD": 162169.25385860002,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.08839999999999992,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 61388.287136,
+        "no_fill_orders": 8,
+        "package_completion": [],
+        "partial_fills": 3,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [
+          {
+            "claims": {
+              "BTC": -0.0116,
+              "USD": 731.414
+            },
+            "date": 1798185600000,
+            "identifier": "BTC-25DEC26",
+            "kind": "funded_expiry_bridge"
+          }
+        ],
+        "score_is_surrogate": false,
+        "submitted_orders": 10,
+        "terminal_prediction_error": 0.0072067270444085745,
+        "truncated": false,
+        "turnover_btc": 0.0116,
+        "turnover_usd": 731.414,
+        "utility": -0.011600000000000055,
+        "wait_ms": [
+          30696,
+          30840,
+          108287
+        ]
+      },
+      "policy": "value_v1",
+      "seed": 29,
+      "split": "validation",
+      "start": 1781139600000
+    },
+    {
+      "block": "2026-06-10",
+      "delay_multiplier": 1.0,
+      "end": 1781056800000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1781056800000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1781056800000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 99999.93714
+        },
+        "composition_error": 0.10407891868400032,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.06286
+        },
+        "fills": 2,
+        "fixed_reference_value": 199628.53714,
+        "full_fills": 1,
+        "growth": {
+          "BTC": -0.010000000000000009,
+          "USD": 0.006285371400000003
+        },
+        "holding_status": "contractual/projected",
+        "holdings": {
+          "BTC": 0.99,
+          "USD": 100628.53714
+        },
+        "live_orders": 1,
+        "marked_wealth": {
+          "BTC": 2.621489194783816,
+          "USD": 161670.22714,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.08999999999999997,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 61054.4286,
+        "no_fill_orders": 1,
+        "package_completion": [],
+        "partial_fills": 1,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [
+          {
+            "claims": {
+              "BTC": -0.01,
+              "USD": 628.6
+            },
+            "date": 1798185600000,
+            "identifier": "BTC-25DEC26",
+            "kind": "funded_expiry_bridge"
+          }
+        ],
+        "score_is_surrogate": false,
+        "submitted_orders": 2,
+        "terminal_prediction_error": -0.050977827881773304,
+        "truncated": false,
+        "turnover_btc": 0.01,
+        "turnover_usd": 628.6,
+        "utility": -0.010000000000000009,
+        "wait_ms": [
+          46833,
+          46989
+        ]
+      },
+      "policy": "value_v2",
+      "seed": 11,
+      "split": "validation",
+      "start": 1781053200000
+    },
+    {
+      "block": "2026-06-10",
+      "delay_multiplier": 1.0,
+      "end": 1781056800000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1781056800000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1781056800000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 99999.93714
+        },
+        "composition_error": 0.10407891868400032,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.06286
+        },
+        "fills": 2,
+        "fixed_reference_value": 199628.53714,
+        "full_fills": 1,
+        "growth": {
+          "BTC": -0.010000000000000009,
+          "USD": 0.006285371400000003
+        },
+        "holding_status": "contractual/projected",
+        "holdings": {
+          "BTC": 0.99,
+          "USD": 100628.53714
+        },
+        "live_orders": 1,
+        "marked_wealth": {
+          "BTC": 2.621489194783816,
+          "USD": 161670.22714,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.08999999999999997,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 61054.4286,
+        "no_fill_orders": 1,
+        "package_completion": [],
+        "partial_fills": 1,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [
+          {
+            "claims": {
+              "BTC": -0.01,
+              "USD": 628.6
+            },
+            "date": 1798185600000,
+            "identifier": "BTC-25DEC26",
+            "kind": "funded_expiry_bridge"
+          }
+        ],
+        "score_is_surrogate": false,
+        "submitted_orders": 2,
+        "terminal_prediction_error": -0.051014820573230577,
+        "truncated": false,
+        "turnover_btc": 0.01,
+        "turnover_usd": 628.6,
+        "utility": -0.010000000000000009,
+        "wait_ms": [
+          46833,
+          46989
+        ]
+      },
+      "policy": "value_v2",
+      "seed": 29,
+      "split": "validation",
+      "start": 1781053200000
+    },
+    {
+      "block": "2026-06-11",
+      "delay_multiplier": 1.0,
+      "end": 1781143200000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1781143200000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1781143200000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 99999.91292270001
+        },
+        "composition_error": 0.1056410802145723,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.0870773
+        },
+        "fills": 4,
+        "fixed_reference_value": 199490.6859227,
+        "full_fills": 1,
+        "growth": {
+          "BTC": -0.013800000000000034,
+          "USD": 0.008706859227000095
+        },
+        "holding_status": "contractual/projected",
+        "holdings": {
+          "BTC": 0.9862,
+          "USD": 100870.68592270001
+        },
+        "live_orders": 1,
+        "marked_wealth": {
+          "BTC": 2.6083471309190545,
+          "USD": 162169.15742270002,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.08619999999999994,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 61315.16053,
+        "no_fill_orders": 0,
+        "package_completion": [],
+        "partial_fills": 3,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [
+          {
+            "claims": {
+              "BTC": -0.0138,
+              "USD": 870.773
+            },
+            "date": 1798185600000,
+            "identifier": "BTC-25DEC26",
+            "kind": "funded_expiry_bridge"
+          }
+        ],
+        "score_is_surrogate": false,
+        "submitted_orders": 2,
+        "terminal_prediction_error": -0.04576091235081351,
+        "truncated": false,
+        "turnover_btc": 0.0138,
+        "turnover_usd": 870.773,
+        "utility": -0.013800000000000034,
+        "wait_ms": [
+          30696,
+          30840,
+          6493,
+          108287
+        ]
+      },
+      "policy": "value_v2",
+      "seed": 11,
+      "split": "validation",
+      "start": 1781139600000
+    },
+    {
+      "block": "2026-06-11",
+      "delay_multiplier": 1.0,
+      "end": 1781143200000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1781143200000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1781143200000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 99999.91292270001
+        },
+        "composition_error": 0.1056410802145723,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.0870773
+        },
+        "fills": 4,
+        "fixed_reference_value": 199490.6859227,
+        "full_fills": 1,
+        "growth": {
+          "BTC": -0.013800000000000034,
+          "USD": 0.008706859227000095
+        },
+        "holding_status": "contractual/projected",
+        "holdings": {
+          "BTC": 0.9862,
+          "USD": 100870.68592270001
+        },
+        "live_orders": 1,
+        "marked_wealth": {
+          "BTC": 2.6083471309190545,
+          "USD": 162169.15742270002,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.08619999999999994,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 61315.16053,
+        "no_fill_orders": 0,
+        "package_completion": [],
+        "partial_fills": 3,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [
+          {
+            "claims": {
+              "BTC": -0.0138,
+              "USD": 870.773
+            },
+            "date": 1798185600000,
+            "identifier": "BTC-25DEC26",
+            "kind": "funded_expiry_bridge"
+          }
+        ],
+        "score_is_surrogate": false,
+        "submitted_orders": 2,
+        "terminal_prediction_error": -0.045497666822870535,
+        "truncated": false,
+        "turnover_btc": 0.0138,
+        "turnover_usd": 870.773,
+        "utility": -0.013800000000000034,
+        "wait_ms": [
+          30696,
+          30840,
+          6493,
+          108287
+        ]
+      },
+      "policy": "value_v2",
+      "seed": 29,
+      "split": "validation",
+      "start": 1781139600000
+    },
+    {
+      "block": "2026-06-12",
+      "delay_multiplier": 1.0,
+      "end": 1781229600000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1781229600000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1781229600000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "composition_error": 0.09999999999999998,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "fills": 0,
+        "fixed_reference_value": 200000.0,
+        "full_fills": 0,
+        "growth": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "holding_status": "realized",
+        "holdings": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "live_orders": 0,
+        "marked_wealth": {
+          "BTC": 2.578408881769914,
+          "USD": 163354.94,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.09999999999999998,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 63247.49,
+        "no_fill_orders": 0,
+        "package_completion": [],
+        "partial_fills": 0,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [],
+        "score_is_surrogate": false,
+        "submitted_orders": 0,
+        "terminal_prediction_error": null,
+        "truncated": false,
+        "turnover_btc": 0,
+        "turnover_usd": 0,
+        "utility": 0.0,
+        "wait_ms": []
+      },
+      "policy": "hold",
+      "seed": 11,
+      "split": "test",
+      "start": 1781226000000
+    },
+    {
+      "block": "2026-06-12",
+      "delay_multiplier": 1.0,
+      "end": 1781229600000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1781229600000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1781229600000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "composition_error": 0.09999999999999998,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "fills": 0,
+        "fixed_reference_value": 200000.0,
+        "full_fills": 0,
+        "growth": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "holding_status": "realized",
+        "holdings": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "live_orders": 2,
+        "marked_wealth": {
+          "BTC": 2.578408881769914,
+          "USD": 163354.94,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.09999999999999998,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 63247.49,
+        "no_fill_orders": 2,
+        "package_completion": [
+          {
+            "completion_ms": null,
+            "group": "g-0",
+            "status": "none"
+          }
+        ],
+        "partial_fills": 0,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [],
+        "score_is_surrogate": false,
+        "submitted_orders": 2,
+        "terminal_prediction_error": null,
+        "truncated": false,
+        "turnover_btc": 0,
+        "turnover_usd": 0,
+        "utility": 0.0,
+        "wait_ms": []
+      },
+      "policy": "analytical",
+      "seed": 11,
+      "split": "test",
+      "start": 1781226000000
+    },
+    {
+      "block": "2026-06-12",
+      "delay_multiplier": 1.0,
+      "end": 1781229600000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1781229600000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1781229600000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 99999.987729325
+        },
+        "composition_error": 0.10078199936268384,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.012270675000000002
+        },
+        "fills": 4,
+        "fixed_reference_value": 199932.694479325,
+        "full_fills": 0,
+        "growth": {
+          "BTC": -0.0019000000000000128,
+          "USD": 0.0012269447932500043
+        },
+        "holding_status": "contractual/projected",
+        "holdings": {
+          "BTC": 0.9981,
+          "USD": 100122.694479325
+        },
+        "live_orders": 1,
+        "marked_wealth": {
+          "BTC": 2.5784078633698493,
+          "USD": 163354.875479325,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.09809999999999997,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 63234.565614,
+        "no_fill_orders": 0,
+        "package_completion": [],
+        "partial_fills": 4,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [
+          {
+            "claims": {
+              "BTC": -0.0019000000000000002,
+              "USD": 122.70675000000001
+            },
+            "date": 1798185600000,
+            "identifier": "BTC-25DEC26",
+            "kind": "funded_expiry_bridge"
+          }
+        ],
+        "score_is_surrogate": false,
+        "submitted_orders": 1,
+        "terminal_prediction_error": -0.06328446231881776,
+        "truncated": false,
+        "turnover_btc": 0.0019000000000000002,
+        "turnover_usd": 122.70675000000001,
+        "utility": -0.0019000000000000128,
+        "wait_ms": [
+          53961,
+          30676,
+          56782,
+          77447
+        ]
+      },
+      "policy": "value_v2",
+      "seed": 11,
+      "split": "test",
+      "start": 1781226000000
+    },
+    {
+      "block": "2026-06-12",
+      "delay_multiplier": 1.0,
+      "end": 1781229600000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1781229600000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1781229600000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "composition_error": 0.09999999999999998,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "fills": 0,
+        "fixed_reference_value": 200000.0,
+        "full_fills": 0,
+        "growth": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "holding_status": "realized",
+        "holdings": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "live_orders": 0,
+        "marked_wealth": {
+          "BTC": 2.578408881769914,
+          "USD": 163354.94,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.09999999999999998,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 63247.49,
+        "no_fill_orders": 0,
+        "package_completion": [],
+        "partial_fills": 0,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [],
+        "score_is_surrogate": false,
+        "submitted_orders": 0,
+        "terminal_prediction_error": null,
+        "truncated": false,
+        "turnover_btc": 0,
+        "turnover_usd": 0,
+        "utility": 0.0,
+        "wait_ms": []
+      },
+      "policy": "hold",
+      "seed": 29,
+      "split": "test",
+      "start": 1781226000000
+    },
+    {
+      "block": "2026-06-12",
+      "delay_multiplier": 1.0,
+      "end": 1781229600000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1781229600000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1781229600000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "composition_error": 0.09999999999999998,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "fills": 0,
+        "fixed_reference_value": 200000.0,
+        "full_fills": 0,
+        "growth": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "holding_status": "realized",
+        "holdings": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "live_orders": 2,
+        "marked_wealth": {
+          "BTC": 2.578408881769914,
+          "USD": 163354.94,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.09999999999999998,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 63247.49,
+        "no_fill_orders": 2,
+        "package_completion": [
+          {
+            "completion_ms": null,
+            "group": "g-0",
+            "status": "none"
+          }
+        ],
+        "partial_fills": 0,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [],
+        "score_is_surrogate": false,
+        "submitted_orders": 2,
+        "terminal_prediction_error": null,
+        "truncated": false,
+        "turnover_btc": 0,
+        "turnover_usd": 0,
+        "utility": 0.0,
+        "wait_ms": []
+      },
+      "policy": "analytical",
+      "seed": 29,
+      "split": "test",
+      "start": 1781226000000
+    },
+    {
+      "block": "2026-06-12",
+      "delay_multiplier": 1.0,
+      "end": 1781229600000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1781229600000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1781229600000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 99999.987729325
+        },
+        "composition_error": 0.10078199936268384,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.012270675000000002
+        },
+        "fills": 4,
+        "fixed_reference_value": 199932.694479325,
+        "full_fills": 0,
+        "growth": {
+          "BTC": -0.0019000000000000128,
+          "USD": 0.0012269447932500043
+        },
+        "holding_status": "contractual/projected",
+        "holdings": {
+          "BTC": 0.9981,
+          "USD": 100122.694479325
+        },
+        "live_orders": 1,
+        "marked_wealth": {
+          "BTC": 2.5784078633698493,
+          "USD": 163354.875479325,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.09809999999999997,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 63234.565614,
+        "no_fill_orders": 0,
+        "package_completion": [],
+        "partial_fills": 4,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [
+          {
+            "claims": {
+              "BTC": -0.0019000000000000002,
+              "USD": 122.70675000000001
+            },
+            "date": 1798185600000,
+            "identifier": "BTC-25DEC26",
+            "kind": "funded_expiry_bridge"
+          }
+        ],
+        "score_is_surrogate": false,
+        "submitted_orders": 1,
+        "terminal_prediction_error": -0.06326718864440917,
+        "truncated": false,
+        "turnover_btc": 0.0019000000000000002,
+        "turnover_usd": 122.70675000000001,
+        "utility": -0.0019000000000000128,
+        "wait_ms": [
+          53961,
+          30676,
+          56782,
+          77447
+        ]
+      },
+      "policy": "value_v2",
+      "seed": 29,
+      "split": "test",
+      "start": 1781226000000
+    },
+    {
+      "block": "2026-06-12",
+      "delay_multiplier": 10.0,
+      "end": 1781229600000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1781229600000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1781229600000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "composition_error": 0.09999999999999998,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "fills": 0,
+        "fixed_reference_value": 200000.0,
+        "full_fills": 0,
+        "growth": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "holding_status": "realized",
+        "holdings": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "live_orders": 0,
+        "marked_wealth": {
+          "BTC": 2.578408881769914,
+          "USD": 163354.94,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.09999999999999998,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 63247.49,
+        "no_fill_orders": 0,
+        "package_completion": [],
+        "partial_fills": 0,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [],
+        "score_is_surrogate": false,
+        "submitted_orders": 0,
+        "terminal_prediction_error": null,
+        "truncated": false,
+        "turnover_btc": 0,
+        "turnover_usd": 0,
+        "utility": 0.0,
+        "wait_ms": []
+      },
+      "policy": "hold",
+      "seed": 11,
+      "split": "test",
+      "start": 1781226000000
+    },
+    {
+      "block": "2026-06-12",
+      "delay_multiplier": 10.0,
+      "end": 1781229600000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1781229600000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1781229600000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "composition_error": 0.09999999999999998,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "fills": 0,
+        "fixed_reference_value": 200000.0,
+        "full_fills": 0,
+        "growth": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "holding_status": "realized",
+        "holdings": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "live_orders": 2,
+        "marked_wealth": {
+          "BTC": 2.578408881769914,
+          "USD": 163354.94,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.09999999999999998,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 63247.49,
+        "no_fill_orders": 2,
+        "package_completion": [
+          {
+            "completion_ms": null,
+            "group": "g-0",
+            "status": "none"
+          }
+        ],
+        "partial_fills": 0,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [],
+        "score_is_surrogate": false,
+        "submitted_orders": 2,
+        "terminal_prediction_error": null,
+        "truncated": false,
+        "turnover_btc": 0,
+        "turnover_usd": 0,
+        "utility": 0.0,
+        "wait_ms": []
+      },
+      "policy": "analytical",
+      "seed": 11,
+      "split": "test",
+      "start": 1781226000000
+    },
+    {
+      "block": "2026-06-12",
+      "delay_multiplier": 10.0,
+      "end": 1781229600000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1781229600000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1781229600000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 99999.987729325
+        },
+        "composition_error": 0.10078199936268384,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.012270675000000002
+        },
+        "fills": 4,
+        "fixed_reference_value": 199932.694479325,
+        "full_fills": 0,
+        "growth": {
+          "BTC": -0.0019000000000000128,
+          "USD": 0.0012269447932500043
+        },
+        "holding_status": "contractual/projected",
+        "holdings": {
+          "BTC": 0.9981,
+          "USD": 100122.694479325
+        },
+        "live_orders": 1,
+        "marked_wealth": {
+          "BTC": 2.5784078633698493,
+          "USD": 163354.875479325,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.09809999999999997,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 63234.565614,
+        "no_fill_orders": 0,
+        "package_completion": [],
+        "partial_fills": 4,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [
+          {
+            "claims": {
+              "BTC": -0.0019000000000000002,
+              "USD": 122.70675000000001
+            },
+            "date": 1798185600000,
+            "identifier": "BTC-25DEC26",
+            "kind": "funded_expiry_bridge"
+          }
+        ],
+        "score_is_surrogate": false,
+        "submitted_orders": 1,
+        "terminal_prediction_error": -0.060558483067651575,
+        "truncated": false,
+        "turnover_btc": 0.0019000000000000002,
+        "turnover_usd": 122.70675000000001,
+        "utility": -0.0019000000000000128,
+        "wait_ms": [
+          53961,
+          30676,
+          56782,
+          77447
+        ]
+      },
+      "policy": "value_v2",
+      "seed": 11,
+      "split": "test",
+      "start": 1781226000000
+    },
+    {
+      "block": "2026-06-12",
+      "delay_multiplier": 10.0,
+      "end": 1781229600000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1781229600000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1781229600000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "composition_error": 0.09999999999999998,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "fills": 0,
+        "fixed_reference_value": 200000.0,
+        "full_fills": 0,
+        "growth": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "holding_status": "realized",
+        "holdings": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "live_orders": 0,
+        "marked_wealth": {
+          "BTC": 2.578408881769914,
+          "USD": 163354.94,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.09999999999999998,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 63247.49,
+        "no_fill_orders": 0,
+        "package_completion": [],
+        "partial_fills": 0,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [],
+        "score_is_surrogate": false,
+        "submitted_orders": 0,
+        "terminal_prediction_error": null,
+        "truncated": false,
+        "turnover_btc": 0,
+        "turnover_usd": 0,
+        "utility": 0.0,
+        "wait_ms": []
+      },
+      "policy": "hold",
+      "seed": 29,
+      "split": "test",
+      "start": 1781226000000
+    },
+    {
+      "block": "2026-06-12",
+      "delay_multiplier": 10.0,
+      "end": 1781229600000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1781229600000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1781229600000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "composition_error": 0.09999999999999998,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "fills": 0,
+        "fixed_reference_value": 200000.0,
+        "full_fills": 0,
+        "growth": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "holding_status": "realized",
+        "holdings": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "live_orders": 2,
+        "marked_wealth": {
+          "BTC": 2.578408881769914,
+          "USD": 163354.94,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.09999999999999998,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 63247.49,
+        "no_fill_orders": 2,
+        "package_completion": [
+          {
+            "completion_ms": null,
+            "group": "g-0",
+            "status": "none"
+          }
+        ],
+        "partial_fills": 0,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [],
+        "score_is_surrogate": false,
+        "submitted_orders": 2,
+        "terminal_prediction_error": null,
+        "truncated": false,
+        "turnover_btc": 0,
+        "turnover_usd": 0,
+        "utility": 0.0,
+        "wait_ms": []
+      },
+      "policy": "analytical",
+      "seed": 29,
+      "split": "test",
+      "start": 1781226000000
+    },
+    {
+      "block": "2026-06-12",
+      "delay_multiplier": 10.0,
+      "end": 1781229600000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1781229600000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1781229600000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 99999.987729325
+        },
+        "composition_error": 0.10078199936268384,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.012270675000000002
+        },
+        "fills": 4,
+        "fixed_reference_value": 199932.694479325,
+        "full_fills": 0,
+        "growth": {
+          "BTC": -0.0019000000000000128,
+          "USD": 0.0012269447932500043
+        },
+        "holding_status": "contractual/projected",
+        "holdings": {
+          "BTC": 0.9981,
+          "USD": 100122.694479325
+        },
+        "live_orders": 1,
+        "marked_wealth": {
+          "BTC": 2.5784078633698493,
+          "USD": 163354.875479325,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.09809999999999997,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 63234.565614,
+        "no_fill_orders": 0,
+        "package_completion": [],
+        "partial_fills": 4,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [
+          {
+            "claims": {
+              "BTC": -0.0019000000000000002,
+              "USD": 122.70675000000001
+            },
+            "date": 1798185600000,
+            "identifier": "BTC-25DEC26",
+            "kind": "funded_expiry_bridge"
+          }
+        ],
+        "score_is_surrogate": false,
+        "submitted_orders": 1,
+        "terminal_prediction_error": -0.0601607346917192,
+        "truncated": false,
+        "turnover_btc": 0.0019000000000000002,
+        "turnover_usd": 122.70675000000001,
+        "utility": -0.0019000000000000128,
+        "wait_ms": [
+          53961,
+          30676,
+          56782,
+          77447
+        ]
+      },
+      "policy": "value_v2",
+      "seed": 29,
+      "split": "test",
+      "start": 1781226000000
+    },
+    {
+      "block": "2026-06-13",
+      "delay_multiplier": 1.0,
+      "end": 1781316000000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1781316000000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1781316000000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "composition_error": 0.09999999999999998,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "fills": 0,
+        "fixed_reference_value": 200000.0,
+        "full_fills": 0,
+        "growth": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "holding_status": "realized",
+        "holdings": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "live_orders": 0,
+        "marked_wealth": {
+          "BTC": 2.5679744357447993,
+          "USD": 163776.55,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.09999999999999998,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 63532.3,
+        "no_fill_orders": 0,
+        "package_completion": [],
+        "partial_fills": 0,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [],
+        "score_is_surrogate": false,
+        "submitted_orders": 0,
+        "terminal_prediction_error": null,
+        "truncated": false,
+        "turnover_btc": 0,
+        "turnover_usd": 0,
+        "utility": 0.0,
+        "wait_ms": []
+      },
+      "policy": "hold",
+      "seed": 11,
+      "split": "test",
+      "start": 1781312400000
+    },
+    {
+      "block": "2026-06-13",
+      "delay_multiplier": 1.0,
+      "end": 1781316000000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1781316000000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1781316000000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "composition_error": 0.09999999999999998,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "fills": 0,
+        "fixed_reference_value": 200000.0,
+        "full_fills": 0,
+        "growth": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "holding_status": "realized",
+        "holdings": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "live_orders": 2,
+        "marked_wealth": {
+          "BTC": 2.5679744357447993,
+          "USD": 163776.55,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.09999999999999998,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 63532.3,
+        "no_fill_orders": 2,
+        "package_completion": [
+          {
+            "completion_ms": null,
+            "group": "g-0",
+            "status": "none"
+          }
+        ],
+        "partial_fills": 0,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [],
+        "score_is_surrogate": false,
+        "submitted_orders": 2,
+        "terminal_prediction_error": null,
+        "truncated": false,
+        "turnover_btc": 0,
+        "turnover_usd": 0,
+        "utility": 0.0,
+        "wait_ms": []
+      },
+      "policy": "analytical",
+      "seed": 11,
+      "split": "test",
+      "start": 1781312400000
+    },
+    {
+      "block": "2026-06-13",
+      "delay_multiplier": 1.0,
+      "end": 1781316000000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1781316000000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1781316000000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 99999.74031705
+        },
+        "composition_error": 0.11660796514040211,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.25968294999999997
+        },
+        "fills": 7,
+        "fixed_reference_value": 198596.56981705,
+        "full_fills": 4,
+        "growth": {
+          "BTC": -0.040000000000000036,
+          "USD": 0.02596569817050011
+        },
+        "holding_status": "contractual/projected",
+        "holdings": {
+          "BTC": 0.96,
+          "USD": 102596.56981705001
+        },
+        "live_orders": 1,
+        "marked_wealth": {
+          "BTC": 2.567892427813201,
+          "USD": 163771.31981705,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.05999999999999994,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 61213.4112,
+        "no_fill_orders": 1,
+        "package_completion": [],
+        "partial_fills": 3,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [
+          {
+            "claims": {
+              "BTC": -0.04,
+              "USD": 2596.8295000000003
+            },
+            "date": 1798185600000,
+            "identifier": "BTC-25DEC26",
+            "kind": "funded_expiry_bridge"
+          }
+        ],
+        "score_is_surrogate": false,
+        "submitted_orders": 5,
+        "terminal_prediction_error": -0.014222436373432443,
+        "truncated": false,
+        "turnover_btc": 0.04,
+        "turnover_usd": 2596.8295000000003,
+        "utility": -0.040000000000000036,
+        "wait_ms": [
+          57734,
+          1219,
+          61571,
+          12433,
+          15552,
+          15552,
+          53481
+        ]
+      },
+      "policy": "value_v2",
+      "seed": 11,
+      "split": "test",
+      "start": 1781312400000
+    },
+    {
+      "block": "2026-06-13",
+      "delay_multiplier": 1.0,
+      "end": 1781316000000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1781316000000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1781316000000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "composition_error": 0.09999999999999998,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "fills": 0,
+        "fixed_reference_value": 200000.0,
+        "full_fills": 0,
+        "growth": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "holding_status": "realized",
+        "holdings": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "live_orders": 0,
+        "marked_wealth": {
+          "BTC": 2.5679744357447993,
+          "USD": 163776.55,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.09999999999999998,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 63532.3,
+        "no_fill_orders": 0,
+        "package_completion": [],
+        "partial_fills": 0,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [],
+        "score_is_surrogate": false,
+        "submitted_orders": 0,
+        "terminal_prediction_error": null,
+        "truncated": false,
+        "turnover_btc": 0,
+        "turnover_usd": 0,
+        "utility": 0.0,
+        "wait_ms": []
+      },
+      "policy": "hold",
+      "seed": 29,
+      "split": "test",
+      "start": 1781312400000
+    },
+    {
+      "block": "2026-06-13",
+      "delay_multiplier": 1.0,
+      "end": 1781316000000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1781316000000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1781316000000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "composition_error": 0.09999999999999998,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "fills": 0,
+        "fixed_reference_value": 200000.0,
+        "full_fills": 0,
+        "growth": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "holding_status": "realized",
+        "holdings": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "live_orders": 2,
+        "marked_wealth": {
+          "BTC": 2.5679744357447993,
+          "USD": 163776.55,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.09999999999999998,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 63532.3,
+        "no_fill_orders": 2,
+        "package_completion": [
+          {
+            "completion_ms": null,
+            "group": "g-0",
+            "status": "none"
+          }
+        ],
+        "partial_fills": 0,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [],
+        "score_is_surrogate": false,
+        "submitted_orders": 2,
+        "terminal_prediction_error": null,
+        "truncated": false,
+        "turnover_btc": 0,
+        "turnover_usd": 0,
+        "utility": 0.0,
+        "wait_ms": []
+      },
+      "policy": "analytical",
+      "seed": 29,
+      "split": "test",
+      "start": 1781312400000
+    },
+    {
+      "block": "2026-06-13",
+      "delay_multiplier": 1.0,
+      "end": 1781316000000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1781316000000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1781316000000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 99999.74031705
+        },
+        "composition_error": 0.11660796514040211,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.25968294999999997
+        },
+        "fills": 7,
+        "fixed_reference_value": 198596.56981705,
+        "full_fills": 4,
+        "growth": {
+          "BTC": -0.040000000000000036,
+          "USD": 0.02596569817050011
+        },
+        "holding_status": "contractual/projected",
+        "holdings": {
+          "BTC": 0.96,
+          "USD": 102596.56981705001
+        },
+        "live_orders": 1,
+        "marked_wealth": {
+          "BTC": 2.567892427813201,
+          "USD": 163771.31981705,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.05999999999999994,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 61213.4112,
+        "no_fill_orders": 1,
+        "package_completion": [],
+        "partial_fills": 3,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [
+          {
+            "claims": {
+              "BTC": -0.04,
+              "USD": 2596.8295000000003
+            },
+            "date": 1798185600000,
+            "identifier": "BTC-25DEC26",
+            "kind": "funded_expiry_bridge"
+          }
+        ],
+        "score_is_surrogate": false,
+        "submitted_orders": 5,
+        "terminal_prediction_error": -0.014153303677837022,
+        "truncated": false,
+        "turnover_btc": 0.04,
+        "turnover_usd": 2596.8295000000003,
+        "utility": -0.040000000000000036,
+        "wait_ms": [
+          57734,
+          1219,
+          61571,
+          12433,
+          15552,
+          15552,
+          53481
+        ]
+      },
+      "policy": "value_v2",
+      "seed": 29,
+      "split": "test",
+      "start": 1781312400000
+    },
+    {
+      "block": "2026-06-13",
+      "delay_multiplier": 10.0,
+      "end": 1781316000000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1781316000000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1781316000000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "composition_error": 0.09999999999999998,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "fills": 0,
+        "fixed_reference_value": 200000.0,
+        "full_fills": 0,
+        "growth": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "holding_status": "realized",
+        "holdings": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "live_orders": 0,
+        "marked_wealth": {
+          "BTC": 2.5679744357447993,
+          "USD": 163776.55,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.09999999999999998,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 63532.3,
+        "no_fill_orders": 0,
+        "package_completion": [],
+        "partial_fills": 0,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [],
+        "score_is_surrogate": false,
+        "submitted_orders": 0,
+        "terminal_prediction_error": null,
+        "truncated": false,
+        "turnover_btc": 0,
+        "turnover_usd": 0,
+        "utility": 0.0,
+        "wait_ms": []
+      },
+      "policy": "hold",
+      "seed": 11,
+      "split": "test",
+      "start": 1781312400000
+    },
+    {
+      "block": "2026-06-13",
+      "delay_multiplier": 10.0,
+      "end": 1781316000000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1781316000000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1781316000000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "composition_error": 0.09999999999999998,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "fills": 0,
+        "fixed_reference_value": 200000.0,
+        "full_fills": 0,
+        "growth": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "holding_status": "realized",
+        "holdings": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "live_orders": 2,
+        "marked_wealth": {
+          "BTC": 2.5679744357447993,
+          "USD": 163776.55,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.09999999999999998,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 63532.3,
+        "no_fill_orders": 2,
+        "package_completion": [
+          {
+            "completion_ms": null,
+            "group": "g-0",
+            "status": "none"
+          }
+        ],
+        "partial_fills": 0,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [],
+        "score_is_surrogate": false,
+        "submitted_orders": 2,
+        "terminal_prediction_error": null,
+        "truncated": false,
+        "turnover_btc": 0,
+        "turnover_usd": 0,
+        "utility": 0.0,
+        "wait_ms": []
+      },
+      "policy": "analytical",
+      "seed": 11,
+      "split": "test",
+      "start": 1781312400000
+    },
+    {
+      "block": "2026-06-13",
+      "delay_multiplier": 10.0,
+      "end": 1781316000000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1781316000000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1781316000000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 99999.74031705
+        },
+        "composition_error": 0.11660796514040211,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.25968294999999997
+        },
+        "fills": 7,
+        "fixed_reference_value": 198596.56981705,
+        "full_fills": 4,
+        "growth": {
+          "BTC": -0.040000000000000036,
+          "USD": 0.02596569817050011
+        },
+        "holding_status": "contractual/projected",
+        "holdings": {
+          "BTC": 0.96,
+          "USD": 102596.56981705001
+        },
+        "live_orders": 1,
+        "marked_wealth": {
+          "BTC": 2.567892427813201,
+          "USD": 163771.31981705,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.05999999999999994,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 61213.4112,
+        "no_fill_orders": 1,
+        "package_completion": [],
+        "partial_fills": 3,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [
+          {
+            "claims": {
+              "BTC": -0.04,
+              "USD": 2596.8295000000003
+            },
+            "date": 1798185600000,
+            "identifier": "BTC-25DEC26",
+            "kind": "funded_expiry_bridge"
+          }
+        ],
+        "score_is_surrogate": false,
+        "submitted_orders": 5,
+        "terminal_prediction_error": -0.012517887949943504,
+        "truncated": false,
+        "turnover_btc": 0.04,
+        "turnover_usd": 2596.8295000000003,
+        "utility": -0.040000000000000036,
+        "wait_ms": [
+          57734,
+          1219,
+          61571,
+          12433,
+          15552,
+          15552,
+          53481
+        ]
+      },
+      "policy": "value_v2",
+      "seed": 11,
+      "split": "test",
+      "start": 1781312400000
+    },
+    {
+      "block": "2026-06-13",
+      "delay_multiplier": 10.0,
+      "end": 1781316000000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1781316000000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1781316000000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "composition_error": 0.09999999999999998,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "fills": 0,
+        "fixed_reference_value": 200000.0,
+        "full_fills": 0,
+        "growth": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "holding_status": "realized",
+        "holdings": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "live_orders": 0,
+        "marked_wealth": {
+          "BTC": 2.5679744357447993,
+          "USD": 163776.55,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.09999999999999998,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 63532.3,
+        "no_fill_orders": 0,
+        "package_completion": [],
+        "partial_fills": 0,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [],
+        "score_is_surrogate": false,
+        "submitted_orders": 0,
+        "terminal_prediction_error": null,
+        "truncated": false,
+        "turnover_btc": 0,
+        "turnover_usd": 0,
+        "utility": 0.0,
+        "wait_ms": []
+      },
+      "policy": "hold",
+      "seed": 29,
+      "split": "test",
+      "start": 1781312400000
+    },
+    {
+      "block": "2026-06-13",
+      "delay_multiplier": 10.0,
+      "end": 1781316000000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1781316000000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1781316000000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "composition_error": 0.09999999999999998,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "fills": 0,
+        "fixed_reference_value": 200000.0,
+        "full_fills": 0,
+        "growth": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "holding_status": "realized",
+        "holdings": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "live_orders": 2,
+        "marked_wealth": {
+          "BTC": 2.5679744357447993,
+          "USD": 163776.55,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.09999999999999998,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 63532.3,
+        "no_fill_orders": 2,
+        "package_completion": [
+          {
+            "completion_ms": null,
+            "group": "g-0",
+            "status": "none"
+          }
+        ],
+        "partial_fills": 0,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [],
+        "score_is_surrogate": false,
+        "submitted_orders": 2,
+        "terminal_prediction_error": null,
+        "truncated": false,
+        "turnover_btc": 0,
+        "turnover_usd": 0,
+        "utility": 0.0,
+        "wait_ms": []
+      },
+      "policy": "analytical",
+      "seed": 29,
+      "split": "test",
+      "start": 1781312400000
+    },
+    {
+      "block": "2026-06-13",
+      "delay_multiplier": 10.0,
+      "end": 1781316000000,
+      "goal": {
+        "absolute_floors": {},
+        "composition_penalty": 1.0,
+        "drawdown": 0.1,
+        "failure_penalty": 1.0,
+        "horizon": 1781316000000,
+        "initial": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "maintain_band": false,
+        "mode": "basket",
+        "reference": {
+          "BTC": 100000.0,
+          "USD": 1.0
+        },
+        "resolution": 1806048000000,
+        "scales": {},
+        "target": {
+          "BTC": 0.6,
+          "USD": 0.4
+        },
+        "target_deadline": 1781316000000,
+        "tolerance": 0.02
+      },
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 99999.80518430001
+        },
+        "composition_error": 0.11243531758248515,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.1948157
+        },
+        "fills": 6,
+        "fixed_reference_value": 198947.9621843,
+        "full_fills": 3,
+        "growth": {
+          "BTC": -0.030000000000000027,
+          "USD": 0.019479621843000203
+        },
+        "holding_status": "contractual/projected",
+        "holdings": {
+          "BTC": 0.97,
+          "USD": 101947.96218430002
+        },
+        "live_orders": 1,
+        "marked_wealth": {
+          "BTC": 2.5679213156606937,
+          "USD": 163773.16218430002,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.06999999999999995,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 61851.0509,
+        "no_fill_orders": 1,
+        "package_completion": [],
+        "partial_fills": 3,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "schedule": [
+          {
+            "claims": {
+              "BTC": -0.03,
+              "USD": 1948.1570000000002
+            },
+            "date": 1798185600000,
+            "identifier": "BTC-25DEC26",
+            "kind": "funded_expiry_bridge"
+          }
+        ],
+        "score_is_surrogate": false,
+        "submitted_orders": 4,
+        "terminal_prediction_error": -0.02250605704883732,
+        "truncated": false,
+        "turnover_btc": 0.030000000000000002,
+        "turnover_usd": 1948.1570000000002,
+        "utility": -0.030000000000000027,
+        "wait_ms": [
+          57734,
+          61571,
+          12433,
+          15552,
+          15552,
+          53481
+        ]
+      },
+      "policy": "value_v2",
+      "seed": 29,
+      "split": "test",
+      "start": 1781312400000
+    }
+  ],
+  "resources": {
+    "exchange_and_report_events": 28257,
+    "optimizer_updates": 320,
+    "pilot_seconds": 48.810531606999575,
+    "recorded_decisions": 1560,
+    "training_seconds": 9.756214317996637
+  },
+  "selected_policy": "value_v2",
+  "summary": {
+    "test/analytical/delay=1.0": {
+      "block_mean_range": [
+        0.0,
+        0.0
+      ],
+      "block_standard_error": 0.0,
+      "blocks": 2,
+      "completed": 4,
+      "episodes": 4,
+      "failed": 0,
+      "fees_usd": 0.0,
+      "fills": 0,
+      "mean_growth": {
+        "BTC": 0.0,
+        "USD": 0.0
+      },
+      "mean_utility": 0.0,
+      "min_floor_headroom": {
+        "BTC": 0.09999999999999998,
+        "USD": 10000.0
+      },
+      "peak_async_btc": 0.0,
+      "prediction_mae": null
+    },
+    "test/analytical/delay=10.0": {
+      "block_mean_range": [
+        0.0,
+        0.0
+      ],
+      "block_standard_error": 0.0,
+      "blocks": 2,
+      "completed": 4,
+      "episodes": 4,
+      "failed": 0,
+      "fees_usd": 0.0,
+      "fills": 0,
+      "mean_growth": {
+        "BTC": 0.0,
+        "USD": 0.0
+      },
+      "mean_utility": 0.0,
+      "min_floor_headroom": {
+        "BTC": 0.09999999999999998,
+        "USD": 10000.0
+      },
+      "peak_async_btc": 0.0,
+      "prediction_mae": null
+    },
+    "test/hold/delay=1.0": {
+      "block_mean_range": [
+        0.0,
+        0.0
+      ],
+      "block_standard_error": 0.0,
+      "blocks": 2,
+      "completed": 4,
+      "episodes": 4,
+      "failed": 0,
+      "fees_usd": 0.0,
+      "fills": 0,
+      "mean_growth": {
+        "BTC": 0.0,
+        "USD": 0.0
+      },
+      "mean_utility": 0.0,
+      "min_floor_headroom": {
+        "BTC": 0.09999999999999998,
+        "USD": 10000.0
+      },
+      "peak_async_btc": 0.0,
+      "prediction_mae": null
+    },
+    "test/hold/delay=10.0": {
+      "block_mean_range": [
+        0.0,
+        0.0
+      ],
+      "block_standard_error": 0.0,
+      "blocks": 2,
+      "completed": 4,
+      "episodes": 4,
+      "failed": 0,
+      "fees_usd": 0.0,
+      "fills": 0,
+      "mean_growth": {
+        "BTC": 0.0,
+        "USD": 0.0
+      },
+      "mean_utility": 0.0,
+      "min_floor_headroom": {
+        "BTC": 0.09999999999999998,
+        "USD": 10000.0
+      },
+      "peak_async_btc": 0.0,
+      "prediction_mae": null
+    },
+    "test/value_v2/delay=1.0": {
+      "block_mean_range": [
+        -0.040000000000000036,
+        -0.0019000000000000128
+      ],
+      "block_standard_error": 0.01905000000000001,
+      "blocks": 2,
+      "completed": 4,
+      "episodes": 4,
+      "failed": 0,
+      "fees_usd": 0.54390725,
+      "fills": 22,
+      "mean_growth": {
+        "BTC": -0.020950000000000024,
+        "USD": 0.013596321481875057
+      },
+      "mean_utility": -0.020950000000000024,
+      "min_floor_headroom": {
+        "BTC": 0.05999999999999994,
+        "USD": 10000.0
+      },
+      "peak_async_btc": 0.0,
+      "prediction_mae": 0.038731847753624093
+    },
+    "test/value_v2/delay=10.0": {
+      "block_mean_range": [
+        -0.03500000000000003,
+        -0.0019000000000000128
+      ],
+      "block_standard_error": 0.01655000000000001,
+      "blocks": 2,
+      "completed": 4,
+      "episodes": 4,
+      "failed": 0,
+      "fees_usd": 0.47903999999999997,
+      "fills": 21,
+      "mean_growth": {
+        "BTC": -0.018450000000000022,
+        "USD": 0.011974802400000081
+      },
+      "mean_utility": -0.018450000000000022,
+      "min_floor_headroom": {
+        "BTC": 0.05999999999999994,
+        "USD": 10000.0
+      },
+      "peak_async_btc": 0.0,
+      "prediction_mae": 0.038935790689537904
+    },
+    "train/collect_greedy_v1_eps015/delay=1.0": {
+      "block_mean_range": [
+        -0.07474999999999998,
+        -0.02290000000000003
+      ],
+      "block_standard_error": 0.011272077873370694,
+      "blocks": 4,
+      "completed": 8,
+      "episodes": 8,
+      "failed": 0,
+      "fees_usd": 2.611997725,
+      "fills": 116,
+      "mean_growth": {
+        "BTC": -0.04886250000000003,
+        "USD": 0.031061706565343704
+      },
+      "mean_utility": -0.04886250000000003,
+      "min_floor_headroom": {
+        "BTC": 0.02210000000000001,
+        "USD": 9680.54263625
+      },
+      "peak_async_btc": 0.01,
+      "prediction_mae": 0.04651139385357192
+    },
+    "train/exploratory_v1/delay=1.0": {
+      "block_mean_range": [
+        -0.0072792257203749865,
+        -0.0009225417163749427
+      ],
+      "block_standard_error": 0.0017045836882116914,
+      "blocks": 4,
+      "completed": 8,
+      "episodes": 8,
+      "failed": 0,
+      "fees_usd": 1.3655208,
+      "fills": 69,
+      "mean_growth": {
+        "BTC": 0.0006999999999999923,
+        "USD": -0.0004693800260000172
+      },
+      "mean_utility": -0.004011927313562462,
+      "min_floor_headroom": {
+        "BTC": 0.08999999999999997,
+        "USD": 9032.090718750012
+      },
+      "peak_async_btc": 0.02,
+      "prediction_mae": null
+    },
+    "validation/value_v1/delay=1.0": {
+      "block_mean_range": [
+        -0.020499999999999963,
+        -0.011600000000000055
+      ],
+      "block_standard_error": 0.004449999999999954,
+      "blocks": 2,
+      "completed": 4,
+      "episodes": 4,
+      "failed": 0,
+      "fees_usd": 0.40637945000000003,
+      "fills": 34,
+      "mean_growth": {
+        "BTC": -0.01605000000000001,
+        "USD": 0.010158470301375127
+      },
+      "mean_utility": -0.01605000000000001,
+      "min_floor_headroom": {
+        "BTC": 0.07950000000000002,
+        "USD": 10000.0
+      },
+      "peak_async_btc": 0.0,
+      "prediction_mae": 0.012424531856660431
+    },
+    "validation/value_v2/delay=1.0": {
+      "block_mean_range": [
+        -0.013800000000000034,
+        -0.010000000000000009
+      ],
+      "block_standard_error": 0.0019000000000000126,
+      "blocks": 2,
+      "completed": 4,
+      "episodes": 4,
+      "failed": 0,
+      "fees_usd": 0.2998746,
+      "fills": 12,
+      "mean_growth": {
+        "BTC": -0.011900000000000022,
+        "USD": 0.00749611531350005
+      },
+      "mean_utility": -0.011900000000000022,
+      "min_floor_headroom": {
+        "BTC": 0.08619999999999994,
+        "USD": 10000.0
+      },
+      "peak_async_btc": 0.0,
+      "prediction_mae": 0.04831280690717198
+    }
+  },
+  "training": [
+    {
+      "continuation": "exploratory_v1",
+      "first_loss": 1.1845662593841553,
+      "last_loss": 0.28731769323349,
+      "normalization": "training-only label moments",
+      "seconds": 4.797616992997064,
+      "updates": 160
+    },
+    {
+      "continuation": "collect_greedy_v1_eps015:exploratory_v1",
+      "first_loss": 1.3022507429122925,
+      "last_loss": 0.40235635638237,
+      "normalization": "training-only label moments",
+      "seconds": 4.958597324999573,
+      "updates": 160
+    }
+  ]
+}
