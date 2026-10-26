@@ -16,6 +16,11 @@ OUT = Path('maturity-inputs')
 def main():
     from google.cloud import storage
     request = json.loads(REQUEST.read_text())
+    if request == {'schema_version': 1, 'action': 'reconcile-existing-futures-union', 'sequence': 1}:
+        import sys
+        sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+        from research.post_decision_value.archive_union_worker import main as reconcile
+        return reconcile(request_path=REQUEST, output=str(OUT))
     if request != {'schema_version': 1, 'job_id': JOB, 'action': 'export_metadata', 'sequence': 1}:
         raise ValueError('Only the fixed, read-only metadata export is supported')
     bucket = storage.Client().bucket('keep-and-lease-market-data')
