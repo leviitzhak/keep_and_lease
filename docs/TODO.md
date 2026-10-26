@@ -1,5 +1,17 @@
 # TODO
 
+## Analytical post-decision research, 26 October 2026
+
+- [x] Full cached 90-day pair replay with frozen chronological calibration,
+  validation and test sets; report inactive selection and funding-stress failures.
+- [x] Document exact action enumeration and candidate-budget ordering bias.
+- [ ] Design a separately frozen analytical experiment with a funding buffer and
+  an executable recovery path for already-held futures; do not reinterpret the
+  present failed paths as safe or realized liquidation outcomes.
+- [ ] Adapt the multi-year sequence-chunk archive, supply verified settlement and
+  executable bridge evidence, and balance candidates across a larger universe
+  before claiming full multi-year post-decision policy coverage.
+
 ## Post-decision value research — 25 October 2026
 
 Standalone implementation on `agent/btc-post-decision-value-v1`: signed linear/inverse commodity accounting, delayed observable/exchange replay, constrained candidate search and complete-outcome value learning. No application deployment or integration into existing strategy defaults. See [POST_DECISION_VALUE_V1.md](POST_DECISION_VALUE_V1.md) for conventions, commands, acceptance scope and research limitations. The [final pilot](research/post_decision_value/RESULTS.md) and independent audit are complete: 43 new tests and 83 existing tests pass. The learned policy underperforms hold (-2.095% joint held-out growth versus 0%), so historical profitability and promotion remain unaccepted. Artifacts are retained under `docs/research/post_decision_value/`.

@@ -107,7 +107,11 @@ python -m unittest tests.post_decision_value.test_analytical_study \
   tests.test_paired_transfer_economics tests.test_paired_execution_study -v
 python -m research.post_decision_value.analytical_study \
   --input /workspace/scratch/0daf5da3421c/dec_mar_inputs \
-  --output docs/research/post_decision_value/analytical-90day-v1
+  --output /tmp/pdv-analytical-reproduction
+python -m docs.research.post_decision_value.audit_analytical \
+  --run /tmp/pdv-analytical-reproduction
+python docs/research/post_decision_value/render_analytical.py \
+  --run /tmp/pdv-analytical-reproduction
 ```
 
 Use `--resume` to reuse complete, hash-verified episodes; an interrupted episode
@@ -135,3 +139,99 @@ speedup claim. Failure log compaction bounds diagnostics on failed long paths.
 The no-safe-grid hold fallback was made explicit before any validation/test
 access. All grids, splits, scoring and economic execution assumptions remain
 unchanged. A fresh run, with a new source fingerprint, follows these changes.
+
+## Calibration and held-out results
+
+Growth below is in net contractual BTC/USD quantities relative to the identical
+initial holdings, averaged over seeds 11 and 29. Fills are execution fragments,
+not necessarily completed paired trades; the table sums them across both seeds.
+
+| Calibration grid | Quantity grid BTC | Offset grid bp | BTC growth | USD growth | Fills | Failed paths |
+|---|---|---|---:|---:|---:|---:|
+| Original | .005 / .01 | -50 / 0 / +50 | +0.4300% | +0.1083% | 1,052 | 2/2 |
+| Small | .0025 / .005 | -50 / 0 / +50 | -0.0500% | +0.3903% | 2,044 | 2/2 |
+| Tight | .005 / .01 | -10 / 0 / +10 | +0.2400% | +0.2174% | 1,171 | 2/2 |
+| Small, tight | .0025 / .005 | -10 / 0 / +10 | 0% | 0% | 0 | 0/2 |
+
+Only `small_tight` survives the safety criterion, so validation compares that
+single surviving candidate. It selects wait at every decision in calibration,
+validation and the standard-latency test. This is an inactive winner, not evidence
+of profitable execution. Validation growth and score are zero for both seeds.
+
+| Held-out test, standard latency | BTC growth | USD growth | Joint score | Fills | Failed paths |
+|---|---:|---:|---:|---:|---:|
+| Selected small/tight grid | 0% | 0% | 0 | 0 | 0/2 |
+| Original analytical grid | -0.1300% | +0.483782% | -1.0013 | 2,236 | 2/2 |
+| Hold | 0% | 0% | 0 | 0 | 0/2 |
+
+The original test results are identical across these two delay seeds. Each seed
+pays $10.1254711 in hypothetical fees, ends at 0.9987 BTC and $100,483.7820 in
+contractual holdings, and reaches a worst funding-stress headroom of
+**-$5,146.75**. Minimum initial-floor headroom stays positive: 0.0901 BTC and
+$9,211.92. Peak package imbalance is 0.0122 BTC, below 0.02. The score -1.0013 is
+the minimum growth (-0.0013) minus the configured failure penalty (1); it is
+**not a 100.13% realized portfolio loss**.
+
+The 10x-delay selected-policy test is also inactive, and therefore provides no
+evidence of robustness when orders actually trade.
+
+The separate **continuous 90-day original-policy** replay ends at mean BTC growth
+**+0.4300%**, USD growth **+0.108282%**, and joint score **-0.998917**. Both paths
+fail funding stress; the worst stressed headroom is **-$30,955.02**. There are 526
+fill fragments per seed, all completed by June 24; later dates do not add trades.
+This is the untuned baseline's descriptive full-period result, not a held-out
+result for the calibrated configuration.
+
+The failed condition is dated funding under the declared scenario checks. It is
+not an observed exchange liquidation or realized settlement default. Positive
+long-term claims can coexist with inadequate cash before later receipts. New
+orders were admissible against then-current stress scenarios, which do not bound
+all future price moves. Once the current state fails those scenarios, the
+cancel-only emergency cannot liquidate already-held futures. The first original
+calibration path reaches 1.5957 BTC of gross futures and first records an
+infeasibility at 2026-06-22 02:00 UTC. Its minimum funding headroom is -$6,475.81.
+
+Two further reasons limit the analytical baseline: it assumes full fills when
+ranking, and the local minimum-growth objective gives a pure cash-only gain zero
+score when BTC growth is zero, tying with wait. Smaller native-rounded unequal
+legs can also require a substantial price difference before both commodity gains
+are positive. A future revised strategy should be evaluated in a separately
+frozen experiment, not retroactively substituted into these results.
+
+## Completed run and durable evidence
+
+Final run: **20 trajectories, 19,008 decisions, 8,818,587 exchange/report events,
+7,555 fills, 1,844.36 seconds (30.74 minutes), zero optimizer updates**. The final
+study stays below its 20,000-decision and one-hour limits. The interrupted
+pre-optimization attempt is separately identified above and is not included in
+these final-run counters. All 109 targeted/regression checks pass. The independent
+20-trajectory audit reconstructs message arrivals and order lifetimes, verifies
+cancel/amend races, remaining quantities, fees, signed BTC/USD cashflows,
+asynchronous exposure, trajectory scores and matched test initial conditions.
+Raw-print hashes, strict crossing and shared-volume consumption were also checked
+for every fill during replay. Checkpoint hashes and all saved artifacts pass.
+
+Small summaries, plots, frozen configurations, source references and audit:
+[`analytical-90day-v1/`](analytical-90day-v1/). The complete decisions, fills, daily
+portfolios and typed final engine checkpoints are retained in
+[`analytical-90day-v1.tar.gz`](analytical-90day-v1.tar.gz); the accompanying
+[`archive.json`](analytical-90day-v1/archive.json) records its SHA-256 and size.
+Unpack it to inspect or rerun the audit without re-running the strategy:
+
+```bash
+tar -xzf docs/research/post_decision_value/analytical-90day-v1.tar.gz -C /tmp
+python -m docs.research.post_decision_value.audit_analytical \
+  --run /tmp/analytical-90day-v1
+```
+
+The full source tapes remain at the existing GCS URIs, not in this artifact.
+Restore the four input-metadata files and the 180 referenced/hash-checked objects
+to reproduce execution after the local cache is gone. This requires the existing
+authorized storage transport. The multi-year metadata hashes and specific adapter
+limitations are recorded in [`multi-year-scope.json`](multi-year-scope.json).
+[`analytical-publication-provenance.json`](analytical-publication-provenance.json)
+maps local execution commits to identical published Git trees.
+
+![Held-out BTC/USD growth](analytical-90day-v1/test-growth.png)
+
+![Full-period original BTC/USD growth](analytical-90day-v1/full_period_original-growth.png)

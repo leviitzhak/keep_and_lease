@@ -1,0 +1,76 @@
+{
+  "status": "Metadata hashes verified; multi-year raw data not locally available/reverified",
+  "job_id": "btc-full-20261009-archive",
+  "instruments": 540,
+  "completed_chunks": 12322,
+  "objects": [
+    {
+      "file": "manifest.json",
+      "match": true,
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-full-history-v1/jobs/btc-full-20261009-archive/manifest.json",
+      "sha256": "9929b159ed2b4d8d1287e83df25ff237f7cde23f190d035628bbbf527cde1869"
+    },
+    {
+      "file": "plan-reconciled-v2.json",
+      "match": true,
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-full-history-v1/jobs/btc-full-20261009-archive/plan-reconciled-v2.json",
+      "sha256": "6ae07e823797a84ac9b24a0387bb1658cc929cb8cc701816122f6a0a67b8f0e3"
+    },
+    {
+      "file": "completed/shard-0.json",
+      "match": true,
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-full-history-v1/jobs/btc-full-20261009-archive/completed/shard-0.json",
+      "sha256": "e26be1f6fca7061435e2629c8629518a82ba53be9e2a74968873cee5337f51a0"
+    },
+    {
+      "file": "completed/shard-1.json",
+      "match": true,
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-full-history-v1/jobs/btc-full-20261009-archive/completed/shard-1.json",
+      "sha256": "d6ef5ccfd5027a149358ca3343b2a5709e891c4efcf65ae57dc34a69922ec233"
+    },
+    {
+      "file": "completed/shard-2.json",
+      "match": true,
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-full-history-v1/jobs/btc-full-20261009-archive/completed/shard-2.json",
+      "sha256": "0d927f12f7acfb9396fe76fb2422a8819ca0c91b21386938742d4fbd490fc7b8"
+    },
+    {
+      "file": "completed/shard-3.json",
+      "match": true,
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-full-history-v1/jobs/btc-full-20261009-archive/completed/shard-3.json",
+      "sha256": "757acbb9c54d0ce2921f00fc0dae6bd215e616372e87ebf737a3b4c524c50f4b"
+    },
+    {
+      "file": "completed/shard-4.json",
+      "match": true,
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-full-history-v1/jobs/btc-full-20261009-archive/completed/shard-4.json",
+      "sha256": "6eb3e1c185f9155fb554e522f49a169dd23fe1cc15a4506c84dee734c5690218"
+    },
+    {
+      "file": "completed/shard-5.json",
+      "match": true,
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-full-history-v1/jobs/btc-full-20261009-archive/completed/shard-5.json",
+      "sha256": "a72408282e9d4ec4cace8b00305df6420a650da066683c3184fc680b88a80dbb"
+    },
+    {
+      "file": "completed/shard-6.json",
+      "match": true,
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-full-history-v1/jobs/btc-full-20261009-archive/completed/shard-6.json",
+      "sha256": "03adfe8cbe574933981c155020e37a961fd15a9123b4071fa0f8b332b066f424"
+    },
+    {
+      "file": "completed/shard-7.json",
+      "match": true,
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-full-history-v1/jobs/btc-full-20261009-archive/completed/shard-7.json",
+      "sha256": "626925a36a0e0e6ad9bc8b05e78cf75f4f93189301894524a3658e8111587fa3"
+    }
+  ],
+  "scope": "Metadata and completed-shard receipts only; raw hashes are not reverified by this export.",
+  "blockers": [
+    "Existing daily pair export contains only 2026-06-06 through 2026-09-03 and two unexpired contracts.",
+    "Current loader requires a bounded dated-pair daily export; multi-year storage uses per-contract sequence chunks.",
+    "No verified historical settlement plus executable spot bridge evidence supplied to this adapter.",
+    "A larger instrument universe needs an unbiased candidate budget; current first-96 enumeration is lexicographically biased."
+  ],
+  "no_new_downloads": true
+}

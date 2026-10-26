@@ -1,0 +1,7 @@
+{
+  "archive": "analytical-90day-v1.tar.gz",
+  "sha256": "708e5a9b5878d0cbfbfe1b9b60647f0a02e996fdb351334cd6df140b824bc1c0",
+  "bytes": 2886742,
+  "files": 118,
+  "contains": "All configurations, raw-source references, complete candidate/fill logs, daily portfolios, final engine checkpoints, tests, audit and plots; no raw source reupload."
+}

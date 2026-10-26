@@ -1,0 +1,23 @@
+{
+  "fallback_hold": false,
+  "selected": {
+    "name": "small_tight",
+    "offsets": [
+      -0.001,
+      0.0,
+      0.001
+    ],
+    "quantities": [
+      0.0025,
+      0.005
+    ]
+  },
+  "source_sha256": "5507251196374011cf7771f4ba3ef12575ad47b18f316a0d7e9e740d303ad7b2",
+  "validation": [
+    {
+      "eligible": true,
+      "preset": "small_tight",
+      "score": 0.0
+    }
+  ]
+}

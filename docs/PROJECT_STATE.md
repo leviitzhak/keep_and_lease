@@ -1,5 +1,17 @@
 # Keep & Lease — Project State
 
+## Analytical research extension — 26 October 2026
+
+The complete cached 90-day, two-contract analytical study uses fixed chronological
+54/18/18-day calibration/validation/test sets and hourly decisions with exact raw
+trade replay. The selected small/tight grid is inactive. The original analytical
+policy fails dated funding stress despite positive USD contractual growth; it is
+not accepted as a safe strategy. The holding floors remain intact. Native ledger
+copies were accelerated without changing economic results. See
+[ANALYTICAL_90_DAY.md](research/post_decision_value/ANALYTICAL_90_DAY.md) for the
+selection rule, outcomes, artifacts, tests, candidate enumeration limitations and
+separate multi-year archive blockers. No deployment or neural retraining.
+
 ## Post-decision value research — 25 October 2026
 
 Standalone implementation on `agent/btc-post-decision-value-v1`: signed linear/inverse commodity accounting, delayed observable/exchange replay, constrained candidate search and complete-outcome value learning. No application deployment or integration into existing strategy defaults. See [POST_DECISION_VALUE_V1.md](POST_DECISION_VALUE_V1.md) for conventions, commands, acceptance scope and research limitations. The [final pilot](research/post_decision_value/RESULTS.md) and independent audit are complete: 43 new tests and 83 existing tests pass. The learned policy underperforms hold (-2.095% joint held-out growth versus 0%), so historical profitability and promotion remain unaccepted. Artifacts are retained under `docs/research/post_decision_value/`.

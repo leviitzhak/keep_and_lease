@@ -1,0 +1,38 @@
+{
+  "ranking": [
+    {
+      "eligible": true,
+      "preset": "small_tight",
+      "score": 0.0
+    },
+    {
+      "eligible": false,
+      "preset": "original",
+      "score": null
+    },
+    {
+      "eligible": false,
+      "preset": "small",
+      "score": null
+    },
+    {
+      "eligible": false,
+      "preset": "tight",
+      "score": null
+    }
+  ],
+  "shortlist": [
+    {
+      "name": "small_tight",
+      "offsets": [
+        -0.001,
+        0.0,
+        0.001
+      ],
+      "quantities": [
+        0.0025,
+        0.005
+      ]
+    }
+  ]
+}

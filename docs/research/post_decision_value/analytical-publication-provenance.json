@@ -1,0 +1,26 @@
+{
+  "research_branch": "agent/btc-post-decision-value-v1",
+  "parent": "bb76b5655d77503e2f8788d7e36e4bb6e25dc591",
+  "method": "Connected GitHub blob/tree/commit APIs; equivalent Git trees verified before moving the branch ref.",
+  "mappings": [
+    {
+      "local_execution_commit": "eb26e8c11e097aed2a3bcf21cfea487ca1934199",
+      "remote_commit": "f33228129f7fe3bfc142406fde642645c4d86e65",
+      "scope": "Interrupted pre-optimization calibration attempt"
+    },
+    {
+      "local_execution_commit": "ca4f3d0281e2183caec66b23df5988d4d413bd99",
+      "remote_commit": "879c4175509729f6b9434d8ff367b64ba1589ca1",
+      "tree_sha": "64db64137cff0b6285db3228bbf8cbc4a88b340a",
+      "scope": "Completed analytical study code"
+    }
+  ],
+  "economic_equivalence_check": {
+    "episode": "calibration-original-s11-d1",
+    "all_economic_outcome_fields_equal": true,
+    "per_reason_failure_counts_equal": true,
+    "before_seconds": 218.02370467299988,
+    "after_seconds": 93.23707775500043
+  },
+  "deployment": "Research branch excluded from deploy workflow; [skip ci] commits; no merge or deployment."
+}

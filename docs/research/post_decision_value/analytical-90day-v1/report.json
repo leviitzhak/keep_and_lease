@@ -1,0 +1,317 @@
+{
+  "calibration": [
+    {
+      "eligible": true,
+      "preset": "small_tight",
+      "score": 0.0
+    },
+    {
+      "eligible": false,
+      "preset": "original",
+      "score": null
+    },
+    {
+      "eligible": false,
+      "preset": "small",
+      "score": null
+    },
+    {
+      "eligible": false,
+      "preset": "tight",
+      "score": null
+    }
+  ],
+  "episodes": [
+    "calibration-original-s11-d1",
+    "calibration-original-s29-d1",
+    "calibration-small-s11-d1",
+    "calibration-small-s29-d1",
+    "calibration-tight-s11-d1",
+    "calibration-tight-s29-d1",
+    "calibration-small_tight-s11-d1",
+    "calibration-small_tight-s29-d1",
+    "validation-small_tight-s11-d1",
+    "validation-small_tight-s29-d1",
+    "test-small_tight-s11-d1",
+    "test-small_tight-s29-d1",
+    "test-original-s11-d1",
+    "test-original-s29-d1",
+    "test-original-s11-d1-hold",
+    "test-original-s29-d1-hold",
+    "test-small_tight-s11-d10",
+    "test-small_tight-s29-d10",
+    "full_period_original-original-s11-d1",
+    "full_period_original-original-s29-d1"
+  ],
+  "fallback_hold": false,
+  "identity": {
+    "config_sha256": "9d93e71ebacdc21250ec67109243e33f92d8d600ea18f1a7a3c8ff875d4997db",
+    "source_commit": "ca4f3d0281e2183caec66b23df5988d4d413bd99",
+    "source_sha256": "5507251196374011cf7771f4ba3ef12575ad47b18f316a0d7e9e740d303ad7b2"
+  },
+  "limitations": [
+    "Counterfactual linear futures on inverse-source prints; no quote depth/spot execution.",
+    "Contractual/projected endpoints, no realized expiry bridges.",
+    "Hourly decisions; no claim of reproducing the two-minute neural pilot cadence.",
+    "Two latency seeds on one market path are not independent market samples; no IID confidence interval.",
+    "Test dates excluded from this calibration, but this archive has been used by earlier research.",
+    "Fixed four-point grid and two instruments; not a multi-year universe study.",
+    "Analytical score assumes every new/amended order fills; zero ties prefer waiting, including over cancellation."
+  ],
+  "resources": {
+    "decisions": 19008,
+    "events": 8818587,
+    "seconds": 1844.359418164
+  },
+  "selected": {
+    "name": "small_tight",
+    "offsets": [
+      -0.001,
+      0.0,
+      0.001
+    ],
+    "quantities": [
+      0.0025,
+      0.005
+    ]
+  },
+  "summary": [
+    {
+      "delay_multiplier": 1.0,
+      "failures": 2,
+      "growth": {
+        "BTC": 0.0042999999999999705,
+        "USD": 0.0010828247170009855
+      },
+      "hold": false,
+      "mean_fees_usd": 10.482028299999994,
+      "mean_utility": -0.9989171752829991,
+      "min_floor_headroom": {
+        "BTC": 0.09009999999999996,
+        "USD": 9378.193976874987
+      },
+      "preset": "original",
+      "score_range": [
+        -0.998918075167999,
+        -0.998916275397999
+      ],
+      "seeds": 2,
+      "split": "calibration",
+      "total_fills": 1052
+    },
+    {
+      "delay_multiplier": 1.0,
+      "failures": 2,
+      "growth": {
+        "BTC": -0.0004999999999995564,
+        "USD": 0.003903264016750327
+      },
+      "hold": false,
+      "mean_fees_usd": 10.66384832499998,
+      "mean_utility": -1.0004999999999995,
+      "min_floor_headroom": {
+        "BTC": 0.09509999999999985,
+        "USD": 9689.213629300051
+      },
+      "preset": "small",
+      "score_range": [
+        -1.0006999999999993,
+        -1.0002999999999997
+      ],
+      "seeds": 2,
+      "split": "calibration",
+      "total_fills": 2044
+    },
+    {
+      "delay_multiplier": 1.0,
+      "failures": 2,
+      "growth": {
+        "BTC": 0.0023999999999982924,
+        "USD": 0.002173591770999119
+      },
+      "hold": false,
+      "mean_fees_usd": 10.368322900000008,
+      "mean_utility": -0.9978264082290009,
+      "min_floor_headroom": {
+        "BTC": 0.09009999999999996,
+        "USD": 9373.21897437502
+      },
+      "preset": "tight",
+      "score_range": [
+        -0.997827313948751,
+        -0.9978255025092508
+      ],
+      "seeds": 2,
+      "split": "calibration",
+      "total_fills": 1171
+    },
+    {
+      "delay_multiplier": 1.0,
+      "failures": 0,
+      "growth": {
+        "BTC": 0.0,
+        "USD": 0.0
+      },
+      "hold": false,
+      "mean_fees_usd": 0.0,
+      "mean_utility": 0.0,
+      "min_floor_headroom": {
+        "BTC": 0.09999999999999998,
+        "USD": 10000.0
+      },
+      "preset": "small_tight",
+      "score_range": [
+        0.0,
+        0.0
+      ],
+      "seeds": 2,
+      "split": "calibration",
+      "total_fills": 0
+    },
+    {
+      "delay_multiplier": 1.0,
+      "failures": 0,
+      "growth": {
+        "BTC": 0.0,
+        "USD": 0.0
+      },
+      "hold": false,
+      "mean_fees_usd": 0.0,
+      "mean_utility": 0.0,
+      "min_floor_headroom": {
+        "BTC": 0.09999999999999998,
+        "USD": 10000.0
+      },
+      "preset": "small_tight",
+      "score_range": [
+        0.0,
+        0.0
+      ],
+      "seeds": 2,
+      "split": "validation",
+      "total_fills": 0
+    },
+    {
+      "delay_multiplier": 1.0,
+      "failures": 0,
+      "growth": {
+        "BTC": 0.0,
+        "USD": 0.0
+      },
+      "hold": false,
+      "mean_fees_usd": 0.0,
+      "mean_utility": 0.0,
+      "min_floor_headroom": {
+        "BTC": 0.09999999999999998,
+        "USD": 10000.0
+      },
+      "preset": "small_tight",
+      "score_range": [
+        0.0,
+        0.0
+      ],
+      "seeds": 2,
+      "split": "test",
+      "total_fills": 0
+    },
+    {
+      "delay_multiplier": 1.0,
+      "failures": 2,
+      "growth": {
+        "BTC": -0.0013000000000038536,
+        "USD": 0.004837820288996445
+      },
+      "hold": false,
+      "mean_fees_usd": 10.125471100000013,
+      "mean_utility": -1.0013000000000039,
+      "min_floor_headroom": {
+        "BTC": 0.09009999999999996,
+        "USD": 9211.922267899849
+      },
+      "preset": "original",
+      "score_range": [
+        -1.0013000000000039,
+        -1.0013000000000039
+      ],
+      "seeds": 2,
+      "split": "test",
+      "total_fills": 2236
+    },
+    {
+      "delay_multiplier": 1.0,
+      "failures": 0,
+      "growth": {
+        "BTC": 0.0,
+        "USD": 0.0
+      },
+      "hold": true,
+      "mean_fees_usd": 0.0,
+      "mean_utility": 0.0,
+      "min_floor_headroom": {
+        "BTC": 0.09999999999999998,
+        "USD": 10000.0
+      },
+      "preset": "original",
+      "score_range": [
+        0.0,
+        0.0
+      ],
+      "seeds": 2,
+      "split": "test",
+      "total_fills": 0
+    },
+    {
+      "delay_multiplier": 10.0,
+      "failures": 0,
+      "growth": {
+        "BTC": 0.0,
+        "USD": 0.0
+      },
+      "hold": false,
+      "mean_fees_usd": 0.0,
+      "mean_utility": 0.0,
+      "min_floor_headroom": {
+        "BTC": 0.09999999999999998,
+        "USD": 10000.0
+      },
+      "preset": "small_tight",
+      "score_range": [
+        0.0,
+        0.0
+      ],
+      "seeds": 2,
+      "split": "test",
+      "total_fills": 0
+    },
+    {
+      "delay_multiplier": 1.0,
+      "failures": 2,
+      "growth": {
+        "BTC": 0.0042999999999999705,
+        "USD": 0.0010828247170009855
+      },
+      "hold": false,
+      "mean_fees_usd": 10.482028299999994,
+      "mean_utility": -0.9989171752829991,
+      "min_floor_headroom": {
+        "BTC": 0.09009999999999996,
+        "USD": 9378.193976874987
+      },
+      "preset": "original",
+      "score_range": [
+        -0.998918075167999,
+        -0.998916275397999
+      ],
+      "seeds": 2,
+      "split": "full_period_original",
+      "total_fills": 1052
+    }
+  ],
+  "validation": [
+    {
+      "eligible": true,
+      "preset": "small_tight",
+      "score": 0.0
+    }
+  ]
+}

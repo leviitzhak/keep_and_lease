@@ -1,0 +1,22 @@
+{
+  "status": "PASS",
+  "episodes": 20,
+  "decisions": 19008,
+  "fills": 7555,
+  "events": 8818587,
+  "matched_test_seeds": 2,
+  "checks": [
+    "artifact hashes",
+    "chronological splits",
+    "delayed message FIFO",
+    "cancel/amend/fill ordering",
+    "remaining order quantities",
+    "linear BTC/USD accounting from signed cashflows",
+    "fees",
+    "asynchronous exposure",
+    "per-trajectory objective and failure flags",
+    "matched baselines"
+  ],
+  "source_fill_audit": "Each daily replay additionally checked raw source hash/side/price/lot/shared volume.",
+  "scope": "No claim of observed settlement, depth, or native linear source data."
+}

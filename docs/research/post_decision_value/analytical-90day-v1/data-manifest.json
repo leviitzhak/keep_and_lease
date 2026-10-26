@@ -1,0 +1,2205 @@
+{
+  "bytes_read": 9121523,
+  "coverage_claim": "All 180 cached daily Dec26/Mar27 objects, 2026-06-06 through 2026-09-03; not the multi-year archive.",
+  "daily": {
+    "2026-06-06": {
+      "bytes": 348949,
+      "rows": 16526
+    },
+    "2026-06-07": {
+      "bytes": 148148,
+      "rows": 7905
+    },
+    "2026-06-08": {
+      "bytes": 91938,
+      "rows": 4588
+    },
+    "2026-06-09": {
+      "bytes": 101977,
+      "rows": 5017
+    },
+    "2026-06-10": {
+      "bytes": 83243,
+      "rows": 4427
+    },
+    "2026-06-11": {
+      "bytes": 65425,
+      "rows": 3136
+    },
+    "2026-06-12": {
+      "bytes": 56426,
+      "rows": 2843
+    },
+    "2026-06-13": {
+      "bytes": 27022,
+      "rows": 1314
+    },
+    "2026-06-14": {
+      "bytes": 52336,
+      "rows": 2855
+    },
+    "2026-06-15": {
+      "bytes": 83659,
+      "rows": 4311
+    },
+    "2026-06-16": {
+      "bytes": 69073,
+      "rows": 3914
+    },
+    "2026-06-17": {
+      "bytes": 88159,
+      "rows": 4885
+    },
+    "2026-06-18": {
+      "bytes": 91615,
+      "rows": 4744
+    },
+    "2026-06-19": {
+      "bytes": 38777,
+      "rows": 1876
+    },
+    "2026-06-20": {
+      "bytes": 28314,
+      "rows": 1354
+    },
+    "2026-06-21": {
+      "bytes": 27189,
+      "rows": 1385
+    },
+    "2026-06-22": {
+      "bytes": 60723,
+      "rows": 2768
+    },
+    "2026-06-23": {
+      "bytes": 76631,
+      "rows": 3618
+    },
+    "2026-06-24": {
+      "bytes": 111223,
+      "rows": 5190
+    },
+    "2026-06-25": {
+      "bytes": 110019,
+      "rows": 5820
+    },
+    "2026-06-26": {
+      "bytes": 220017,
+      "rows": 11893
+    },
+    "2026-06-27": {
+      "bytes": 77597,
+      "rows": 3940
+    },
+    "2026-06-28": {
+      "bytes": 59454,
+      "rows": 3020
+    },
+    "2026-06-29": {
+      "bytes": 106452,
+      "rows": 5631
+    },
+    "2026-06-30": {
+      "bytes": 114940,
+      "rows": 6131
+    },
+    "2026-07-01": {
+      "bytes": 160286,
+      "rows": 8463
+    },
+    "2026-07-02": {
+      "bytes": 142432,
+      "rows": 7411
+    },
+    "2026-07-03": {
+      "bytes": 52594,
+      "rows": 2700
+    },
+    "2026-07-04": {
+      "bytes": 49076,
+      "rows": 2633
+    },
+    "2026-07-05": {
+      "bytes": 35949,
+      "rows": 1779
+    },
+    "2026-07-06": {
+      "bytes": 105094,
+      "rows": 5498
+    },
+    "2026-07-07": {
+      "bytes": 61576,
+      "rows": 3238
+    },
+    "2026-07-08": {
+      "bytes": 62088,
+      "rows": 3239
+    },
+    "2026-07-09": {
+      "bytes": 59058,
+      "rows": 3012
+    },
+    "2026-07-10": {
+      "bytes": 91010,
+      "rows": 5038
+    },
+    "2026-07-11": {
+      "bytes": 29403,
+      "rows": 1620
+    },
+    "2026-07-12": {
+      "bytes": 37683,
+      "rows": 2072
+    },
+    "2026-07-13": {
+      "bytes": 100410,
+      "rows": 5239
+    },
+    "2026-07-14": {
+      "bytes": 91932,
+      "rows": 5149
+    },
+    "2026-07-15": {
+      "bytes": 83092,
+      "rows": 4482
+    },
+    "2026-07-16": {
+      "bytes": 75942,
+      "rows": 3749
+    },
+    "2026-07-17": {
+      "bytes": 86764,
+      "rows": 4323
+    },
+    "2026-07-18": {
+      "bytes": 31778,
+      "rows": 1726
+    },
+    "2026-07-19": {
+      "bytes": 34598,
+      "rows": 1693
+    },
+    "2026-07-20": {
+      "bytes": 126270,
+      "rows": 7419
+    },
+    "2026-07-21": {
+      "bytes": 119167,
+      "rows": 6710
+    },
+    "2026-07-22": {
+      "bytes": 73146,
+      "rows": 3887
+    },
+    "2026-07-23": {
+      "bytes": 142592,
+      "rows": 8364
+    },
+    "2026-07-24": {
+      "bytes": 181569,
+      "rows": 10838
+    },
+    "2026-07-25": {
+      "bytes": 38684,
+      "rows": 2161
+    },
+    "2026-07-26": {
+      "bytes": 54494,
+      "rows": 3145
+    },
+    "2026-07-27": {
+      "bytes": 112764,
+      "rows": 6319
+    },
+    "2026-07-28": {
+      "bytes": 128782,
+      "rows": 7157
+    },
+    "2026-07-29": {
+      "bytes": 139999,
+      "rows": 7549
+    },
+    "2026-07-30": {
+      "bytes": 97647,
+      "rows": 5281
+    },
+    "2026-07-31": {
+      "bytes": 144079,
+      "rows": 7962
+    },
+    "2026-08-01": {
+      "bytes": 32464,
+      "rows": 1698
+    },
+    "2026-08-02": {
+      "bytes": 100176,
+      "rows": 5843
+    },
+    "2026-08-03": {
+      "bytes": 101287,
+      "rows": 5561
+    },
+    "2026-08-04": {
+      "bytes": 119194,
+      "rows": 6662
+    },
+    "2026-08-05": {
+      "bytes": 202766,
+      "rows": 11591
+    },
+    "2026-08-06": {
+      "bytes": 137277,
+      "rows": 7391
+    },
+    "2026-08-07": {
+      "bytes": 71537,
+      "rows": 3684
+    },
+    "2026-08-08": {
+      "bytes": 15348,
+      "rows": 776
+    },
+    "2026-08-09": {
+      "bytes": 18443,
+      "rows": 903
+    },
+    "2026-08-10": {
+      "bytes": 66909,
+      "rows": 3552
+    },
+    "2026-08-11": {
+      "bytes": 59478,
+      "rows": 3696
+    },
+    "2026-08-12": {
+      "bytes": 65187,
+      "rows": 3976
+    },
+    "2026-08-13": {
+      "bytes": 71472,
+      "rows": 4264
+    },
+    "2026-08-14": {
+      "bytes": 51232,
+      "rows": 3029
+    },
+    "2026-08-15": {
+      "bytes": 10433,
+      "rows": 529
+    },
+    "2026-08-16": {
+      "bytes": 19842,
+      "rows": 1078
+    },
+    "2026-08-17": {
+      "bytes": 77838,
+      "rows": 4520
+    },
+    "2026-08-18": {
+      "bytes": 25570,
+      "rows": 1411
+    },
+    "2026-08-19": {
+      "bytes": 158641,
+      "rows": 9277
+    },
+    "2026-08-20": {
+      "bytes": 360849,
+      "rows": 22059
+    },
+    "2026-08-21": {
+      "bytes": 519213,
+      "rows": 28193
+    },
+    "2026-08-22": {
+      "bytes": 157493,
+      "rows": 6704
+    },
+    "2026-08-23": {
+      "bytes": 207629,
+      "rows": 10560
+    },
+    "2026-08-24": {
+      "bytes": 233035,
+      "rows": 11017
+    },
+    "2026-08-25": {
+      "bytes": 314548,
+      "rows": 15148
+    },
+    "2026-08-26": {
+      "bytes": 129990,
+      "rows": 6360
+    },
+    "2026-08-27": {
+      "bytes": 108155,
+      "rows": 5674
+    },
+    "2026-08-28": {
+      "bytes": 137467,
+      "rows": 7532
+    },
+    "2026-08-29": {
+      "bytes": 30332,
+      "rows": 1645
+    },
+    "2026-08-30": {
+      "bytes": 83360,
+      "rows": 4945
+    },
+    "2026-08-31": {
+      "bytes": 97227,
+      "rows": 5243
+    },
+    "2026-09-01": {
+      "bytes": 77606,
+      "rows": 4159
+    },
+    "2026-09-02": {
+      "bytes": 58054,
+      "rows": 2965
+    },
+    "2026-09-03": {
+      "bytes": 112207,
+      "rows": 5611
+    }
+  },
+  "files": [
+    {
+      "bytes": 221778,
+      "file": "2026-06-06-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1780704017455,
+      "last_ms": 1780790135291,
+      "ordinary_rows": 9279,
+      "raw_rows": 10614,
+      "sha256": "dfa06e919b8f3caa5a87ad43cec8c1a2887761c2fb126aaccafda615ed907f5f",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/dfa06e919b8f3caa5a87ad43cec8c1a2887761c2fb126aaccafda615ed907f5f/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 127171,
+      "file": "2026-06-06-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1780704054948,
+      "last_ms": 1780789325447,
+      "ordinary_rows": 5261,
+      "raw_rows": 5912,
+      "sha256": "4ff3f6e0ed2269fae32d0d3cdf3c849c522d9b93dec730fc55a29b995f249bb8",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/4ff3f6e0ed2269fae32d0d3cdf3c849c522d9b93dec730fc55a29b995f249bb8/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 69456,
+      "file": "2026-06-07-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1780791371066,
+      "last_ms": 1780876790129,
+      "ordinary_rows": 3675,
+      "raw_rows": 3692,
+      "sha256": "0657e1d43c33cdf1a4654785184f3a0a67620d5d793dd796b72ea379512e0724",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/0657e1d43c33cdf1a4654785184f3a0a67620d5d793dd796b72ea379512e0724/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 78692,
+      "file": "2026-06-07-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1780790656349,
+      "last_ms": 1780876790051,
+      "ordinary_rows": 4089,
+      "raw_rows": 4213,
+      "sha256": "7a9d5b4ee7771d080752e26f34e804b59d4575a89b9d3aab77e2e1aa428b8440",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/7a9d5b4ee7771d080752e26f34e804b59d4575a89b9d3aab77e2e1aa428b8440/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 51892,
+      "file": "2026-06-08-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1780876957819,
+      "last_ms": 1780963191524,
+      "ordinary_rows": 2673,
+      "raw_rows": 2677,
+      "sha256": "bad7857b29885bba4fd11459025650c0d5560cd1119cb2bcbe9382ca8906333b",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/bad7857b29885bba4fd11459025650c0d5560cd1119cb2bcbe9382ca8906333b/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 40046,
+      "file": "2026-06-08-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1780876881132,
+      "last_ms": 1780962686525,
+      "ordinary_rows": 1881,
+      "raw_rows": 1911,
+      "sha256": "7194e9ee32edea79ca9bedbbf49f3f878ae958b24119acea1e985cb0f17a03bc",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/7194e9ee32edea79ca9bedbbf49f3f878ae958b24119acea1e985cb0f17a03bc/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 67134,
+      "file": "2026-06-09-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1780963254551,
+      "last_ms": 1781049585300,
+      "ordinary_rows": 3296,
+      "raw_rows": 3314,
+      "sha256": "931528b58bca4770d6beb8cbd38208d0298deac631029aa386e75df442c87a6a",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/931528b58bca4770d6beb8cbd38208d0298deac631029aa386e75df442c87a6a/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 34843,
+      "file": "2026-06-09-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1780963233931,
+      "last_ms": 1781049196703,
+      "ordinary_rows": 1685,
+      "raw_rows": 1703,
+      "sha256": "846bdc19eb030883c2558e7b78afd01a254bbbbba7c53f345104a363501676db",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/846bdc19eb030883c2558e7b78afd01a254bbbbba7c53f345104a363501676db/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 41644,
+      "file": "2026-06-10-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1781049699481,
+      "last_ms": 1781135602589,
+      "ordinary_rows": 2026,
+      "raw_rows": 2035,
+      "sha256": "96898066da47c6f535dc88848381201b575ae4cd42d6687bd79b678312fd0774",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/96898066da47c6f535dc88848381201b575ae4cd42d6687bd79b678312fd0774/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 41599,
+      "file": "2026-06-10-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1781049621286,
+      "last_ms": 1781135589536,
+      "ordinary_rows": 2380,
+      "raw_rows": 2392,
+      "sha256": "5d4ae57b7182e48d9feb8aa5b91e1f8d8bb07e6a5927aea193c8aefb89918fd7",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/5d4ae57b7182e48d9feb8aa5b91e1f8d8bb07e6a5927aea193c8aefb89918fd7/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 37268,
+      "file": "2026-06-11-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1781136102330,
+      "last_ms": 1781222103807,
+      "ordinary_rows": 1727,
+      "raw_rows": 1743,
+      "sha256": "4fd566e803903a11ed7d4effff0d54d734f15de39d8d9a53b2177fc845dcd30d",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/4fd566e803903a11ed7d4effff0d54d734f15de39d8d9a53b2177fc845dcd30d/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 28157,
+      "file": "2026-06-11-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1781136298986,
+      "last_ms": 1781222068426,
+      "ordinary_rows": 1387,
+      "raw_rows": 1393,
+      "sha256": "24d8c60f7b0984f4b301f281e25a0e391912712913bce74f977f690e1ce08962",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/24d8c60f7b0984f4b301f281e25a0e391912712913bce74f977f690e1ce08962/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 30747,
+      "file": "2026-06-12-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1781222458662,
+      "last_ms": 1781308719196,
+      "ordinary_rows": 1438,
+      "raw_rows": 1440,
+      "sha256": "515a8e2ad6fe08d1a7f2b1072ff1854c4b0effbc380bd52ac291f3c0674b1f2c",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/515a8e2ad6fe08d1a7f2b1072ff1854c4b0effbc380bd52ac291f3c0674b1f2c/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 25679,
+      "file": "2026-06-12-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1781222422987,
+      "last_ms": 1781308016773,
+      "ordinary_rows": 1401,
+      "raw_rows": 1403,
+      "sha256": "af50f466d4871bab82a1e50dd0595e7b147d135d698c2a61ec971b74dc475808",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/af50f466d4871bab82a1e50dd0595e7b147d135d698c2a61ec971b74dc475808/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 17092,
+      "file": "2026-06-13-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1781308821340,
+      "last_ms": 1781395197718,
+      "ordinary_rows": 811,
+      "raw_rows": 811,
+      "sha256": "92388a0d5bae7018e118e55268f969d3736632154746f6a26f005297f920b774",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/92388a0d5bae7018e118e55268f969d3736632154746f6a26f005297f920b774/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 9930,
+      "file": "2026-06-13-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1781309403331,
+      "last_ms": 1781395197732,
+      "ordinary_rows": 502,
+      "raw_rows": 503,
+      "sha256": "84aee04ed65f5798469193e6773e21a879066e1b1ad0808ae14bb60c151c0cba",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/84aee04ed65f5798469193e6773e21a879066e1b1ad0808ae14bb60c151c0cba/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 30954,
+      "file": "2026-06-14-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1781395788174,
+      "last_ms": 1781481493902,
+      "ordinary_rows": 1647,
+      "raw_rows": 1648,
+      "sha256": "305e9991f7b21a72b929567685de21d4f3695f7625516a3d079e866213002158",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/305e9991f7b21a72b929567685de21d4f3695f7625516a3d079e866213002158/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 21382,
+      "file": "2026-06-14-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1781395260093,
+      "last_ms": 1781481123234,
+      "ordinary_rows": 1198,
+      "raw_rows": 1207,
+      "sha256": "977222c94fd16b79cbe02acc92d6eee6da435eecd7b48d458b5023d9481e5cf2",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/977222c94fd16b79cbe02acc92d6eee6da435eecd7b48d458b5023d9481e5cf2/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 55363,
+      "file": "2026-06-15-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1781481820171,
+      "last_ms": 1781567409618,
+      "ordinary_rows": 2924,
+      "raw_rows": 2986,
+      "sha256": "2c96ccce7b5d444acd6f745bdf58f378dd329f5e08b171d587e82f30bc55d866",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/2c96ccce7b5d444acd6f745bdf58f378dd329f5e08b171d587e82f30bc55d866/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 28296,
+      "file": "2026-06-15-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1781481840986,
+      "last_ms": 1781565379291,
+      "ordinary_rows": 1280,
+      "raw_rows": 1325,
+      "sha256": "c80ad9997956f3c68c0b86f3c73e3997949a63d35c29c26e9906bbed7fc73c60",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/c80ad9997956f3c68c0b86f3c73e3997949a63d35c29c26e9906bbed7fc73c60/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 43673,
+      "file": "2026-06-16-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1781569445233,
+      "last_ms": 1781654323304,
+      "ordinary_rows": 2401,
+      "raw_rows": 2445,
+      "sha256": "864585855b20a79cb121ff7d0e6403bd13bbe263f7cc9bb718b73d2bfb9fd5b0",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/864585855b20a79cb121ff7d0e6403bd13bbe263f7cc9bb718b73d2bfb9fd5b0/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 25400,
+      "file": "2026-06-16-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1781568000728,
+      "last_ms": 1781654180188,
+      "ordinary_rows": 1465,
+      "raw_rows": 1469,
+      "sha256": "dc9920c3ec6b4d06e6d7f0b0f5503416f66d7797152724b210e81365e957f9d1",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/dc9920c3ec6b4d06e6d7f0b0f5503416f66d7797152724b210e81365e957f9d1/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 46537,
+      "file": "2026-06-17-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1781654407708,
+      "last_ms": 1781739989409,
+      "ordinary_rows": 2565,
+      "raw_rows": 2574,
+      "sha256": "43eef98d4ca70d4cc92f21ab331f6985cd574e117a7234e4599c343f8df672a6",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/43eef98d4ca70d4cc92f21ab331f6985cd574e117a7234e4599c343f8df672a6/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 41622,
+      "file": "2026-06-17-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1781655007492,
+      "last_ms": 1781738882691,
+      "ordinary_rows": 2296,
+      "raw_rows": 2311,
+      "sha256": "c4172e2a521914a2d3b03429c0edb31ec6df869af18adbc6dbc6e75d5777fd39",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/c4172e2a521914a2d3b03429c0edb31ec6df869af18adbc6dbc6e75d5777fd39/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 52635,
+      "file": "2026-06-18-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1781740982460,
+      "last_ms": 1781826595565,
+      "ordinary_rows": 2650,
+      "raw_rows": 2662,
+      "sha256": "06da0c13e182850c02ba636b3da4d57b72c5b1d37cb9790ee0985db3380fa296",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/06da0c13e182850c02ba636b3da4d57b72c5b1d37cb9790ee0985db3380fa296/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 38980,
+      "file": "2026-06-18-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1781741028237,
+      "last_ms": 1781826595264,
+      "ordinary_rows": 2072,
+      "raw_rows": 2082,
+      "sha256": "12c3d14bfc2aec4f2a964915a0abc57466aeb41bd993f5cffa3c4010c2a9252c",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/12c3d14bfc2aec4f2a964915a0abc57466aeb41bd993f5cffa3c4010c2a9252c/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 20137,
+      "file": "2026-06-19-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1781827275522,
+      "last_ms": 1781913437861,
+      "ordinary_rows": 951,
+      "raw_rows": 951,
+      "sha256": "5ce4e2102e1e7de89e93da36bcd78eaa7094c54b60e0485ff9b9d41d07b54908",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/5ce4e2102e1e7de89e93da36bcd78eaa7094c54b60e0485ff9b9d41d07b54908/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 18640,
+      "file": "2026-06-19-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1781827343668,
+      "last_ms": 1781913506486,
+      "ordinary_rows": 925,
+      "raw_rows": 925,
+      "sha256": "d902a04aa98bdf430ad4b5ac1d80b99f0e42155d89ff3eacbd2383433204c057",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/d902a04aa98bdf430ad4b5ac1d80b99f0e42155d89ff3eacbd2383433204c057/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 15633,
+      "file": "2026-06-20-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1781913671559,
+      "last_ms": 1781999995760,
+      "ordinary_rows": 764,
+      "raw_rows": 764,
+      "sha256": "02685040dcd6da59def7f67c903953bc2366e192ec915be9fa9e5909cd871def",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/02685040dcd6da59def7f67c903953bc2366e192ec915be9fa9e5909cd871def/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 12681,
+      "file": "2026-06-20-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1781913664874,
+      "last_ms": 1781999995761,
+      "ordinary_rows": 572,
+      "raw_rows": 590,
+      "sha256": "b60b8b2c68238efd1210b7a49818f54fb9e4b52759c1a36b1cc6cc46c7b04768",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/b60b8b2c68238efd1210b7a49818f54fb9e4b52759c1a36b1cc6cc46c7b04768/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 13584,
+      "file": "2026-06-21-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1782000090060,
+      "last_ms": 1782086002141,
+      "ordinary_rows": 597,
+      "raw_rows": 616,
+      "sha256": "c257bc6adfffd666297d95f2143ce9fd1b45584c6191d31bcde5d36f3abd3028",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/c257bc6adfffd666297d95f2143ce9fd1b45584c6191d31bcde5d36f3abd3028/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 13605,
+      "file": "2026-06-21-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1782002350150,
+      "last_ms": 1782086002130,
+      "ordinary_rows": 752,
+      "raw_rows": 769,
+      "sha256": "cdfa8019c0c1667049a80be7414f003e1b12ac6a26decde610e416987500647b",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/cdfa8019c0c1667049a80be7414f003e1b12ac6a26decde610e416987500647b/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 43030,
+      "file": "2026-06-22-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1782086769830,
+      "last_ms": 1782172612789,
+      "ordinary_rows": 1931,
+      "raw_rows": 1967,
+      "sha256": "36b5da835b940cf348717c3b63befcd13378d7cce9bd64c3ba9b6002350b8fb8",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/36b5da835b940cf348717c3b63befcd13378d7cce9bd64c3ba9b6002350b8fb8/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 17693,
+      "file": "2026-06-22-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1782086547882,
+      "last_ms": 1782172582380,
+      "ordinary_rows": 774,
+      "raw_rows": 801,
+      "sha256": "a08b0a8c9310d602c40c0e5efffe9371da3398f4812cdec13d685481c7c57b46",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/a08b0a8c9310d602c40c0e5efffe9371da3398f4812cdec13d685481c7c57b46/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 55013,
+      "file": "2026-06-23-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1782172800955,
+      "last_ms": 1782259102656,
+      "ordinary_rows": 2557,
+      "raw_rows": 2579,
+      "sha256": "bb3741ae47264208f2543f3e6b6e53a981245ece639fa946aa19f839a2d7edb6",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/bb3741ae47264208f2543f3e6b6e53a981245ece639fa946aa19f839a2d7edb6/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 21618,
+      "file": "2026-06-23-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1782172801093,
+      "last_ms": 1782258787197,
+      "ordinary_rows": 1022,
+      "raw_rows": 1039,
+      "sha256": "dddf3ab247995b41c423e3b59b3c20cfda503218350a930f4bb786126e36e14c",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/dddf3ab247995b41c423e3b59b3c20cfda503218350a930f4bb786126e36e14c/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 73765,
+      "file": "2026-06-24-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1782259672255,
+      "last_ms": 1782345492903,
+      "ordinary_rows": 3520,
+      "raw_rows": 3569,
+      "sha256": "af99fde1c87afbbbca5a3a75d97e055c101c097d31c9908ab78d8fa991587ed9",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/af99fde1c87afbbbca5a3a75d97e055c101c097d31c9908ab78d8fa991587ed9/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 37458,
+      "file": "2026-06-24-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1782259284789,
+      "last_ms": 1782345404769,
+      "ordinary_rows": 1563,
+      "raw_rows": 1621,
+      "sha256": "2bdedf1c5efe3d19b54d3a50ed9442a66f457c812cc3b24f3778afda737a791c",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/2bdedf1c5efe3d19b54d3a50ed9442a66f457c812cc3b24f3778afda737a791c/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 70750,
+      "file": "2026-06-25-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1782346278285,
+      "last_ms": 1782431889240,
+      "ordinary_rows": 3609,
+      "raw_rows": 3688,
+      "sha256": "680631422b3319e45a95e43fb672c3144af9d21ed6e6cffed1811666a499c372",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/680631422b3319e45a95e43fb672c3144af9d21ed6e6cffed1811666a499c372/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 39269,
+      "file": "2026-06-25-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1782346057244,
+      "last_ms": 1782431906220,
+      "ordinary_rows": 2098,
+      "raw_rows": 2132,
+      "sha256": "208802b356b914a7b39e17cc6ea08e27f397b9d24f422d913151477554bbcffa",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/208802b356b914a7b39e17cc6ea08e27f397b9d24f422d913151477554bbcffa/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 153504,
+      "file": "2026-06-26-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1782432038154,
+      "last_ms": 1782518335857,
+      "ordinary_rows": 8795,
+      "raw_rows": 8826,
+      "sha256": "6a8b127f059c46cbe1285d04f716b568b8c85a528e85c65e9ea405b4efb54401",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/6a8b127f059c46cbe1285d04f716b568b8c85a528e85c65e9ea405b4efb54401/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 66513,
+      "file": "2026-06-26-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1782432312880,
+      "last_ms": 1782518122150,
+      "ordinary_rows": 3005,
+      "raw_rows": 3067,
+      "sha256": "f46d8644928af52a86f12015295342cbfd08157e0a08b591211ac2e46326b5ca",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/f46d8644928af52a86f12015295342cbfd08157e0a08b591211ac2e46326b5ca/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 37114,
+      "file": "2026-06-27-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1782518458116,
+      "last_ms": 1782604701713,
+      "ordinary_rows": 2023,
+      "raw_rows": 2023,
+      "sha256": "4cf93717e154df0c89ad771fd1bfa8e2034989e84ade5b9a37f4a41d13710007",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/4cf93717e154df0c89ad771fd1bfa8e2034989e84ade5b9a37f4a41d13710007/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 40483,
+      "file": "2026-06-27-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1782518503607,
+      "last_ms": 1782604745317,
+      "ordinary_rows": 1902,
+      "raw_rows": 1917,
+      "sha256": "ae7938ac7296cb95c965dfc9b212b235d88aad118e3c7bd1503f4d6daed2b143",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/ae7938ac7296cb95c965dfc9b212b235d88aad118e3c7bd1503f4d6daed2b143/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 35937,
+      "file": "2026-06-28-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1782605138858,
+      "last_ms": 1782691092188,
+      "ordinary_rows": 1869,
+      "raw_rows": 1869,
+      "sha256": "098d08215321858a690326fbbedd0c1d8abf50ef86bc21cef2f39398b0d6289d",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/098d08215321858a690326fbbedd0c1d8abf50ef86bc21cef2f39398b0d6289d/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 23517,
+      "file": "2026-06-28-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1782604864573,
+      "last_ms": 1782691144522,
+      "ordinary_rows": 1141,
+      "raw_rows": 1151,
+      "sha256": "4a0d13103827c29d7afbd90105303361fdb1563bb49ccf0d2c28d482550de26a",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/4a0d13103827c29d7afbd90105303361fdb1563bb49ccf0d2c28d482550de26a/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 64693,
+      "file": "2026-06-29-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1782691231560,
+      "last_ms": 1782777595985,
+      "ordinary_rows": 3420,
+      "raw_rows": 3427,
+      "sha256": "7f8edff4bc997748fee7406c8e0b1f0a0ade921127139606c8b5779fabbaff8b",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/7f8edff4bc997748fee7406c8e0b1f0a0ade921127139606c8b5779fabbaff8b/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 41759,
+      "file": "2026-06-29-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1782691496943,
+      "last_ms": 1782777596345,
+      "ordinary_rows": 2193,
+      "raw_rows": 2204,
+      "sha256": "90b5ad987e1d3512a0eb87838838da988932e98a571244d8a686ed76360ff5e7",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/90b5ad987e1d3512a0eb87838838da988932e98a571244d8a686ed76360ff5e7/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 66086,
+      "file": "2026-06-30-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1782777611654,
+      "last_ms": 1782863993351,
+      "ordinary_rows": 3587,
+      "raw_rows": 3587,
+      "sha256": "1b557a015113be541677d1227d5bb639d0e7d78dab6d5dc84089a0196d21881c",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/1b557a015113be541677d1227d5bb639d0e7d78dab6d5dc84089a0196d21881c/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 48854,
+      "file": "2026-06-30-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1782777664098,
+      "last_ms": 1782863993836,
+      "ordinary_rows": 2523,
+      "raw_rows": 2544,
+      "sha256": "6f2186a95a34181e64406ef80ae0fd9994286c3cf7820c011c6b188ea24adf04",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/6f2186a95a34181e64406ef80ae0fd9994286c3cf7820c011c6b188ea24adf04/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 111087,
+      "file": "2026-07-01-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1782864050545,
+      "last_ms": 1782950345297,
+      "ordinary_rows": 6012,
+      "raw_rows": 6013,
+      "sha256": "37604211433d4301b06f4f203b9c42780c13ef9258a03b0f2ab5e7c2950331d1",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/37604211433d4301b06f4f203b9c42780c13ef9258a03b0f2ab5e7c2950331d1/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 49199,
+      "file": "2026-07-01-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1782864028068,
+      "last_ms": 1782950324471,
+      "ordinary_rows": 2429,
+      "raw_rows": 2450,
+      "sha256": "321c7d24a9ecb223033fa96c4d74802d77fda4b679f138462bfc527f939b4db5",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/321c7d24a9ecb223033fa96c4d74802d77fda4b679f138462bfc527f939b4db5/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 96071,
+      "file": "2026-07-02-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1782950529506,
+      "last_ms": 1783036572356,
+      "ordinary_rows": 5125,
+      "raw_rows": 5132,
+      "sha256": "4d21cfcf8f433d0dcab636d29081b538a97562d441e1f8be3494172a620b6be1",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/4d21cfcf8f433d0dcab636d29081b538a97562d441e1f8be3494172a620b6be1/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 46361,
+      "file": "2026-07-02-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1782950540184,
+      "last_ms": 1783036299223,
+      "ordinary_rows": 2277,
+      "raw_rows": 2279,
+      "sha256": "f75a42cea2fb7f49f91b2a0252d531e835929b50de06cf9b863369861a781628",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/f75a42cea2fb7f49f91b2a0252d531e835929b50de06cf9b863369861a781628/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 31687,
+      "file": "2026-07-03-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1783036800278,
+      "last_ms": 1783123197932,
+      "ordinary_rows": 1629,
+      "raw_rows": 1629,
+      "sha256": "0b402acbbd0e90b112e996b394c9173af013c967a9ba3d522c9324440d43ac5c",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/0b402acbbd0e90b112e996b394c9173af013c967a9ba3d522c9324440d43ac5c/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 20907,
+      "file": "2026-07-03-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1783036940470,
+      "last_ms": 1783123197932,
+      "ordinary_rows": 1066,
+      "raw_rows": 1071,
+      "sha256": "2ef472c2b8bbdceec74cab275f95fa6bb64b4ab8b51d80d8b0545397f715b660",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/2ef472c2b8bbdceec74cab275f95fa6bb64b4ab8b51d80d8b0545397f715b660/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 27122,
+      "file": "2026-07-04-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1783123513552,
+      "last_ms": 1783208991597,
+      "ordinary_rows": 1431,
+      "raw_rows": 1432,
+      "sha256": "e7393848cfcbe47ce46f2bb5b5e40911a00d49dee34fa4f0656d82a0049587c7",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/e7393848cfcbe47ce46f2bb5b5e40911a00d49dee34fa4f0656d82a0049587c7/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 21954,
+      "file": "2026-07-04-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1783123513553,
+      "last_ms": 1783208991597,
+      "ordinary_rows": 1185,
+      "raw_rows": 1201,
+      "sha256": "81f1e0462138597689eac9187c8093e4b9278aa9e73c74bf859eb445b436a5e4",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/81f1e0462138597689eac9187c8093e4b9278aa9e73c74bf859eb445b436a5e4/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 17937,
+      "file": "2026-07-05-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1783209667227,
+      "last_ms": 1783295048696,
+      "ordinary_rows": 846,
+      "raw_rows": 863,
+      "sha256": "eb6719d5d2911cd2ad2324a0b7dc1d2afe6ed31f5f4ba82c789e6341a3f10c89",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/eb6719d5d2911cd2ad2324a0b7dc1d2afe6ed31f5f4ba82c789e6341a3f10c89/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 18012,
+      "file": "2026-07-05-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1783210017822,
+      "last_ms": 1783295845461,
+      "ordinary_rows": 911,
+      "raw_rows": 916,
+      "sha256": "752ce5061e80ebb97527f98fbfd4b4e72cf039a19301fca20af56e2e5b2c771a",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/752ce5061e80ebb97527f98fbfd4b4e72cf039a19301fca20af56e2e5b2c771a/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 57828,
+      "file": "2026-07-06-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1783296108109,
+      "last_ms": 1783382378502,
+      "ordinary_rows": 3017,
+      "raw_rows": 3018,
+      "sha256": "0c6340b8e54e3f204b4b7e9826976917d858fbbeb9885a3f38e7d6631ab10f9f",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/0c6340b8e54e3f204b4b7e9826976917d858fbbeb9885a3f38e7d6631ab10f9f/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 47266,
+      "file": "2026-07-06-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1783296130095,
+      "last_ms": 1783382168674,
+      "ordinary_rows": 2465,
+      "raw_rows": 2480,
+      "sha256": "5cfa92c7c8cd04d314fea76fdb67382bbb9ffb14f1db39d71de6144cd12d5620",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/5cfa92c7c8cd04d314fea76fdb67382bbb9ffb14f1db39d71de6144cd12d5620/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 36690,
+      "file": "2026-07-07-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1783382445325,
+      "last_ms": 1783465949192,
+      "ordinary_rows": 2014,
+      "raw_rows": 2014,
+      "sha256": "50dc853206085d4f1837d1c18f215db6c65a5ffcda36cf3e740a1bb217853ab5",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/50dc853206085d4f1837d1c18f215db6c65a5ffcda36cf3e740a1bb217853ab5/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 24886,
+      "file": "2026-07-07-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1783382496289,
+      "last_ms": 1783468752705,
+      "ordinary_rows": 1214,
+      "raw_rows": 1224,
+      "sha256": "27a20876458ce7c7534590283f78abe1ae561f1df6b70953983a876557f50eb5",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/27a20876458ce7c7534590283f78abe1ae561f1df6b70953983a876557f50eb5/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 35848,
+      "file": "2026-07-08-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1783468981556,
+      "last_ms": 1783554691493,
+      "ordinary_rows": 1964,
+      "raw_rows": 1973,
+      "sha256": "4ccf05eeedfa5ab96d47aa8e5d102a4bb415a02ebbde1d38237fbaea9433e1e1",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/4ccf05eeedfa5ab96d47aa8e5d102a4bb415a02ebbde1d38237fbaea9433e1e1/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 26240,
+      "file": "2026-07-08-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1783468867513,
+      "last_ms": 1783554701472,
+      "ordinary_rows": 1259,
+      "raw_rows": 1266,
+      "sha256": "2712aec09f9df4fba3656a2cd508d533848628b93e9843e27a272ef8036b56db",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/2712aec09f9df4fba3656a2cd508d533848628b93e9843e27a272ef8036b56db/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 33865,
+      "file": "2026-07-09-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1783555243818,
+      "last_ms": 1783641295835,
+      "ordinary_rows": 1779,
+      "raw_rows": 1783,
+      "sha256": "3f95c468e4b069793939f5b9b9c123698236f2d5b361aff78555301d635f0eda",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/3f95c468e4b069793939f5b9b9c123698236f2d5b361aff78555301d635f0eda/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 25193,
+      "file": "2026-07-09-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1783555243829,
+      "last_ms": 1783641295156,
+      "ordinary_rows": 1229,
+      "raw_rows": 1229,
+      "sha256": "4538902884417309e19752ba9471a591c4686561d2bce4dbd68e5fd514064144",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/4538902884417309e19752ba9471a591c4686561d2bce4dbd68e5fd514064144/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 59935,
+      "file": "2026-07-10-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1783641757717,
+      "last_ms": 1783727695210,
+      "ordinary_rows": 3448,
+      "raw_rows": 3457,
+      "sha256": "558885fbba026aa3242c4a279c18a60cc86a31b1a3219c2a3e69cfdaaa0fcc32",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/558885fbba026aa3242c4a279c18a60cc86a31b1a3219c2a3e69cfdaaa0fcc32/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 31075,
+      "file": "2026-07-10-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1783641743629,
+      "last_ms": 1783727695168,
+      "ordinary_rows": 1557,
+      "raw_rows": 1581,
+      "sha256": "bba26ad3cd3055163c47e8b7992dc1878b94d3cb4a1ced884a82bf0bf1525497",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/bba26ad3cd3055163c47e8b7992dc1878b94d3cb4a1ced884a82bf0bf1525497/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 19174,
+      "file": "2026-07-11-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1783728004042,
+      "last_ms": 1783814222536,
+      "ordinary_rows": 1091,
+      "raw_rows": 1093,
+      "sha256": "ddd1e9c73f62729d0225594d4fc09457e0b50b432908fa24b3a25d09b242f74d",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/ddd1e9c73f62729d0225594d4fc09457e0b50b432908fa24b3a25d09b242f74d/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 10229,
+      "file": "2026-07-11-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1783728004353,
+      "last_ms": 1783814249526,
+      "ordinary_rows": 527,
+      "raw_rows": 527,
+      "sha256": "8b7e9e4b4929fd6bad0a05a486a8bc786d11368235b2a6c5eb782c3be45ec5a1",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/8b7e9e4b4929fd6bad0a05a486a8bc786d11368235b2a6c5eb782c3be45ec5a1/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 21123,
+      "file": "2026-07-12-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1783814444867,
+      "last_ms": 1783900659654,
+      "ordinary_rows": 1187,
+      "raw_rows": 1187,
+      "sha256": "f93c0efb2745d4ef8ddefe00e36bf2cda7dc91c556cd7cc6254b008467c26d1a",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/f93c0efb2745d4ef8ddefe00e36bf2cda7dc91c556cd7cc6254b008467c26d1a/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 16560,
+      "file": "2026-07-12-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1783814403024,
+      "last_ms": 1783899962326,
+      "ordinary_rows": 885,
+      "raw_rows": 885,
+      "sha256": "42fbed5d8fd057b5045dc14a1c6838c7173a15522d37c983c3530eb09616eeb6",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/42fbed5d8fd057b5045dc14a1c6838c7173a15522d37c983c3530eb09616eeb6/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 49027,
+      "file": "2026-07-13-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1783900930666,
+      "last_ms": 1783986949180,
+      "ordinary_rows": 2586,
+      "raw_rows": 2591,
+      "sha256": "e7d54094ceb83f2acc995b8284690c8b88cc8944beaf52117a88408a3ac1f184",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/e7d54094ceb83f2acc995b8284690c8b88cc8944beaf52117a88408a3ac1f184/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 51383,
+      "file": "2026-07-13-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1783900930373,
+      "last_ms": 1783986949182,
+      "ordinary_rows": 2648,
+      "raw_rows": 2648,
+      "sha256": "e74dd273631cb1d7ab00b51c27ae85ae9dd97177e84a060da8338cdca3aca697",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/e74dd273631cb1d7ab00b51c27ae85ae9dd97177e84a060da8338cdca3aca697/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 55109,
+      "file": "2026-07-14-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1783987906634,
+      "last_ms": 1784073597623,
+      "ordinary_rows": 3137,
+      "raw_rows": 3146,
+      "sha256": "0195aa801699da9b2ec6102d61778f98dc6fd272cbdd328838b54355beca7370",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/0195aa801699da9b2ec6102d61778f98dc6fd272cbdd328838b54355beca7370/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 36823,
+      "file": "2026-07-14-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1783987262479,
+      "last_ms": 1784073574980,
+      "ordinary_rows": 2000,
+      "raw_rows": 2003,
+      "sha256": "b7a5e1ebb441875703335df03a5cbe296d553d109aa8046cf3a096056bc5dc23",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/b7a5e1ebb441875703335df03a5cbe296d553d109aa8046cf3a096056bc5dc23/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 42506,
+      "file": "2026-07-15-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1784073629946,
+      "last_ms": 1784159593410,
+      "ordinary_rows": 2303,
+      "raw_rows": 2308,
+      "sha256": "6e50c984e068d43aba8aa5f39bc1182f9e611e6cd90ef863451d8b678ca327dc",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/6e50c984e068d43aba8aa5f39bc1182f9e611e6cd90ef863451d8b678ca327dc/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 40586,
+      "file": "2026-07-15-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1784073791961,
+      "last_ms": 1784159931174,
+      "ordinary_rows": 2165,
+      "raw_rows": 2174,
+      "sha256": "74964c0842f0961f2ec006e6967137c53fc8e2def8af74e8ec9cce57e222d6c1",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/74964c0842f0961f2ec006e6967137c53fc8e2def8af74e8ec9cce57e222d6c1/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 38526,
+      "file": "2026-07-16-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1784160431539,
+      "last_ms": 1784246105035,
+      "ordinary_rows": 1977,
+      "raw_rows": 1981,
+      "sha256": "47f33f577a695b9b97c7f8b98d875bfd1f3ce5e2b1d7190ed611ac3f0d9cf2ca",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/47f33f577a695b9b97c7f8b98d875bfd1f3ce5e2b1d7190ed611ac3f0d9cf2ca/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 37416,
+      "file": "2026-07-16-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1784160053254,
+      "last_ms": 1784246379236,
+      "ordinary_rows": 1768,
+      "raw_rows": 1768,
+      "sha256": "5e5cb59f330ba8700ac6dfc68d599f718e08a747513deb20c9264e2429d3b340",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/5e5cb59f330ba8700ac6dfc68d599f718e08a747513deb20c9264e2429d3b340/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 45459,
+      "file": "2026-07-17-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1784246510304,
+      "last_ms": 1784332718759,
+      "ordinary_rows": 2323,
+      "raw_rows": 2348,
+      "sha256": "1aba0c1696a3f278b7982ce568cf5e4773f87b4dd386bff2e8401af6a0475529",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/1aba0c1696a3f278b7982ce568cf5e4773f87b4dd386bff2e8401af6a0475529/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 41305,
+      "file": "2026-07-17-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1784246400759,
+      "last_ms": 1784332493913,
+      "ordinary_rows": 1891,
+      "raw_rows": 1975,
+      "sha256": "549317446ae8b323f11d3720684e0e19fe4fdd4a4b0c954852626c13a29cdce7",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/549317446ae8b323f11d3720684e0e19fe4fdd4a4b0c954852626c13a29cdce7/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 16796,
+      "file": "2026-07-18-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1784333094156,
+      "last_ms": 1784419061974,
+      "ordinary_rows": 870,
+      "raw_rows": 909,
+      "sha256": "1e6a3ed8b7811161a841a3d9e09c70cc711a922d8101fb23ce4cc455611794f2",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/1e6a3ed8b7811161a841a3d9e09c70cc711a922d8101fb23ce4cc455611794f2/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 14982,
+      "file": "2026-07-18-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1784333094152,
+      "last_ms": 1784419035627,
+      "ordinary_rows": 810,
+      "raw_rows": 817,
+      "sha256": "50a7f67b82752587d6a1a1b4310bede4301fc91677d6b834c980f802aac2c9c6",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/50a7f67b82752587d6a1a1b4310bede4301fc91677d6b834c980f802aac2c9c6/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 17956,
+      "file": "2026-07-19-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1784419322599,
+      "last_ms": 1784504261858,
+      "ordinary_rows": 829,
+      "raw_rows": 875,
+      "sha256": "704962ee799eec669431f0bd657951be013ce87f14ff47ce8bdabfdc5389afd8",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/704962ee799eec669431f0bd657951be013ce87f14ff47ce8bdabfdc5389afd8/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 16642,
+      "file": "2026-07-19-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1784420690331,
+      "last_ms": 1784504946680,
+      "ordinary_rows": 818,
+      "raw_rows": 818,
+      "sha256": "e8bb0fc5831a40a228a98db87ead0a1f5b516ae11da1225c34ffec89dc31eae1",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/e8bb0fc5831a40a228a98db87ead0a1f5b516ae11da1225c34ffec89dc31eae1/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 58917,
+      "file": "2026-07-20-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1784505604984,
+      "last_ms": 1784591811757,
+      "ordinary_rows": 3177,
+      "raw_rows": 3193,
+      "sha256": "20d78559cbb3289f24cd41ff8b9fa0cb24539be31724370a3be2c31621e400ea",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/20d78559cbb3289f24cd41ff8b9fa0cb24539be31724370a3be2c31621e400ea/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 67353,
+      "file": "2026-07-20-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1784505626742,
+      "last_ms": 1784591656321,
+      "ordinary_rows": 4178,
+      "raw_rows": 4226,
+      "sha256": "448817a9ae8a045f5a1fd652ce4bc0b4456c76e944978460b93e794d704523dd",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/448817a9ae8a045f5a1fd652ce4bc0b4456c76e944978460b93e794d704523dd/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 64787,
+      "file": "2026-07-21-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1784592061258,
+      "last_ms": 1784678196383,
+      "ordinary_rows": 3606,
+      "raw_rows": 3641,
+      "sha256": "847e0fae11616f166ae8edf18f76ed567e282ac621c673ee0c478c90d3bcc1be",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/847e0fae11616f166ae8edf18f76ed567e282ac621c673ee0c478c90d3bcc1be/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 54380,
+      "file": "2026-07-21-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1784592001564,
+      "last_ms": 1784678312158,
+      "ordinary_rows": 3020,
+      "raw_rows": 3069,
+      "sha256": "14abeb080b477144cb5443186455cf37a297624e38471debf4e31d3cbb832f1f",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/14abeb080b477144cb5443186455cf37a297624e38471debf4e31d3cbb832f1f/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 38985,
+      "file": "2026-07-22-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1784678709072,
+      "last_ms": 1784764766908,
+      "ordinary_rows": 2088,
+      "raw_rows": 2093,
+      "sha256": "5173956ee72818e21246978cdcb6dcf1f55854abace585373edfc495b9934000",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/5173956ee72818e21246978cdcb6dcf1f55854abace585373edfc495b9934000/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 34161,
+      "file": "2026-07-22-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1784678609357,
+      "last_ms": 1784764766789,
+      "ordinary_rows": 1749,
+      "raw_rows": 1794,
+      "sha256": "34d774b9d63365af5a65ae0827d7d36166119874a9ccb1ae8eea6c5557be18ba",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/34d774b9d63365af5a65ae0827d7d36166119874a9ccb1ae8eea6c5557be18ba/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 106710,
+      "file": "2026-07-23-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1784764878978,
+      "last_ms": 1784851102252,
+      "ordinary_rows": 6420,
+      "raw_rows": 6486,
+      "sha256": "ef111d31e3f0dfe7fe63548507149473f01ef650f5f91e1f49af262d9faf8408",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/ef111d31e3f0dfe7fe63548507149473f01ef650f5f91e1f49af262d9faf8408/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 35882,
+      "file": "2026-07-23-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1784764870250,
+      "last_ms": 1784850980333,
+      "ordinary_rows": 1863,
+      "raw_rows": 1878,
+      "sha256": "d1ef1197ee25d1baf0e4e9873a78a04ee38774c858606172f6574600930467d2",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/d1ef1197ee25d1baf0e4e9873a78a04ee38774c858606172f6574600930467d2/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 127597,
+      "file": "2026-07-24-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1784851266388,
+      "last_ms": 1784937587605,
+      "ordinary_rows": 7759,
+      "raw_rows": 7768,
+      "sha256": "137094b9f5b9a5122ce31c6674e5e6642ac43d84812292ad2114452f5c950f8d",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/137094b9f5b9a5122ce31c6674e5e6642ac43d84812292ad2114452f5c950f8d/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 53972,
+      "file": "2026-07-24-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1784851324604,
+      "last_ms": 1784937295181,
+      "ordinary_rows": 3047,
+      "raw_rows": 3070,
+      "sha256": "3aa18f5cbfeadedc9850699cfbc5bbd46411376c827ece46117260d24b44abb0",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/3aa18f5cbfeadedc9850699cfbc5bbd46411376c827ece46117260d24b44abb0/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 28404,
+      "file": "2026-07-25-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1784937784624,
+      "last_ms": 1785022786639,
+      "ordinary_rows": 1648,
+      "raw_rows": 1657,
+      "sha256": "e501cb4f8219a4377ceb6449136c582bf786d9701745dbc07adbd1ad27f62d4b",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/e501cb4f8219a4377ceb6449136c582bf786d9701745dbc07adbd1ad27f62d4b/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 10280,
+      "file": "2026-07-25-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1784937784622,
+      "last_ms": 1785023598190,
+      "ordinary_rows": 497,
+      "raw_rows": 504,
+      "sha256": "74b156c21a11c2788aba823bae0917e40fc07a62211f04b5be81e5f48377975a",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/74b156c21a11c2788aba823bae0917e40fc07a62211f04b5be81e5f48377975a/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 38464,
+      "file": "2026-07-26-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1785024159009,
+      "last_ms": 1785110395621,
+      "ordinary_rows": 2235,
+      "raw_rows": 2267,
+      "sha256": "8826c947217a470d52a387fd9c8827b74a4d1c618f62f7f6cc2f374396d98584",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/8826c947217a470d52a387fd9c8827b74a4d1c618f62f7f6cc2f374396d98584/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 16030,
+      "file": "2026-07-26-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1785024452160,
+      "last_ms": 1785110306419,
+      "ordinary_rows": 876,
+      "raw_rows": 878,
+      "sha256": "492521067915c784cecce1d84bf3002a956c5ddd00ce631fe0ad40573471897f",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/492521067915c784cecce1d84bf3002a956c5ddd00ce631fe0ad40573471897f/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 78083,
+      "file": "2026-07-27-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1785110411193,
+      "last_ms": 1785196694098,
+      "ordinary_rows": 4393,
+      "raw_rows": 4419,
+      "sha256": "87da2e23c244fb3907054bcc353f8ef323e7c76f5ae8f34cf9d326af7b2e382b",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/87da2e23c244fb3907054bcc353f8ef323e7c76f5ae8f34cf9d326af7b2e382b/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 34681,
+      "file": "2026-07-27-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1785110491129,
+      "last_ms": 1785196734502,
+      "ordinary_rows": 1895,
+      "raw_rows": 1900,
+      "sha256": "f1c244b034cee5b130c59f5f71cc8d1ecfed464c7ee670a6f0d795b01bde7317",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/f1c244b034cee5b130c59f5f71cc8d1ecfed464c7ee670a6f0d795b01bde7317/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 79789,
+      "file": "2026-07-28-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1785196815514,
+      "last_ms": 1785283191749,
+      "ordinary_rows": 4550,
+      "raw_rows": 4600,
+      "sha256": "17972cacf8131130ba01baa645da38078f8acf6ad5a413fc366b8ad59df52986",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/17972cacf8131130ba01baa645da38078f8acf6ad5a413fc366b8ad59df52986/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 48993,
+      "file": "2026-07-28-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1785196805569,
+      "last_ms": 1785283190821,
+      "ordinary_rows": 2551,
+      "raw_rows": 2557,
+      "sha256": "55d72dd46d8634d58369bca6d73d0570d4d5679d076dae25e668226e6de1fb46",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/55d72dd46d8634d58369bca6d73d0570d4d5679d076dae25e668226e6de1fb46/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 75815,
+      "file": "2026-07-29-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1785283204238,
+      "last_ms": 1785369295158,
+      "ordinary_rows": 3946,
+      "raw_rows": 3963,
+      "sha256": "6fdd1bd779a385e615bdc986fe75ca1cdabcf454c5f144e90bf0ba726bf62a0e",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/6fdd1bd779a385e615bdc986fe75ca1cdabcf454c5f144e90bf0ba726bf62a0e/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 64184,
+      "file": "2026-07-29-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1785283230904,
+      "last_ms": 1785369155706,
+      "ordinary_rows": 3581,
+      "raw_rows": 3586,
+      "sha256": "b66dfb3bab32dbbf6611fbaf734d3c6453c5f7186897e32750a6ea9c077870ca",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/b66dfb3bab32dbbf6611fbaf734d3c6453c5f7186897e32750a6ea9c077870ca/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 48583,
+      "file": "2026-07-30-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1785369644773,
+      "last_ms": 1785455966173,
+      "ordinary_rows": 2550,
+      "raw_rows": 2577,
+      "sha256": "c7f469b1f961d3ca60507c8b5a0c6343f79de80bbdb4fb6565245ef07f275447",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/c7f469b1f961d3ca60507c8b5a0c6343f79de80bbdb4fb6565245ef07f275447/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 49064,
+      "file": "2026-07-30-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1785369736094,
+      "last_ms": 1785455656006,
+      "ordinary_rows": 2673,
+      "raw_rows": 2704,
+      "sha256": "fad0610c93f7857f95de0251db72df4cc71248b4501f38961c4bfb05c5edb5af",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/fad0610c93f7857f95de0251db72df4cc71248b4501f38961c4bfb05c5edb5af/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 76314,
+      "file": "2026-07-31-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1785456009613,
+      "last_ms": 1785542387065,
+      "ordinary_rows": 4098,
+      "raw_rows": 4134,
+      "sha256": "58bb586e7f165a88b66762657436c1c5fc897762a93091458c0f1b470519c876",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/58bb586e7f165a88b66762657436c1c5fc897762a93091458c0f1b470519c876/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 67765,
+      "file": "2026-07-31-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1785456074668,
+      "last_ms": 1785542248910,
+      "ordinary_rows": 3801,
+      "raw_rows": 3828,
+      "sha256": "8ce970c209356e71e123a25039e37887d0c72cafbddc4cd7d8d016175534c133",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/8ce970c209356e71e123a25039e37887d0c72cafbddc4cd7d8d016175534c133/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 25029,
+      "file": "2026-08-01-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1785542504300,
+      "last_ms": 1785628080370,
+      "ordinary_rows": 1333,
+      "raw_rows": 1343,
+      "sha256": "17f7a2b69bb12929c5b96fafc6ad3afbbc6583c3ed92f7e84d236d8fd13dd281",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/17f7a2b69bb12929c5b96fafc6ad3afbbc6583c3ed92f7e84d236d8fd13dd281/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 7435,
+      "file": "2026-08-01-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1785542525660,
+      "last_ms": 1785627891354,
+      "ordinary_rows": 348,
+      "raw_rows": 355,
+      "sha256": "31a64ebea32d39e6acf0890714b020a48adcb642887a0e37fc74c019e7dd51d7",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/31a64ebea32d39e6acf0890714b020a48adcb642887a0e37fc74c019e7dd51d7/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 73322,
+      "file": "2026-08-02-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1785628818518,
+      "last_ms": 1785715094469,
+      "ordinary_rows": 4302,
+      "raw_rows": 4302,
+      "sha256": "59f5138c4c85092413d4bd90e884fd46b05e38c93acba2b53bc23dc529efc7ca",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/59f5138c4c85092413d4bd90e884fd46b05e38c93acba2b53bc23dc529efc7ca/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 26854,
+      "file": "2026-08-02-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1785629559975,
+      "last_ms": 1785715123015,
+      "ordinary_rows": 1541,
+      "raw_rows": 1541,
+      "sha256": "0a497555a9c108f4e264836d3e2357314d282209310afe47ff361436198945f9",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/0a497555a9c108f4e264836d3e2357314d282209310afe47ff361436198945f9/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 81086,
+      "file": "2026-08-03-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1785715204356,
+      "last_ms": 1785801180420,
+      "ordinary_rows": 4428,
+      "raw_rows": 4429,
+      "sha256": "24c30fdd17b5ad0f3e3c23c4918bf44c73658a45500cba4da9cf90487dbbb147",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/24c30fdd17b5ad0f3e3c23c4918bf44c73658a45500cba4da9cf90487dbbb147/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 20201,
+      "file": "2026-08-03-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1785715300370,
+      "last_ms": 1785801181294,
+      "ordinary_rows": 1132,
+      "raw_rows": 1132,
+      "sha256": "dbe85121a6c9b179ae18e2cf3571583156826534df68233751555357a845acdb",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/dbe85121a6c9b179ae18e2cf3571583156826534df68233751555357a845acdb/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 86033,
+      "file": "2026-08-04-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1785801608938,
+      "last_ms": 1785887933868,
+      "ordinary_rows": 4872,
+      "raw_rows": 4896,
+      "sha256": "edc0e8d9795440333978d6d84f430230ed48aa88dd3d38d19d326c2b91cd0b90",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/edc0e8d9795440333978d6d84f430230ed48aa88dd3d38d19d326c2b91cd0b90/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 33161,
+      "file": "2026-08-04-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1785801628623,
+      "last_ms": 1785887901407,
+      "ordinary_rows": 1764,
+      "raw_rows": 1766,
+      "sha256": "ff3c16247e202bf2561f4389808b94db600437d18d97ecbac9a459da0d623692",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/ff3c16247e202bf2561f4389808b94db600437d18d97ecbac9a459da0d623692/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 179664,
+      "file": "2026-08-05-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1785888049878,
+      "last_ms": 1785974285673,
+      "ordinary_rows": 10446,
+      "raw_rows": 10475,
+      "sha256": "7c6f4f1bb7511fbb9b218b6fdc8ca948488ed08211a178f5dbe073dd114e007a",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/7c6f4f1bb7511fbb9b218b6fdc8ca948488ed08211a178f5dbe073dd114e007a/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 23102,
+      "file": "2026-08-05-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1785888050539,
+      "last_ms": 1785973788711,
+      "ordinary_rows": 1115,
+      "raw_rows": 1116,
+      "sha256": "79b85c204c5edd7666054411ff08031a9fdbf208786e3ea701a167b1f6f3cd55",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/79b85c204c5edd7666054411ff08031a9fdbf208786e3ea701a167b1f6f3cd55/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 121505,
+      "file": "2026-08-06-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1785974400937,
+      "last_ms": 1786060658248,
+      "ordinary_rows": 6547,
+      "raw_rows": 6558,
+      "sha256": "e030e77bad5e381f6a3b3ea991c6593044a5e5e8045a8ba4448cb5ffc67a744a",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/e030e77bad5e381f6a3b3ea991c6593044a5e5e8045a8ba4448cb5ffc67a744a/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 15772,
+      "file": "2026-08-06-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1785974404897,
+      "last_ms": 1786060260228,
+      "ordinary_rows": 816,
+      "raw_rows": 833,
+      "sha256": "b2e3ecb65e55951604b1e8b6e35625c2364f5b587f6fe39b7c84f519b425ec63",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/b2e3ecb65e55951604b1e8b6e35625c2364f5b587f6fe39b7c84f519b425ec63/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 48244,
+      "file": "2026-08-07-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1786060811661,
+      "last_ms": 1786146386080,
+      "ordinary_rows": 2456,
+      "raw_rows": 2481,
+      "sha256": "3f66e6ccaea0790cf258fbd2d4dc18c7423777665746d0962dd36698e34763d3",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/3f66e6ccaea0790cf258fbd2d4dc18c7423777665746d0962dd36698e34763d3/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 23293,
+      "file": "2026-08-07-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1786061165108,
+      "last_ms": 1786144742299,
+      "ordinary_rows": 1192,
+      "raw_rows": 1203,
+      "sha256": "6b8f47fb051897e9fa5b5810cac9e4ba51cb245c983eb278c9161937c4c7a02d",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/6b8f47fb051897e9fa5b5810cac9e4ba51cb245c983eb278c9161937c4c7a02d/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 9349,
+      "file": "2026-08-08-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1786147474527,
+      "last_ms": 1786233422437,
+      "ordinary_rows": 480,
+      "raw_rows": 482,
+      "sha256": "766ebf7655f712699e2f76d676326bd484d140c475c6023af3df9cfb680f404e",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/766ebf7655f712699e2f76d676326bd484d140c475c6023af3df9cfb680f404e/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 5999,
+      "file": "2026-08-08-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1786147985219,
+      "last_ms": 1786231589937,
+      "ordinary_rows": 294,
+      "raw_rows": 294,
+      "sha256": "065ec4606270896e2c4ff52afb60cd3cc65916a22b473a7993429f20fc3b5c08",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/065ec4606270896e2c4ff52afb60cd3cc65916a22b473a7993429f20fc3b5c08/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 11632,
+      "file": "2026-08-09-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1786234211042,
+      "last_ms": 1786319917786,
+      "ordinary_rows": 568,
+      "raw_rows": 570,
+      "sha256": "4ca67e1b5718956772c7f16f4d123cecbeee71de7868a8502723ccec49549400",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/4ca67e1b5718956772c7f16f4d123cecbeee71de7868a8502723ccec49549400/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 6811,
+      "file": "2026-08-09-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1786237161844,
+      "last_ms": 1786318774613,
+      "ordinary_rows": 331,
+      "raw_rows": 333,
+      "sha256": "1ff0d270ad226f58c8c39f4ba2ac275c19e285fe36ea499be0329bcb786c5dff",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/1ff0d270ad226f58c8c39f4ba2ac275c19e285fe36ea499be0329bcb786c5dff/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 50299,
+      "file": "2026-08-10-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1786320051436,
+      "last_ms": 1786406131636,
+      "ordinary_rows": 2650,
+      "raw_rows": 2687,
+      "sha256": "5a5e371e5cb989f6df24c90285bda2b997ac6d45a1862f09afd721bcee66ad5c",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/5a5e371e5cb989f6df24c90285bda2b997ac6d45a1862f09afd721bcee66ad5c/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 16610,
+      "file": "2026-08-10-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1786320649225,
+      "last_ms": 1786405394811,
+      "ordinary_rows": 858,
+      "raw_rows": 865,
+      "sha256": "436c26cafbf3a72948defb22d28a45415aa445dcc42a031f625728ec259355f0",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/436c26cafbf3a72948defb22d28a45415aa445dcc42a031f625728ec259355f0/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 40448,
+      "file": "2026-08-11-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1786406419047,
+      "last_ms": 1786492704445,
+      "ordinary_rows": 2399,
+      "raw_rows": 2420,
+      "sha256": "30b62486716520ae3ff6468922f833df3d7acaf0bca4c61f7f394866d5fade67",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/30b62486716520ae3ff6468922f833df3d7acaf0bca4c61f7f394866d5fade67/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 19030,
+      "file": "2026-08-11-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1786406570915,
+      "last_ms": 1786491807717,
+      "ordinary_rows": 1255,
+      "raw_rows": 1276,
+      "sha256": "7a3aa8492bd2572c204ffee1d33d1967b251e34b061c8d821321df305e6b570b",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/7a3aa8492bd2572c204ffee1d33d1967b251e34b061c8d821321df305e6b570b/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 53207,
+      "file": "2026-08-12-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1786492916439,
+      "last_ms": 1786579168220,
+      "ordinary_rows": 3210,
+      "raw_rows": 3222,
+      "sha256": "2ee9ca38e2423d56351e67d68d92c11f232845f144f1b57aad9743dc9fef4909",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/2ee9ca38e2423d56351e67d68d92c11f232845f144f1b57aad9743dc9fef4909/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 11980,
+      "file": "2026-08-12-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1786493274236,
+      "last_ms": 1786579110351,
+      "ordinary_rows": 749,
+      "raw_rows": 754,
+      "sha256": "9cc42c83a95ba5cba8d41bc8a55977b58e0f9a1fc991028f2177e720ca6662fa",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/9cc42c83a95ba5cba8d41bc8a55977b58e0f9a1fc991028f2177e720ca6662fa/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 37678,
+      "file": "2026-08-13-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1786579261976,
+      "last_ms": 1786665560802,
+      "ordinary_rows": 2047,
+      "raw_rows": 2091,
+      "sha256": "ee515bb60d04719e4065c1992a069f6b14f63d2fc2d90237f6d22f4dc4ca954b",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/ee515bb60d04719e4065c1992a069f6b14f63d2fc2d90237f6d22f4dc4ca954b/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 33794,
+      "file": "2026-08-13-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1786579533589,
+      "last_ms": 1786665262433,
+      "ordinary_rows": 2110,
+      "raw_rows": 2173,
+      "sha256": "18b2df6855b073c0c7596edeca6c95fdf251c67967305e4cca98d952d78a0440",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/18b2df6855b073c0c7596edeca6c95fdf251c67967305e4cca98d952d78a0440/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 24178,
+      "file": "2026-08-14-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1786665760034,
+      "last_ms": 1786751961729,
+      "ordinary_rows": 1270,
+      "raw_rows": 1302,
+      "sha256": "78e06fd89548badacaa70362d614ea36f779e6a8ae0009f21fd3579e65595bf7",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/78e06fd89548badacaa70362d614ea36f779e6a8ae0009f21fd3579e65595bf7/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 27054,
+      "file": "2026-08-14-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1786666949734,
+      "last_ms": 1786749914582,
+      "ordinary_rows": 1725,
+      "raw_rows": 1727,
+      "sha256": "f746cce8dc43a2d1926ce1a3c3485f9bd060e363857bf934a8f23f9c19fc5625",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/f746cce8dc43a2d1926ce1a3c3485f9bd060e363857bf934a8f23f9c19fc5625/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 6339,
+      "file": "2026-08-15-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1786753431024,
+      "last_ms": 1786837156659,
+      "ordinary_rows": 311,
+      "raw_rows": 313,
+      "sha256": "ee7dae592b958e1b561bf7634c52d45b0b48a38cb5e84ebf35c85e55c820a95d",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/ee7dae592b958e1b561bf7634c52d45b0b48a38cb5e84ebf35c85e55c820a95d/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 4094,
+      "file": "2026-08-15-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1786752494218,
+      "last_ms": 1786835583350,
+      "ordinary_rows": 215,
+      "raw_rows": 216,
+      "sha256": "6060ab8e8f6d56e635e2a3937d4de32d5d126d26e9e5d94a33e18a4f06be6fc2",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/6060ab8e8f6d56e635e2a3937d4de32d5d126d26e9e5d94a33e18a4f06be6fc2/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 11743,
+      "file": "2026-08-16-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1786838671444,
+      "last_ms": 1786924440425,
+      "ordinary_rows": 588,
+      "raw_rows": 599,
+      "sha256": "5ea2cf49322db74d7d84c333c05047189fa3595e91e9d46e24f143335b1654d9",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/5ea2cf49322db74d7d84c333c05047189fa3595e91e9d46e24f143335b1654d9/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 8099,
+      "file": "2026-08-16-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1786838890350,
+      "last_ms": 1786922220080,
+      "ordinary_rows": 479,
+      "raw_rows": 479,
+      "sha256": "93dcd97906701c04e9d859cfb262f75e44c8a4af9a399f2ee3fde0a09cf99175",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/93dcd97906701c04e9d859cfb262f75e44c8a4af9a399f2ee3fde0a09cf99175/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 54026,
+      "file": "2026-08-17-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1786924868267,
+      "last_ms": 1787011129476,
+      "ordinary_rows": 3079,
+      "raw_rows": 3112,
+      "sha256": "d096f22dfdbc30c0ae71648ceb5297c1e0fbece50d1c199f810ec9d189f1d313",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/d096f22dfdbc30c0ae71648ceb5297c1e0fbece50d1c199f810ec9d189f1d313/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 23812,
+      "file": "2026-08-17-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1786926704552,
+      "last_ms": 1787004832354,
+      "ordinary_rows": 1384,
+      "raw_rows": 1408,
+      "sha256": "9f6fba5fa40ac47bad5f67a70c08487c4f6d44d8d1ca06ba0a36c92f4bbaa922",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/9f6fba5fa40ac47bad5f67a70c08487c4f6d44d8d1ca06ba0a36c92f4bbaa922/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 20296,
+      "file": "2026-08-18-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1787011306583,
+      "last_ms": 1787096796312,
+      "ordinary_rows": 1057,
+      "raw_rows": 1085,
+      "sha256": "006e4676b2cd925513cbb081640cbfa68f102989e052eea8e5cd2dafb459bd3f",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/006e4676b2cd925513cbb081640cbfa68f102989e052eea8e5cd2dafb459bd3f/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 5274,
+      "file": "2026-08-18-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1787011547363,
+      "last_ms": 1787097519015,
+      "ordinary_rows": 316,
+      "raw_rows": 326,
+      "sha256": "270832fb19dbc07a90ebccefa4ce310335939c24680067178e6b05d620fb592b",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/270832fb19dbc07a90ebccefa4ce310335939c24680067178e6b05d620fb592b/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 116641,
+      "file": "2026-08-19-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1787097649092,
+      "last_ms": 1787183994620,
+      "ordinary_rows": 6591,
+      "raw_rows": 6736,
+      "sha256": "7c9250f2e9ddf72c5be170791b565ca9eeb4e89d074410dca6f11c666c560411",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/7c9250f2e9ddf72c5be170791b565ca9eeb4e89d074410dca6f11c666c560411/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 42000,
+      "file": "2026-08-19-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1787097960457,
+      "last_ms": 1787183910520,
+      "ordinary_rows": 2366,
+      "raw_rows": 2541,
+      "sha256": "5afdc3bad0f7f90167ba1cb2b09021f117527dfe507b06f3f50ea79d53393143",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/5afdc3bad0f7f90167ba1cb2b09021f117527dfe507b06f3f50ea79d53393143/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 279177,
+      "file": "2026-08-20-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1787184006163,
+      "last_ms": 1787270385738,
+      "ordinary_rows": 16382,
+      "raw_rows": 17069,
+      "sha256": "45812fe36e7f003197f1cd1b128cc6dbfad80f07ab4442417675ee3ca16a0f29",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/45812fe36e7f003197f1cd1b128cc6dbfad80f07ab4442417675ee3ca16a0f29/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 81672,
+      "file": "2026-08-20-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1787184139475,
+      "last_ms": 1787270398803,
+      "ordinary_rows": 4770,
+      "raw_rows": 4990,
+      "sha256": "6c7df079c4abc4ed999bace6bcdcbbffeacfc60e257732ab87e9016bab0ed70e",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/6c7df079c4abc4ed999bace6bcdcbbffeacfc60e257732ab87e9016bab0ed70e/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 342332,
+      "file": "2026-08-21-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1787270410148,
+      "last_ms": 1787356759114,
+      "ordinary_rows": 16705,
+      "raw_rows": 18358,
+      "sha256": "e04d01de67a6e67f05738dbdf0b019854ed61f469a7596f25a700271ea431178",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/e04d01de67a6e67f05738dbdf0b019854ed61f469a7596f25a700271ea431178/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 176881,
+      "file": "2026-08-21-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1787270410148,
+      "last_ms": 1787356794228,
+      "ordinary_rows": 8314,
+      "raw_rows": 9835,
+      "sha256": "250d8453dfbb8f35cd842b769fe180853d0c5aaa62a37c536b59ad4d94a9e9d5",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/250d8453dfbb8f35cd842b769fe180853d0c5aaa62a37c536b59ad4d94a9e9d5/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 95640,
+      "file": "2026-08-22-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1787356819617,
+      "last_ms": 1787443142039,
+      "ordinary_rows": 2859,
+      "raw_rows": 4299,
+      "sha256": "ae1a8c8384b29aef6fe118c48b1790777b1a96b53ac1932857dea19b32b9b44b",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/ae1a8c8384b29aef6fe118c48b1790777b1a96b53ac1932857dea19b32b9b44b/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 61853,
+      "file": "2026-08-22-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1787356852727,
+      "last_ms": 1787443147210,
+      "ordinary_rows": 1010,
+      "raw_rows": 2405,
+      "sha256": "b5cef870b63e3ac9ce8eb0dc6552c744878d664bdce5c6dd141e2366a2e525f1",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/b5cef870b63e3ac9ce8eb0dc6552c744878d664bdce5c6dd141e2366a2e525f1/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 147680,
+      "file": "2026-08-23-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1787443205826,
+      "last_ms": 1787529565478,
+      "ordinary_rows": 6668,
+      "raw_rows": 8074,
+      "sha256": "8bbfc04f19d37dae2e6b3172b80940b033a19ce3f70c3ececc7e829a56fa2a8e",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/8bbfc04f19d37dae2e6b3172b80940b033a19ce3f70c3ececc7e829a56fa2a8e/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 59949,
+      "file": "2026-08-23-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1787443216343,
+      "last_ms": 1787529560427,
+      "ordinary_rows": 1102,
+      "raw_rows": 2486,
+      "sha256": "16ef61da711c33d63cbb89dd013b05bbe78935700065cb65dd44cb7be24cc948",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/16ef61da711c33d63cbb89dd013b05bbe78935700065cb65dd44cb7be24cc948/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 145839,
+      "file": "2026-08-24-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1787529627887,
+      "last_ms": 1787615962818,
+      "ordinary_rows": 4932,
+      "raw_rows": 6920,
+      "sha256": "98777d51f64923ce2a8b4026d19c96398b434c4344bef7367cc5436166fee88d",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/98777d51f64923ce2a8b4026d19c96398b434c4344bef7367cc5436166fee88d/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 87196,
+      "file": "2026-08-24-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1787529622815,
+      "last_ms": 1787615949692,
+      "ordinary_rows": 2706,
+      "raw_rows": 4097,
+      "sha256": "a0ce5ef8193fdde62c642f577113aaecaff8a8b487e569e3e18f6919193729d7",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/a0ce5ef8193fdde62c642f577113aaecaff8a8b487e569e3e18f6919193729d7/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 196773,
+      "file": "2026-08-25-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1787616017952,
+      "last_ms": 1787702397448,
+      "ordinary_rows": 6857,
+      "raw_rows": 9430,
+      "sha256": "8d6953d7d2adaf928b3882670f2041a59bd857967b2e838c5471a76ded8bc47c",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/8d6953d7d2adaf928b3882670f2041a59bd857967b2e838c5471a76ded8bc47c/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 117775,
+      "file": "2026-08-25-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1787616010256,
+      "last_ms": 1787702377147,
+      "ordinary_rows": 4277,
+      "raw_rows": 5718,
+      "sha256": "cdabbe2d3f3320203eb20758bb7aa4e750b457fc587b598c9760b4bf3b361724",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/cdabbe2d3f3320203eb20758bb7aa4e750b457fc587b598c9760b4bf3b361724/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 89188,
+      "file": "2026-08-26-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1787702402973,
+      "last_ms": 1787788755755,
+      "ordinary_rows": 4194,
+      "raw_rows": 4624,
+      "sha256": "88dab932377138aa178239063f2f3dbba0bb2ec9fa5007d1fb228334433cec66",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/88dab932377138aa178239063f2f3dbba0bb2ec9fa5007d1fb228334433cec66/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 40802,
+      "file": "2026-08-26-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1787702414652,
+      "last_ms": 1787788745748,
+      "ordinary_rows": 1142,
+      "raw_rows": 1736,
+      "sha256": "f59194bc77126b8a111c018690994780e490940442f8bcc19f6bab5671ed1420",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/f59194bc77126b8a111c018690994780e490940442f8bcc19f6bab5671ed1420/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 66684,
+      "file": "2026-08-27-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1787788811832,
+      "last_ms": 1787874756787,
+      "ordinary_rows": 3224,
+      "raw_rows": 3296,
+      "sha256": "57acd964c30dd5c550a60a595855c87c69a48a36ead61de026b084f18153edd3",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/57acd964c30dd5c550a60a595855c87c69a48a36ead61de026b084f18153edd3/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 41471,
+      "file": "2026-08-27-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1787788947585,
+      "last_ms": 1787874241580,
+      "ordinary_rows": 2243,
+      "raw_rows": 2378,
+      "sha256": "1708276600bda1a17b0909c0ecdc76e7e9654a7873f8c3eadc233cc960644dd3",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/1708276600bda1a17b0909c0ecdc76e7e9654a7873f8c3eadc233cc960644dd3/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 101950,
+      "file": "2026-08-28-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1787875200200,
+      "last_ms": 1787961323308,
+      "ordinary_rows": 5507,
+      "raw_rows": 5602,
+      "sha256": "4b1a99b42e3ac4cc5ac503fc3246600a2691ec0a405d225dea48599ba759e800",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/4b1a99b42e3ac4cc5ac503fc3246600a2691ec0a405d225dea48599ba759e800/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 35517,
+      "file": "2026-08-28-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1787875354767,
+      "last_ms": 1787961084985,
+      "ordinary_rows": 1875,
+      "raw_rows": 1930,
+      "sha256": "9f782fd615bbf82bfd1f213b9094366450f52f0d7891ab303dc5611c5d205f03",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/9f782fd615bbf82bfd1f213b9094366450f52f0d7891ab303dc5611c5d205f03/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 23370,
+      "file": "2026-08-29-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1787961602954,
+      "last_ms": 1788047954104,
+      "ordinary_rows": 1343,
+      "raw_rows": 1363,
+      "sha256": "28babdfdf91f2528472c2cb33901e4cfca9303c78bcdc0cde8f417088f5df94b",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/28babdfdf91f2528472c2cb33901e4cfca9303c78bcdc0cde8f417088f5df94b/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 6962,
+      "file": "2026-08-29-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1787961666760,
+      "last_ms": 1788047941198,
+      "ordinary_rows": 276,
+      "raw_rows": 282,
+      "sha256": "32337a37b2ee8d5677861b1205708f7b622999d4690315d3857b39d281e8f5e8",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/32337a37b2ee8d5677861b1205708f7b622999d4690315d3857b39d281e8f5e8/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 70718,
+      "file": "2026-08-30-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1788048006486,
+      "last_ms": 1788134367693,
+      "ordinary_rows": 4299,
+      "raw_rows": 4331,
+      "sha256": "b40a6487633e61723d3edd661f91f3e5024097bcc52ed618162d3b89e6e4f782",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/b40a6487633e61723d3edd661f91f3e5024097bcc52ed618162d3b89e6e4f782/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 12642,
+      "file": "2026-08-30-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1788048378962,
+      "last_ms": 1788133743014,
+      "ordinary_rows": 597,
+      "raw_rows": 614,
+      "sha256": "5e23e49b5318a67b58845971b6ce6209155077e6bda3e8b49f6f97febf54abcf",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/5e23e49b5318a67b58845971b6ce6209155077e6bda3e8b49f6f97febf54abcf/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 71020,
+      "file": "2026-08-31-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1788134400839,
+      "last_ms": 1788219780920,
+      "ordinary_rows": 3996,
+      "raw_rows": 4028,
+      "sha256": "6b06602c0a21513f0962524cbdbc1a0693a1cd20068e932c5870ef9ab524fc3a",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/6b06602c0a21513f0962524cbdbc1a0693a1cd20068e932c5870ef9ab524fc3a/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 26207,
+      "file": "2026-08-31-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1788134426665,
+      "last_ms": 1788219503479,
+      "ordinary_rows": 1202,
+      "raw_rows": 1215,
+      "sha256": "fe959174fc5a64fd61121af546c2ff7317e26eb918f567917b4d8439f359b558",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/fe959174fc5a64fd61121af546c2ff7317e26eb918f567917b4d8439f359b558/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 60100,
+      "file": "2026-09-01-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1788220971331,
+      "last_ms": 1788307150693,
+      "ordinary_rows": 3158,
+      "raw_rows": 3177,
+      "sha256": "ab4cacf1e57c7aa1712cc29ae4a64110f9024cfb41c8db45199baa647e535682",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/ab4cacf1e57c7aa1712cc29ae4a64110f9024cfb41c8db45199baa647e535682/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 17506,
+      "file": "2026-09-01-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1788221127323,
+      "last_ms": 1788306776019,
+      "ordinary_rows": 963,
+      "raw_rows": 982,
+      "sha256": "08e1662b933e8278acf23001ab425957a39d1f88e1278cc536b41f17da6bd261",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/08e1662b933e8278acf23001ab425957a39d1f88e1278cc536b41f17da6bd261/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 48714,
+      "file": "2026-09-02-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1788307200197,
+      "last_ms": 1788393535426,
+      "ordinary_rows": 2491,
+      "raw_rows": 2510,
+      "sha256": "0550789c72e3246daeebc94bbb67577d84a9e514029b2258d31444a552310573",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/0550789c72e3246daeebc94bbb67577d84a9e514029b2258d31444a552310573/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 9340,
+      "file": "2026-09-02-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1788307451949,
+      "last_ms": 1788393081368,
+      "ordinary_rows": 440,
+      "raw_rows": 455,
+      "sha256": "92d69aeebd67eaf9bcf378505b591fecfc36274227e77ffdeb5a6db3c6046d93",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/92d69aeebd67eaf9bcf378505b591fecfc36274227e77ffdeb5a6db3c6046d93/BTC-26MAR27.jsonl.gz"
+    },
+    {
+      "bytes": 94790,
+      "file": "2026-09-03-BTC-25DEC26.jsonl.gz",
+      "first_ms": 1788393613014,
+      "last_ms": 1788479534003,
+      "ordinary_rows": 4670,
+      "raw_rows": 4735,
+      "sha256": "156fb9e70fa8f38f03e60e379d24e64fbf4750cafc344214eb6fe3b302315b2d",
+      "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/156fb9e70fa8f38f03e60e379d24e64fbf4750cafc344214eb6fe3b302315b2d/BTC-25DEC26.jsonl.gz"
+    },
+    {
+      "bytes": 17417,
+      "file": "2026-09-03-BTC-26MAR27.jsonl.gz",
+      "first_ms": 1788393928080,
+      "last_ms": 1788479283256,
+      "ordinary_rows": 841,
+      "raw_rows": 876,
+      "sha256": "5c57a2068496c209426a01b0bfb5d6a9558a83e4bb54c9d24e74124f6fadc1d0",
+      "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/5c57a2068496c209426a01b0bfb5d6a9558a83e4bb54c9d24e74124f6fadc1d0/BTC-26MAR27.jsonl.gz"
+    }
+  ],
+  "hypothetical_linear_capacity": "native USD amount / print price",
+  "instruments": {
+    "BTC-25DEC26": {
+      "expiry": 1798185600000,
+      "fee_bps": 1.0,
+      "lot": 0.0001,
+      "margin_fraction": 0.1,
+      "payoff": "linear",
+      "source_payoff": "inverse",
+      "symbol": "BTC-25DEC26",
+      "tick": 2.5
+    },
+    "BTC-26MAR27": {
+      "expiry": 1806048000000,
+      "fee_bps": 1.0,
+      "lot": 0.0001,
+      "margin_fraction": 0.1,
+      "payoff": "linear",
+      "source_payoff": "inverse",
+      "symbol": "BTC-26MAR27",
+      "tick": 2.5
+    }
+  },
+  "metadata": {
+    "input_coverage.json": "1deec1539c7f220d5895d51b0f7ed77f8e15d6a067a41eedfc5d04701a63021d",
+    "seeds.json": "82b424dd8d2a135c3c42fc92c2e33be30a32194a285cc5dbb8e6f7e3be664c1b",
+    "source_receipts.json": "bfdfdbce4b9f302a98039db4deff38f8cd8c1cf698d315e57e59ecca3123d720",
+    "specification.json": "f3dcdaedfa8e910f846c715087af89dd7bd471180b3c9fc6cac060f164c9f9f9"
+  },
+  "mode": "counterfactual linear on inverse-source tape",
+  "native_amount": "USD notional",
+  "no_quote_depth": true,
+  "ordering": "timestamp then symbol then trade id; sequence verified per daily object",
+  "raw_rows": 486203,
+  "settlement_evidence": "not present",
+  "source_payoff": "inverse",
+  "spot_execution": "disabled"
+}

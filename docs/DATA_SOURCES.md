@@ -132,3 +132,12 @@ Each backtest result should record data-source identifiers, extraction date, inp
 ## Post-decision research provenance (25 October 2026)
 
 The [post-decision value pilot](research/post_decision_value/RESULTS.md) verifies 16 native inverse Deribit trade objects for BTC-25DEC26 and BTC-26MAR27 on June 6–13. Its linear-futures results are counterfactual, with source USD amounts converted to declared BTC participation capacity. No spot executions or observed expiry settlements are claimed. Existing Binance individual-trade acquisition run 39736701767 is complete with early-source gaps and raw archives not yet parsed; this does not imply a replay-ready extended spot dataset. Full source hashes, operator evidence and limitations are saved with the report.
+
+The [26 October analytical study](research/post_decision_value/ANALYTICAL_90_DAY.md)
+extends local verification to **all 180 existing cached pair objects**, June 6
+through September 3, 2026: 486,203 rows and 9,121,523 compressed bytes. It replays
+every print with hourly decisions, without acquiring additional data. The same
+counterfactual-linear, futures-only, contractual-endpoint restrictions apply.
+The separate multi-year archive's 10 exported metadata objects were hash verified;
+its 540-instrument/12,322-chunk metadata is not a fresh verification or replay of
+those raw objects. See the saved source manifest and multi-year scope evidence.

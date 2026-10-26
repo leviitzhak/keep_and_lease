@@ -1,5 +1,19 @@
 # Current work
 
+## Full cached analytical study — 26 October 2026
+
+The post-decision research branch now has a separate hourly-decision analytical
+runner covering every cached Dec26/Mar27 print over June 6–September 3 (180 files,
+486,203 rows). Fixed 54/18/18-day calibration/validation/test sets carry portfolios
+continuously within each set. Four predefined size/price grids were compared.
+Only the smaller, tighter grid passed calibration; it remained entirely inactive
+on validation and test. The original analytical baseline lost 0.13% BTC and gained
+0.483782% USD contractually in the held-out test, but failed dated funding stress
+in both seeds. These are not observed settlement or liquidation results. See
+[the protocol and report](research/post_decision_value/ANALYTICAL_90_DAY.md).
+The multi-year archive is not included: only its metadata was verified locally.
+No application deployment, new download or neural training was performed.
+
 ## Post-decision value research — 25 October 2026
 
 Standalone implementation on `agent/btc-post-decision-value-v1`: signed linear/inverse commodity accounting, delayed observable/exchange replay, constrained candidate search and complete-outcome value learning. No application deployment or integration into existing strategy defaults. See [POST_DECISION_VALUE_V1.md](POST_DECISION_VALUE_V1.md) for conventions, commands, acceptance scope and research limitations. The [final pilot](research/post_decision_value/RESULTS.md) and independent audit are complete: 43 new tests and 83 existing tests pass. The learned policy underperforms hold (-2.095% joint held-out growth versus 0%), so historical profitability and promotion remain unaccepted. Artifacts are retained under `docs/research/post_decision_value/`.
