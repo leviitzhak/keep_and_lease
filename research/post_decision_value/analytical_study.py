@@ -54,7 +54,7 @@ def plan():
                 candidate_budget=96, delays=asdict(Delays()),
                 max_decisions=20000, max_seconds=3600, max_rows=600000,
                 max_source_bytes=12000000, max_episode_events=1200000,
-                selection='Top two safe calibration mean terminal utilities; validation chooses one; preset order breaks ties.',
+                selection='Top two safe calibration mean terminal utilities; validation chooses one; preset order breaks ties; no safe choice falls back to hold.',
                 objective='min(BTC growth, USD growth) minus 1 for any path failure',
                 portfolio='Continuous within each split, fresh identical initial portfolio at split boundaries.',
                 full_period='Untuned original only; descriptive, not an additional holdout.',
@@ -133,6 +133,21 @@ def check_fills(fills, source, instruments, participation):
             raise ValueError('Shared print volume exceeded')
 
 
+def compact_failures(failures):
+    """Keep exact per-reason counts and first/last times without duplicate rows.
+
+    This changes diagnostic representation only. Engine behavior uses bool of
+    the list, and each failure reason remains present forever after occurrence.
+    """
+    reasons = {}
+    for f in failures:
+        r = reasons.setdefault(f['reason'], dict(reason=f['reason'], time=f['time'], last_time=f.get('last_time',f['time']), count=0))
+        r['time'] = min(r['time'],f['time'])
+        r['last_time'] = max(r['last_time'],f.get('last_time',f['time']))
+        r['count'] += f.get('count',1)
+    return list(reasons.values())
+
+
 def rank_presets(results, presets):
     ranked = []
     for preset in presets:
@@ -196,13 +211,16 @@ def replay(root, output, identity, config, instruments, manifest, seeds_by_date,
             if engine.truncated:
                 raise RuntimeError('Replay truncated at day end')
             check_fills(engine.hidden.fills[before_fills:], {(t.symbol, t.identifier): t for t in trades}, instruments, config['participation'])
+            engine.hidden.failures = compact_failures(engine.hidden.failures)
             holdings = engine.hidden.ledger.holdings(instruments)
             daily.append(dict(date=day, holdings=holdings, **goal.outcome(holdings, bool(engine.hidden.failures)),
                               fills=len(engine.hidden.fills), fees=engine.hidden.ledger.fees.copy(),
                               live_orders=len(engine.hidden.orders), pending=len(engine.observable.pending),
                               positions={k: asdict(v) for k, v in engine.hidden.ledger.positions.items()},
-                              accepted_decisions=decisions))
+                              accepted_decisions=decisions,
+                              failure_counts={f['reason']:f['count'] for f in engine.hidden.failures}))
     engine.advance(end)
+    engine.hidden.failures = compact_failures(engine.hidden.failures)
     outcome = engine.outcome()
     if not outcome['done'] or outcome['truncated']:
         raise RuntimeError('Incomplete episode')
@@ -275,25 +293,23 @@ def run(root, output, resume=False):
     ranking = rank_presets(results, config['presets'])
     shortlist = [next(p for p in PRESETS if p['name'] == r['preset']) for r in ranking if r['eligible']][:2]
     write(output / 'calibration-selection.json', dict(ranking=ranking, shortlist=shortlist))
-    if not shortlist:
-        raise RuntimeError('No safe calibration preset; test withheld')
     for preset in shortlist:
         evaluate('validation', config['splits']['validation'], preset)
     validation = rank_presets([r for r in results if r['split'] == 'validation'], shortlist)
-    if not validation[0]['eligible']:
-        raise RuntimeError('No safe validation preset; test withheld')
-    selected = next(p for p in shortlist if p['name'] == validation[0]['preset'])
+    fallback_hold = not validation or not validation[0]['eligible']
+    selected = PRESETS[0] if fallback_hold else next(p for p in shortlist if p['name'] == validation[0]['preset'])
     # Written before any test replay. No test feedback enters either selection.
-    write(output / 'frozen-selection.json', dict(selected=selected, validation=validation,
+    write(output / 'frozen-selection.json', dict(selected=selected, fallback_hold=fallback_hold, validation=validation,
                                                source_sha256=identity['source_sha256']))
     for preset in [selected] + ([PRESETS[0]] if selected['name'] != 'original' else []):
         evaluate('test', config['splits']['test'], preset)
     evaluate('test', config['splits']['test'], PRESETS[0], hold=True)
-    evaluate('test', config['splits']['test'], selected, multiplier=10.)
+    if not fallback_hold:
+        evaluate('test', config['splits']['test'], selected, multiplier=10.)
     # The untuned original can be evaluated continuously on all 90 days without
     # applying a configuration selected using later information to earlier dates.
     evaluate('full_period_original', config['dates'], PRESETS[0])
-    report = dict(identity=identity, selected=selected, calibration=ranking, validation=validation,
+    report = dict(identity=identity, selected=selected, fallback_hold=fallback_hold, calibration=ranking, validation=validation,
                   resources=dict(decisions=budget.decisions, events=budget.events, seconds=time.monotonic()-budget.started),
                   summary=summarize(results), episodes=[r['name'] for r in results],
                   limitations=['Counterfactual linear futures on inverse-source prints; no quote depth/spot execution.',

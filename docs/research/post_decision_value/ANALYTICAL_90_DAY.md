@@ -53,6 +53,12 @@ continuous 90-day replay uses only the untuned original policy and is descriptiv
 The archive was used in earlier research; this is a holdout from this calibration,
 not a claim that these market dates have never been inspected.
 
+If no safe grid survives calibration or validation, the selected policy is hold.
+The original analytical policy is still tested as a frozen baseline, clearly
+separate from that fallback. Repeated identical failure reasons are compacted
+daily into exact counts and first/last event times; they never disappear from
+the path-failure flag or objective penalty.
+
 The analytical score fills all newly proposed/amended remaining quantities at
 their limits in a hypothetical ledger and chooses the largest increase in joint
 contractual utility. It does not model fill probability, expected waiting time,
@@ -117,3 +123,15 @@ BTC/USD results are contractual/projected until actual supported settlement.
 Two latency seeds share one market path: report their range, not an IID confidence
 interval or annualized statistical claim. Selection performance is always shown
 against holding, including when holding wins.
+
+## Throughput adjustment before test access
+
+An initial attempt completed the first original-policy calibration seed in 218
+seconds. Its remaining process was stopped when throughput projected beyond the
+one-hour study cap. Generic ledger `deepcopy` was replaced with fully independent
+typed copies (all mutable fields covered by an equivalence/isolation test).
+A 10,000-copy microbenchmark measured 0.227 s vs 0.0175 s; this is not a replay
+speedup claim. Failure log compaction bounds diagnostics on failed long paths.
+The no-safe-grid hold fallback was made explicit before any validation/test
+access. All grids, splits, scoring and economic execution assumptions remain
+unchanged. A fresh run, with a new source fingerprint, follows these changes.

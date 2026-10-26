@@ -1,7 +1,22 @@
 import unittest
+from copy import deepcopy
 from research.post_decision_value.accounting import Instrument,Ledger,Goal
 
 class AccountingTests(unittest.TestCase):
+    def test_fast_clone_matches_deepcopy_and_isolates_all_mutable_state(self):
+        from dataclasses import asdict
+        from research.post_decision_value.accounting import Cashflow
+        p=Ledger({'BTC':2.,'USD':100000.},credit_limit=2000)
+        p.fill(self.linear,.1,100000);p.fill(self.inverse,-1000,100000)
+        p.borrow(1000,1500,10);p.pledge('USD',100)
+        p.flows.append(Cashflow('coupon',500,'USD',5,'treasury'));p.settled_ids.append('old')
+        a,b=p.clone(),deepcopy(p)
+        self.assertEqual(asdict(a),asdict(b))
+        for price in (50000,100000,200000):
+            self.assertEqual(a.funding_headroom(self.ins,price,2000),b.funding_headroom(self.ins,price,2000))
+        a.balances['USD']+=1;a.positions['L'].basis+=1;a.flows[0].amount-=1
+        a.collateral['USD']+=1;a.fees['USD']+=1;a.settled_ids.append('new')
+        self.assertEqual(asdict(p),asdict(b))
     def setUp(self):
         self.linear=Instrument('L',1000,fee_bps=0)
         self.inverse=Instrument('I',2000,'inverse',lot=10,fee_bps=0)

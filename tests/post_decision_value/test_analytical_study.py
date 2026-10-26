@@ -7,7 +7,7 @@ import unittest
 
 from research.post_decision_value.accounting import Goal, Instrument, Ledger
 from research.post_decision_value.analytical import analytical
-from research.post_decision_value.analytical_study import Budget, PRESETS, check_fills, inventory, plan, rank_presets, replay
+from research.post_decision_value.analytical_study import Budget, PRESETS, check_fills, compact_failures, inventory, plan, rank_presets, replay
 from research.post_decision_value.data import utc_ms
 from research.post_decision_value.engine import CandidateGenerator, Instruction, ObservableState, Order
 
@@ -48,6 +48,15 @@ class AnalyticalStudyTests(unittest.TestCase):
         ranked=rank_presets(rows,PRESETS)
         self.assertEqual(ranked[0]['preset'],'small')
         self.assertFalse(ranked[-1]['eligible'])
+
+    def test_failure_compaction_preserves_counts_and_first_last(self):
+        rows=[dict(reason='funding',time=1),dict(reason='floor',time=2),dict(reason='funding',time=3)]
+        compact=compact_failures(rows)
+        self.assertEqual(compact[0],dict(reason='funding',time=1,last_time=3,count=2))
+        compact=compact_failures(compact+[dict(reason='funding',time=4)])
+        self.assertEqual(compact[0]['count'],3)
+        self.assertEqual(compact[0]['last_time'],4)
+        self.assertTrue(compact)
 
     def test_fixed_split_dates_and_decision_bound(self):
         p=plan();s=p['splits']

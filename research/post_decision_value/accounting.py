@@ -8,7 +8,6 @@ this is a research ledger, not an exchange reconciliation implementation.
 from __future__ import annotations
 
 from dataclasses import dataclass, field, asdict
-from copy import deepcopy
 import math
 
 EPS = 1e-9
@@ -101,7 +100,15 @@ class Ledger:
     settled_ids: list = field(default_factory=list)
 
     def clone(self):
-        return deepcopy(self)
+        # All leaves are numeric/string primitives. Copy every mutable container
+        # and dataclass explicitly: event-by-event funding stress calls this
+        # millions of times, where generic deepcopy bookkeeping dominates.
+        return Ledger(balances=self.balances.copy(),
+                      positions={s: Position(p.quantity, p.basis) for s, p in self.positions.items()},
+                      flows=[Cashflow(f.identifier, f.date, f.currency, f.amount, f.kind) for f in self.flows],
+                      collateral=self.collateral.copy(), credit_limit=self.credit_limit,
+                      debt_principal=self.debt_principal, fees=self.fees.copy(),
+                      settled_ids=self.settled_ids.copy())
 
     def holdings(self, instruments):
         h = dict(self.balances)
