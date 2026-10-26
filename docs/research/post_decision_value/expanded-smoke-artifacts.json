@@ -1,0 +1,17 @@
+{
+  "archive": "expanded-smoke-v2.tar.gz",
+  "bytes": 2456690,
+  "sha256": "82f408193e6f3ae31b1ea75a500f4fcb15298d79c106750c96103fe1eedc4161",
+  "optimization_equivalence": {
+    "status": "PASS",
+    "checked": [
+      "episodes-0.json.gz",
+      "episodes-1.json.gz",
+      "validation.json.gz",
+      "evaluation.json.gz",
+      "identical collected regression records"
+    ]
+  },
+  "source_snapshot": "source/ contains the exact research modules used by the saved smoke run; source_sha256 verified against identity.json",
+  "note": "Subsequent continuation identity hardening adds domain/search/model hashes to future dataset policy tags; numerical action/learning behavior is unchanged."
+}

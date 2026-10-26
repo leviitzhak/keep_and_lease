@@ -239,4 +239,6 @@ maps local execution commits to identical published Git trees.
 Follow-up: [unified archive, subsecond costs and replay examples](UNIFIED_DATA_AND_REPLAYS.md)
 provides the exact grid-to-order mapping, three re-executed four-hour event journals,
 and bounded cadence benchmarks. Those probes do not replace this study's hourly
-protocol or held-out results. Multi-year raw reconciliation remains pending.
+protocol or held-out results. The later [completed logical union](FULL_ACTIONS_AND_UNION.md)
+reconciles all daily records against the multi-year archive and replaces the
+default neural action menu. This study's frozen legacy policy results are unchanged.

@@ -1,0 +1,201 @@
+{
+  "decisions": 280,
+  "limitations": [
+    "Five-minute windows and 30-second decisions validate plumbing, not annual or subsecond profitability.",
+    "Only two training market days; repeated seeds are not independent market history.",
+    "Counterfactual linear futures on inverse-source tape; contractual endpoints, no settlement bridge.",
+    "Expanded-domain checkpoint requires substantially more diverse outcome training before substantive use."
+  ],
+  "optimizer_updates": 160,
+  "seconds": 112.43204902999787,
+  "selected_stage": 0,
+  "status": "COMPLETE_BOUNDED_SMOKE",
+  "summary": {
+    "test/analytical/delay=1.0": {
+      "block_mean_range": [
+        0.0,
+        0.0
+      ],
+      "block_standard_error": 0.0,
+      "blocks": 2,
+      "completed": 4,
+      "episodes": 4,
+      "failed": 0,
+      "fees_usd": 0.0,
+      "fills": 0,
+      "mean_growth": {
+        "BTC": 0.0,
+        "USD": 0.0
+      },
+      "mean_utility": 0.0,
+      "min_floor_headroom": {
+        "BTC": 0.09999999999999998,
+        "USD": 10000.0
+      },
+      "peak_async_btc": 0.0,
+      "prediction_mae": null
+    },
+    "test/hold/delay=1.0": {
+      "block_mean_range": [
+        0.0,
+        0.0
+      ],
+      "block_standard_error": 0.0,
+      "blocks": 2,
+      "completed": 4,
+      "episodes": 4,
+      "failed": 0,
+      "fees_usd": 0.0,
+      "fills": 0,
+      "mean_growth": {
+        "BTC": 0.0,
+        "USD": 0.0
+      },
+      "mean_utility": 0.0,
+      "min_floor_headroom": {
+        "BTC": 0.09999999999999998,
+        "USD": 10000.0
+      },
+      "peak_async_btc": 0.0,
+      "prediction_mae": null
+    },
+    "test/value_v1/delay=1.0": {
+      "block_mean_range": [
+        -0.005818488040624943,
+        -0.0009593646768750477
+      ],
+      "block_standard_error": 0.0024295616818749474,
+      "blocks": 2,
+      "completed": 4,
+      "episodes": 4,
+      "failed": 0,
+      "fees_usd": 0.1355435,
+      "fills": 4,
+      "mean_growth": {
+        "BTC": 0.005300000000000027,
+        "USD": -0.0033889263587499954
+      },
+      "mean_utility": -0.0033889263587499954,
+      "min_floor_headroom": {
+        "BTC": 0.09999999999999998,
+        "USD": 9250.978855375011
+      },
+      "peak_async_btc": 0.0,
+      "prediction_mae": 0.0032406726607607196
+    },
+    "train/collect_greedy_v1_eps015/delay=1.0": {
+      "block_mean_range": [
+        -0.0204452768232501,
+        0.0
+      ],
+      "block_standard_error": 0.01022263841162505,
+      "blocks": 2,
+      "completed": 4,
+      "episodes": 4,
+      "failed": 0,
+      "fees_usd": 0.40886465,
+      "fills": 14,
+      "mean_growth": {
+        "BTC": 0.016174999999999995,
+        "USD": -0.01022263841162505
+      },
+      "mean_utility": -0.01022263841162505,
+      "min_floor_headroom": {
+        "BTC": 0.09999999999999998,
+        "USD": 7704.086931649988
+      },
+      "peak_async_btc": 0.0,
+      "prediction_mae": 0.010726202788765769
+    },
+    "train/exploratory_v1/delay=1.0": {
+      "block_mean_range": [
+        -0.0010499999999999954,
+        0.0
+      ],
+      "block_standard_error": 0.0005249999999999977,
+      "blocks": 2,
+      "completed": 4,
+      "episodes": 4,
+      "failed": 0,
+      "fees_usd": 0.0130809,
+      "fills": 2,
+      "mean_growth": {
+        "BTC": -0.0005249999999999977,
+        "USD": 0.00032698979774999315
+      },
+      "mean_utility": -0.0005249999999999977,
+      "min_floor_headroom": {
+        "BTC": 0.09819999999999995,
+        "USD": 10000.0
+      },
+      "peak_async_btc": 0.00030000000000000003,
+      "prediction_mae": null
+    },
+    "validation/value_v1/delay=1.0": {
+      "block_mean_range": [
+        -0.003476882653499997,
+        -0.002850000000000019
+      ],
+      "block_standard_error": 0.0003134413267499888,
+      "blocks": 2,
+      "completed": 4,
+      "episodes": 4,
+      "failed": 0,
+      "fees_usd": 0.106345575,
+      "fills": 2,
+      "mean_growth": {
+        "BTC": 0.001224999999999976,
+        "USD": -0.0008181614889375122
+      },
+      "mean_utility": -0.003163441326750008,
+      "min_floor_headroom": {
+        "BTC": 0.09429999999999994,
+        "USD": 9304.6234693
+      },
+      "peak_async_btc": 0.0057,
+      "prediction_mae": 0.0031728765892228426
+    },
+    "validation/value_v2/delay=1.0": {
+      "block_mean_range": [
+        -0.019199999999999995,
+        -0.010350000000000026
+      ],
+      "block_standard_error": 0.0044249999999999845,
+      "blocks": 2,
+      "completed": 4,
+      "episodes": 4,
+      "failed": 0,
+      "fees_usd": 0.380515025,
+      "fills": 15,
+      "mean_growth": {
+        "BTC": -0.01477500000000001,
+        "USD": 0.009511924337437559
+      },
+      "mean_utility": -0.01477500000000001,
+      "min_floor_headroom": {
+        "BTC": 0.07379999999999998,
+        "USD": 10000.0
+      },
+      "peak_async_btc": 0.006500000000000001,
+      "prediction_mae": 0.006854977532196799
+    }
+  },
+  "training": [
+    {
+      "continuation": "exploratory_v1",
+      "first_loss": 1.2501519918441772,
+      "last_loss": 0.32777610421180725,
+      "normalization": "training-only label moments",
+      "seconds": 8.54474732000017,
+      "updates": 80
+    },
+    {
+      "continuation": "collect_greedy_v1_eps015:exploratory_v1",
+      "first_loss": 1.0032378435134888,
+      "last_loss": 0.029717212542891502,
+      "normalization": "training-only label moments",
+      "seconds": 10.59527685500143,
+      "updates": 80
+    }
+  ]
+}

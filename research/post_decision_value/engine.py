@@ -104,9 +104,12 @@ class Delays:
         return max(0, round(base * common * (1 + self.jitter * (2 * uniform(f"{channel}:{identifier}") - 1))))
 
 
-def post_decision(obs, action, instruments):
+def post_decision(obs, action, instruments, *, _share_observations=False):
     """Pure local transformation; never consult hidden state or draw latency."""
-    x = deepcopy(obs)
+    # Internal admission/feature callers only read market/history and never expose
+    # this temporary state. Public/default transformations remain fully detached.
+    memo = {id(obs.market):obs.market,id(obs.history):obs.history} if _share_observations else None
+    x = deepcopy(obs, memo)
     x.last_decision = x.time
     if action.kind == "wait":
         return x
@@ -143,12 +146,16 @@ def possible_orders(obs, max_orders=6):
 
 def admissible(obs, action, goal, instruments, async_cap=.02):
     try:
-        if action.kind not in ("wait", "create", "amend", "cancel", "emergency"):
+        if action.kind not in ("wait", "create", "amend", "cancel", "emergency", "batch"):
             return False, "unsupported_instruction"
         if action.kind in ("wait", "cancel", "emergency") and action.orders:
             return False, "invalid_instruction_shape"
         if action.kind == "wait" and action.targets:
             return False, "invalid_instruction_shape"
+        if action.kind == "create" and action.targets:
+            return False, "invalid_instruction_shape"
+        if action.kind == "batch" and any(t not in obs.uncertain for t in action.targets):
+            return False, "unknown_batch_target"
         if action.kind == "amend" and (not action.orders or any(o.identifier not in action.targets or o.identifier not in obs.uncertain for o in action.orders)):
             return False, "unknown_amendment"
         if len({o.identifier for o in action.orders}) != len(action.orders):
@@ -163,7 +170,9 @@ def admissible(obs, action, goal, instruments, async_cap=.02):
                 return False, "native_rounding"
             if action.kind == "create" and o.identifier in obs.uncertain:
                 return False, "duplicate_order_id"
-        x = post_decision(obs, action, instruments)
+            if action.kind == "batch" and o.identifier in obs.uncertain and o.identifier not in action.targets:
+                return False, "duplicate_order_id"
+        x = post_decision(obs, action, instruments, _share_observations=True)
         choices = possible_orders(x)
         if not obs.market:
             return (action.kind == "wait" and not choices), "no_market"
@@ -369,7 +378,8 @@ class Engine:
                 for target in action.targets:
                     h.orders.pop(target, None)
                 for order in action.orders:
-                    if t < self.instruments[order.symbol].expiry and (action.kind != "amend" or order.identifier in live_before):
+                    replacing = action.kind == "amend" or (action.kind == "batch" and order.identifier in action.targets)
+                    if t < self.instruments[order.symbol].expiry and (not replacing or order.identifier in live_before):
                         h.orders[order.identifier] = order
                 snapshot = {oid: h.orders.get(oid) for oid in set(action.targets) | {o.identifier for o in action.orders}}
                 self._report(dict(kind="ack", request=request, snapshot=snapshot), f"ack:{sequence}")

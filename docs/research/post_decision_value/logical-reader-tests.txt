@@ -1,0 +1,10 @@
+test_cross_chunk_backdating_is_not_a_retroactive_fill (tests.post_decision_value.test_logical_data.LogicalReaderTests.test_cross_chunk_backdating_is_not_a_retroactive_fill) ... ok
+test_local_cache_and_manifest_pin (tests.post_decision_value.test_logical_data.LogicalReaderTests.test_local_cache_and_manifest_pin) ... ok
+test_prefix_anchor_and_gap_validation (tests.post_decision_value.test_logical_data.LogicalReaderTests.test_prefix_anchor_and_gap_validation) ... ok
+test_receipt_and_object_hashes_and_duplicate_sources (tests.post_decision_value.test_logical_data.LogicalReaderTests.test_receipt_and_object_hashes_and_duplicate_sources) ... ok
+test_union_reads_canonical_once_and_window_is_half_open (tests.post_decision_value.test_logical_data.LogicalReaderTests.test_union_reads_canonical_once_and_window_is_half_open) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.171s
+
+OK

@@ -7,8 +7,14 @@ from pathlib import Path
 import numpy as np
 import torch
 from torch import nn
+from .engine import post_decision
 
 CURRENCIES = ('BTC', 'USD')
+
+
+def action_features(obs, action, goal, instruments):
+    """Encode a temporary post-state; shared read-only observations never escape."""
+    return features(post_decision(obs,action,instruments,_share_observations=True),goal,instruments)
 
 
 def identity(symbol):
@@ -58,14 +64,17 @@ def features(obs, goal, instruments):
                     continue
                 pending = [p for p in obs.pending if oid in p['instruction']['targets'] or any(v['identifier']==oid for v in p['instruction']['orders'])]
                 kind = pending[-1]['instruction']['kind'] if pending else ''
+                if kind == 'batch':
+                    instruction = pending[-1]['instruction']
+                    kind = ('amend' if oid in instruction['targets'] else 'create') if any(v['identifier']==oid for v in instruction['orders']) else 'cancel'
                 items.append(prefix+[ins.btc(o.quantity,o.limit)/goal.scale('BTC')/.02, 100*(o.limit/(market['price'] if market else ref)-1),
                                      (obs.time-o.created)/60000, float(oid in obs.confirmed),
                                      float(kind=='create'),float(kind=='amend'),float(kind in ('cancel','emergency'))])
     for flow in obs.ledger.flows:
         items.append([*identity(flow.identifier),(flow.date-obs.time)/31557600000,
                       float(flow.currency=='BTC'),flow.amount/goal.scale(flow.currency),float(flow.kind=='debt')]+[0.]*14)
-    if len(items)>32:
-        raise ValueError('Item capacity exceeded; do not silently drop held instruments')
+    # Item pooling supports a variable universe; never silently drop contracts.
+    # Runner memory/runtime bounds govern the supplied universe, not a 32-token menu.
     history=[]
     for row in obs.history[-64:]:
         history.append([*identity(row['symbol']), row['price']/ref,row['index']/ref,
@@ -121,10 +130,25 @@ class ValueNetwork(nn.Module):
         hp=eh[torch.arange(eh.shape[0]),last]
         return self.readout(torch.cat((global_,ipool,hp),dim=1))
 
-    def predict(self, fs):
+    def predict(self, fs, *, history_cache=None):
         self.eval()
         with torch.no_grad():
-            z=self(batch(fs))
+            global_,items,hist,imask,hmask=batch(fs)
+            cache={} if history_cache is None else history_cache
+            # Exact identical histories share one causal encoding. Parameter
+            # versions prevent reuse after optimizer/load/in-place weight changes.
+            token=(id(self),self.history_mode,tuple(p._version for p in self.parameters()))
+            keys=[(token,tuple(tuple(row) for row in f['history'])) for f in fs]
+            missing={key:i for i,key in enumerate(keys) if key not in cache}
+            if missing:
+                indices=list(missing.values());encoded=self.history_encoding(hist[indices],hmask[indices])
+                last=(~hmask[indices]).sum(1)-1
+                pooled=encoded[torch.arange(len(indices)),last]
+                for i,key in enumerate(missing):cache[key]=pooled[i]
+            hp=torch.stack([cache[key] for key in keys])
+            item=self.item(items).masked_fill(imask.unsqueeze(-1),0.)
+            ipool=item.sum(1)/(~imask).sum(1,keepdim=True)
+            z=self.readout(torch.cat((global_,ipool,hp),dim=1))
             y=(z[:,:3]*self.label_scale+self.label_mean).numpy()
             flags=torch.sigmoid(z[:,3:]).numpy()
         initial=np.array([f['initial'] for f in fs]); scales=np.array([f['scales'] for f in fs])

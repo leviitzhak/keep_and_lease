@@ -1,0 +1,14 @@
+{
+  "run_id": 40341311717,
+  "operator_commit": "2bc6bd7b18650cb1633ae317eecedb120b819a56",
+  "artifact_id": 12660190038,
+  "artifact_zip_sha256": "6db67b12095b829d3b8dfa8dfc8e926ab4eb106a41007b5ee5cbb45185caf4b9",
+  "manifest_sha256": "bb448ae2b6ae0fb04e3ecc5a2b77e639122a59077cb79205c773a58ae009b4d2",
+  "status": "COMPLETE_LOGICAL_UNION",
+  "checks": {
+    "all_daily_records_matched": true,
+    "canonical_chunks_unique": true,
+    "canonical_rows": 120105433,
+    "read_pins": 292
+  }
+}

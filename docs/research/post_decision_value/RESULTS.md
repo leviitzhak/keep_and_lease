@@ -1,5 +1,10 @@
 # Post-decision value v1 — final historical pilot
 
+This is the frozen original pilot. The later [full action-domain smoke report](FULL_ACTIONS_AND_UNION.md)
+documents the expanded search, current tests and completed multi-year logical
+union. Use `--action-space legacy` for the original menu; exact reproduction also
+requires the source identity saved with this pilot. The default is now full search.
+
 **Research implementation runs end to end; the learned policy does not outperform hold.** The final model is not accepted for trading or application promotion. Hold remains the reference fallback.
 
 Source commit: `6b6865daf8b0691b934706229d8c281ca6dda507`. This is a counterfactual USD-linear experiment using native Deribit inverse trade prints. Figures describe net contractual commodity holdings, not realized expiry profits.

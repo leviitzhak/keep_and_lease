@@ -1,0 +1,1689 @@
+{
+  "schema_version": 1,
+  "archive_job": "btc-full-20261009-archive",
+  "metadata": [
+    {
+      "key": "btc/research/deribit-full-history-v1/jobs/btc-full-20261009-archive/manifest.json",
+      "generation": "1791735515634837",
+      "bytes": 1283,
+      "sha256": "9929b159ed2b4d8d1287e83df25ff237f7cde23f190d035628bbbf527cde1869"
+    },
+    {
+      "key": "btc/research/deribit-full-history-v1/jobs/btc-full-20261009-archive/plan-reconciled-v2.json",
+      "generation": "1791541396450894",
+      "bytes": 1102762,
+      "sha256": "6ae07e823797a84ac9b24a0387bb1658cc929cb8cc701816122f6a0a67b8f0e3"
+    },
+    {
+      "key": "btc/research/deribit-full-history-v1/jobs/btc-full-20261009-archive/completed/shard-0.json",
+      "generation": "1791713380114686",
+      "bytes": 204900,
+      "sha256": "e26be1f6fca7061435e2629c8629518a82ba53be9e2a74968873cee5337f51a0"
+    },
+    {
+      "key": "btc/research/deribit-full-history-v1/jobs/btc-full-20261009-archive/completed/shard-1.json",
+      "generation": "1791709426306569",
+      "bytes": 191565,
+      "sha256": "d6ef5ccfd5027a149358ca3343b2a5709e891c4efcf65ae57dc34a69922ec233"
+    },
+    {
+      "key": "btc/research/deribit-full-history-v1/jobs/btc-full-20261009-archive/completed/shard-2.json",
+      "generation": "1791716090643829",
+      "bytes": 197044,
+      "sha256": "0d927f12f7acfb9396fe76fb2422a8819ca0c91b21386938742d4fbd490fc7b8"
+    },
+    {
+      "key": "btc/research/deribit-full-history-v1/jobs/btc-full-20261009-archive/completed/shard-3.json",
+      "generation": "1791719606495336",
+      "bytes": 191194,
+      "sha256": "757acbb9c54d0ce2921f00fc0dae6bd215e616372e87ebf737a3b4c524c50f4b"
+    },
+    {
+      "key": "btc/research/deribit-full-history-v1/jobs/btc-full-20261009-archive/completed/shard-4.json",
+      "generation": "1791720577061203",
+      "bytes": 188799,
+      "sha256": "6eb3e1c185f9155fb554e522f49a169dd23fe1cc15a4506c84dee734c5690218"
+    },
+    {
+      "key": "btc/research/deribit-full-history-v1/jobs/btc-full-20261009-archive/completed/shard-5.json",
+      "generation": "1791728621578613",
+      "bytes": 200964,
+      "sha256": "a72408282e9d4ec4cace8b00305df6420a650da066683c3184fc680b88a80dbb"
+    },
+    {
+      "key": "btc/research/deribit-full-history-v1/jobs/btc-full-20261009-archive/completed/shard-6.json",
+      "generation": "1791729331798392",
+      "bytes": 198047,
+      "sha256": "03adfe8cbe574933981c155020e37a961fd15a9123b4071fa0f8b332b066f424"
+    },
+    {
+      "key": "btc/research/deribit-full-history-v1/jobs/btc-full-20261009-archive/completed/shard-7.json",
+      "generation": "1791735486277754",
+      "bytes": 192842,
+      "sha256": "626925a36a0e0e6ad9bc8b05e78cf75f4f93189301894524a3658e8111587fa3"
+    }
+  ],
+  "daily_objects": [
+    {
+      "key": "btc/raw/sha256/dfa06e919b8f3caa5a87ad43cec8c1a2887761c2fb126aaccafda615ed907f5f/BTC-25DEC26.jsonl.gz",
+      "sha256": "dfa06e919b8f3caa5a87ad43cec8c1a2887761c2fb126aaccafda615ed907f5f",
+      "bytes": 221778,
+      "rows": 10614,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 375833,
+      "last_seq": 386446
+    },
+    {
+      "key": "btc/raw/sha256/0657e1d43c33cdf1a4654785184f3a0a67620d5d793dd796b72ea379512e0724/BTC-25DEC26.jsonl.gz",
+      "sha256": "0657e1d43c33cdf1a4654785184f3a0a67620d5d793dd796b72ea379512e0724",
+      "bytes": 69456,
+      "rows": 3692,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 386447,
+      "last_seq": 390138
+    },
+    {
+      "key": "btc/raw/sha256/bad7857b29885bba4fd11459025650c0d5560cd1119cb2bcbe9382ca8906333b/BTC-25DEC26.jsonl.gz",
+      "sha256": "bad7857b29885bba4fd11459025650c0d5560cd1119cb2bcbe9382ca8906333b",
+      "bytes": 51892,
+      "rows": 2677,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 390139,
+      "last_seq": 392815
+    },
+    {
+      "key": "btc/raw/sha256/931528b58bca4770d6beb8cbd38208d0298deac631029aa386e75df442c87a6a/BTC-25DEC26.jsonl.gz",
+      "sha256": "931528b58bca4770d6beb8cbd38208d0298deac631029aa386e75df442c87a6a",
+      "bytes": 67134,
+      "rows": 3314,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 392816,
+      "last_seq": 396129
+    },
+    {
+      "key": "btc/raw/sha256/96898066da47c6f535dc88848381201b575ae4cd42d6687bd79b678312fd0774/BTC-25DEC26.jsonl.gz",
+      "sha256": "96898066da47c6f535dc88848381201b575ae4cd42d6687bd79b678312fd0774",
+      "bytes": 41644,
+      "rows": 2035,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 396130,
+      "last_seq": 398164
+    },
+    {
+      "key": "btc/raw/sha256/4fd566e803903a11ed7d4effff0d54d734f15de39d8d9a53b2177fc845dcd30d/BTC-25DEC26.jsonl.gz",
+      "sha256": "4fd566e803903a11ed7d4effff0d54d734f15de39d8d9a53b2177fc845dcd30d",
+      "bytes": 37268,
+      "rows": 1743,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 398165,
+      "last_seq": 399907
+    },
+    {
+      "key": "btc/raw/sha256/515a8e2ad6fe08d1a7f2b1072ff1854c4b0effbc380bd52ac291f3c0674b1f2c/BTC-25DEC26.jsonl.gz",
+      "sha256": "515a8e2ad6fe08d1a7f2b1072ff1854c4b0effbc380bd52ac291f3c0674b1f2c",
+      "bytes": 30747,
+      "rows": 1440,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 399908,
+      "last_seq": 401347
+    },
+    {
+      "key": "btc/raw/sha256/92388a0d5bae7018e118e55268f969d3736632154746f6a26f005297f920b774/BTC-25DEC26.jsonl.gz",
+      "sha256": "92388a0d5bae7018e118e55268f969d3736632154746f6a26f005297f920b774",
+      "bytes": 17092,
+      "rows": 811,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 401348,
+      "last_seq": 402158
+    },
+    {
+      "key": "btc/raw/sha256/305e9991f7b21a72b929567685de21d4f3695f7625516a3d079e866213002158/BTC-25DEC26.jsonl.gz",
+      "sha256": "305e9991f7b21a72b929567685de21d4f3695f7625516a3d079e866213002158",
+      "bytes": 30954,
+      "rows": 1648,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 402159,
+      "last_seq": 403806
+    },
+    {
+      "key": "btc/raw/sha256/2c96ccce7b5d444acd6f745bdf58f378dd329f5e08b171d587e82f30bc55d866/BTC-25DEC26.jsonl.gz",
+      "sha256": "2c96ccce7b5d444acd6f745bdf58f378dd329f5e08b171d587e82f30bc55d866",
+      "bytes": 55363,
+      "rows": 2986,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 403807,
+      "last_seq": 406792
+    },
+    {
+      "key": "btc/raw/sha256/864585855b20a79cb121ff7d0e6403bd13bbe263f7cc9bb718b73d2bfb9fd5b0/BTC-25DEC26.jsonl.gz",
+      "sha256": "864585855b20a79cb121ff7d0e6403bd13bbe263f7cc9bb718b73d2bfb9fd5b0",
+      "bytes": 43673,
+      "rows": 2445,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 406793,
+      "last_seq": 409237
+    },
+    {
+      "key": "btc/raw/sha256/43eef98d4ca70d4cc92f21ab331f6985cd574e117a7234e4599c343f8df672a6/BTC-25DEC26.jsonl.gz",
+      "sha256": "43eef98d4ca70d4cc92f21ab331f6985cd574e117a7234e4599c343f8df672a6",
+      "bytes": 46537,
+      "rows": 2574,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 409238,
+      "last_seq": 411811
+    },
+    {
+      "key": "btc/raw/sha256/06da0c13e182850c02ba636b3da4d57b72c5b1d37cb9790ee0985db3380fa296/BTC-25DEC26.jsonl.gz",
+      "sha256": "06da0c13e182850c02ba636b3da4d57b72c5b1d37cb9790ee0985db3380fa296",
+      "bytes": 52635,
+      "rows": 2662,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 411812,
+      "last_seq": 414473
+    },
+    {
+      "key": "btc/raw/sha256/5ce4e2102e1e7de89e93da36bcd78eaa7094c54b60e0485ff9b9d41d07b54908/BTC-25DEC26.jsonl.gz",
+      "sha256": "5ce4e2102e1e7de89e93da36bcd78eaa7094c54b60e0485ff9b9d41d07b54908",
+      "bytes": 20137,
+      "rows": 951,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 414474,
+      "last_seq": 415424
+    },
+    {
+      "key": "btc/raw/sha256/02685040dcd6da59def7f67c903953bc2366e192ec915be9fa9e5909cd871def/BTC-25DEC26.jsonl.gz",
+      "sha256": "02685040dcd6da59def7f67c903953bc2366e192ec915be9fa9e5909cd871def",
+      "bytes": 15633,
+      "rows": 764,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 415425,
+      "last_seq": 416188
+    },
+    {
+      "key": "btc/raw/sha256/c257bc6adfffd666297d95f2143ce9fd1b45584c6191d31bcde5d36f3abd3028/BTC-25DEC26.jsonl.gz",
+      "sha256": "c257bc6adfffd666297d95f2143ce9fd1b45584c6191d31bcde5d36f3abd3028",
+      "bytes": 13584,
+      "rows": 616,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 416189,
+      "last_seq": 416804
+    },
+    {
+      "key": "btc/raw/sha256/36b5da835b940cf348717c3b63befcd13378d7cce9bd64c3ba9b6002350b8fb8/BTC-25DEC26.jsonl.gz",
+      "sha256": "36b5da835b940cf348717c3b63befcd13378d7cce9bd64c3ba9b6002350b8fb8",
+      "bytes": 43030,
+      "rows": 1967,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 416805,
+      "last_seq": 418771
+    },
+    {
+      "key": "btc/raw/sha256/bb3741ae47264208f2543f3e6b6e53a981245ece639fa946aa19f839a2d7edb6/BTC-25DEC26.jsonl.gz",
+      "sha256": "bb3741ae47264208f2543f3e6b6e53a981245ece639fa946aa19f839a2d7edb6",
+      "bytes": 55013,
+      "rows": 2579,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 418772,
+      "last_seq": 421350
+    },
+    {
+      "key": "btc/raw/sha256/af99fde1c87afbbbca5a3a75d97e055c101c097d31c9908ab78d8fa991587ed9/BTC-25DEC26.jsonl.gz",
+      "sha256": "af99fde1c87afbbbca5a3a75d97e055c101c097d31c9908ab78d8fa991587ed9",
+      "bytes": 73765,
+      "rows": 3569,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 421351,
+      "last_seq": 424919
+    },
+    {
+      "key": "btc/raw/sha256/680631422b3319e45a95e43fb672c3144af9d21ed6e6cffed1811666a499c372/BTC-25DEC26.jsonl.gz",
+      "sha256": "680631422b3319e45a95e43fb672c3144af9d21ed6e6cffed1811666a499c372",
+      "bytes": 70750,
+      "rows": 3688,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 424920,
+      "last_seq": 428607
+    },
+    {
+      "key": "btc/raw/sha256/6a8b127f059c46cbe1285d04f716b568b8c85a528e85c65e9ea405b4efb54401/BTC-25DEC26.jsonl.gz",
+      "sha256": "6a8b127f059c46cbe1285d04f716b568b8c85a528e85c65e9ea405b4efb54401",
+      "bytes": 153504,
+      "rows": 8826,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 428608,
+      "last_seq": 437433
+    },
+    {
+      "key": "btc/raw/sha256/4cf93717e154df0c89ad771fd1bfa8e2034989e84ade5b9a37f4a41d13710007/BTC-25DEC26.jsonl.gz",
+      "sha256": "4cf93717e154df0c89ad771fd1bfa8e2034989e84ade5b9a37f4a41d13710007",
+      "bytes": 37114,
+      "rows": 2023,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 437434,
+      "last_seq": 439456
+    },
+    {
+      "key": "btc/raw/sha256/098d08215321858a690326fbbedd0c1d8abf50ef86bc21cef2f39398b0d6289d/BTC-25DEC26.jsonl.gz",
+      "sha256": "098d08215321858a690326fbbedd0c1d8abf50ef86bc21cef2f39398b0d6289d",
+      "bytes": 35937,
+      "rows": 1869,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 439457,
+      "last_seq": 441325
+    },
+    {
+      "key": "btc/raw/sha256/7f8edff4bc997748fee7406c8e0b1f0a0ade921127139606c8b5779fabbaff8b/BTC-25DEC26.jsonl.gz",
+      "sha256": "7f8edff4bc997748fee7406c8e0b1f0a0ade921127139606c8b5779fabbaff8b",
+      "bytes": 64693,
+      "rows": 3427,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 441326,
+      "last_seq": 444752
+    },
+    {
+      "key": "btc/raw/sha256/1b557a015113be541677d1227d5bb639d0e7d78dab6d5dc84089a0196d21881c/BTC-25DEC26.jsonl.gz",
+      "sha256": "1b557a015113be541677d1227d5bb639d0e7d78dab6d5dc84089a0196d21881c",
+      "bytes": 66086,
+      "rows": 3587,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 444753,
+      "last_seq": 448339
+    },
+    {
+      "key": "btc/raw/sha256/37604211433d4301b06f4f203b9c42780c13ef9258a03b0f2ab5e7c2950331d1/BTC-25DEC26.jsonl.gz",
+      "sha256": "37604211433d4301b06f4f203b9c42780c13ef9258a03b0f2ab5e7c2950331d1",
+      "bytes": 111087,
+      "rows": 6013,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 448340,
+      "last_seq": 454352
+    },
+    {
+      "key": "btc/raw/sha256/4d21cfcf8f433d0dcab636d29081b538a97562d441e1f8be3494172a620b6be1/BTC-25DEC26.jsonl.gz",
+      "sha256": "4d21cfcf8f433d0dcab636d29081b538a97562d441e1f8be3494172a620b6be1",
+      "bytes": 96071,
+      "rows": 5132,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 454353,
+      "last_seq": 459484
+    },
+    {
+      "key": "btc/raw/sha256/0b402acbbd0e90b112e996b394c9173af013c967a9ba3d522c9324440d43ac5c/BTC-25DEC26.jsonl.gz",
+      "sha256": "0b402acbbd0e90b112e996b394c9173af013c967a9ba3d522c9324440d43ac5c",
+      "bytes": 31687,
+      "rows": 1629,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 459485,
+      "last_seq": 461113
+    },
+    {
+      "key": "btc/raw/sha256/e7393848cfcbe47ce46f2bb5b5e40911a00d49dee34fa4f0656d82a0049587c7/BTC-25DEC26.jsonl.gz",
+      "sha256": "e7393848cfcbe47ce46f2bb5b5e40911a00d49dee34fa4f0656d82a0049587c7",
+      "bytes": 27122,
+      "rows": 1432,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 461114,
+      "last_seq": 462545
+    },
+    {
+      "key": "btc/raw/sha256/eb6719d5d2911cd2ad2324a0b7dc1d2afe6ed31f5f4ba82c789e6341a3f10c89/BTC-25DEC26.jsonl.gz",
+      "sha256": "eb6719d5d2911cd2ad2324a0b7dc1d2afe6ed31f5f4ba82c789e6341a3f10c89",
+      "bytes": 17937,
+      "rows": 863,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 462546,
+      "last_seq": 463408
+    },
+    {
+      "key": "btc/raw/sha256/0c6340b8e54e3f204b4b7e9826976917d858fbbeb9885a3f38e7d6631ab10f9f/BTC-25DEC26.jsonl.gz",
+      "sha256": "0c6340b8e54e3f204b4b7e9826976917d858fbbeb9885a3f38e7d6631ab10f9f",
+      "bytes": 57828,
+      "rows": 3018,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 463409,
+      "last_seq": 466426
+    },
+    {
+      "key": "btc/raw/sha256/50dc853206085d4f1837d1c18f215db6c65a5ffcda36cf3e740a1bb217853ab5/BTC-25DEC26.jsonl.gz",
+      "sha256": "50dc853206085d4f1837d1c18f215db6c65a5ffcda36cf3e740a1bb217853ab5",
+      "bytes": 36690,
+      "rows": 2014,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 466427,
+      "last_seq": 468440
+    },
+    {
+      "key": "btc/raw/sha256/4ccf05eeedfa5ab96d47aa8e5d102a4bb415a02ebbde1d38237fbaea9433e1e1/BTC-25DEC26.jsonl.gz",
+      "sha256": "4ccf05eeedfa5ab96d47aa8e5d102a4bb415a02ebbde1d38237fbaea9433e1e1",
+      "bytes": 35848,
+      "rows": 1973,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 468441,
+      "last_seq": 470413
+    },
+    {
+      "key": "btc/raw/sha256/3f95c468e4b069793939f5b9b9c123698236f2d5b361aff78555301d635f0eda/BTC-25DEC26.jsonl.gz",
+      "sha256": "3f95c468e4b069793939f5b9b9c123698236f2d5b361aff78555301d635f0eda",
+      "bytes": 33865,
+      "rows": 1783,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 470414,
+      "last_seq": 472196
+    },
+    {
+      "key": "btc/raw/sha256/558885fbba026aa3242c4a279c18a60cc86a31b1a3219c2a3e69cfdaaa0fcc32/BTC-25DEC26.jsonl.gz",
+      "sha256": "558885fbba026aa3242c4a279c18a60cc86a31b1a3219c2a3e69cfdaaa0fcc32",
+      "bytes": 59935,
+      "rows": 3457,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 472197,
+      "last_seq": 475653
+    },
+    {
+      "key": "btc/raw/sha256/ddd1e9c73f62729d0225594d4fc09457e0b50b432908fa24b3a25d09b242f74d/BTC-25DEC26.jsonl.gz",
+      "sha256": "ddd1e9c73f62729d0225594d4fc09457e0b50b432908fa24b3a25d09b242f74d",
+      "bytes": 19174,
+      "rows": 1093,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 475654,
+      "last_seq": 476746
+    },
+    {
+      "key": "btc/raw/sha256/f93c0efb2745d4ef8ddefe00e36bf2cda7dc91c556cd7cc6254b008467c26d1a/BTC-25DEC26.jsonl.gz",
+      "sha256": "f93c0efb2745d4ef8ddefe00e36bf2cda7dc91c556cd7cc6254b008467c26d1a",
+      "bytes": 21123,
+      "rows": 1187,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 476747,
+      "last_seq": 477933
+    },
+    {
+      "key": "btc/raw/sha256/e7d54094ceb83f2acc995b8284690c8b88cc8944beaf52117a88408a3ac1f184/BTC-25DEC26.jsonl.gz",
+      "sha256": "e7d54094ceb83f2acc995b8284690c8b88cc8944beaf52117a88408a3ac1f184",
+      "bytes": 49027,
+      "rows": 2591,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 477934,
+      "last_seq": 480524
+    },
+    {
+      "key": "btc/raw/sha256/0195aa801699da9b2ec6102d61778f98dc6fd272cbdd328838b54355beca7370/BTC-25DEC26.jsonl.gz",
+      "sha256": "0195aa801699da9b2ec6102d61778f98dc6fd272cbdd328838b54355beca7370",
+      "bytes": 55109,
+      "rows": 3146,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 480525,
+      "last_seq": 483670
+    },
+    {
+      "key": "btc/raw/sha256/6e50c984e068d43aba8aa5f39bc1182f9e611e6cd90ef863451d8b678ca327dc/BTC-25DEC26.jsonl.gz",
+      "sha256": "6e50c984e068d43aba8aa5f39bc1182f9e611e6cd90ef863451d8b678ca327dc",
+      "bytes": 42506,
+      "rows": 2308,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 483671,
+      "last_seq": 485978
+    },
+    {
+      "key": "btc/raw/sha256/47f33f577a695b9b97c7f8b98d875bfd1f3ce5e2b1d7190ed611ac3f0d9cf2ca/BTC-25DEC26.jsonl.gz",
+      "sha256": "47f33f577a695b9b97c7f8b98d875bfd1f3ce5e2b1d7190ed611ac3f0d9cf2ca",
+      "bytes": 38526,
+      "rows": 1981,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 485979,
+      "last_seq": 487959
+    },
+    {
+      "key": "btc/raw/sha256/1aba0c1696a3f278b7982ce568cf5e4773f87b4dd386bff2e8401af6a0475529/BTC-25DEC26.jsonl.gz",
+      "sha256": "1aba0c1696a3f278b7982ce568cf5e4773f87b4dd386bff2e8401af6a0475529",
+      "bytes": 45459,
+      "rows": 2348,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 487960,
+      "last_seq": 490307
+    },
+    {
+      "key": "btc/raw/sha256/1e6a3ed8b7811161a841a3d9e09c70cc711a922d8101fb23ce4cc455611794f2/BTC-25DEC26.jsonl.gz",
+      "sha256": "1e6a3ed8b7811161a841a3d9e09c70cc711a922d8101fb23ce4cc455611794f2",
+      "bytes": 16796,
+      "rows": 909,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 490308,
+      "last_seq": 491216
+    },
+    {
+      "key": "btc/raw/sha256/704962ee799eec669431f0bd657951be013ce87f14ff47ce8bdabfdc5389afd8/BTC-25DEC26.jsonl.gz",
+      "sha256": "704962ee799eec669431f0bd657951be013ce87f14ff47ce8bdabfdc5389afd8",
+      "bytes": 17956,
+      "rows": 875,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 491217,
+      "last_seq": 492091
+    },
+    {
+      "key": "btc/raw/sha256/20d78559cbb3289f24cd41ff8b9fa0cb24539be31724370a3be2c31621e400ea/BTC-25DEC26.jsonl.gz",
+      "sha256": "20d78559cbb3289f24cd41ff8b9fa0cb24539be31724370a3be2c31621e400ea",
+      "bytes": 58917,
+      "rows": 3193,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 492092,
+      "last_seq": 495284
+    },
+    {
+      "key": "btc/raw/sha256/847e0fae11616f166ae8edf18f76ed567e282ac621c673ee0c478c90d3bcc1be/BTC-25DEC26.jsonl.gz",
+      "sha256": "847e0fae11616f166ae8edf18f76ed567e282ac621c673ee0c478c90d3bcc1be",
+      "bytes": 64787,
+      "rows": 3641,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 495285,
+      "last_seq": 498925
+    },
+    {
+      "key": "btc/raw/sha256/5173956ee72818e21246978cdcb6dcf1f55854abace585373edfc495b9934000/BTC-25DEC26.jsonl.gz",
+      "sha256": "5173956ee72818e21246978cdcb6dcf1f55854abace585373edfc495b9934000",
+      "bytes": 38985,
+      "rows": 2093,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 498926,
+      "last_seq": 501018
+    },
+    {
+      "key": "btc/raw/sha256/ef111d31e3f0dfe7fe63548507149473f01ef650f5f91e1f49af262d9faf8408/BTC-25DEC26.jsonl.gz",
+      "sha256": "ef111d31e3f0dfe7fe63548507149473f01ef650f5f91e1f49af262d9faf8408",
+      "bytes": 106710,
+      "rows": 6486,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 501019,
+      "last_seq": 507504
+    },
+    {
+      "key": "btc/raw/sha256/137094b9f5b9a5122ce31c6674e5e6642ac43d84812292ad2114452f5c950f8d/BTC-25DEC26.jsonl.gz",
+      "sha256": "137094b9f5b9a5122ce31c6674e5e6642ac43d84812292ad2114452f5c950f8d",
+      "bytes": 127597,
+      "rows": 7768,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 507505,
+      "last_seq": 515272
+    },
+    {
+      "key": "btc/raw/sha256/e501cb4f8219a4377ceb6449136c582bf786d9701745dbc07adbd1ad27f62d4b/BTC-25DEC26.jsonl.gz",
+      "sha256": "e501cb4f8219a4377ceb6449136c582bf786d9701745dbc07adbd1ad27f62d4b",
+      "bytes": 28404,
+      "rows": 1657,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 515273,
+      "last_seq": 516929
+    },
+    {
+      "key": "btc/raw/sha256/8826c947217a470d52a387fd9c8827b74a4d1c618f62f7f6cc2f374396d98584/BTC-25DEC26.jsonl.gz",
+      "sha256": "8826c947217a470d52a387fd9c8827b74a4d1c618f62f7f6cc2f374396d98584",
+      "bytes": 38464,
+      "rows": 2267,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 516930,
+      "last_seq": 519196
+    },
+    {
+      "key": "btc/raw/sha256/87da2e23c244fb3907054bcc353f8ef323e7c76f5ae8f34cf9d326af7b2e382b/BTC-25DEC26.jsonl.gz",
+      "sha256": "87da2e23c244fb3907054bcc353f8ef323e7c76f5ae8f34cf9d326af7b2e382b",
+      "bytes": 78083,
+      "rows": 4419,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 519197,
+      "last_seq": 523615
+    },
+    {
+      "key": "btc/raw/sha256/17972cacf8131130ba01baa645da38078f8acf6ad5a413fc366b8ad59df52986/BTC-25DEC26.jsonl.gz",
+      "sha256": "17972cacf8131130ba01baa645da38078f8acf6ad5a413fc366b8ad59df52986",
+      "bytes": 79789,
+      "rows": 4600,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 523616,
+      "last_seq": 528215
+    },
+    {
+      "key": "btc/raw/sha256/6fdd1bd779a385e615bdc986fe75ca1cdabcf454c5f144e90bf0ba726bf62a0e/BTC-25DEC26.jsonl.gz",
+      "sha256": "6fdd1bd779a385e615bdc986fe75ca1cdabcf454c5f144e90bf0ba726bf62a0e",
+      "bytes": 75815,
+      "rows": 3963,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 528216,
+      "last_seq": 532178
+    },
+    {
+      "key": "btc/raw/sha256/c7f469b1f961d3ca60507c8b5a0c6343f79de80bbdb4fb6565245ef07f275447/BTC-25DEC26.jsonl.gz",
+      "sha256": "c7f469b1f961d3ca60507c8b5a0c6343f79de80bbdb4fb6565245ef07f275447",
+      "bytes": 48583,
+      "rows": 2577,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 532179,
+      "last_seq": 534755
+    },
+    {
+      "key": "btc/raw/sha256/58bb586e7f165a88b66762657436c1c5fc897762a93091458c0f1b470519c876/BTC-25DEC26.jsonl.gz",
+      "sha256": "58bb586e7f165a88b66762657436c1c5fc897762a93091458c0f1b470519c876",
+      "bytes": 76314,
+      "rows": 4134,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 534756,
+      "last_seq": 538889
+    },
+    {
+      "key": "btc/raw/sha256/17f7a2b69bb12929c5b96fafc6ad3afbbc6583c3ed92f7e84d236d8fd13dd281/BTC-25DEC26.jsonl.gz",
+      "sha256": "17f7a2b69bb12929c5b96fafc6ad3afbbc6583c3ed92f7e84d236d8fd13dd281",
+      "bytes": 25029,
+      "rows": 1343,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 538890,
+      "last_seq": 540232
+    },
+    {
+      "key": "btc/raw/sha256/59f5138c4c85092413d4bd90e884fd46b05e38c93acba2b53bc23dc529efc7ca/BTC-25DEC26.jsonl.gz",
+      "sha256": "59f5138c4c85092413d4bd90e884fd46b05e38c93acba2b53bc23dc529efc7ca",
+      "bytes": 73322,
+      "rows": 4302,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 540233,
+      "last_seq": 544534
+    },
+    {
+      "key": "btc/raw/sha256/24c30fdd17b5ad0f3e3c23c4918bf44c73658a45500cba4da9cf90487dbbb147/BTC-25DEC26.jsonl.gz",
+      "sha256": "24c30fdd17b5ad0f3e3c23c4918bf44c73658a45500cba4da9cf90487dbbb147",
+      "bytes": 81086,
+      "rows": 4429,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 544535,
+      "last_seq": 548963
+    },
+    {
+      "key": "btc/raw/sha256/edc0e8d9795440333978d6d84f430230ed48aa88dd3d38d19d326c2b91cd0b90/BTC-25DEC26.jsonl.gz",
+      "sha256": "edc0e8d9795440333978d6d84f430230ed48aa88dd3d38d19d326c2b91cd0b90",
+      "bytes": 86033,
+      "rows": 4896,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 548964,
+      "last_seq": 553859
+    },
+    {
+      "key": "btc/raw/sha256/7c6f4f1bb7511fbb9b218b6fdc8ca948488ed08211a178f5dbe073dd114e007a/BTC-25DEC26.jsonl.gz",
+      "sha256": "7c6f4f1bb7511fbb9b218b6fdc8ca948488ed08211a178f5dbe073dd114e007a",
+      "bytes": 179664,
+      "rows": 10475,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 553860,
+      "last_seq": 564334
+    },
+    {
+      "key": "btc/raw/sha256/e030e77bad5e381f6a3b3ea991c6593044a5e5e8045a8ba4448cb5ffc67a744a/BTC-25DEC26.jsonl.gz",
+      "sha256": "e030e77bad5e381f6a3b3ea991c6593044a5e5e8045a8ba4448cb5ffc67a744a",
+      "bytes": 121505,
+      "rows": 6558,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 564335,
+      "last_seq": 570892
+    },
+    {
+      "key": "btc/raw/sha256/3f66e6ccaea0790cf258fbd2d4dc18c7423777665746d0962dd36698e34763d3/BTC-25DEC26.jsonl.gz",
+      "sha256": "3f66e6ccaea0790cf258fbd2d4dc18c7423777665746d0962dd36698e34763d3",
+      "bytes": 48244,
+      "rows": 2481,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 570893,
+      "last_seq": 573373
+    },
+    {
+      "key": "btc/raw/sha256/766ebf7655f712699e2f76d676326bd484d140c475c6023af3df9cfb680f404e/BTC-25DEC26.jsonl.gz",
+      "sha256": "766ebf7655f712699e2f76d676326bd484d140c475c6023af3df9cfb680f404e",
+      "bytes": 9349,
+      "rows": 482,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 573374,
+      "last_seq": 573855
+    },
+    {
+      "key": "btc/raw/sha256/4ca67e1b5718956772c7f16f4d123cecbeee71de7868a8502723ccec49549400/BTC-25DEC26.jsonl.gz",
+      "sha256": "4ca67e1b5718956772c7f16f4d123cecbeee71de7868a8502723ccec49549400",
+      "bytes": 11632,
+      "rows": 570,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 573856,
+      "last_seq": 574425
+    },
+    {
+      "key": "btc/raw/sha256/5a5e371e5cb989f6df24c90285bda2b997ac6d45a1862f09afd721bcee66ad5c/BTC-25DEC26.jsonl.gz",
+      "sha256": "5a5e371e5cb989f6df24c90285bda2b997ac6d45a1862f09afd721bcee66ad5c",
+      "bytes": 50299,
+      "rows": 2687,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 574426,
+      "last_seq": 577112
+    },
+    {
+      "key": "btc/raw/sha256/30b62486716520ae3ff6468922f833df3d7acaf0bca4c61f7f394866d5fade67/BTC-25DEC26.jsonl.gz",
+      "sha256": "30b62486716520ae3ff6468922f833df3d7acaf0bca4c61f7f394866d5fade67",
+      "bytes": 40448,
+      "rows": 2420,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 577113,
+      "last_seq": 579532
+    },
+    {
+      "key": "btc/raw/sha256/2ee9ca38e2423d56351e67d68d92c11f232845f144f1b57aad9743dc9fef4909/BTC-25DEC26.jsonl.gz",
+      "sha256": "2ee9ca38e2423d56351e67d68d92c11f232845f144f1b57aad9743dc9fef4909",
+      "bytes": 53207,
+      "rows": 3222,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 579533,
+      "last_seq": 582754
+    },
+    {
+      "key": "btc/raw/sha256/ee515bb60d04719e4065c1992a069f6b14f63d2fc2d90237f6d22f4dc4ca954b/BTC-25DEC26.jsonl.gz",
+      "sha256": "ee515bb60d04719e4065c1992a069f6b14f63d2fc2d90237f6d22f4dc4ca954b",
+      "bytes": 37678,
+      "rows": 2091,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 582755,
+      "last_seq": 584845
+    },
+    {
+      "key": "btc/raw/sha256/78e06fd89548badacaa70362d614ea36f779e6a8ae0009f21fd3579e65595bf7/BTC-25DEC26.jsonl.gz",
+      "sha256": "78e06fd89548badacaa70362d614ea36f779e6a8ae0009f21fd3579e65595bf7",
+      "bytes": 24178,
+      "rows": 1302,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 584846,
+      "last_seq": 586147
+    },
+    {
+      "key": "btc/raw/sha256/ee7dae592b958e1b561bf7634c52d45b0b48a38cb5e84ebf35c85e55c820a95d/BTC-25DEC26.jsonl.gz",
+      "sha256": "ee7dae592b958e1b561bf7634c52d45b0b48a38cb5e84ebf35c85e55c820a95d",
+      "bytes": 6339,
+      "rows": 313,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 586148,
+      "last_seq": 586460
+    },
+    {
+      "key": "btc/raw/sha256/5ea2cf49322db74d7d84c333c05047189fa3595e91e9d46e24f143335b1654d9/BTC-25DEC26.jsonl.gz",
+      "sha256": "5ea2cf49322db74d7d84c333c05047189fa3595e91e9d46e24f143335b1654d9",
+      "bytes": 11743,
+      "rows": 599,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 586461,
+      "last_seq": 587059
+    },
+    {
+      "key": "btc/raw/sha256/d096f22dfdbc30c0ae71648ceb5297c1e0fbece50d1c199f810ec9d189f1d313/BTC-25DEC26.jsonl.gz",
+      "sha256": "d096f22dfdbc30c0ae71648ceb5297c1e0fbece50d1c199f810ec9d189f1d313",
+      "bytes": 54026,
+      "rows": 3112,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 587060,
+      "last_seq": 590171
+    },
+    {
+      "key": "btc/raw/sha256/006e4676b2cd925513cbb081640cbfa68f102989e052eea8e5cd2dafb459bd3f/BTC-25DEC26.jsonl.gz",
+      "sha256": "006e4676b2cd925513cbb081640cbfa68f102989e052eea8e5cd2dafb459bd3f",
+      "bytes": 20296,
+      "rows": 1085,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 590172,
+      "last_seq": 591256
+    },
+    {
+      "key": "btc/raw/sha256/7c9250f2e9ddf72c5be170791b565ca9eeb4e89d074410dca6f11c666c560411/BTC-25DEC26.jsonl.gz",
+      "sha256": "7c9250f2e9ddf72c5be170791b565ca9eeb4e89d074410dca6f11c666c560411",
+      "bytes": 116641,
+      "rows": 6736,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 591257,
+      "last_seq": 597992
+    },
+    {
+      "key": "btc/raw/sha256/45812fe36e7f003197f1cd1b128cc6dbfad80f07ab4442417675ee3ca16a0f29/BTC-25DEC26.jsonl.gz",
+      "sha256": "45812fe36e7f003197f1cd1b128cc6dbfad80f07ab4442417675ee3ca16a0f29",
+      "bytes": 279177,
+      "rows": 17069,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 597993,
+      "last_seq": 615061
+    },
+    {
+      "key": "btc/raw/sha256/e04d01de67a6e67f05738dbdf0b019854ed61f469a7596f25a700271ea431178/BTC-25DEC26.jsonl.gz",
+      "sha256": "e04d01de67a6e67f05738dbdf0b019854ed61f469a7596f25a700271ea431178",
+      "bytes": 342332,
+      "rows": 18358,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 615062,
+      "last_seq": 633419
+    },
+    {
+      "key": "btc/raw/sha256/ae1a8c8384b29aef6fe118c48b1790777b1a96b53ac1932857dea19b32b9b44b/BTC-25DEC26.jsonl.gz",
+      "sha256": "ae1a8c8384b29aef6fe118c48b1790777b1a96b53ac1932857dea19b32b9b44b",
+      "bytes": 95640,
+      "rows": 4299,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 633420,
+      "last_seq": 637718
+    },
+    {
+      "key": "btc/raw/sha256/8bbfc04f19d37dae2e6b3172b80940b033a19ce3f70c3ececc7e829a56fa2a8e/BTC-25DEC26.jsonl.gz",
+      "sha256": "8bbfc04f19d37dae2e6b3172b80940b033a19ce3f70c3ececc7e829a56fa2a8e",
+      "bytes": 147680,
+      "rows": 8074,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 637719,
+      "last_seq": 645792
+    },
+    {
+      "key": "btc/raw/sha256/98777d51f64923ce2a8b4026d19c96398b434c4344bef7367cc5436166fee88d/BTC-25DEC26.jsonl.gz",
+      "sha256": "98777d51f64923ce2a8b4026d19c96398b434c4344bef7367cc5436166fee88d",
+      "bytes": 145839,
+      "rows": 6920,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 645793,
+      "last_seq": 652712
+    },
+    {
+      "key": "btc/raw/sha256/8d6953d7d2adaf928b3882670f2041a59bd857967b2e838c5471a76ded8bc47c/BTC-25DEC26.jsonl.gz",
+      "sha256": "8d6953d7d2adaf928b3882670f2041a59bd857967b2e838c5471a76ded8bc47c",
+      "bytes": 196773,
+      "rows": 9430,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 652713,
+      "last_seq": 662142
+    },
+    {
+      "key": "btc/raw/sha256/88dab932377138aa178239063f2f3dbba0bb2ec9fa5007d1fb228334433cec66/BTC-25DEC26.jsonl.gz",
+      "sha256": "88dab932377138aa178239063f2f3dbba0bb2ec9fa5007d1fb228334433cec66",
+      "bytes": 89188,
+      "rows": 4624,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 662143,
+      "last_seq": 666766
+    },
+    {
+      "key": "btc/raw/sha256/57acd964c30dd5c550a60a595855c87c69a48a36ead61de026b084f18153edd3/BTC-25DEC26.jsonl.gz",
+      "sha256": "57acd964c30dd5c550a60a595855c87c69a48a36ead61de026b084f18153edd3",
+      "bytes": 66684,
+      "rows": 3296,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 666767,
+      "last_seq": 670062
+    },
+    {
+      "key": "btc/raw/sha256/4b1a99b42e3ac4cc5ac503fc3246600a2691ec0a405d225dea48599ba759e800/BTC-25DEC26.jsonl.gz",
+      "sha256": "4b1a99b42e3ac4cc5ac503fc3246600a2691ec0a405d225dea48599ba759e800",
+      "bytes": 101950,
+      "rows": 5602,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 670063,
+      "last_seq": 675664
+    },
+    {
+      "key": "btc/raw/sha256/28babdfdf91f2528472c2cb33901e4cfca9303c78bcdc0cde8f417088f5df94b/BTC-25DEC26.jsonl.gz",
+      "sha256": "28babdfdf91f2528472c2cb33901e4cfca9303c78bcdc0cde8f417088f5df94b",
+      "bytes": 23370,
+      "rows": 1363,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 675665,
+      "last_seq": 677027
+    },
+    {
+      "key": "btc/raw/sha256/b40a6487633e61723d3edd661f91f3e5024097bcc52ed618162d3b89e6e4f782/BTC-25DEC26.jsonl.gz",
+      "sha256": "b40a6487633e61723d3edd661f91f3e5024097bcc52ed618162d3b89e6e4f782",
+      "bytes": 70718,
+      "rows": 4331,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 677028,
+      "last_seq": 681358
+    },
+    {
+      "key": "btc/raw/sha256/6b06602c0a21513f0962524cbdbc1a0693a1cd20068e932c5870ef9ab524fc3a/BTC-25DEC26.jsonl.gz",
+      "sha256": "6b06602c0a21513f0962524cbdbc1a0693a1cd20068e932c5870ef9ab524fc3a",
+      "bytes": 71020,
+      "rows": 4028,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 681359,
+      "last_seq": 685386
+    },
+    {
+      "key": "btc/raw/sha256/ab4cacf1e57c7aa1712cc29ae4a64110f9024cfb41c8db45199baa647e535682/BTC-25DEC26.jsonl.gz",
+      "sha256": "ab4cacf1e57c7aa1712cc29ae4a64110f9024cfb41c8db45199baa647e535682",
+      "bytes": 60100,
+      "rows": 3177,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 685387,
+      "last_seq": 688563
+    },
+    {
+      "key": "btc/raw/sha256/0550789c72e3246daeebc94bbb67577d84a9e514029b2258d31444a552310573/BTC-25DEC26.jsonl.gz",
+      "sha256": "0550789c72e3246daeebc94bbb67577d84a9e514029b2258d31444a552310573",
+      "bytes": 48714,
+      "rows": 2510,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 688564,
+      "last_seq": 691073
+    },
+    {
+      "key": "btc/raw/sha256/156fb9e70fa8f38f03e60e379d24e64fbf4750cafc344214eb6fe3b302315b2d/BTC-25DEC26.jsonl.gz",
+      "sha256": "156fb9e70fa8f38f03e60e379d24e64fbf4750cafc344214eb6fe3b302315b2d",
+      "bytes": 94790,
+      "rows": 4735,
+      "symbol": "BTC-25DEC26",
+      "first_seq": 691074,
+      "last_seq": 695808
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/4ff3f6e0ed2269fae32d0d3cdf3c849c522d9b93dec730fc55a29b995f249bb8/BTC-26MAR27.jsonl.gz",
+      "sha256": "4ff3f6e0ed2269fae32d0d3cdf3c849c522d9b93dec730fc55a29b995f249bb8",
+      "bytes": 127171,
+      "rows": 5912,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 66169,
+      "last_seq": 72080
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/7a9d5b4ee7771d080752e26f34e804b59d4575a89b9d3aab77e2e1aa428b8440/BTC-26MAR27.jsonl.gz",
+      "sha256": "7a9d5b4ee7771d080752e26f34e804b59d4575a89b9d3aab77e2e1aa428b8440",
+      "bytes": 78692,
+      "rows": 4213,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 72081,
+      "last_seq": 76293
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/7194e9ee32edea79ca9bedbbf49f3f878ae958b24119acea1e985cb0f17a03bc/BTC-26MAR27.jsonl.gz",
+      "sha256": "7194e9ee32edea79ca9bedbbf49f3f878ae958b24119acea1e985cb0f17a03bc",
+      "bytes": 40046,
+      "rows": 1911,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 76294,
+      "last_seq": 78204
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/846bdc19eb030883c2558e7b78afd01a254bbbbba7c53f345104a363501676db/BTC-26MAR27.jsonl.gz",
+      "sha256": "846bdc19eb030883c2558e7b78afd01a254bbbbba7c53f345104a363501676db",
+      "bytes": 34843,
+      "rows": 1703,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 78205,
+      "last_seq": 79907
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/5d4ae57b7182e48d9feb8aa5b91e1f8d8bb07e6a5927aea193c8aefb89918fd7/BTC-26MAR27.jsonl.gz",
+      "sha256": "5d4ae57b7182e48d9feb8aa5b91e1f8d8bb07e6a5927aea193c8aefb89918fd7",
+      "bytes": 41599,
+      "rows": 2392,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 79908,
+      "last_seq": 82299
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/24d8c60f7b0984f4b301f281e25a0e391912712913bce74f977f690e1ce08962/BTC-26MAR27.jsonl.gz",
+      "sha256": "24d8c60f7b0984f4b301f281e25a0e391912712913bce74f977f690e1ce08962",
+      "bytes": 28157,
+      "rows": 1393,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 82300,
+      "last_seq": 83692
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/af50f466d4871bab82a1e50dd0595e7b147d135d698c2a61ec971b74dc475808/BTC-26MAR27.jsonl.gz",
+      "sha256": "af50f466d4871bab82a1e50dd0595e7b147d135d698c2a61ec971b74dc475808",
+      "bytes": 25679,
+      "rows": 1403,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 83693,
+      "last_seq": 85095
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/84aee04ed65f5798469193e6773e21a879066e1b1ad0808ae14bb60c151c0cba/BTC-26MAR27.jsonl.gz",
+      "sha256": "84aee04ed65f5798469193e6773e21a879066e1b1ad0808ae14bb60c151c0cba",
+      "bytes": 9930,
+      "rows": 503,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 85096,
+      "last_seq": 85598
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/977222c94fd16b79cbe02acc92d6eee6da435eecd7b48d458b5023d9481e5cf2/BTC-26MAR27.jsonl.gz",
+      "sha256": "977222c94fd16b79cbe02acc92d6eee6da435eecd7b48d458b5023d9481e5cf2",
+      "bytes": 21382,
+      "rows": 1207,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 85599,
+      "last_seq": 86805
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/c80ad9997956f3c68c0b86f3c73e3997949a63d35c29c26e9906bbed7fc73c60/BTC-26MAR27.jsonl.gz",
+      "sha256": "c80ad9997956f3c68c0b86f3c73e3997949a63d35c29c26e9906bbed7fc73c60",
+      "bytes": 28296,
+      "rows": 1325,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 86806,
+      "last_seq": 88130
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/dc9920c3ec6b4d06e6d7f0b0f5503416f66d7797152724b210e81365e957f9d1/BTC-26MAR27.jsonl.gz",
+      "sha256": "dc9920c3ec6b4d06e6d7f0b0f5503416f66d7797152724b210e81365e957f9d1",
+      "bytes": 25400,
+      "rows": 1469,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 88131,
+      "last_seq": 89599
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/c4172e2a521914a2d3b03429c0edb31ec6df869af18adbc6dbc6e75d5777fd39/BTC-26MAR27.jsonl.gz",
+      "sha256": "c4172e2a521914a2d3b03429c0edb31ec6df869af18adbc6dbc6e75d5777fd39",
+      "bytes": 41622,
+      "rows": 2311,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 89600,
+      "last_seq": 91910
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/12c3d14bfc2aec4f2a964915a0abc57466aeb41bd993f5cffa3c4010c2a9252c/BTC-26MAR27.jsonl.gz",
+      "sha256": "12c3d14bfc2aec4f2a964915a0abc57466aeb41bd993f5cffa3c4010c2a9252c",
+      "bytes": 38980,
+      "rows": 2082,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 91911,
+      "last_seq": 93992
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/d902a04aa98bdf430ad4b5ac1d80b99f0e42155d89ff3eacbd2383433204c057/BTC-26MAR27.jsonl.gz",
+      "sha256": "d902a04aa98bdf430ad4b5ac1d80b99f0e42155d89ff3eacbd2383433204c057",
+      "bytes": 18640,
+      "rows": 925,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 93993,
+      "last_seq": 94917
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/b60b8b2c68238efd1210b7a49818f54fb9e4b52759c1a36b1cc6cc46c7b04768/BTC-26MAR27.jsonl.gz",
+      "sha256": "b60b8b2c68238efd1210b7a49818f54fb9e4b52759c1a36b1cc6cc46c7b04768",
+      "bytes": 12681,
+      "rows": 590,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 94918,
+      "last_seq": 95507
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/cdfa8019c0c1667049a80be7414f003e1b12ac6a26decde610e416987500647b/BTC-26MAR27.jsonl.gz",
+      "sha256": "cdfa8019c0c1667049a80be7414f003e1b12ac6a26decde610e416987500647b",
+      "bytes": 13605,
+      "rows": 769,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 95508,
+      "last_seq": 96276
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/a08b0a8c9310d602c40c0e5efffe9371da3398f4812cdec13d685481c7c57b46/BTC-26MAR27.jsonl.gz",
+      "sha256": "a08b0a8c9310d602c40c0e5efffe9371da3398f4812cdec13d685481c7c57b46",
+      "bytes": 17693,
+      "rows": 801,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 96277,
+      "last_seq": 97077
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/dddf3ab247995b41c423e3b59b3c20cfda503218350a930f4bb786126e36e14c/BTC-26MAR27.jsonl.gz",
+      "sha256": "dddf3ab247995b41c423e3b59b3c20cfda503218350a930f4bb786126e36e14c",
+      "bytes": 21618,
+      "rows": 1039,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 97078,
+      "last_seq": 98116
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/2bdedf1c5efe3d19b54d3a50ed9442a66f457c812cc3b24f3778afda737a791c/BTC-26MAR27.jsonl.gz",
+      "sha256": "2bdedf1c5efe3d19b54d3a50ed9442a66f457c812cc3b24f3778afda737a791c",
+      "bytes": 37458,
+      "rows": 1621,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 98117,
+      "last_seq": 99737
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/208802b356b914a7b39e17cc6ea08e27f397b9d24f422d913151477554bbcffa/BTC-26MAR27.jsonl.gz",
+      "sha256": "208802b356b914a7b39e17cc6ea08e27f397b9d24f422d913151477554bbcffa",
+      "bytes": 39269,
+      "rows": 2132,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 99738,
+      "last_seq": 101869
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/f46d8644928af52a86f12015295342cbfd08157e0a08b591211ac2e46326b5ca/BTC-26MAR27.jsonl.gz",
+      "sha256": "f46d8644928af52a86f12015295342cbfd08157e0a08b591211ac2e46326b5ca",
+      "bytes": 66513,
+      "rows": 3067,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 101870,
+      "last_seq": 104936
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/ae7938ac7296cb95c965dfc9b212b235d88aad118e3c7bd1503f4d6daed2b143/BTC-26MAR27.jsonl.gz",
+      "sha256": "ae7938ac7296cb95c965dfc9b212b235d88aad118e3c7bd1503f4d6daed2b143",
+      "bytes": 40483,
+      "rows": 1917,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 104937,
+      "last_seq": 106853
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/4a0d13103827c29d7afbd90105303361fdb1563bb49ccf0d2c28d482550de26a/BTC-26MAR27.jsonl.gz",
+      "sha256": "4a0d13103827c29d7afbd90105303361fdb1563bb49ccf0d2c28d482550de26a",
+      "bytes": 23517,
+      "rows": 1151,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 106854,
+      "last_seq": 108004
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/90b5ad987e1d3512a0eb87838838da988932e98a571244d8a686ed76360ff5e7/BTC-26MAR27.jsonl.gz",
+      "sha256": "90b5ad987e1d3512a0eb87838838da988932e98a571244d8a686ed76360ff5e7",
+      "bytes": 41759,
+      "rows": 2204,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 108005,
+      "last_seq": 110208
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/6f2186a95a34181e64406ef80ae0fd9994286c3cf7820c011c6b188ea24adf04/BTC-26MAR27.jsonl.gz",
+      "sha256": "6f2186a95a34181e64406ef80ae0fd9994286c3cf7820c011c6b188ea24adf04",
+      "bytes": 48854,
+      "rows": 2544,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 110209,
+      "last_seq": 112752
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/321c7d24a9ecb223033fa96c4d74802d77fda4b679f138462bfc527f939b4db5/BTC-26MAR27.jsonl.gz",
+      "sha256": "321c7d24a9ecb223033fa96c4d74802d77fda4b679f138462bfc527f939b4db5",
+      "bytes": 49199,
+      "rows": 2450,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 112753,
+      "last_seq": 115202
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/f75a42cea2fb7f49f91b2a0252d531e835929b50de06cf9b863369861a781628/BTC-26MAR27.jsonl.gz",
+      "sha256": "f75a42cea2fb7f49f91b2a0252d531e835929b50de06cf9b863369861a781628",
+      "bytes": 46361,
+      "rows": 2279,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 115203,
+      "last_seq": 117481
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/2ef472c2b8bbdceec74cab275f95fa6bb64b4ab8b51d80d8b0545397f715b660/BTC-26MAR27.jsonl.gz",
+      "sha256": "2ef472c2b8bbdceec74cab275f95fa6bb64b4ab8b51d80d8b0545397f715b660",
+      "bytes": 20907,
+      "rows": 1071,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 117482,
+      "last_seq": 118552
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/81f1e0462138597689eac9187c8093e4b9278aa9e73c74bf859eb445b436a5e4/BTC-26MAR27.jsonl.gz",
+      "sha256": "81f1e0462138597689eac9187c8093e4b9278aa9e73c74bf859eb445b436a5e4",
+      "bytes": 21954,
+      "rows": 1201,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 118553,
+      "last_seq": 119753
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/752ce5061e80ebb97527f98fbfd4b4e72cf039a19301fca20af56e2e5b2c771a/BTC-26MAR27.jsonl.gz",
+      "sha256": "752ce5061e80ebb97527f98fbfd4b4e72cf039a19301fca20af56e2e5b2c771a",
+      "bytes": 18012,
+      "rows": 916,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 119754,
+      "last_seq": 120669
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/5cfa92c7c8cd04d314fea76fdb67382bbb9ffb14f1db39d71de6144cd12d5620/BTC-26MAR27.jsonl.gz",
+      "sha256": "5cfa92c7c8cd04d314fea76fdb67382bbb9ffb14f1db39d71de6144cd12d5620",
+      "bytes": 47266,
+      "rows": 2480,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 120670,
+      "last_seq": 123149
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/27a20876458ce7c7534590283f78abe1ae561f1df6b70953983a876557f50eb5/BTC-26MAR27.jsonl.gz",
+      "sha256": "27a20876458ce7c7534590283f78abe1ae561f1df6b70953983a876557f50eb5",
+      "bytes": 24886,
+      "rows": 1224,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 123150,
+      "last_seq": 124373
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/2712aec09f9df4fba3656a2cd508d533848628b93e9843e27a272ef8036b56db/BTC-26MAR27.jsonl.gz",
+      "sha256": "2712aec09f9df4fba3656a2cd508d533848628b93e9843e27a272ef8036b56db",
+      "bytes": 26240,
+      "rows": 1266,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 124374,
+      "last_seq": 125639
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/4538902884417309e19752ba9471a591c4686561d2bce4dbd68e5fd514064144/BTC-26MAR27.jsonl.gz",
+      "sha256": "4538902884417309e19752ba9471a591c4686561d2bce4dbd68e5fd514064144",
+      "bytes": 25193,
+      "rows": 1229,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 125640,
+      "last_seq": 126868
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/bba26ad3cd3055163c47e8b7992dc1878b94d3cb4a1ced884a82bf0bf1525497/BTC-26MAR27.jsonl.gz",
+      "sha256": "bba26ad3cd3055163c47e8b7992dc1878b94d3cb4a1ced884a82bf0bf1525497",
+      "bytes": 31075,
+      "rows": 1581,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 126869,
+      "last_seq": 128449
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/8b7e9e4b4929fd6bad0a05a486a8bc786d11368235b2a6c5eb782c3be45ec5a1/BTC-26MAR27.jsonl.gz",
+      "sha256": "8b7e9e4b4929fd6bad0a05a486a8bc786d11368235b2a6c5eb782c3be45ec5a1",
+      "bytes": 10229,
+      "rows": 527,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 128450,
+      "last_seq": 128976
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/42fbed5d8fd057b5045dc14a1c6838c7173a15522d37c983c3530eb09616eeb6/BTC-26MAR27.jsonl.gz",
+      "sha256": "42fbed5d8fd057b5045dc14a1c6838c7173a15522d37c983c3530eb09616eeb6",
+      "bytes": 16560,
+      "rows": 885,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 128977,
+      "last_seq": 129861
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/e74dd273631cb1d7ab00b51c27ae85ae9dd97177e84a060da8338cdca3aca697/BTC-26MAR27.jsonl.gz",
+      "sha256": "e74dd273631cb1d7ab00b51c27ae85ae9dd97177e84a060da8338cdca3aca697",
+      "bytes": 51383,
+      "rows": 2648,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 129862,
+      "last_seq": 132509
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/b7a5e1ebb441875703335df03a5cbe296d553d109aa8046cf3a096056bc5dc23/BTC-26MAR27.jsonl.gz",
+      "sha256": "b7a5e1ebb441875703335df03a5cbe296d553d109aa8046cf3a096056bc5dc23",
+      "bytes": 36823,
+      "rows": 2003,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 132510,
+      "last_seq": 134512
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/74964c0842f0961f2ec006e6967137c53fc8e2def8af74e8ec9cce57e222d6c1/BTC-26MAR27.jsonl.gz",
+      "sha256": "74964c0842f0961f2ec006e6967137c53fc8e2def8af74e8ec9cce57e222d6c1",
+      "bytes": 40586,
+      "rows": 2174,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 134513,
+      "last_seq": 136686
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/5e5cb59f330ba8700ac6dfc68d599f718e08a747513deb20c9264e2429d3b340/BTC-26MAR27.jsonl.gz",
+      "sha256": "5e5cb59f330ba8700ac6dfc68d599f718e08a747513deb20c9264e2429d3b340",
+      "bytes": 37416,
+      "rows": 1768,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 136687,
+      "last_seq": 138454
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/549317446ae8b323f11d3720684e0e19fe4fdd4a4b0c954852626c13a29cdce7/BTC-26MAR27.jsonl.gz",
+      "sha256": "549317446ae8b323f11d3720684e0e19fe4fdd4a4b0c954852626c13a29cdce7",
+      "bytes": 41305,
+      "rows": 1975,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 138455,
+      "last_seq": 140429
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/50a7f67b82752587d6a1a1b4310bede4301fc91677d6b834c980f802aac2c9c6/BTC-26MAR27.jsonl.gz",
+      "sha256": "50a7f67b82752587d6a1a1b4310bede4301fc91677d6b834c980f802aac2c9c6",
+      "bytes": 14982,
+      "rows": 817,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 140430,
+      "last_seq": 141246
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/e8bb0fc5831a40a228a98db87ead0a1f5b516ae11da1225c34ffec89dc31eae1/BTC-26MAR27.jsonl.gz",
+      "sha256": "e8bb0fc5831a40a228a98db87ead0a1f5b516ae11da1225c34ffec89dc31eae1",
+      "bytes": 16642,
+      "rows": 818,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 141247,
+      "last_seq": 142064
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/448817a9ae8a045f5a1fd652ce4bc0b4456c76e944978460b93e794d704523dd/BTC-26MAR27.jsonl.gz",
+      "sha256": "448817a9ae8a045f5a1fd652ce4bc0b4456c76e944978460b93e794d704523dd",
+      "bytes": 67353,
+      "rows": 4226,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 142065,
+      "last_seq": 146290
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/14abeb080b477144cb5443186455cf37a297624e38471debf4e31d3cbb832f1f/BTC-26MAR27.jsonl.gz",
+      "sha256": "14abeb080b477144cb5443186455cf37a297624e38471debf4e31d3cbb832f1f",
+      "bytes": 54380,
+      "rows": 3069,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 146291,
+      "last_seq": 149359
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/34d774b9d63365af5a65ae0827d7d36166119874a9ccb1ae8eea6c5557be18ba/BTC-26MAR27.jsonl.gz",
+      "sha256": "34d774b9d63365af5a65ae0827d7d36166119874a9ccb1ae8eea6c5557be18ba",
+      "bytes": 34161,
+      "rows": 1794,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 149360,
+      "last_seq": 151153
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/d1ef1197ee25d1baf0e4e9873a78a04ee38774c858606172f6574600930467d2/BTC-26MAR27.jsonl.gz",
+      "sha256": "d1ef1197ee25d1baf0e4e9873a78a04ee38774c858606172f6574600930467d2",
+      "bytes": 35882,
+      "rows": 1878,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 151154,
+      "last_seq": 153031
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/3aa18f5cbfeadedc9850699cfbc5bbd46411376c827ece46117260d24b44abb0/BTC-26MAR27.jsonl.gz",
+      "sha256": "3aa18f5cbfeadedc9850699cfbc5bbd46411376c827ece46117260d24b44abb0",
+      "bytes": 53972,
+      "rows": 3070,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 153032,
+      "last_seq": 156101
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/74b156c21a11c2788aba823bae0917e40fc07a62211f04b5be81e5f48377975a/BTC-26MAR27.jsonl.gz",
+      "sha256": "74b156c21a11c2788aba823bae0917e40fc07a62211f04b5be81e5f48377975a",
+      "bytes": 10280,
+      "rows": 504,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 156102,
+      "last_seq": 156605
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/492521067915c784cecce1d84bf3002a956c5ddd00ce631fe0ad40573471897f/BTC-26MAR27.jsonl.gz",
+      "sha256": "492521067915c784cecce1d84bf3002a956c5ddd00ce631fe0ad40573471897f",
+      "bytes": 16030,
+      "rows": 878,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 156606,
+      "last_seq": 157483
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/f1c244b034cee5b130c59f5f71cc8d1ecfed464c7ee670a6f0d795b01bde7317/BTC-26MAR27.jsonl.gz",
+      "sha256": "f1c244b034cee5b130c59f5f71cc8d1ecfed464c7ee670a6f0d795b01bde7317",
+      "bytes": 34681,
+      "rows": 1900,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 157484,
+      "last_seq": 159383
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/55d72dd46d8634d58369bca6d73d0570d4d5679d076dae25e668226e6de1fb46/BTC-26MAR27.jsonl.gz",
+      "sha256": "55d72dd46d8634d58369bca6d73d0570d4d5679d076dae25e668226e6de1fb46",
+      "bytes": 48993,
+      "rows": 2557,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 159384,
+      "last_seq": 161940
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/b66dfb3bab32dbbf6611fbaf734d3c6453c5f7186897e32750a6ea9c077870ca/BTC-26MAR27.jsonl.gz",
+      "sha256": "b66dfb3bab32dbbf6611fbaf734d3c6453c5f7186897e32750a6ea9c077870ca",
+      "bytes": 64184,
+      "rows": 3586,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 161941,
+      "last_seq": 165526
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/fad0610c93f7857f95de0251db72df4cc71248b4501f38961c4bfb05c5edb5af/BTC-26MAR27.jsonl.gz",
+      "sha256": "fad0610c93f7857f95de0251db72df4cc71248b4501f38961c4bfb05c5edb5af",
+      "bytes": 49064,
+      "rows": 2704,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 165527,
+      "last_seq": 168230
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/8ce970c209356e71e123a25039e37887d0c72cafbddc4cd7d8d016175534c133/BTC-26MAR27.jsonl.gz",
+      "sha256": "8ce970c209356e71e123a25039e37887d0c72cafbddc4cd7d8d016175534c133",
+      "bytes": 67765,
+      "rows": 3828,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 168231,
+      "last_seq": 172058
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/31a64ebea32d39e6acf0890714b020a48adcb642887a0e37fc74c019e7dd51d7/BTC-26MAR27.jsonl.gz",
+      "sha256": "31a64ebea32d39e6acf0890714b020a48adcb642887a0e37fc74c019e7dd51d7",
+      "bytes": 7435,
+      "rows": 355,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 172059,
+      "last_seq": 172413
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/0a497555a9c108f4e264836d3e2357314d282209310afe47ff361436198945f9/BTC-26MAR27.jsonl.gz",
+      "sha256": "0a497555a9c108f4e264836d3e2357314d282209310afe47ff361436198945f9",
+      "bytes": 26854,
+      "rows": 1541,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 172414,
+      "last_seq": 173954
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/dbe85121a6c9b179ae18e2cf3571583156826534df68233751555357a845acdb/BTC-26MAR27.jsonl.gz",
+      "sha256": "dbe85121a6c9b179ae18e2cf3571583156826534df68233751555357a845acdb",
+      "bytes": 20201,
+      "rows": 1132,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 173955,
+      "last_seq": 175086
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/ff3c16247e202bf2561f4389808b94db600437d18d97ecbac9a459da0d623692/BTC-26MAR27.jsonl.gz",
+      "sha256": "ff3c16247e202bf2561f4389808b94db600437d18d97ecbac9a459da0d623692",
+      "bytes": 33161,
+      "rows": 1766,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 175087,
+      "last_seq": 176852
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/79b85c204c5edd7666054411ff08031a9fdbf208786e3ea701a167b1f6f3cd55/BTC-26MAR27.jsonl.gz",
+      "sha256": "79b85c204c5edd7666054411ff08031a9fdbf208786e3ea701a167b1f6f3cd55",
+      "bytes": 23102,
+      "rows": 1116,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 176853,
+      "last_seq": 177968
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/b2e3ecb65e55951604b1e8b6e35625c2364f5b587f6fe39b7c84f519b425ec63/BTC-26MAR27.jsonl.gz",
+      "sha256": "b2e3ecb65e55951604b1e8b6e35625c2364f5b587f6fe39b7c84f519b425ec63",
+      "bytes": 15772,
+      "rows": 833,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 177969,
+      "last_seq": 178801
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/6b8f47fb051897e9fa5b5810cac9e4ba51cb245c983eb278c9161937c4c7a02d/BTC-26MAR27.jsonl.gz",
+      "sha256": "6b8f47fb051897e9fa5b5810cac9e4ba51cb245c983eb278c9161937c4c7a02d",
+      "bytes": 23293,
+      "rows": 1203,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 178802,
+      "last_seq": 180004
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/065ec4606270896e2c4ff52afb60cd3cc65916a22b473a7993429f20fc3b5c08/BTC-26MAR27.jsonl.gz",
+      "sha256": "065ec4606270896e2c4ff52afb60cd3cc65916a22b473a7993429f20fc3b5c08",
+      "bytes": 5999,
+      "rows": 294,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 180005,
+      "last_seq": 180298
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/1ff0d270ad226f58c8c39f4ba2ac275c19e285fe36ea499be0329bcb786c5dff/BTC-26MAR27.jsonl.gz",
+      "sha256": "1ff0d270ad226f58c8c39f4ba2ac275c19e285fe36ea499be0329bcb786c5dff",
+      "bytes": 6811,
+      "rows": 333,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 180299,
+      "last_seq": 180631
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/436c26cafbf3a72948defb22d28a45415aa445dcc42a031f625728ec259355f0/BTC-26MAR27.jsonl.gz",
+      "sha256": "436c26cafbf3a72948defb22d28a45415aa445dcc42a031f625728ec259355f0",
+      "bytes": 16610,
+      "rows": 865,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 180632,
+      "last_seq": 181496
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/7a3aa8492bd2572c204ffee1d33d1967b251e34b061c8d821321df305e6b570b/BTC-26MAR27.jsonl.gz",
+      "sha256": "7a3aa8492bd2572c204ffee1d33d1967b251e34b061c8d821321df305e6b570b",
+      "bytes": 19030,
+      "rows": 1276,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 181497,
+      "last_seq": 182772
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/9cc42c83a95ba5cba8d41bc8a55977b58e0f9a1fc991028f2177e720ca6662fa/BTC-26MAR27.jsonl.gz",
+      "sha256": "9cc42c83a95ba5cba8d41bc8a55977b58e0f9a1fc991028f2177e720ca6662fa",
+      "bytes": 11980,
+      "rows": 754,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 182773,
+      "last_seq": 183526
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/18b2df6855b073c0c7596edeca6c95fdf251c67967305e4cca98d952d78a0440/BTC-26MAR27.jsonl.gz",
+      "sha256": "18b2df6855b073c0c7596edeca6c95fdf251c67967305e4cca98d952d78a0440",
+      "bytes": 33794,
+      "rows": 2173,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 183527,
+      "last_seq": 185699
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/f746cce8dc43a2d1926ce1a3c3485f9bd060e363857bf934a8f23f9c19fc5625/BTC-26MAR27.jsonl.gz",
+      "sha256": "f746cce8dc43a2d1926ce1a3c3485f9bd060e363857bf934a8f23f9c19fc5625",
+      "bytes": 27054,
+      "rows": 1727,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 185700,
+      "last_seq": 187426
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/6060ab8e8f6d56e635e2a3937d4de32d5d126d26e9e5d94a33e18a4f06be6fc2/BTC-26MAR27.jsonl.gz",
+      "sha256": "6060ab8e8f6d56e635e2a3937d4de32d5d126d26e9e5d94a33e18a4f06be6fc2",
+      "bytes": 4094,
+      "rows": 216,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 187427,
+      "last_seq": 187642
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/93dcd97906701c04e9d859cfb262f75e44c8a4af9a399f2ee3fde0a09cf99175/BTC-26MAR27.jsonl.gz",
+      "sha256": "93dcd97906701c04e9d859cfb262f75e44c8a4af9a399f2ee3fde0a09cf99175",
+      "bytes": 8099,
+      "rows": 479,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 187643,
+      "last_seq": 188121
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/9f6fba5fa40ac47bad5f67a70c08487c4f6d44d8d1ca06ba0a36c92f4bbaa922/BTC-26MAR27.jsonl.gz",
+      "sha256": "9f6fba5fa40ac47bad5f67a70c08487c4f6d44d8d1ca06ba0a36c92f4bbaa922",
+      "bytes": 23812,
+      "rows": 1408,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 188122,
+      "last_seq": 189529
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/270832fb19dbc07a90ebccefa4ce310335939c24680067178e6b05d620fb592b/BTC-26MAR27.jsonl.gz",
+      "sha256": "270832fb19dbc07a90ebccefa4ce310335939c24680067178e6b05d620fb592b",
+      "bytes": 5274,
+      "rows": 326,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 189530,
+      "last_seq": 189855
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/5afdc3bad0f7f90167ba1cb2b09021f117527dfe507b06f3f50ea79d53393143/BTC-26MAR27.jsonl.gz",
+      "sha256": "5afdc3bad0f7f90167ba1cb2b09021f117527dfe507b06f3f50ea79d53393143",
+      "bytes": 42000,
+      "rows": 2541,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 189856,
+      "last_seq": 192396
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/6c7df079c4abc4ed999bace6bcdcbbffeacfc60e257732ab87e9016bab0ed70e/BTC-26MAR27.jsonl.gz",
+      "sha256": "6c7df079c4abc4ed999bace6bcdcbbffeacfc60e257732ab87e9016bab0ed70e",
+      "bytes": 81672,
+      "rows": 4990,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 192397,
+      "last_seq": 197386
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/250d8453dfbb8f35cd842b769fe180853d0c5aaa62a37c536b59ad4d94a9e9d5/BTC-26MAR27.jsonl.gz",
+      "sha256": "250d8453dfbb8f35cd842b769fe180853d0c5aaa62a37c536b59ad4d94a9e9d5",
+      "bytes": 176881,
+      "rows": 9835,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 197387,
+      "last_seq": 207221
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/b5cef870b63e3ac9ce8eb0dc6552c744878d664bdce5c6dd141e2366a2e525f1/BTC-26MAR27.jsonl.gz",
+      "sha256": "b5cef870b63e3ac9ce8eb0dc6552c744878d664bdce5c6dd141e2366a2e525f1",
+      "bytes": 61853,
+      "rows": 2405,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 207222,
+      "last_seq": 209626
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/16ef61da711c33d63cbb89dd013b05bbe78935700065cb65dd44cb7be24cc948/BTC-26MAR27.jsonl.gz",
+      "sha256": "16ef61da711c33d63cbb89dd013b05bbe78935700065cb65dd44cb7be24cc948",
+      "bytes": 59949,
+      "rows": 2486,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 209627,
+      "last_seq": 212112
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/a0ce5ef8193fdde62c642f577113aaecaff8a8b487e569e3e18f6919193729d7/BTC-26MAR27.jsonl.gz",
+      "sha256": "a0ce5ef8193fdde62c642f577113aaecaff8a8b487e569e3e18f6919193729d7",
+      "bytes": 87196,
+      "rows": 4097,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 212113,
+      "last_seq": 216209
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/cdabbe2d3f3320203eb20758bb7aa4e750b457fc587b598c9760b4bf3b361724/BTC-26MAR27.jsonl.gz",
+      "sha256": "cdabbe2d3f3320203eb20758bb7aa4e750b457fc587b598c9760b4bf3b361724",
+      "bytes": 117775,
+      "rows": 5718,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 216210,
+      "last_seq": 221927
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/f59194bc77126b8a111c018690994780e490940442f8bcc19f6bab5671ed1420/BTC-26MAR27.jsonl.gz",
+      "sha256": "f59194bc77126b8a111c018690994780e490940442f8bcc19f6bab5671ed1420",
+      "bytes": 40802,
+      "rows": 1736,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 221928,
+      "last_seq": 223663
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/1708276600bda1a17b0909c0ecdc76e7e9654a7873f8c3eadc233cc960644dd3/BTC-26MAR27.jsonl.gz",
+      "sha256": "1708276600bda1a17b0909c0ecdc76e7e9654a7873f8c3eadc233cc960644dd3",
+      "bytes": 41471,
+      "rows": 2378,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 223664,
+      "last_seq": 226041
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/9f782fd615bbf82bfd1f213b9094366450f52f0d7891ab303dc5611c5d205f03/BTC-26MAR27.jsonl.gz",
+      "sha256": "9f782fd615bbf82bfd1f213b9094366450f52f0d7891ab303dc5611c5d205f03",
+      "bytes": 35517,
+      "rows": 1930,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 226042,
+      "last_seq": 227971
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/32337a37b2ee8d5677861b1205708f7b622999d4690315d3857b39d281e8f5e8/BTC-26MAR27.jsonl.gz",
+      "sha256": "32337a37b2ee8d5677861b1205708f7b622999d4690315d3857b39d281e8f5e8",
+      "bytes": 6962,
+      "rows": 282,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 227972,
+      "last_seq": 228253
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/5e23e49b5318a67b58845971b6ce6209155077e6bda3e8b49f6f97febf54abcf/BTC-26MAR27.jsonl.gz",
+      "sha256": "5e23e49b5318a67b58845971b6ce6209155077e6bda3e8b49f6f97febf54abcf",
+      "bytes": 12642,
+      "rows": 614,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 228254,
+      "last_seq": 228867
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/fe959174fc5a64fd61121af546c2ff7317e26eb918f567917b4d8439f359b558/BTC-26MAR27.jsonl.gz",
+      "sha256": "fe959174fc5a64fd61121af546c2ff7317e26eb918f567917b4d8439f359b558",
+      "bytes": 26207,
+      "rows": 1215,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 228868,
+      "last_seq": 230082
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/08e1662b933e8278acf23001ab425957a39d1f88e1278cc536b41f17da6bd261/BTC-26MAR27.jsonl.gz",
+      "sha256": "08e1662b933e8278acf23001ab425957a39d1f88e1278cc536b41f17da6bd261",
+      "bytes": 17506,
+      "rows": 982,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 230083,
+      "last_seq": 231064
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/92d69aeebd67eaf9bcf378505b591fecfc36274227e77ffdeb5a6db3c6046d93/BTC-26MAR27.jsonl.gz",
+      "sha256": "92d69aeebd67eaf9bcf378505b591fecfc36274227e77ffdeb5a6db3c6046d93",
+      "bytes": 9340,
+      "rows": 455,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 231065,
+      "last_seq": 231519
+    },
+    {
+      "key": "btc/research/deribit-history-extension-v1/objects/5c57a2068496c209426a01b0bfb5d6a9558a83e4bb54c9d24e74124f6fadc1d0/BTC-26MAR27.jsonl.gz",
+      "sha256": "5c57a2068496c209426a01b0bfb5d6a9558a83e4bb54c9d24e74124f6fadc1d0",
+      "bytes": 17417,
+      "rows": 876,
+      "symbol": "BTC-26MAR27",
+      "first_seq": 231520,
+      "last_seq": 232395
+    }
+  ],
+  "expected_daily_rows": 486203
+}

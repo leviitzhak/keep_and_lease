@@ -17,8 +17,9 @@ import torch
 from .accounting import Goal, Ledger
 from .engine import Engine, CandidateGenerator, Delays, Instruction, post_decision
 from .data import load_archive, split_blocks
-from .model import ValueNetwork, features, fit, save_model, load_model
-from .analytical import analytical
+from .model import ValueNetwork, features, action_features, fit, save_model, load_model
+from .analytical import analytical, analytical_scores
+from .action_search import ActionDomain, ValueActionSearch
 
 
 def write_json(path, obj):
@@ -35,6 +36,21 @@ def code_identity():
     digest.update(Path('trade_ordering.py').read_bytes());digest.update(Path('replay_checkpoints.py').read_bytes())
     commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
     return dict(source_commit=commit,source_sha256=digest.hexdigest(),simulator='post-decision-v1')
+
+
+def continuation_identity(policy,config,model=None):
+    base=policy if model is None else f'{policy}:{model.continuation}'
+    if config.get('action_space')!='full':return base
+    details=dict(algorithm='native-state-search-v2',domain=config['action_domain'],
+                 evaluations=config['search_evaluations'],rounds=4,
+                 exploration=.5 if policy=='exploratory_v1' else .15 if policy=='collect_greedy_v1_eps015' else 0.)
+    if model is not None:
+        weights=hashlib.sha256()
+        for name,tensor in model.state_dict().items():
+            weights.update(name.encode());weights.update(tensor.detach().cpu().numpy().tobytes())
+        details['continuation_model_sha256']=weights.hexdigest()
+    version=hashlib.sha256(json.dumps(details,sort_keys=True).encode()).hexdigest()[:24]
+    return base+'|actions:'+version
 
 
 class Budget:
@@ -56,19 +72,34 @@ def episode(block, instruments, seed, policy, config, budget, model=None, delay_
     replay=Engine(instruments,Ledger(initial.copy()),goal,seed,delays,participation=config['participation'],event_cap=config['event_cap'])
     replay.seed_market(block['seeds'],block['start']);replay.add_tape(block['tape'])
     generator=CandidateGenerator(budget=config['candidate_budget'])
+    searcher=ValueActionSearch(ActionDomain(**config['action_domain']),evaluations=config['search_evaluations']) if config.get('action_space')=='full' else None
     rng=random.Random(seed)
     records=[];decision_audit=[];predictions=[];submitted_orders=set()
-    continuation=policy if model is None else f'{policy}:{model.continuation}'
+    continuation=continuation_identity(policy,config,model)
     for t in range(block['start'],block['end'],config['cadence_ms']):
         try:budget.check()
         except RuntimeError as e:
             replay.truncated=True;replay.hidden.failures.append(dict(time=t,reason=str(e)));break
         replay.advance(t)
         if replay.truncated:break
-        obs=replay.observe();actions,audit=generator.generate(obs,goal,instruments)
-        fs=[features(post_decision(obs,a,instruments),goal,instruments) for a in actions]
+        obs=replay.observe()
+        history_cache={}
+        if searcher is not None:
+            def score(candidates):
+                if policy=='hold':return [0. if a.kind=='wait' else -1. for a in candidates]
+                if model is None:return analytical_scores(obs,candidates,goal,instruments)
+                return model.predict([action_features(obs,a,goal,instruments) for a in candidates],history_cache=history_cache)['objective']
+            epsilon=.5 if policy=='exploratory_v1' else .15 if policy=='collect_greedy_v1_eps015' else 0.
+            action,search=searcher.choose(obs,goal,instruments,score,rng=rng,epsilon=epsilon)
+            actions=[action];audit=search['proposals']
+        else:
+            actions,audit=generator.generate(obs,goal,instruments)
+        fs=[action_features(obs,a,goal,instruments) for a in actions]
         predicted=None
-        if policy=='hold':
+        if searcher is not None:
+            chosen=0
+            if model is not None:predicted=model.predict(fs,history_cache=history_cache)
+        elif policy=='hold':
             chosen=next((i for i,a in enumerate(actions) if a.kind=='wait'),0)
         elif policy=='analytical':chosen=analytical(obs,actions,goal,instruments)
         elif policy=='exploratory_v1':
@@ -150,7 +181,8 @@ def run(args):
     config=dict(initial_btc=1.,initial_usd=100000.,reference_btc=100000.,candidate_budget=96,cadence_ms=120000,
                 transition_cap=20000,event_cap=30000,pilot_seconds=3600,optimizer_updates_per_stage=160,
                 participation=.1,delays=asdict(Delays()),seeds=[11,29],
-                dates=[f'2026-06-{d:02d}' for d in range(6,14)],episode_minutes=60,offset_minutes=60)
+                dates=[f'2026-06-{d:02d}' for d in range(6,14)],episode_minutes=60,offset_minutes=60,
+                action_space=getattr(args,'action_space','full'),action_domain=asdict(ActionDomain()),search_evaluations=128)
     output=Path(args.output);output.mkdir(parents=True,exist_ok=True)
     budget=Budget(config)
     instruments,trades,seeds,manifest=load_archive(args.input,config['dates'])
@@ -254,6 +286,7 @@ def main():
     parser.add_argument('--input',required=True,help='Existing hash-receipted local export; no download')
     parser.add_argument('--output',required=True)
     parser.add_argument('--resume',action='store_true',help='Resume immutable completed training stages with identical code/data/config')
+    parser.add_argument('--action-space',choices=('full','legacy'),default='full',help='Full bounded native order domain with stochastic value search; legacy reproduces the old menu')
     args=parser.parse_args()
     try:run(args)
     except Exception as e:

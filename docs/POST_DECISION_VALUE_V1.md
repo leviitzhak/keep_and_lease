@@ -94,14 +94,23 @@ linear experiments using inverse-source prints, BTC capacity is `USD amount /
 print price`, then multiplied by participation. Quotes, depth and queue position
 are not invented. Historical spot execution is disabled in this pilot.
 
-At most 128 candidates are allowed (pilot 96). Search includes wait, cancellation,
-amendment, directional buys/sells and independent two-leg packages; quantities
-and posted prices vary together. Defaults use 0.005/0.01 BTC, 0.99/1 leg ratios,
-and -50/0/+50 bp offsets with side-aware tick rounding. Existing live instructions
-are resolved before adding another package. Existing positions can be reduced
-by an opposing instruction. A pure post-decision builder adds pending intent and
-reservations without pretending it filled. Every proposal, executable payload,
-rejection reason and selected action is retained.
+The default `--action-space full` searches every native tick/lot combination
+within configurable bounds: 0.0001–0.02 BTC equivalent per order and ±50 bp of
+the last received trade. All eligible observed instruments have sampling support.
+Order sizes, sides and posted prices are independent; there is no fixed leg ratio.
+Working orders permit additional postings and combined creations/amendments/
+cancellations, subject to the existing funding, floor and six-uncertain-version
+admission checks. Defaults allow up to two new orders per decision (configurable
+to six). Stochastic global proposals and local refinement use 128 attempts over
+four rounds, selecting the best scalar value among feasible evaluated post-states;
+this is an approximate argmax, not exhaustive enumeration or a 128-action domain.
+The state encoder retains actual orders without a 32-item cutoff. A pure builder
+adds pending intent and reservations without pretending an order filled. Proposal
+payloads, admission results and selected actions are retained.
+
+`--action-space legacy` preserves the old 96-candidate pilot menu, 0.005/0.01 BTC
+sizes, 0.99/1 leg ratios, -50/0/+50 bp offsets and suppression of new packages
+while instructions remain unresolved. Frozen earlier reports used that menu.
 
 The emergency action cancels all known possible orders and admits no new risk.
 It cannot instantly undo a late fill or guarantee recovery. A failure is retained
@@ -212,10 +221,11 @@ validation and test sets, continuous portfolios within each set, all raw trades
 and hourly decisions. It documents the exact candidate count and larger-universe
 truncation bias. This extension does not rerun or change the neural pilot.
 
-The [unified data and replay extension](research/post_decision_value/UNIFIED_DATA_AND_REPLAYS.md)
-adds a bounded offline native archive union, strict sequence-prefix causal reader,
-three exact historical replay excerpts, and measured 100/500 ms CPU runtime probes.
-All available 90-day raw files were reconciled locally; the multi-year raw union
-remains incomplete because its receipts and objects are not available in this
-session. The report separates trade unification from settlement/spot bridge
-verification and documents the remaining operator/partitioned-reader work.
+The [initial unified data and replay extension](research/post_decision_value/UNIFIED_DATA_AND_REPLAYS.md)
+preserves three exact historical replay excerpts and legacy 100/500 ms CPU probes.
+The subsequent [completed union and expanded action search](research/post_decision_value/FULL_ACTIONS_AND_UNION.md)
+reconciles all 486,203 daily records against the native multi-year archive and
+publishes one logical 120,105,433-row dataset. It adds a lazy causal chunk reader,
+full bounded order-domain search, restored Torch validation, a new chronological
+learning smoke test and updated runtime measurements. Trade unification is
+complete; verified settlement/spot bridges and annual learning remain outstanding.

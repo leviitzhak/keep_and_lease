@@ -1,5 +1,10 @@
 # Unified data, subsecond cost, and order replays
 
+**Historical phase report.** The later [completed union and full action search](FULL_ACTIONS_AND_UNION.md)
+supersedes the pending-merge, missing-Torch and action-domain status below. Its
+new CPU measurements apply to expanded neural search; the frozen legacy replay
+results and their provenance here remain unchanged.
+
 Research only, 2026-10-26. No deployment, orders, purchases, new market-data downloads,
 cloud workers, neural retraining, or large replay were started.
 

@@ -1,0 +1,23 @@
+{
+  "application_deployment": false,
+  "canonical_chunks": 12322,
+  "compressed_bytes_read": 21539143,
+  "exchange_downloads": 0,
+  "fresh_full_raw_scan": false,
+  "manifest": {
+    "bytes": 1658578,
+    "sha256": "bb448ae2b6ae0fb04e3ecc5a2b77e639122a59077cb79205c773a58ae009b4d2",
+    "uri": "gs://keep-and-lease-market-data/btc/research/unified-futures-v1/objects/bb448ae2b6ae0fb04e3ecc5a2b77e639122a59077cb79205c773a58ae009b4d2/manifest.json"
+  },
+  "native_rows": 120105433,
+  "reconciliation": {
+    "daily_rows": 486203,
+    "matched_identical": 486203,
+    "overlap_chunk_rows": 510000,
+    "overlap_chunks": 51,
+    "overlay_rows": 0
+  },
+  "seconds": 118.71376093,
+  "source_objects_read": 292,
+  "status": "COMPLETE_LOGICAL_UNION"
+}

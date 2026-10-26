@@ -1,0 +1,127 @@
+{
+  "architecture": {
+    "heads": 4,
+    "history_mode": "transformer",
+    "layers": 2,
+    "width": 64
+  },
+  "checkpoint_sha256": "b3d5892f3c939fb3d2df11e65a92c9fd73fa0d64ac3cbb0cfb07d7b421d83dda",
+  "domain": {
+    "max_btc": 0.02,
+    "max_new_orders": 2,
+    "min_btc": 0.0001,
+    "price_band_bps": 50.0
+  },
+  "interpretation": "Timing only: fixed historical observable states, existing trained checkpoint, no executed trajectory or profitability claim. Serial annual figures are extrapolations.",
+  "network_parameters": 87877,
+  "search_evaluations": 128,
+  "search_rounds": 4,
+  "single_order_domain_size": 201600,
+  "source_manifest": {
+    "bytes_read": 348949,
+    "coverage_claim": "Only the explicitly listed cached objects were verified; no fresh full-archive inventory",
+    "files": [
+      {
+        "bytes": 221778,
+        "file": "2026-06-06-BTC-25DEC26.jsonl.gz",
+        "first_ms": 1780704017455,
+        "last_ms": 1780790135291,
+        "ordinary_rows": 9279,
+        "raw_rows": 10614,
+        "sha256": "dfa06e919b8f3caa5a87ad43cec8c1a2887761c2fb126aaccafda615ed907f5f",
+        "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/dfa06e919b8f3caa5a87ad43cec8c1a2887761c2fb126aaccafda615ed907f5f/BTC-25DEC26.jsonl.gz"
+      },
+      {
+        "bytes": 127171,
+        "file": "2026-06-06-BTC-26MAR27.jsonl.gz",
+        "first_ms": 1780704054948,
+        "last_ms": 1780789325447,
+        "ordinary_rows": 5261,
+        "raw_rows": 5912,
+        "sha256": "4ff3f6e0ed2269fae32d0d3cdf3c849c522d9b93dec730fc55a29b995f249bb8",
+        "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/4ff3f6e0ed2269fae32d0d3cdf3c849c522d9b93dec730fc55a29b995f249bb8/BTC-26MAR27.jsonl.gz"
+      }
+    ],
+    "hypothetical_linear_capacity": "native USD amount / print price",
+    "instruments": {
+      "BTC-25DEC26": {
+        "expiry": 1798185600000,
+        "fee_bps": 1.0,
+        "lot": 0.0001,
+        "margin_fraction": 0.1,
+        "payoff": "linear",
+        "source_payoff": "inverse",
+        "symbol": "BTC-25DEC26",
+        "tick": 2.5
+      },
+      "BTC-26MAR27": {
+        "expiry": 1806048000000,
+        "fee_bps": 1.0,
+        "lot": 0.0001,
+        "margin_fraction": 0.1,
+        "payoff": "linear",
+        "source_payoff": "inverse",
+        "symbol": "BTC-26MAR27",
+        "tick": 2.5
+      }
+    },
+    "metadata": {
+      "input_coverage.json": "1deec1539c7f220d5895d51b0f7ed77f8e15d6a067a41eedfc5d04701a63021d",
+      "seeds.json": "82b424dd8d2a135c3c42fc92c2e33be30a32194a285cc5dbb8e6f7e3be664c1b",
+      "source_receipts.json": "bfdfdbce4b9f302a98039db4deff38f8cd8c1cf698d315e57e59ecca3123d720",
+      "specification.json": "f3dcdaedfa8e910f846c715087af89dd7bd471180b3c9fc6cac060f164c9f9f9"
+    },
+    "mode": "counterfactual linear on inverse-source tape",
+    "native_amount": "USD notional",
+    "no_quote_depth": true,
+    "ordering": "timestamp then symbol then trade id; sequence verified per daily object",
+    "raw_rows": 16526,
+    "settlement_evidence": "not present",
+    "source_payoff": "inverse",
+    "spot_execution": "disabled"
+  },
+  "states": [
+    {
+      "accepted": [
+        121,
+        122,
+        115,
+        111,
+        113,
+        120,
+        112,
+        119
+      ],
+      "annual_100ms_serial_days": 2239.605409405931,
+      "annual_500ms_serial_days": 447.92108188118624,
+      "history_events": 64,
+      "max_ms": 1157.7590060005605,
+      "mean_ms": 613.5905231249126,
+      "min_ms": 382.0489300014742,
+      "repeats": 8,
+      "working_orders": false
+    },
+    {
+      "accepted": [
+        105,
+        102,
+        102,
+        90,
+        93,
+        95,
+        104,
+        105
+      ],
+      "annual_100ms_serial_days": 1542.714719553237,
+      "annual_500ms_serial_days": 308.5429439106474,
+      "history_events": 64,
+      "max_ms": 545.6659519986715,
+      "mean_ms": 422.66156700088686,
+      "min_ms": 326.15650000298047,
+      "repeats": 8,
+      "working_orders": true
+    }
+  ],
+  "threads": 1,
+  "torch": "2.14.1+cpu"
+}
