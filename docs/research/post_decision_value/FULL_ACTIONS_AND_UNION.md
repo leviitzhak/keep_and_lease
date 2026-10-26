@@ -1,5 +1,9 @@
 # Completed futures union and full bounded action search
 
+The later [carry, sparse grid and expiry-input update](CARRY_GRID_AND_EXPIRY_INPUTS.md)
+changes the default search to a 32-attempt sparse grid and downloads public
+delivery/settlement/Treasury evidence. The union and frozen results here stand.
+
 Research update, 2026-10-26. All dates/times below are UTC. Research branch:
 `agent/btc-post-decision-value-v1`. No application deployment, master merge, live
 order, data purchase, new infrastructure, exchange acquisition or annual training.

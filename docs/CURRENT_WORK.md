@@ -1,5 +1,18 @@
 # Current work
 
+## Sparse value search and expiry inputs — 26 October 2026
+
+The research-only branch now defaults to a 32-attempt endpoint/random action grid,
+with configurable effort. The prior futures union is complete as a logical
+120,105,433-row dataset. Bounded public acquisition added delivery values for all
+528 expired contracts, 17,695 daily settlement events and 2,703 Treasury quote
+dates; 55 expired contracts still have missing daily events. The current neural
+action set remains futures-only, and its minimum-growth score does not reward
+growth of only one commodity. The new carry accounting fixtures and
+[report](research/post_decision_value/CARRY_GRID_AND_EXPIRY_INPUTS.md) describe
+these limits, measured search costs and reproduction. No deployment or annual
+training was performed. Earlier phase reports below retain their original scope.
+
 ## Full cached analytical study — 26 October 2026
 
 The post-decision research branch now has a separate hourly-decision analytical

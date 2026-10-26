@@ -1,0 +1,453 @@
+{
+  "bytes": 0,
+  "created_at": "2026-10-26T16:48:49.205032+00:00",
+  "cutoff_ms": 1791590400000,
+  "daily_api_complete": true,
+  "daily_instruments": 495,
+  "daily_rows": 17695,
+  "delivery_api_complete": true,
+  "delivery_date_range": [
+    "2016-03-18",
+    "2026-10-26"
+  ],
+  "delivery_rows": 2650,
+  "errors": [],
+  "expired_contracts": 528,
+  "expired_contracts_with_complete_daily_schedule": 473,
+  "expired_contracts_with_delivery": 528,
+  "interpretation": [
+    "Observed delivery indices and daily mark events, not spot execution prices.",
+    "Public platform-wide P&L is never assigned to the strategy.",
+    "Treasury indicative bid rates are not executable purchases or CUSIP cash flows.",
+    "Next-UTC-day availability of rate observations is a modeling convention, not verified publication time.",
+    "Account margin/credit/collateral terms and executable spot/FX bridges remain separate requirements.",
+    "API exhaustion does not establish complete coverage since contract listing; inspect coverage.json."
+  ],
+  "limits": {
+    "bytes": 24000000,
+    "requests": 80,
+    "seconds": 240
+  },
+  "plan_sha256": "6ae07e823797a84ac9b24a0387bb1658cc929cb8cc701816122f6a0a67b8f0e3",
+  "requests": 0,
+  "seconds": 2.784624581996468,
+  "source_bytes": 13005981,
+  "source_objects": 59,
+  "sources": [
+    {
+      "body": "14dde4c18af2e3e8b82185ac70ba5f7767ccb87f2aed5080377a53c9f440d441.gz",
+      "bytes": 4926,
+      "retrieved_at": "2026-10-26T16:33:44.981525+00:00",
+      "sha256": "8fb2ff68bb4d0ea7edb2f58d1318ba51e22a14dbe0c372f2a43095f0025209be",
+      "url": "https://www.deribit.com/api/v2/public/get_delivery_prices?index_name=btc_usd&count=1000&offset=0"
+    },
+    {
+      "body": "031ba178427049252c05ab3feba84b2b4612f720fa25060bfc44ead7bb3a7aa3.gz",
+      "bytes": 4925,
+      "retrieved_at": "2026-10-26T16:40:59.448200+00:00",
+      "sha256": "8ee9fb2e60f2bec748e6bdd36e18bbacc4d6897fa4094a0d65dd11f7ab297e18",
+      "url": "https://www.deribit.com/api/v2/public/get_delivery_prices?index_name=btc_usd&count=1000&offset=100"
+    },
+    {
+      "body": "9e59e2c87aaed0258921196a926ad47b59e70d010537766f5b217af1370126b2.gz",
+      "bytes": 4928,
+      "retrieved_at": "2026-10-26T16:41:04.902234+00:00",
+      "sha256": "651db4152e274208c62a617aedc24105c5741a921faafe8346214a158adf9f54",
+      "url": "https://www.deribit.com/api/v2/public/get_delivery_prices?index_name=btc_usd&count=1000&offset=200"
+    },
+    {
+      "body": "b6c5adad1fc8f9d9074d20ed52104b204f06b87c510a3c45072e3b2a66882d4b.gz",
+      "bytes": 4974,
+      "retrieved_at": "2026-10-26T16:41:10.328757+00:00",
+      "sha256": "37f1516b8fc064894413d57d6ab259c08b3ba8c540b36906230d511871ae456d",
+      "url": "https://www.deribit.com/api/v2/public/get_delivery_prices?index_name=btc_usd&count=1000&offset=300"
+    },
+    {
+      "body": "731b08eaaaba3358d672fd2b90ba29abdb4ef3a18cae2be0aa1d8a268c30116d.gz",
+      "bytes": 5028,
+      "retrieved_at": "2026-10-26T16:41:15.769195+00:00",
+      "sha256": "8ff430583417ca014be61fff4d1cc6b4e55a2e2de2acc6a72fc5bb63ac2a7267",
+      "url": "https://www.deribit.com/api/v2/public/get_delivery_prices?index_name=btc_usd&count=1000&offset=400"
+    },
+    {
+      "body": "123fd17f40f555af561f5221983b9719b4771e842512a5c464d23cad9ddce0a6.gz",
+      "bytes": 4966,
+      "retrieved_at": "2026-10-26T16:41:21.281697+00:00",
+      "sha256": "ef081ffcca1f1725a164fb0962f5c8e341d221dcfd1a03848bf3742c5a60fc1a",
+      "url": "https://www.deribit.com/api/v2/public/get_delivery_prices?index_name=btc_usd&count=1000&offset=500"
+    },
+    {
+      "body": "0839e62bb8f2f06cb889e67b86449be9f44b7cc7cc7703557c2f32e825b1fb13.gz",
+      "bytes": 4951,
+      "retrieved_at": "2026-10-26T16:41:26.803899+00:00",
+      "sha256": "58fb5befb7cbe02537df785151796f6b4cde3d7ffa54f4f672da154351548eba",
+      "url": "https://www.deribit.com/api/v2/public/get_delivery_prices?index_name=btc_usd&count=1000&offset=600"
+    },
+    {
+      "body": "4a63bfcc378a0e3a3b179b9d553a58adbd6630e4ad71b3a91693d2c47e1cd1e7.gz",
+      "bytes": 4921,
+      "retrieved_at": "2026-10-26T16:41:32.490102+00:00",
+      "sha256": "cd7a14aa3fcde8b596f12aef9d785495f18f8ee753d93d5a6c4fac36d6f3984c",
+      "url": "https://www.deribit.com/api/v2/public/get_delivery_prices?index_name=btc_usd&count=1000&offset=700"
+    },
+    {
+      "body": "c91bb10158d2426719623c654056ea78b5acdbba6cd662d3aec4e48e4636af10.gz",
+      "bytes": 4927,
+      "retrieved_at": "2026-10-26T16:41:38.366142+00:00",
+      "sha256": "8d021dcaeaa8f59120bf03677af8cf14b21bb2418a35716d95807fe758bbdb29",
+      "url": "https://www.deribit.com/api/v2/public/get_delivery_prices?index_name=btc_usd&count=1000&offset=800"
+    },
+    {
+      "body": "94bab1d95f1e87582b5ca6a6839be08a54de058cc2e1d3362cf0f89c9f02f702.gz",
+      "bytes": 4926,
+      "retrieved_at": "2026-10-26T16:41:43.821215+00:00",
+      "sha256": "1556cebc46a8493c3622c1f2574146ba31c4a246c15417f045d0e0f6d013a6d7",
+      "url": "https://www.deribit.com/api/v2/public/get_delivery_prices?index_name=btc_usd&count=1000&offset=900"
+    },
+    {
+      "body": "e04c51555352b57356b6e3c5e6493d24e8ad244abfe050d1786244369e893201.gz",
+      "bytes": 4926,
+      "retrieved_at": "2026-10-26T16:33:50.420572+00:00",
+      "sha256": "7089bdb67f25367305d75519fea2dada77281643ef3ead1bd362fd0bb82a269c",
+      "url": "https://www.deribit.com/api/v2/public/get_delivery_prices?index_name=btc_usd&count=1000&offset=1000"
+    },
+    {
+      "body": "3d10d7ce8271f7796d4c0ac776d9b5aba82d87718608a789ff2dc9e19e9c57b4.gz",
+      "bytes": 4921,
+      "retrieved_at": "2026-10-26T16:41:49.262661+00:00",
+      "sha256": "cd85f65124db72277d9cdb587598bf143189dcc3327ad87edc40ccd737c2d2de",
+      "url": "https://www.deribit.com/api/v2/public/get_delivery_prices?index_name=btc_usd&count=1000&offset=1100"
+    },
+    {
+      "body": "1a1089b54af3be890876faef77cd909800ca23ab3d15bf98f45afd3a0c88c599.gz",
+      "bytes": 4931,
+      "retrieved_at": "2026-10-26T16:41:54.270744+00:00",
+      "sha256": "2ba720f8c9c34dd89308b16273e22d241fad6e71fe9ddd549b2ac29f1792e86b",
+      "url": "https://www.deribit.com/api/v2/public/get_delivery_prices?index_name=btc_usd&count=1000&offset=1200"
+    },
+    {
+      "body": "74b7c87b753b2bde5568823b5378a86bf6fc91349b322336f413e03af54eeb23.gz",
+      "bytes": 4931,
+      "retrieved_at": "2026-10-26T16:41:59.648942+00:00",
+      "sha256": "6355dc8d3ff1ce20d1ea8fd7df9a20befc06fbf4ef2a43077fd1d08ff0149a92",
+      "url": "https://www.deribit.com/api/v2/public/get_delivery_prices?index_name=btc_usd&count=1000&offset=1300"
+    },
+    {
+      "body": "6678f68ea44da9b473f26824fc133420a3567c761eac014a5cc1ae900db707b4.gz",
+      "bytes": 4930,
+      "retrieved_at": "2026-10-26T16:42:05.177713+00:00",
+      "sha256": "33449efb6b421e24b8dca1dd897cc61273baa441cef863fc88f97ece95fa1b92",
+      "url": "https://www.deribit.com/api/v2/public/get_delivery_prices?index_name=btc_usd&count=1000&offset=1400"
+    },
+    {
+      "body": "4942fdbae22a3aaaa0430eca9d4458a3fdc79b915b6396754f66f0b4cceb30bd.gz",
+      "bytes": 4923,
+      "retrieved_at": "2026-10-26T16:42:10.886956+00:00",
+      "sha256": "257e388ad79064bfe32745db7232cfed9b7f1f231f4026811d0fd183cd6ae057",
+      "url": "https://www.deribit.com/api/v2/public/get_delivery_prices?index_name=btc_usd&count=1000&offset=1500"
+    },
+    {
+      "body": "27e135e025ef61890b65d1eae3c78f676e35fef728e8426baea0aebf0cda834c.gz",
+      "bytes": 4932,
+      "retrieved_at": "2026-10-26T16:42:16.239817+00:00",
+      "sha256": "0573b6641ef98452a237088258c42588074f8e3a955eaecbe41f1636b47364db",
+      "url": "https://www.deribit.com/api/v2/public/get_delivery_prices?index_name=btc_usd&count=1000&offset=1600"
+    },
+    {
+      "body": "ce5b6b1290d33e2d198df2c2dcf529da46f47e1d5d4fabba04918514324ddaf3.gz",
+      "bytes": 4932,
+      "retrieved_at": "2026-10-26T16:42:21.635575+00:00",
+      "sha256": "b9c7ee6497f7c746ae3860c361c7eb476a1f10ce8c7dbea4a6760dd697c788c2",
+      "url": "https://www.deribit.com/api/v2/public/get_delivery_prices?index_name=btc_usd&count=1000&offset=1700"
+    },
+    {
+      "body": "279751256a57cea14019d23c40393020f95b1ef07f71d444390a4daebc95285f.gz",
+      "bytes": 4932,
+      "retrieved_at": "2026-10-26T16:42:26.910809+00:00",
+      "sha256": "07bd7e1e09db36a2f46d6b5c3ed5f0053040aefb46cb6aa69fccac5bd0b80f98",
+      "url": "https://www.deribit.com/api/v2/public/get_delivery_prices?index_name=btc_usd&count=1000&offset=1800"
+    },
+    {
+      "body": "21f75ce91e8de69e7d181e3f22babf60b647eefb219079f2b0242718703ecf5f.gz",
+      "bytes": 4927,
+      "retrieved_at": "2026-10-26T16:42:35.070732+00:00",
+      "sha256": "24bf86e0d13bb74022146eaff5f1680531507afe61b6eb69cd2235f732bb792f",
+      "url": "https://www.deribit.com/api/v2/public/get_delivery_prices?index_name=btc_usd&count=1000&offset=1900"
+    },
+    {
+      "body": "0b59e74990d3770ea29e65f10167f4996489dc09e45604b782ddf70a6e5aafd3.gz",
+      "bytes": 4920,
+      "retrieved_at": "2026-10-26T16:33:55.979898+00:00",
+      "sha256": "e022779cb71bde1047761f53543d02066826d3380f2b0179fd3c3f202a8c865f",
+      "url": "https://www.deribit.com/api/v2/public/get_delivery_prices?index_name=btc_usd&count=1000&offset=2000"
+    },
+    {
+      "body": "2c75ce847b461cd8ba41bfa99c99a51c8865f5bed45e8d6eebd4b18cd56151c6.gz",
+      "bytes": 4929,
+      "retrieved_at": "2026-10-26T16:42:40.608462+00:00",
+      "sha256": "8fee647ea33530ce86157380ae3587fdc3db5fc59bf38c2f55792f78d96ae4fa",
+      "url": "https://www.deribit.com/api/v2/public/get_delivery_prices?index_name=btc_usd&count=1000&offset=2100"
+    },
+    {
+      "body": "79eb580a257cf5051f7fbac431f5e46353c3e0f878eb11a6635702dd63edb925.gz",
+      "bytes": 4914,
+      "retrieved_at": "2026-10-26T16:42:46.047602+00:00",
+      "sha256": "7c1144646a78d2ab2f805dbb60b787caee12502a716bfb95af8e0de46905a589",
+      "url": "https://www.deribit.com/api/v2/public/get_delivery_prices?index_name=btc_usd&count=1000&offset=2200"
+    },
+    {
+      "body": "36002973a2c4cfa4baafa6e03829e25aa4e4642ff584ec1aa736b286c6d34025.gz",
+      "bytes": 4834,
+      "retrieved_at": "2026-10-26T16:42:51.534837+00:00",
+      "sha256": "e7eb449e58f1b9d35b96bf9e5f52259f78682bbf8f36a5229601c99906a2394c",
+      "url": "https://www.deribit.com/api/v2/public/get_delivery_prices?index_name=btc_usd&count=1000&offset=2300"
+    },
+    {
+      "body": "18de4ea5e82ed8f3e5cc05b31ab5e205bdb274734cec5a3bb1c284034f40cf76.gz",
+      "bytes": 4842,
+      "retrieved_at": "2026-10-26T16:42:56.908913+00:00",
+      "sha256": "74f67683f21901df0f3a6c4434864ef2361866fbe46e223fb3191ede25518b46",
+      "url": "https://www.deribit.com/api/v2/public/get_delivery_prices?index_name=btc_usd&count=1000&offset=2400"
+    },
+    {
+      "body": "027916617b8c86931a1544028210f801bc20279fb32a311c1ff017a4a63080e1.gz",
+      "bytes": 4835,
+      "retrieved_at": "2026-10-26T16:43:02.440875+00:00",
+      "sha256": "6c6b1a4797187af56ac5482e056665798f8a606cd9d75e76420087442534e1cd",
+      "url": "https://www.deribit.com/api/v2/public/get_delivery_prices?index_name=btc_usd&count=1000&offset=2500"
+    },
+    {
+      "body": "3c38f2c0a101bb5b3ccc28cc417ef3abdafdd568e3e4d8bdbf8db94e635c3f9d.gz",
+      "bytes": 2433,
+      "retrieved_at": "2026-10-26T16:43:07.886979+00:00",
+      "sha256": "33193f51d3d8754d975738da409ec2e9d1b8f9843c8f5eb5975356f70bc9263f",
+      "url": "https://www.deribit.com/api/v2/public/get_delivery_prices?index_name=btc_usd&count=1000&offset=2600"
+    },
+    {
+      "body": "d577f06641b6ae5194aec004caf5fe5ec349dab25156686cd7cfaa3a525875c7.gz",
+      "bytes": 666404,
+      "retrieved_at": "2026-10-26T16:34:08.116524+00:00",
+      "sha256": "359320b0fb083e358f9ada388d5706d3741cc0920c57d9f2b27bfca1ded84e9e",
+      "url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data=daily_treasury_bill_rates&field_tdr_date_value=2016"
+    },
+    {
+      "body": "4d51bbf1c6ffc8b6ca8753d8d4ca354ec5972dd771e1bdc64e0ead9ad5df5132.gz",
+      "bytes": 666404,
+      "retrieved_at": "2026-10-26T16:34:14.261910+00:00",
+      "sha256": "a6fea2a0e6829203b18760f475fbd6cb0564643caf3d02c34da5a92131300a53",
+      "url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data=daily_treasury_bill_rates&field_tdr_date_value=2017"
+    },
+    {
+      "body": "32d08247e6cfced812fda1eeb1d6081c77ae399479d4c41fe714bfcef0d97eee.gz",
+      "bytes": 684243,
+      "retrieved_at": "2026-10-26T16:34:20.476848+00:00",
+      "sha256": "36501e496c6dafa81283f33e2da9093f14707283fca9b7688708cbf70b8af288",
+      "url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data=daily_treasury_bill_rates&field_tdr_date_value=2018"
+    },
+    {
+      "body": "3b4be4e10a99f26f5de047c998715c37439c8e5248f97831b712ed97c2120c4b.gz",
+      "bytes": 766904,
+      "retrieved_at": "2026-10-26T16:34:26.778839+00:00",
+      "sha256": "c5913fa676c33cb70b2a16bf37975acc66b508fb1a483659be2b904b238d6921",
+      "url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data=daily_treasury_bill_rates&field_tdr_date_value=2019"
+    },
+    {
+      "body": "6da67e069d0e55f971794222cb338a79280802b4caa7dfa16682a2f0c14da8f1.gz",
+      "bytes": 769983,
+      "retrieved_at": "2026-10-26T16:34:33.380856+00:00",
+      "sha256": "fab1a5c1e4942e0315b719a00d14560369daf4344f2682ab39804fd04ba08827",
+      "url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data=daily_treasury_bill_rates&field_tdr_date_value=2020"
+    },
+    {
+      "body": "8d56e514399961229fca8c86dd657e2a8e500d29ce78aaae20843b12870ff202.gz",
+      "bytes": 769969,
+      "retrieved_at": "2026-10-26T16:34:39.612082+00:00",
+      "sha256": "ed544a82d427ce5d0fe49dfd2aec6574d26ce31ec7002fb9f86a77af1e58ab92",
+      "url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data=daily_treasury_bill_rates&field_tdr_date_value=2021"
+    },
+    {
+      "body": "30b8f8399e2917d06ce5ea42ae416a99bb2bfbe43829f3ea1f1a49b2f0d1b7aa.gz",
+      "bytes": 764589,
+      "retrieved_at": "2026-10-26T16:34:45.403179+00:00",
+      "sha256": "4612aa5d73a0c85de50de34272bc78210c89e73560912b3200cd1af7f06a718f",
+      "url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data=daily_treasury_bill_rates&field_tdr_date_value=2022"
+    },
+    {
+      "body": "e8ddb4334f0b416f389e586a9413cc7f5e8a8f24683ca3727946823220576fdf.gz",
+      "bytes": 770654,
+      "retrieved_at": "2026-10-26T16:34:52.365890+00:00",
+      "sha256": "3e2853324d4135eb2216f727fb5a53ac16d6b22bfbac0e094fd824666d8c38c3",
+      "url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data=daily_treasury_bill_rates&field_tdr_date_value=2023"
+    },
+    {
+      "body": "8b58a7bf8e71fba788b476dd9a03a1712564db4cbf15b506333d6a14984e5762.gz",
+      "bytes": 770654,
+      "retrieved_at": "2026-10-26T16:34:58.739114+00:00",
+      "sha256": "0de320eaab12c40faada3262ae85775ae42613c1762ffb62d99587f3311ff623",
+      "url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data=daily_treasury_bill_rates&field_tdr_date_value=2024"
+    },
+    {
+      "body": "26d30c3e48bf5f82073f0599239771582d61ed4f915966ebc6691d5e964c67f9.gz",
+      "bytes": 909930,
+      "retrieved_at": "2026-10-26T16:35:05.990585+00:00",
+      "sha256": "87692f2da06132e7f881bd4e4549fe33d4bba470a2d681bf74f297c337e7ed23",
+      "url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data=daily_treasury_bill_rates&field_tdr_date_value=2025"
+    },
+    {
+      "body": "6bd0ef355de1faf1f90261a52945ef7f1db4a88bbca84a04861f975f2c06cd57.gz",
+      "bytes": 791766,
+      "retrieved_at": "2026-10-26T16:35:11.948885+00:00",
+      "sha256": "2d5578e27cfe6636981fd037a2a0c74705d88ceacfe8c8cd7f58a9cf6511a6d3",
+      "url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data=daily_treasury_bill_rates&field_tdr_date_value=2026"
+    },
+    {
+      "body": "001782af06f339a57fce144d47f5b440881cbc02605a8eedaf2aab0792795d21.gz",
+      "bytes": 219684,
+      "retrieved_at": "2026-10-26T16:35:18.443766+00:00",
+      "sha256": "9fd204209a866a5b722ae5a90d8ddaf1b8715a0a5ea73c84224ec0bf692d3adb",
+      "url": "https://www.deribit.com/api/v2/public/get_last_settlements_by_currency?currency=BTC&type=settlement&count=1000&search_start_timestamp=1791590400000"
+    },
+    {
+      "body": "749eeb97308e8db7920186837c50c30d695eccdeffe0d00c1b9ea0d8ad6b2417.gz",
+      "bytes": 219449,
+      "retrieved_at": "2026-10-26T16:35:24.653708+00:00",
+      "sha256": "85db4d0b5497a1c8a188fb046952adbd6e9a3e9e5d3b0a27b161a870a86606e2",
+      "url": "https://www.deribit.com/api/v2/public/get_last_settlements_by_currency?currency=BTC&type=settlement&count=1000&search_start_timestamp=1791590400000&continuation=23nYDkVbUCuUDM4W3g7sDt2QW7SpWCgKb8Dr8kR69TRPw5uyd9PPnTL51J6Vocx2dJZ38"
+    },
+    {
+      "body": "486399b4a9c932b1a69786dc04a7df35c8b981b8f2434ab70dddb638512b9d34.gz",
+      "bytes": 220522,
+      "retrieved_at": "2026-10-26T16:35:30.675957+00:00",
+      "sha256": "cffb32d98afca3868c2dcd19a0f3bf759a62a1faa1b021e601e16f4e4a21e7f1",
+      "url": "https://www.deribit.com/api/v2/public/get_last_settlements_by_currency?currency=BTC&type=settlement&count=1000&search_start_timestamp=1791590400000&continuation=23nYDkVbTEmbc2vtSXrG3qs3UXyx9TcWUJzrfTPTxQ5xht5RQLRyjfKnurLfCvtX5TE3k"
+    },
+    {
+      "body": "8bc775286ba0cc4e0bbf1692aa84dd9ab50c6707895d9ac2eb5706b8221a83bd.gz",
+      "bytes": 222540,
+      "retrieved_at": "2026-10-26T16:35:36.392975+00:00",
+      "sha256": "200ebaf0783f255928ab4623e2cd57c369b68b32ce41fcd94bf8a5f94b112bd0",
+      "url": "https://www.deribit.com/api/v2/public/get_last_settlements_by_currency?currency=BTC&type=settlement&count=1000&search_start_timestamp=1791590400000&continuation=47y8wJn3tVkgnBsdoYQJJ2EDJTRZFzoVYesXbz4duxsBHK5p2R1LgDGYF7PozPzJFH"
+    },
+    {
+      "body": "c5f41a2e67400ca06f2129f97c7987325cc48141973666640cb0502a905d844b.gz",
+      "bytes": 222738,
+      "retrieved_at": "2026-10-26T16:35:42.198338+00:00",
+      "sha256": "852122b3cc29ac25913b11ea3d8f38fd42d6bfbff0d98935165c6bea5f109630",
+      "url": "https://www.deribit.com/api/v2/public/get_last_settlements_by_currency?currency=BTC&type=settlement&count=1000&search_start_timestamp=1791590400000&continuation=47y8wJn3ruAey7rtMKJUu4PkZHqC44YkxX5rqkxMtfEef7CrD6nX3crh4DjuhoGJ2s"
+    },
+    {
+      "body": "0d49956f4b986f404bd6a141e7b710bfb9194ff7bde459717eef805a4476f9c3.gz",
+      "bytes": 221104,
+      "retrieved_at": "2026-10-26T16:35:47.990105+00:00",
+      "sha256": "7cc4e0efc2a69970710994052e4ac093a511f2c2532efa7c0e51471e4b3d2378",
+      "url": "https://www.deribit.com/api/v2/public/get_last_settlements_by_currency?currency=BTC&type=settlement&count=1000&search_start_timestamp=1791590400000&continuation=47y8wJn3txB1PWiizkpmB2TdPXBKRKzdj7VvpUdngLsPSUTS1r1K4DXsUwvfXJYafZ"
+    },
+    {
+      "body": "a6605e774c7becaf932257a6f00556c694a608711eb25623bbcce1bdd470d809.gz",
+      "bytes": 220646,
+      "retrieved_at": "2026-10-26T16:35:53.802523+00:00",
+      "sha256": "568ce17d67c401c6ec156bcbd7abf3a087ee5e397b7e20bc01998387f2c3663c",
+      "url": "https://www.deribit.com/api/v2/public/get_last_settlements_by_currency?currency=BTC&type=settlement&count=1000&search_start_timestamp=1791590400000&continuation=23nYDkVbUMYgLrWgyMbMQ2TZjNiC9pS3BDb49KJZyRvzoji24ioA9aThKJpfo1wTmtuNz"
+    },
+    {
+      "body": "e171be5f1edc190ac7ee6453e095e2f9f82093ebdf86e135cc52d6e728a94c1c.gz",
+      "bytes": 220512,
+      "retrieved_at": "2026-10-26T16:36:00.434288+00:00",
+      "sha256": "8974f395e2e3e19f5c249f9135ec2323903a494b2bd0ec828a45539ce96ba811",
+      "url": "https://www.deribit.com/api/v2/public/get_last_settlements_by_currency?currency=BTC&type=settlement&count=1000&search_start_timestamp=1791590400000&continuation=47y8wJn3te6V6BUv5U77suDGrM9x9TXmHE8wXdBBNZDqBBksQmrtttD4aLC6GxSxDV"
+    },
+    {
+      "body": "602f611e21b083f65f47577280680316cd5e5c18fdbe4924f6110804858bca82.gz",
+      "bytes": 220452,
+      "retrieved_at": "2026-10-26T16:36:06.706623+00:00",
+      "sha256": "f59fe242fc2c24cddee71606b318decbf85abf99edd3a0611fca9c1d156972d3",
+      "url": "https://www.deribit.com/api/v2/public/get_last_settlements_by_currency?currency=BTC&type=settlement&count=1000&search_start_timestamp=1791590400000&continuation=23nYDkVbTe2psBJYpfV9uJrqF3jvXktUZgueFCbx9Nh6CZYEm79SBG9FqJXLo46rgNaJn"
+    },
+    {
+      "body": "6467d42a35c55935cda21f88986b503a73507560a6596a90210aecfd184b32b1.gz",
+      "bytes": 220459,
+      "retrieved_at": "2026-10-26T16:36:13.426299+00:00",
+      "sha256": "68efdecf219b402083e7b7f887b59289f518f8c899bc33465d5443fed3e4e061",
+      "url": "https://www.deribit.com/api/v2/public/get_last_settlements_by_currency?currency=BTC&type=settlement&count=1000&search_start_timestamp=1791590400000&continuation=47y8wJn3stM4jxHcZ6tXV2LWeghaKjobwGJzZJRFnXtJVxVU38RU3Jea2F9njq3K43"
+    },
+    {
+      "body": "c8da9afa786c903bfedd9fb1990d53776a4e647b34e71b8b97e3c5b1a7461757.gz",
+      "bytes": 220474,
+      "retrieved_at": "2026-10-26T16:36:19.141076+00:00",
+      "sha256": "46ff398a2aafe057d20682388b18cd9e08a41b15f33bfd05fc5268ad42774694",
+      "url": "https://www.deribit.com/api/v2/public/get_last_settlements_by_currency?currency=BTC&type=settlement&count=1000&search_start_timestamp=1791590400000&continuation=23nYDkVbSymLC7PZae2tFnbrZ1qM5LHfT6yBv1mETnSZpfKgz7JLi9bRACgk5Riz3iqCW"
+    },
+    {
+      "body": "fb8552b1a199f84db8b0975b3544212f0b2dde118b827f962ea03728c1bf0dec.gz",
+      "bytes": 220334,
+      "retrieved_at": "2026-10-26T16:36:24.861809+00:00",
+      "sha256": "6e407745d5f4caa5098fe40a3ac0ff7ea6eac980750b8e55c7563a86194c227b",
+      "url": "https://www.deribit.com/api/v2/public/get_last_settlements_by_currency?currency=BTC&type=settlement&count=1000&search_start_timestamp=1791590400000&continuation=47y8wJn3sYKNvbTXK9wyCePP8h1KvXCwMtcJUfTxcPyARWwyuCRVzUjCbCvs48xWmM"
+    },
+    {
+      "body": "e15c704f94740497a40c0d0f46f73ad3c594873d1d038c5252552fb428f05033.gz",
+      "bytes": 219263,
+      "retrieved_at": "2026-10-26T16:36:30.725599+00:00",
+      "sha256": "4ae9ccc260872f34ed33f6cf77e5318c60a1c6ee455c3f1936c298f9706dbe76",
+      "url": "https://www.deribit.com/api/v2/public/get_last_settlements_by_currency?currency=BTC&type=settlement&count=1000&search_start_timestamp=1791590400000&continuation=47y8wJn3r57SYYX1wsX7UmmsxVQ59FPRveZE16NaLk7F3F8WdNJ9e7eaw9qULMDWn3"
+    },
+    {
+      "body": "a4ef1e97ed7e644b79845b2d91bd9605abd13dbadef102796eed4441298e8545.gz",
+      "bytes": 219670,
+      "retrieved_at": "2026-10-26T16:36:38.576239+00:00",
+      "sha256": "9707f9d449a63f4a6ade534be03758a2c7c44b3f271462fc37e6d7aa8ed8bafd",
+      "url": "https://www.deribit.com/api/v2/public/get_last_settlements_by_currency?currency=BTC&type=settlement&count=1000&search_start_timestamp=1791590400000&continuation=23nYDkVbTcEbFTYCWKexHCY1nBSxtyrcZfSbKdk1uw3n5hrdGaXXXuT6rCxMAcknqmmL6"
+    },
+    {
+      "body": "ac04cfeecb47f216fedff00841b7031853c1329ce01dc8d87e71b037a1f20cf3.gz",
+      "bytes": 219976,
+      "retrieved_at": "2026-10-26T16:36:44.550029+00:00",
+      "sha256": "0a79bb406f41ffea7734a450e18dab654551fcc0930c0279d676ded8ff0b6710",
+      "url": "https://www.deribit.com/api/v2/public/get_last_settlements_by_currency?currency=BTC&type=settlement&count=1000&search_start_timestamp=1791590400000&continuation=23nYDkVbTigss6Sj4wBUdaHvHbF5r9VYTUfsVVFL5pWcZsHMiFvnwaPdQUTe6dNJ2fYxJ"
+    },
+    {
+      "body": "174d0b17dc42bdd841d0f545afb92941f2d83c9d8fde4e432481cc3c9710cdc9.gz",
+      "bytes": 219713,
+      "retrieved_at": "2026-10-26T16:36:50.326062+00:00",
+      "sha256": "a43b880bd132f919c078543b42de48c3da6095c0cd300e2baaf4691f301413cb",
+      "url": "https://www.deribit.com/api/v2/public/get_last_settlements_by_currency?currency=BTC&type=settlement&count=1000&search_start_timestamp=1791590400000&continuation=i12oHiUP3nkkAFLhxvXwv82R8HfN5VxSjXzLy19hKPocxYRDXEDhEnvSPSVhWMXG"
+    },
+    {
+      "body": "4dba28f17cd62146d953c8ff4c668af0df918b06cbadfb0ed53e04c1d36af804.gz",
+      "bytes": 219766,
+      "retrieved_at": "2026-10-26T16:36:56.938093+00:00",
+      "sha256": "dab3ffbde7fd2cf6ed6aac9e89fda4a2e2d84410940b444e1a1724b5ddb3c69c",
+      "url": "https://www.deribit.com/api/v2/public/get_last_settlements_by_currency?currency=BTC&type=settlement&count=1000&search_start_timestamp=1791590400000&continuation=47y8wJn3sEQHY3sStY1Caqsg6ZnNwjKbqbYEUxvvAmDRytVFYQaNaKLEhrKDsPmtZV"
+    },
+    {
+      "body": "447615b849bcf2987da3e90428e70c6e1fee1148ea566ea071ac3e113f336c16.gz",
+      "bytes": 218124,
+      "retrieved_at": "2026-10-26T16:37:03.405945+00:00",
+      "sha256": "23ce3b3aaea46b71bb580854abb5aac02ef5db078e88a2eef368a092e0a34b37",
+      "url": "https://www.deribit.com/api/v2/public/get_last_settlements_by_currency?currency=BTC&type=settlement&count=1000&search_start_timestamp=1791590400000&continuation=23nYDkVbTn2m77a7BxyXXCPGVT623iJZ9HUhqotJ89QTxRrGyG2YB8ckrSYL7R53zU1HU"
+    },
+    {
+      "body": "7f3ba73d4482815638825eec8d1815797485ffea004a344800d5554c34ecb25a.gz",
+      "bytes": 217508,
+      "retrieved_at": "2026-10-26T16:37:09.306698+00:00",
+      "sha256": "4b2f7e472166caeae74a73f2cae1eba15c81e50f4075a8f7e811cad61922db92",
+      "url": "https://www.deribit.com/api/v2/public/get_last_settlements_by_currency?currency=BTC&type=settlement&count=1000&search_start_timestamp=1791590400000&continuation=47y8wJn3tWHpyByAbH8vrGdHSAm7WQ8wMCYxjnxPEf28RJ7P3VM5ZJXmJrJG64qgsh"
+    },
+    {
+      "body": "2276d75b0f8ddc364631c100915b0771f333aac36ceb307e177fee13417276c8.gz",
+      "bytes": 216193,
+      "retrieved_at": "2026-10-26T16:37:14.921453+00:00",
+      "sha256": "e00e0c5234091db8e845a24366c1775d83b58714944806ab226810408b873a03",
+      "url": "https://www.deribit.com/api/v2/public/get_last_settlements_by_currency?currency=BTC&type=settlement&count=1000&search_start_timestamp=1791590400000&continuation=47y8wJn3sY6Dg8QMYQgVRVc57BV1MTLN9FpnJVkgqiHwr64XpvrRCSbRJbX5Z7SXaF"
+    },
+    {
+      "body": "b1d325c118cdf5abac3b0919a68223350f2952b632336c65ff7bad3f0937a2b3.gz",
+      "bytes": 144890,
+      "retrieved_at": "2026-10-26T16:37:20.750054+00:00",
+      "sha256": "64f697eca1cf3268e2182cd6b80bedee7c868b5330f3f86323aff1cb317d51a6",
+      "url": "https://www.deribit.com/api/v2/public/get_last_settlements_by_currency?currency=BTC&type=settlement&count=1000&search_start_timestamp=1791590400000&continuation=47y8wJn3sPifc4GsKnpUfHMHG1BwVDVHHou59MQnocvE69Kiybs2Cqs53XcuV5mAMV"
+    }
+  ],
+  "status": "PUBLIC_INPUTS_DOWNLOADED",
+  "treasury_rows": 2703
+}

@@ -4,7 +4,7 @@ The domain includes every native tick/lot inside configurable bounds. Stochastic
 search budgets computation, not the legal price/quantity menu; it approximates an
 argmax and never claims to enumerate an enormous Cartesian product completely.
 """
-from dataclasses import dataclass,replace
+from dataclasses import dataclass,replace,field
 import math
 import random
 from .engine import Instruction,Order,admissible
@@ -102,6 +102,74 @@ class ActionDomain:
         return total
 
 
+def sparse_levels(lo,hi,extra,rng):
+    """Endpoints, midpoint and random interior native steps; no large enumeration."""
+    if lo>hi:return ()
+    fixed={lo,hi,(lo+hi)//2}
+    # Sampling range is O(extra), even when a tick/lot interval is enormous.
+    fixed.update(rng.sample(range(lo+1,hi),min(extra,max(0,hi-lo-1))))
+    return tuple(sorted(fixed))
+
+
+@dataclass(frozen=True)
+class SparseGridDomain(ActionDomain):
+    random_points: int=2
+
+    def __post_init__(self):
+        super().__post_init__()
+        if type(self.random_points) is not int or not 0<=self.random_points<=16:raise ValueError('Grid random points must be 0..16')
+
+    def prepare(self,rng,obs,goal,instruments):
+        prices={};quantities={}
+        for s in self.symbols(obs,goal,instruments):
+            ins=instruments[s];lo,hi=self.price_ticks(obs,ins)
+            prices[s]=sparse_levels(lo,hi,self.random_points,rng)
+            for tick in prices[s]:
+                ql,qh=self.quantity_lots(ins,tick*ins.tick)
+                quantities[s,tick]=sparse_levels(ql,qh,self.random_points,rng)
+        return PreparedGrid(self.min_btc,self.max_btc,self.price_band_bps,self.max_new_orders,prices,quantities)
+
+
+@dataclass(frozen=True)
+class PreparedGrid(ActionDomain):
+    prices: dict=field(default_factory=dict)
+    quantities: dict=field(default_factory=dict)
+
+    def quote(self,rng,obs,ins,identifier,group='',old=None,radius=None):
+        prices=self.prices.get(ins.symbol,())
+        if not prices:return None
+        tick=rng.choice(prices);lots=self.quantities[ins.symbol,tick]
+        if not lots:return None
+        sign=(1 if old.quantity>0 else -1) if old is not None else rng.choice((-1,1))
+        return Order(identifier,ins.symbol,sign*rng.choice(lots)*ins.lot,tick*ins.tick,group,obs.time)
+
+    def anchors(self,rng,obs,instruments):
+        actions=[]
+        for s,ticks in self.prices.items():
+            if not ticks:continue
+            ins=instruments[s]
+            for tick in sorted({ticks[0],ticks[-1]}):
+                lots=self.quantities[s,tick]
+                if not lots:continue
+                for quantity in sorted({lots[0],lots[-1]}):
+                    for sign in (-1,1):
+                        actions.append(Instruction('create',(Order(f'o-{obs.submitted}-0',s,sign*quantity*ins.lot,tick*ins.tick,'',obs.time),)))
+        for oid,variants in obs.uncertain.items():
+            old=variants[-1];ticks=self.prices.get(old.symbol,())
+            if not ticks:continue
+            ins=instruments[old.symbol]
+            for tick in sorted({ticks[0],ticks[-1]}):
+                ql,qh=self.quantity_lots(ins,tick*ins.tick)
+                if ql>qh:continue
+                quantity=max(ql,min(qh,round(abs(old.quantity)/ins.lot)))
+                # Retaining the current size is an additional useful amendment
+                # point; it is not a restriction on independently sampled sizes.
+                order=replace(old,quantity=math.copysign(quantity*ins.lot,old.quantity),limit=tick*ins.tick,created=obs.time)
+                actions.append(Instruction('amend',(order,),(oid,)))
+        rng.shuffle(actions)  # Fair instrument support when anchors exceed budget.
+        return actions
+
+
 class ValueActionSearch:
     def __init__(self,domain=None,evaluations=128,rounds=4,async_cap=.02):
         if not 4<=evaluations<=4096 or not 1<=rounds<=evaluations:
@@ -111,8 +179,11 @@ class ValueActionSearch:
     def choose(self,obs,goal,instruments,score,*,rng=None,epsilon=0.):
         if not 0<=epsilon<=1:raise ValueError('Exploration probability')
         rng=rng or random.Random(0);audit=[];accepted=[];scores=[];seen=set();attempts=0
+        domain=self.domain.prepare(rng,obs,goal,instruments) if isinstance(self.domain,SparseGridDomain) else self.domain
         fixed=[Instruction(),Instruction('emergency',targets=tuple(sorted(obs.uncertain)))]
         if obs.uncertain:fixed.append(Instruction('cancel',targets=tuple(sorted(obs.uncertain))))
+        anchors=domain.anchors(rng,obs,instruments) if isinstance(domain,PreparedGrid) else []
+        fixed.extend(anchors);anchor_count=len(anchors)
         # Every round retains global sampling support and refines good states.
         for stage in range(self.rounds):
             batch=[];limit=(stage+1)*self.evaluations//self.rounds
@@ -120,13 +191,13 @@ class ValueActionSearch:
                 if fixed:action=fixed.pop(0)
                 elif accepted and stage>0 and rng.random()<.5:
                     elites=sorted(range(len(scores)),key=lambda i:scores[i],reverse=True)[:8]
-                    action=self.domain.mutate(rng,obs,accepted[rng.choice(elites)],instruments,max(1,16//(stage+1)))
-                else:action=self.domain.sample(rng,obs,goal,instruments)
+                    action=domain.mutate(rng,obs,accepted[rng.choice(elites)],instruments,max(1,16//(stage+1)))
+                else:action=domain.sample(rng,obs,goal,instruments)
                 attempts+=1;key=repr(action)
                 if key in seen:continue
                 seen.add(key)
                 ok,reason=admissible(obs,action,goal,instruments,self.async_cap)
-                if ok and not self.domain.contains(obs,action,instruments):raise ValueError('Search escaped native domain')
+                if ok and not domain.contains(obs,action,instruments):raise ValueError('Search escaped native domain')
                 audit.append(dict(instruction=action.payload(),accepted=ok,reason=reason))
                 if ok:batch.append(action)
             if batch:
@@ -138,4 +209,6 @@ class ValueActionSearch:
         explore=rng.random()<epsilon
         index=rng.randrange(len(accepted)) if explore else max(range(len(scores)),key=scores.__getitem__)
         return accepted[index],dict(proposals=audit,attempts=attempts,accepted=len(accepted),objective=scores[index],explored=explore,
-                                    search='stochastic global proposals and local refinement; approximate scalar argmax')
+                                    search='sparse endpoint/random grid' if isinstance(domain,PreparedGrid) else 'stochastic global proposals and local refinement; approximate scalar argmax',
+                                    boundary_proposals=anchor_count,boundary_proposals_not_attempted=len(fixed),
+                                    price_grid={s:[t*instruments[s].tick for t in ticks] for s,ticks in domain.prices.items()} if isinstance(domain,PreparedGrid) else None)

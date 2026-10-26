@@ -19,7 +19,7 @@ from .engine import Engine, CandidateGenerator, Delays, Instruction, post_decisi
 from .data import load_archive, split_blocks
 from .model import ValueNetwork, features, action_features, fit, save_model, load_model
 from .analytical import analytical, analytical_scores
-from .action_search import ActionDomain, ValueActionSearch
+from .action_search import ActionDomain, SparseGridDomain, ValueActionSearch
 
 
 def write_json(path, obj):
@@ -40,10 +40,11 @@ def code_identity():
 
 def continuation_identity(policy,config,model=None):
     base=policy if model is None else f'{policy}:{model.continuation}'
-    if config.get('action_space')!='full':return base
+    if config.get('action_space') not in ('full','grid'):return base
     details=dict(algorithm='native-state-search-v2',domain=config['action_domain'],
-                 evaluations=config['search_evaluations'],rounds=4,
+                 evaluations=config['search_evaluations'],rounds=config.get('search_rounds',4),
                  exploration=.5 if policy=='exploratory_v1' else .15 if policy=='collect_greedy_v1_eps015' else 0.)
+    if config.get('action_space')=='grid':details.update(algorithm='sparse-endpoint-grid-v1',random_points=config.get('grid_random_points',2))
     if model is not None:
         weights=hashlib.sha256()
         for name,tensor in model.state_dict().items():
@@ -72,7 +73,9 @@ def episode(block, instruments, seed, policy, config, budget, model=None, delay_
     replay=Engine(instruments,Ledger(initial.copy()),goal,seed,delays,participation=config['participation'],event_cap=config['event_cap'])
     replay.seed_market(block['seeds'],block['start']);replay.add_tape(block['tape'])
     generator=CandidateGenerator(budget=config['candidate_budget'])
-    searcher=ValueActionSearch(ActionDomain(**config['action_domain']),evaluations=config['search_evaluations']) if config.get('action_space')=='full' else None
+    domain=(SparseGridDomain(**config['action_domain'],random_points=config.get('grid_random_points',2))
+            if config.get('action_space')=='grid' else ActionDomain(**config.get('action_domain',{})))
+    searcher=ValueActionSearch(domain,evaluations=config['search_evaluations'],rounds=config.get('search_rounds',4)) if config.get('action_space') in ('full','grid') else None
     rng=random.Random(seed)
     records=[];decision_audit=[];predictions=[];submitted_orders=set()
     continuation=continuation_identity(policy,config,model)
@@ -118,6 +121,7 @@ def episode(block, instruments, seed, policy, config, budget, model=None, delay_
                                 block=block['id'],seed=seed,source_ids=[v['identifier'] for v in obs.market.values()]))
         decision_audit.append(dict(time=t,selected=action.payload(),candidates=audit,
                                    predicted_score=float(predicted['objective'][chosen]) if predicted else None,
+                                   search_info={k:v for k,v in search.items() if k!='proposals'} if searcher is not None else None,
                                    continuation=predicted['continuation'] if predicted else continuation))
         if predicted:predictions.append(float(predicted['objective'][chosen]))
     if not replay.truncated:replay.advance(block['end'])
@@ -182,7 +186,9 @@ def run(args):
                 transition_cap=20000,event_cap=30000,pilot_seconds=3600,optimizer_updates_per_stage=160,
                 participation=.1,delays=asdict(Delays()),seeds=[11,29],
                 dates=[f'2026-06-{d:02d}' for d in range(6,14)],episode_minutes=60,offset_minutes=60,
-                action_space=getattr(args,'action_space','full'),action_domain=asdict(ActionDomain()),search_evaluations=128)
+                action_space=getattr(args,'action_space','grid'),action_domain=asdict(ActionDomain()),
+                search_evaluations=getattr(args,'search_evaluations',None) or (32 if getattr(args,'action_space','grid')=='grid' else 128),
+                search_rounds=getattr(args,'search_rounds',4),grid_random_points=getattr(args,'grid_random_points',2))
     output=Path(args.output);output.mkdir(parents=True,exist_ok=True)
     budget=Budget(config)
     instruments,trades,seeds,manifest=load_archive(args.input,config['dates'])
@@ -286,7 +292,10 @@ def main():
     parser.add_argument('--input',required=True,help='Existing hash-receipted local export; no download')
     parser.add_argument('--output',required=True)
     parser.add_argument('--resume',action='store_true',help='Resume immutable completed training stages with identical code/data/config')
-    parser.add_argument('--action-space',choices=('full','legacy'),default='full',help='Full bounded native order domain with stochastic value search; legacy reproduces the old menu')
+    parser.add_argument('--action-space',choices=('grid','full','legacy'),default='grid',help='Sparse endpoint/random grid (default), full-domain sampling, or legacy menu')
+    parser.add_argument('--search-evaluations',type=int,help='Proposal budget, 4..4096; grid default 32, full default 128')
+    parser.add_argument('--search-rounds',type=int,default=4)
+    parser.add_argument('--grid-random-points',type=int,default=2,help='Additional random price/quantity points per interval, 0..16')
     args=parser.parse_args()
     try:run(args)
     except Exception as e:

@@ -141,3 +141,11 @@ counterfactual-linear, futures-only, contractual-endpoint restrictions apply.
 The separate multi-year archive's 10 exported metadata objects were hash verified;
 its 540-instrument/12,322-chunk metadata is not a fresh verification or replay of
 those raw objects. See the saved source manifest and multi-year scope evidence.
+
+The subsequent [union report](research/post_decision_value/FULL_ACTIONS_AND_UNION.md)
+reconciles every daily-export record against the native multi-year overlap and
+publishes one canonical logical dataset, without a fresh full raw-history scan.
+The [expiry-input update](research/post_decision_value/CARRY_GRID_AND_EXPIRY_INPUTS.md)
+adds hash-receipted public Deribit delivery/daily settlement data and official
+Treasury bill quotations for 2016–2026. The committed archive and report distinguish
+observed prices/marks from unverified executable spot bridges and financing terms.

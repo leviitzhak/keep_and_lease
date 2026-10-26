@@ -1,0 +1,23 @@
+test_basis_gap_and_fees_reduce_surplus_and_selling_first_breaches_floor (tests.post_decision_value.test_sparse_grid_and_carry.CarryAccountingTests.test_basis_gap_and_fees_reduce_surplus_and_selling_first_breaches_floor) ... ok
+test_larger_prefunded_futures_size_locks_more_btc_under_ideal_bridge (tests.post_decision_value.test_sparse_grid_and_carry.CarryAccountingTests.test_larger_prefunded_futures_size_locks_more_btc_under_ideal_bridge) ... ok
+test_neutral_futures_pair_gains_cash_but_joint_min_can_be_zero (tests.post_decision_value.test_sparse_grid_and_carry.CarryAccountingTests.test_neutral_futures_pair_gains_cash_but_joint_min_can_be_zero) ... ok
+test_same_btc_size_keeps_cash_surplus_after_variation_and_bridge (tests.post_decision_value.test_sparse_grid_and_carry.CarryAccountingTests.test_same_btc_size_keeps_cash_surplus_after_variation_and_bridge) ... ok
+test_all_price_size_endpoints_both_sides_in_search (tests.post_decision_value.test_sparse_grid_and_carry.SparseGridTests.test_all_price_size_endpoints_both_sides_in_search) ... ok
+test_amendment_extremes_and_budget_reporting (tests.post_decision_value.test_sparse_grid_and_carry.SparseGridTests.test_amendment_extremes_and_budget_reporting) ... ok
+test_endpoints_and_bounded_size_even_for_huge_lattice (tests.post_decision_value.test_sparse_grid_and_carry.SparseGridTests.test_endpoints_and_bounded_size_even_for_huge_lattice) ... ok
+test_grid_runs_in_closed_loop_and_retains_search_audit (tests.post_decision_value.test_sparse_grid_and_carry.SparseGridTests.test_grid_runs_in_closed_loop_and_retains_search_audit) ... ok
+test_policy_identity_includes_grid_and_effort (tests.post_decision_value.test_sparse_grid_and_carry.SparseGridTests.test_policy_identity_includes_grid_and_effort) ... ok
+test_seeded_grid_changes_interiors_and_native_inverse_lots (tests.post_decision_value.test_sparse_grid_and_carry.SparseGridTests.test_seeded_grid_changes_interiors_and_native_inverse_lots) ... ok
+test_delivery_conflicts_and_nonfinite_rejected (tests.post_decision_value.test_expiry_inputs.ExpiryInputTests.test_delivery_conflicts_and_nonfinite_rejected) ... ok
+test_immutable_cache_hash_and_request_budget (tests.post_decision_value.test_expiry_inputs.ExpiryInputTests.test_immutable_cache_hash_and_request_budget) ... ok
+test_server_page_cap_uses_actual_count_not_requested_count (tests.post_decision_value.test_expiry_inputs.ExpiryInputTests.test_server_page_cap_uses_actual_count_not_requested_count) ... {"component": "delivery", "rows": 5, "api_complete": true}
+{"component": "treasury", "rows": 11}
+{"status": "PUBLIC_INPUTS_DOWNLOADED", "created_at": "2026-10-26T16:41:45.086556+00:00", "cutoff_ms": 1791590400000, "plan_sha256": "12be82ee08ca3e2f23d6505fde05dc723f9b96922c6c87d6c1e0c55b930d7a0b", "delivery_api_complete": true, "daily_api_complete": true, "delivery_rows": 5, "delivery_date_range": ["2025-01-01", "2025-01-05"], "expired_contracts": 0, "expired_contracts_with_delivery": 0, "daily_rows": 0, "daily_instruments": 0, "treasury_rows": 11, "requests": 0, "bytes": 0, "seconds": 0.0032163799987756647, "errors": [], "limits": {"seconds": 240, "requests": 80, "bytes": 24000000}}
+ok
+test_settlement_account_aggregates_not_used_and_conflicts_rejected (tests.post_decision_value.test_expiry_inputs.ExpiryInputTests.test_settlement_account_aggregates_not_used_and_conflicts_rejected) ... ok
+test_treasury_current_and_old_schema_and_no_intraday_availability (tests.post_decision_value.test_expiry_inputs.ExpiryInputTests.test_treasury_current_and_old_schema_and_no_intraday_availability) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 0.099s
+
+OK

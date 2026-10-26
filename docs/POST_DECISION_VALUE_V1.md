@@ -94,7 +94,7 @@ linear experiments using inverse-source prints, BTC capacity is `USD amount /
 print price`, then multiplied by participation. Quotes, depth and queue position
 are not invented. Historical spot execution is disabled in this pilot.
 
-The default `--action-space full` searches every native tick/lot combination
+`--action-space full` samples the full native tick/lot domain
 within configurable bounds: 0.0001–0.02 BTC equivalent per order and ±50 bp of
 the last received trade. All eligible observed instruments have sampling support.
 Order sizes, sides and posted prices are independent; there is no fixed leg ratio.
@@ -107,6 +107,15 @@ this is an approximate argmax, not exhaustive enumeration or a 128-action domain
 The state encoder retains actual orders without a 32-item cutoff. A pure builder
 adds pending intent and reservations without pretending an order filled. Proposal
 payloads, admission results and selected actions are retained.
+
+The current default `--action-space grid` uses price/quantity endpoints, a midpoint
+and up to two random interior native steps, with 32 proposal attempts. It prioritizes
+boundary proposals, then samples combinations and amendments. Budget, rounds and
+random points have CLI controls; insufficient coverage of boundary proposals is
+reported. See [carry, grid and expiry inputs](research/post_decision_value/CARRY_GRID_AND_EXPIRY_INPUTS.md)
+for measured costs, public settlement/rate downloads and the remaining gap between
+ledger capabilities and learned spot/Treasury actions. The joint basket score
+still uses minimum commodity growth; no frozen training labels were changed.
 
 `--action-space legacy` preserves the old 96-candidate pilot menu, 0.005/0.01 BTC
 sizes, 0.99/1 leg ratios, -50/0/+50 bp offsets and suppression of new packages

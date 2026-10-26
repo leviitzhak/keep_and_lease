@@ -1,0 +1,9 @@
+{
+  "archive": "expiry-inputs-v1.tar.gz",
+  "bytes": 1426787,
+  "sha256": "1bd29cd2ec54504b9938b7e623837430334e6da55f2362f4074373ec62c13dc1",
+  "source_objects": 59,
+  "source_bytes": 13005981,
+  "source_snapshot": "download_expiry_inputs.py",
+  "mode": "public historical data; no simulated spot fills or financing permissions"
+}
