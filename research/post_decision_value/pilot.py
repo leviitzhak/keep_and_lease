@@ -18,6 +18,7 @@ from .accounting import Goal, Ledger
 from .engine import Engine, CandidateGenerator, Delays, Instruction, post_decision
 from .data import load_archive, split_blocks
 from .model import ValueNetwork, features, fit, save_model, load_model
+from .analytical import analytical
 
 
 def write_json(path, obj):
@@ -46,19 +47,6 @@ class Budget:
     def training(self,result):
         self.updates+=result['updates'];self.training_seconds+=result['seconds']
         if self.updates>2000 or self.training_seconds>1200:raise RuntimeError('training_cap')
-
-
-def analytical(obs, actions, goal, instruments):
-    scores=[]
-    current=goal.outcome(obs.ledger.holdings(instruments))['utility']
-    for action in actions:
-        p=obs.ledger.clone()
-        for order in action.orders:p.fill(instruments[order.symbol],order.quantity,order.limit)
-        gain=goal.outcome(p.holdings(instruments))['utility']-current
-        # No assumed fills for waiting/cancelling. Prefer fresh quotes over stale
-        # resting orders only when their fully-filled contractual gain is positive.
-        scores.append(gain)
-    return int(np.argmax(scores))
 
 
 def episode(block, instruments, seed, policy, config, budget, model=None, delay_multiplier=1., retain=False):

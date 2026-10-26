@@ -205,3 +205,9 @@ seeds as independent evidence.
 Full native inverse learning, target-composition training, empirical latency,
 verified historical margin/account capabilities, live spot execution, historical
 settlement bridges and wider out-of-time evaluation remain separate research.
+
+The subsequent [complete cached 90-day analytical study](research/post_decision_value/ANALYTICAL_90_DAY.md)
+adds a neural-dependency-free runner with fixed 54/18/18-day calibration,
+validation and test sets, continuous portfolios within each set, all raw trades
+and hourly decisions. It documents the exact candidate count and larger-universe
+truncation bias. This extension does not rerun or change the neural pilot.
