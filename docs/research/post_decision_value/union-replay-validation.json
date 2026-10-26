@@ -1,0 +1,65 @@
+{
+  "base_commit": "ee1b4121b952fa2e3722aedeb43ff2362be1102a",
+  "tests": {
+    "relevant_suite": {
+      "tests": 117,
+      "status": "PASS"
+    },
+    "historical_reexecutions": {
+      "trajectories": 3,
+      "exact_decisions_candidate_audits_and_fills": "PASS"
+    },
+    "viewer": {
+      "javascript_syntax": "PASS",
+      "DOM_interactions": "PASS: initial render, trajectory choice, slider, previous/next and bounds",
+      "plot_visual_inspection": "PASS"
+    },
+    "full_neural_feature_discovery": "BLOCKED: torch absent; test_engine and test_learning import errors. No neural code changed."
+  },
+  "artifacts": {
+    "research/post_decision_value/unified.py": {
+      "bytes": 13751,
+      "sha256": "5f4afc6eb111431edc0994cabc4010f48e3cb08e06800c9c091dc2f0153da81d"
+    },
+    "research/post_decision_value/replay_examples.py": {
+      "bytes": 5734,
+      "sha256": "ac5f13763b946f91d1154e231b53b1e1c593d5b4c732268b38b7332852ac2d85"
+    },
+    "research/post_decision_value/cadence_benchmark.py": {
+      "bytes": 4359,
+      "sha256": "b8d08b54ac485dcc75dda53224129b43928b891366e0ad9278c5cda87be23e00"
+    },
+    "tests/post_decision_value/test_unified.py": {
+      "bytes": 4893,
+      "sha256": "63840e727028f258cd5f0f0012c0df56142028a9e5686b10b25495c37494eb76"
+    },
+    "docs/research/post_decision_value/historical-dedup-check.json": {
+      "bytes": 834,
+      "sha256": "06968a05ffb73f6842b1ed61f2bad121495e668cb19dfbfc089ec3a36e9e1e3f"
+    },
+    "docs/research/post_decision_value/unified-v1.json": {
+      "bytes": 1175090,
+      "sha256": "42c822c75b999ff45549551fd135b59e5c8681b1c20449b3870aff99105470a5"
+    },
+    "docs/research/post_decision_value/replays-v1.png": {
+      "bytes": 145889,
+      "sha256": "8c173c330e30f0371255d1e6028c2cc84bc34b1ef2188e401c01738849de6e54"
+    },
+    "docs/research/post_decision_value/replays-v1.html": {
+      "bytes": 235698,
+      "sha256": "cc3a88f59400e8e00de89d9fe763961ed9541bb68f5302f25a084de09d343f4e"
+    },
+    "docs/research/post_decision_value/unified-tests.txt": {
+      "bytes": 20279,
+      "sha256": "87cd02211d3b2fecc5a141511c69d5e2d82bf162bde68913ee791a98002eed4d"
+    },
+    "docs/research/post_decision_value/replays-v1.json": {
+      "bytes": 67074,
+      "sha256": "0677d9c2584dc60c3e88996d4b3e2335bb085adaf9e1257bd100ff781e5b10d3"
+    },
+    "docs/research/post_decision_value/cadence-benchmark-v1.json": {
+      "bytes": 6574,
+      "sha256": "ce6d42b9f5667ddc2b181b54254cec2a18bedc5ddee81309bc679796ef2217b1"
+    }
+  }
+}

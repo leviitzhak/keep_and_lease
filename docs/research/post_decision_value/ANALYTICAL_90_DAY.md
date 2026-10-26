@@ -235,3 +235,8 @@ maps local execution commits to identical published Git trees.
 ![Held-out BTC/USD growth](analytical-90day-v1/test-growth.png)
 
 ![Full-period original BTC/USD growth](analytical-90day-v1/full_period_original-growth.png)
+
+Follow-up: [unified archive, subsecond costs and replay examples](UNIFIED_DATA_AND_REPLAYS.md)
+provides the exact grid-to-order mapping, three re-executed four-hour event journals,
+and bounded cadence benchmarks. Those probes do not replace this study's hourly
+protocol or held-out results. Multi-year raw reconciliation remains pending.

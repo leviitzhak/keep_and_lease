@@ -1,0 +1,2226 @@
+{
+  "examples": [
+    {
+      "end": 1780718400000,
+      "fills": [
+        {
+          "group": "g-0",
+          "order": "o-0-1",
+          "price": 63187.5,
+          "quantity": -0.0099,
+          "remaining": 0.0,
+          "source_amount": 7070.0,
+          "source_id": "432723868",
+          "source_price": 63272.5,
+          "source_time": 1780704251092,
+          "symbol": "BTC-26MAR27",
+          "time": 1780704251092,
+          "wait_ms": 251092
+        },
+        {
+          "group": "g-0",
+          "order": "o-0-0",
+          "price": 62597.5,
+          "quantity": 0.008,
+          "remaining": 0.002,
+          "source_amount": 5070.0,
+          "source_id": "432733265",
+          "source_price": 62595.0,
+          "source_time": 1780708317477,
+          "symbol": "BTC-25DEC26",
+          "time": 1780708317477,
+          "wait_ms": 717477
+        },
+        {
+          "group": "g-0",
+          "order": "o-0-0",
+          "price": 62597.5,
+          "quantity": 0.002,
+          "remaining": 0.0,
+          "source_amount": 5070.0,
+          "source_id": "432733392",
+          "source_price": 62565.0,
+          "source_time": 1780708362759,
+          "symbol": "BTC-25DEC26",
+          "time": 1780708362759,
+          "wait_ms": 762759
+        },
+        {
+          "group": "g-2",
+          "order": "o-2-0",
+          "price": 62120.0,
+          "quantity": 0.005,
+          "remaining": 0.005,
+          "source_amount": 3130.0,
+          "source_id": "432744321",
+          "source_price": 62097.5,
+          "source_time": 1780712312513,
+          "symbol": "BTC-25DEC26",
+          "time": 1780712312513,
+          "wait_ms": 1112513
+        },
+        {
+          "group": "g-2",
+          "order": "o-2-0",
+          "price": 62120.0,
+          "quantity": 0.0014,
+          "remaining": 0.0036,
+          "source_amount": 870.0,
+          "source_id": "432744322",
+          "source_price": 62095.0,
+          "source_time": 1780712313120,
+          "symbol": "BTC-25DEC26",
+          "time": 1780712313120,
+          "wait_ms": 1113120
+        },
+        {
+          "group": "g-2",
+          "order": "o-2-0",
+          "price": 62120.0,
+          "quantity": 0.0004,
+          "remaining": 0.0031999999999999997,
+          "source_amount": 280.0,
+          "source_id": "432744325",
+          "source_price": 62095.0,
+          "source_time": 1780712313665,
+          "symbol": "BTC-25DEC26",
+          "time": 1780712313665,
+          "wait_ms": 1113665
+        },
+        {
+          "group": "g-2",
+          "order": "o-2-0",
+          "price": 62120.0,
+          "quantity": 0.0009000000000000001,
+          "remaining": 0.0022999999999999995,
+          "source_amount": 610.0,
+          "source_id": "432744326",
+          "source_price": 62095.0,
+          "source_time": 1780712313815,
+          "symbol": "BTC-25DEC26",
+          "time": 1780712313815,
+          "wait_ms": 1113815
+        },
+        {
+          "group": "g-2",
+          "order": "o-2-0",
+          "price": 62120.0,
+          "quantity": 0.0023,
+          "remaining": 4.336808689942018e-19,
+          "source_amount": 3270.0,
+          "source_id": "432744335",
+          "source_price": 62095.0,
+          "source_time": 1780712322654,
+          "symbol": "BTC-25DEC26",
+          "time": 1780712322654,
+          "wait_ms": 1122654
+        }
+      ],
+      "final_contractual_holdings": {
+        "BTC": 1.0101,
+        "USD": 99378.19397687499
+      },
+      "limitation": "Four-hour excerpt, not a terminal performance evaluation. Hypothetical linear orders on inverse-source trades; no realized settlement.",
+      "name": "calibration-original-s11-d1",
+      "preset": {
+        "name": "original",
+        "offsets": [
+          -0.005,
+          0.0,
+          0.005
+        ],
+        "quantities": [
+          0.005,
+          0.01
+        ]
+      },
+      "seed": 11,
+      "source_manifest": {
+        "bytes_read": 348949,
+        "coverage_claim": "Only the explicitly listed cached objects were verified; no fresh full-archive inventory",
+        "files": [
+          {
+            "bytes": 221778,
+            "file": "2026-06-06-BTC-25DEC26.jsonl.gz",
+            "first_ms": 1780704017455,
+            "last_ms": 1780790135291,
+            "ordinary_rows": 9279,
+            "raw_rows": 10614,
+            "sha256": "dfa06e919b8f3caa5a87ad43cec8c1a2887761c2fb126aaccafda615ed907f5f",
+            "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/dfa06e919b8f3caa5a87ad43cec8c1a2887761c2fb126aaccafda615ed907f5f/BTC-25DEC26.jsonl.gz"
+          },
+          {
+            "bytes": 127171,
+            "file": "2026-06-06-BTC-26MAR27.jsonl.gz",
+            "first_ms": 1780704054948,
+            "last_ms": 1780789325447,
+            "ordinary_rows": 5261,
+            "raw_rows": 5912,
+            "sha256": "4ff3f6e0ed2269fae32d0d3cdf3c849c522d9b93dec730fc55a29b995f249bb8",
+            "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/4ff3f6e0ed2269fae32d0d3cdf3c849c522d9b93dec730fc55a29b995f249bb8/BTC-26MAR27.jsonl.gz"
+          }
+        ],
+        "hypothetical_linear_capacity": "native USD amount / print price",
+        "instruments": {
+          "BTC-25DEC26": {
+            "expiry": 1798185600000,
+            "fee_bps": 1.0,
+            "lot": 0.0001,
+            "margin_fraction": 0.1,
+            "payoff": "linear",
+            "source_payoff": "inverse",
+            "symbol": "BTC-25DEC26",
+            "tick": 2.5
+          },
+          "BTC-26MAR27": {
+            "expiry": 1806048000000,
+            "fee_bps": 1.0,
+            "lot": 0.0001,
+            "margin_fraction": 0.1,
+            "payoff": "linear",
+            "source_payoff": "inverse",
+            "symbol": "BTC-26MAR27",
+            "tick": 2.5
+          }
+        },
+        "metadata": {
+          "input_coverage.json": "1deec1539c7f220d5895d51b0f7ed77f8e15d6a067a41eedfc5d04701a63021d",
+          "seeds.json": "82b424dd8d2a135c3c42fc92c2e33be30a32194a285cc5dbb8e6f7e3be664c1b",
+          "source_receipts.json": "bfdfdbce4b9f302a98039db4deff38f8cd8c1cf698d315e57e59ecca3123d720",
+          "specification.json": "f3dcdaedfa8e910f846c715087af89dd7bd471180b3c9fc6cac060f164c9f9f9"
+        },
+        "mode": "counterfactual linear on inverse-source tape",
+        "native_amount": "USD notional",
+        "no_quote_depth": true,
+        "ordering": "timestamp then symbol then trade id; sequence verified per daily object",
+        "raw_rows": 16526,
+        "settlement_evidence": "not present",
+        "source_payoff": "inverse",
+        "spot_execution": "disabled"
+      },
+      "source_result_sha256": "defc3ec9c5633a32fa485eb05dd53694fe4d5eac1e912183747314aee3880eb5",
+      "start": 1780704000000,
+      "trace": [
+        {
+          "accepted": 50,
+          "confirmed": {},
+          "data": {
+            "kind": "create",
+            "orders": [
+              {
+                "created": 1780704000000,
+                "group": "g-0",
+                "identifier": "o-0-0",
+                "limit": 62012.5,
+                "quantity": 0.01,
+                "symbol": "BTC-25DEC26",
+                "tif": "GTC"
+              },
+              {
+                "created": 1780704000000,
+                "group": "g-0",
+                "identifier": "o-0-1",
+                "limit": 63187.5,
+                "quantity": -0.0099,
+                "symbol": "BTC-26MAR27",
+                "tif": "GTC"
+              }
+            ],
+            "targets": []
+          },
+          "event": "decision",
+          "observable_holdings": {
+            "BTC": 1.0,
+            "USD": 100000.0
+          },
+          "observed_market": {
+            "BTC-25DEC26": {
+              "amount": 400.0,
+              "identifier": "432722380",
+              "index": 61041.51,
+              "price": 62325.0,
+              "received": 1780703992531,
+              "side": "buy",
+              "symbol": "BTC-25DEC26",
+              "time": 1780703992425
+            },
+            "BTC-26MAR27": {
+              "amount": 7110.0,
+              "identifier": "432722272",
+              "index": 60937.63,
+              "price": 62872.5,
+              "received": 1780703984374,
+              "side": "buy",
+              "symbol": "BTC-26MAR27",
+              "time": 1780703984220
+            }
+          },
+          "pending": [],
+          "proposed": 50,
+          "time": 1780704000000
+        },
+        {
+          "data": [
+            "request-0",
+            {
+              "kind": "create",
+              "orders": [
+                {
+                  "created": 1780704000000,
+                  "group": "g-0",
+                  "identifier": "o-0-0",
+                  "limit": 62012.5,
+                  "quantity": 0.01,
+                  "symbol": "BTC-25DEC26",
+                  "tif": "GTC"
+                },
+                {
+                  "created": 1780704000000,
+                  "group": "g-0",
+                  "identifier": "o-0-1",
+                  "limit": 63187.5,
+                  "quantity": -0.0099,
+                  "symbol": "BTC-26MAR27",
+                  "tif": "GTC"
+                }
+              ],
+              "targets": []
+            }
+          ],
+          "event": "exchange_message",
+          "time": 1780704000138
+        },
+        {
+          "data": {
+            "kind": "ack",
+            "request": "request-0",
+            "snapshot": {
+              "o-0-0": {
+                "created": 1780704000000,
+                "group": "g-0",
+                "identifier": "o-0-0",
+                "limit": 62012.5,
+                "quantity": 0.01,
+                "symbol": "BTC-25DEC26",
+                "tif": "GTC"
+              },
+              "o-0-1": {
+                "created": 1780704000000,
+                "group": "g-0",
+                "identifier": "o-0-1",
+                "limit": 63187.5,
+                "quantity": -0.0099,
+                "symbol": "BTC-26MAR27",
+                "tif": "GTC"
+              }
+            }
+          },
+          "event": "received_ack",
+          "time": 1780704000278
+        },
+        {
+          "contractual_holdings": {
+            "BTC": 0.9901,
+            "USD": 100625.49369437499
+          },
+          "data": {
+            "group": "g-0",
+            "order": "o-0-1",
+            "price": 63187.5,
+            "quantity": -0.0099,
+            "remaining": 0.0,
+            "source_amount": 7070.0,
+            "source_id": "432723868",
+            "source_price": 63272.5,
+            "source_time": 1780704251092,
+            "symbol": "BTC-26MAR27",
+            "time": 1780704251092,
+            "wait_ms": 251092
+          },
+          "event": "exchange_fill",
+          "time": 1780704251092
+        },
+        {
+          "data": {
+            "kind": "fill",
+            "order": {
+              "created": 1780704000000,
+              "group": "g-0",
+              "identifier": "o-0-1",
+              "limit": 63187.5,
+              "quantity": -0.0099,
+              "symbol": "BTC-26MAR27",
+              "tif": "GTC"
+            },
+            "quantity": -0.0099,
+            "remaining": null
+          },
+          "event": "received_fill",
+          "time": 1780704251282
+        },
+        {
+          "accepted": 4,
+          "confirmed": {
+            "o-0-0": {
+              "created": 1780704000000,
+              "group": "g-0",
+              "identifier": "o-0-0",
+              "limit": 62012.5,
+              "quantity": 0.01,
+              "symbol": "BTC-25DEC26",
+              "tif": "GTC"
+            }
+          },
+          "data": {
+            "kind": "amend",
+            "orders": [
+              {
+                "created": 1780707600000,
+                "group": "g-0",
+                "identifier": "o-0-0",
+                "limit": 62597.5,
+                "quantity": 0.01,
+                "symbol": "BTC-25DEC26",
+                "tif": "GTC"
+              }
+            ],
+            "targets": [
+              "o-0-0"
+            ]
+          },
+          "event": "decision",
+          "observable_holdings": {
+            "BTC": 0.9901,
+            "USD": 100625.49369437499
+          },
+          "observed_market": {
+            "BTC-25DEC26": {
+              "amount": 5070.0,
+              "identifier": "432732044",
+              "index": 61259.47,
+              "price": 62597.5,
+              "received": 1780707539234,
+              "side": "sell",
+              "symbol": "BTC-25DEC26",
+              "time": 1780707539080
+            },
+            "BTC-26MAR27": {
+              "amount": 1100.0,
+              "identifier": "432732043",
+              "index": 61259.47,
+              "price": 63242.5,
+              "received": 1780707539202,
+              "side": "sell",
+              "symbol": "BTC-26MAR27",
+              "time": 1780707539080
+            }
+          },
+          "pending": [],
+          "proposed": 4,
+          "time": 1780707600000
+        },
+        {
+          "data": [
+            "request-1",
+            {
+              "kind": "amend",
+              "orders": [
+                {
+                  "created": 1780707600000,
+                  "group": "g-0",
+                  "identifier": "o-0-0",
+                  "limit": 62597.5,
+                  "quantity": 0.01,
+                  "symbol": "BTC-25DEC26",
+                  "tif": "GTC"
+                }
+              ],
+              "targets": [
+                "o-0-0"
+              ]
+            }
+          ],
+          "event": "exchange_message",
+          "time": 1780707600130
+        },
+        {
+          "data": {
+            "kind": "ack",
+            "request": "request-1",
+            "snapshot": {
+              "o-0-0": {
+                "created": 1780707600000,
+                "group": "g-0",
+                "identifier": "o-0-0",
+                "limit": 62597.5,
+                "quantity": 0.01,
+                "symbol": "BTC-25DEC26",
+                "tif": "GTC"
+              }
+            }
+          },
+          "event": "received_ack",
+          "time": 1780707600225
+        },
+        {
+          "contractual_holdings": {
+            "BTC": 0.9981,
+            "USD": 100124.663616375
+          },
+          "data": {
+            "group": "g-0",
+            "order": "o-0-0",
+            "price": 62597.5,
+            "quantity": 0.008,
+            "remaining": 0.002,
+            "source_amount": 5070.0,
+            "source_id": "432733265",
+            "source_price": 62595.0,
+            "source_time": 1780708317477,
+            "symbol": "BTC-25DEC26",
+            "time": 1780708317477,
+            "wait_ms": 717477
+          },
+          "event": "exchange_fill",
+          "time": 1780708317477
+        },
+        {
+          "data": {
+            "kind": "fill",
+            "order": {
+              "created": 1780707600000,
+              "group": "g-0",
+              "identifier": "o-0-0",
+              "limit": 62597.5,
+              "quantity": 0.01,
+              "symbol": "BTC-25DEC26",
+              "tif": "GTC"
+            },
+            "quantity": 0.008,
+            "remaining": {
+              "created": 1780707600000,
+              "group": "g-0",
+              "identifier": "o-0-0",
+              "limit": 62597.5,
+              "quantity": 0.002,
+              "symbol": "BTC-25DEC26",
+              "tif": "GTC"
+            }
+          },
+          "event": "received_fill",
+          "time": 1780708317601
+        },
+        {
+          "contractual_holdings": {
+            "BTC": 1.0001,
+            "USD": 99999.45609687499
+          },
+          "data": {
+            "group": "g-0",
+            "order": "o-0-0",
+            "price": 62597.5,
+            "quantity": 0.002,
+            "remaining": 0.0,
+            "source_amount": 5070.0,
+            "source_id": "432733392",
+            "source_price": 62565.0,
+            "source_time": 1780708362759,
+            "symbol": "BTC-25DEC26",
+            "time": 1780708362759,
+            "wait_ms": 762759
+          },
+          "event": "exchange_fill",
+          "time": 1780708362759
+        },
+        {
+          "data": {
+            "kind": "fill",
+            "order": {
+              "created": 1780707600000,
+              "group": "g-0",
+              "identifier": "o-0-0",
+              "limit": 62597.5,
+              "quantity": 0.002,
+              "symbol": "BTC-25DEC26",
+              "tif": "GTC"
+            },
+            "quantity": 0.002,
+            "remaining": null
+          },
+          "event": "received_fill",
+          "time": 1780708362944
+        },
+        {
+          "accepted": 50,
+          "confirmed": {},
+          "data": {
+            "kind": "create",
+            "orders": [
+              {
+                "created": 1780711200000,
+                "group": "g-2",
+                "identifier": "o-2-0",
+                "limit": 62120.0,
+                "quantity": 0.01,
+                "symbol": "BTC-25DEC26",
+                "tif": "GTC"
+              },
+              {
+                "created": 1780711200000,
+                "group": "g-2",
+                "identifier": "o-2-1",
+                "limit": 63407.5,
+                "quantity": -0.01,
+                "symbol": "BTC-26MAR27",
+                "tif": "GTC"
+              }
+            ],
+            "targets": []
+          },
+          "event": "decision",
+          "observable_holdings": {
+            "BTC": 1.0001,
+            "USD": 99999.45609687499
+          },
+          "observed_market": {
+            "BTC-25DEC26": {
+              "amount": 5040.0,
+              "identifier": "432740976",
+              "index": 61069.2,
+              "price": 62432.5,
+              "received": 1780711198366,
+              "side": "sell",
+              "symbol": "BTC-25DEC26",
+              "time": 1780711198296
+            },
+            "BTC-26MAR27": {
+              "amount": 5100.0,
+              "identifier": "432740953",
+              "index": 61069.2,
+              "price": 63090.0,
+              "received": 1780711198276,
+              "side": "sell",
+              "symbol": "BTC-26MAR27",
+              "time": 1780711198125
+            }
+          },
+          "pending": [],
+          "proposed": 50,
+          "time": 1780711200000
+        },
+        {
+          "data": [
+            "request-2",
+            {
+              "kind": "create",
+              "orders": [
+                {
+                  "created": 1780711200000,
+                  "group": "g-2",
+                  "identifier": "o-2-0",
+                  "limit": 62120.0,
+                  "quantity": 0.01,
+                  "symbol": "BTC-25DEC26",
+                  "tif": "GTC"
+                },
+                {
+                  "created": 1780711200000,
+                  "group": "g-2",
+                  "identifier": "o-2-1",
+                  "limit": 63407.5,
+                  "quantity": -0.01,
+                  "symbol": "BTC-26MAR27",
+                  "tif": "GTC"
+                }
+              ],
+              "targets": []
+            }
+          ],
+          "event": "exchange_message",
+          "time": 1780711200168
+        },
+        {
+          "data": {
+            "kind": "ack",
+            "request": "request-2",
+            "snapshot": {
+              "o-2-0": {
+                "created": 1780711200000,
+                "group": "g-2",
+                "identifier": "o-2-0",
+                "limit": 62120.0,
+                "quantity": 0.01,
+                "symbol": "BTC-25DEC26",
+                "tif": "GTC"
+              },
+              "o-2-1": {
+                "created": 1780711200000,
+                "group": "g-2",
+                "identifier": "o-2-1",
+                "limit": 63407.5,
+                "quantity": -0.01,
+                "symbol": "BTC-26MAR27",
+                "tif": "GTC"
+              }
+            }
+          },
+          "event": "received_ack",
+          "time": 1780711200302
+        },
+        {
+          "contractual_holdings": {
+            "BTC": 1.0050999999999999,
+            "USD": 99688.825036875
+          },
+          "data": {
+            "group": "g-2",
+            "order": "o-2-0",
+            "price": 62120.0,
+            "quantity": 0.005,
+            "remaining": 0.005,
+            "source_amount": 3130.0,
+            "source_id": "432744321",
+            "source_price": 62097.5,
+            "source_time": 1780712312513,
+            "symbol": "BTC-25DEC26",
+            "time": 1780712312513,
+            "wait_ms": 1112513
+          },
+          "event": "exchange_fill",
+          "time": 1780712312513
+        },
+        {
+          "data": {
+            "kind": "fill",
+            "order": {
+              "created": 1780711200000,
+              "group": "g-2",
+              "identifier": "o-2-0",
+              "limit": 62120.0,
+              "quantity": 0.01,
+              "symbol": "BTC-25DEC26",
+              "tif": "GTC"
+            },
+            "quantity": 0.005,
+            "remaining": {
+              "created": 1780711200000,
+              "group": "g-2",
+              "identifier": "o-2-0",
+              "limit": 62120.0,
+              "quantity": 0.005,
+              "symbol": "BTC-25DEC26",
+              "tif": "GTC"
+            }
+          },
+          "event": "received_fill",
+          "time": 1780712312657
+        },
+        {
+          "contractual_holdings": {
+            "BTC": 1.0065,
+            "USD": 99601.848340075
+          },
+          "data": {
+            "group": "g-2",
+            "order": "o-2-0",
+            "price": 62120.0,
+            "quantity": 0.0014,
+            "remaining": 0.0036,
+            "source_amount": 870.0,
+            "source_id": "432744322",
+            "source_price": 62095.0,
+            "source_time": 1780712313120,
+            "symbol": "BTC-25DEC26",
+            "time": 1780712313120,
+            "wait_ms": 1113120
+          },
+          "event": "exchange_fill",
+          "time": 1780712313120
+        },
+        {
+          "data": {
+            "kind": "fill",
+            "order": {
+              "created": 1780711200000,
+              "group": "g-2",
+              "identifier": "o-2-0",
+              "limit": 62120.0,
+              "quantity": 0.005,
+              "symbol": "BTC-25DEC26",
+              "tif": "GTC"
+            },
+            "quantity": 0.0014,
+            "remaining": {
+              "created": 1780711200000,
+              "group": "g-2",
+              "identifier": "o-2-0",
+              "limit": 62120.0,
+              "quantity": 0.0036,
+              "symbol": "BTC-25DEC26",
+              "tif": "GTC"
+            }
+          },
+          "event": "received_fill",
+          "time": 1780712313289
+        },
+        {
+          "contractual_holdings": {
+            "BTC": 1.0069,
+            "USD": 99576.997855275
+          },
+          "data": {
+            "group": "g-2",
+            "order": "o-2-0",
+            "price": 62120.0,
+            "quantity": 0.0004,
+            "remaining": 0.0031999999999999997,
+            "source_amount": 280.0,
+            "source_id": "432744325",
+            "source_price": 62095.0,
+            "source_time": 1780712313665,
+            "symbol": "BTC-25DEC26",
+            "time": 1780712313665,
+            "wait_ms": 1113665
+          },
+          "event": "exchange_fill",
+          "time": 1780712313665
+        },
+        {
+          "data": {
+            "kind": "fill",
+            "order": {
+              "created": 1780711200000,
+              "group": "g-2",
+              "identifier": "o-2-0",
+              "limit": 62120.0,
+              "quantity": 0.0036,
+              "symbol": "BTC-25DEC26",
+              "tif": "GTC"
+            },
+            "quantity": 0.0004,
+            "remaining": {
+              "created": 1780711200000,
+              "group": "g-2",
+              "identifier": "o-2-0",
+              "limit": 62120.0,
+              "quantity": 0.0031999999999999997,
+              "symbol": "BTC-25DEC26",
+              "tif": "GTC"
+            }
+          },
+          "event": "received_fill",
+          "time": 1780712313801
+        },
+        {
+          "contractual_holdings": {
+            "BTC": 1.0078,
+            "USD": 99521.084264475
+          },
+          "data": {
+            "group": "g-2",
+            "order": "o-2-0",
+            "price": 62120.0,
+            "quantity": 0.0009000000000000001,
+            "remaining": 0.0022999999999999995,
+            "source_amount": 610.0,
+            "source_id": "432744326",
+            "source_price": 62095.0,
+            "source_time": 1780712313815,
+            "symbol": "BTC-25DEC26",
+            "time": 1780712313815,
+            "wait_ms": 1113815
+          },
+          "event": "exchange_fill",
+          "time": 1780712313815
+        },
+        {
+          "data": {
+            "kind": "fill",
+            "order": {
+              "created": 1780711200000,
+              "group": "g-2",
+              "identifier": "o-2-0",
+              "limit": 62120.0,
+              "quantity": 0.0031999999999999997,
+              "symbol": "BTC-25DEC26",
+              "tif": "GTC"
+            },
+            "quantity": 0.0009000000000000001,
+            "remaining": {
+              "created": 1780711200000,
+              "group": "g-2",
+              "identifier": "o-2-0",
+              "limit": 62120.0,
+              "quantity": 0.0022999999999999995,
+              "symbol": "BTC-25DEC26",
+              "tif": "GTC"
+            }
+          },
+          "event": "received_fill",
+          "time": 1780712313942
+        },
+        {
+          "contractual_holdings": {
+            "BTC": 1.0101,
+            "USD": 99378.19397687499
+          },
+          "data": {
+            "group": "g-2",
+            "order": "o-2-0",
+            "price": 62120.0,
+            "quantity": 0.0023,
+            "remaining": 4.336808689942018e-19,
+            "source_amount": 3270.0,
+            "source_id": "432744335",
+            "source_price": 62095.0,
+            "source_time": 1780712322654,
+            "symbol": "BTC-25DEC26",
+            "time": 1780712322654,
+            "wait_ms": 1122654
+          },
+          "event": "exchange_fill",
+          "time": 1780712322654
+        },
+        {
+          "data": {
+            "kind": "fill",
+            "order": {
+              "created": 1780711200000,
+              "group": "g-2",
+              "identifier": "o-2-0",
+              "limit": 62120.0,
+              "quantity": 0.0022999999999999995,
+              "symbol": "BTC-25DEC26",
+              "tif": "GTC"
+            },
+            "quantity": 0.0023,
+            "remaining": null
+          },
+          "event": "received_fill",
+          "time": 1780712322803
+        },
+        {
+          "accepted": 4,
+          "confirmed": {
+            "o-2-1": {
+              "created": 1780711200000,
+              "group": "g-2",
+              "identifier": "o-2-1",
+              "limit": 63407.5,
+              "quantity": -0.01,
+              "symbol": "BTC-26MAR27",
+              "tif": "GTC"
+            }
+          },
+          "data": {
+            "kind": "amend",
+            "orders": [
+              {
+                "created": 1780714800000,
+                "group": "g-2",
+                "identifier": "o-2-1",
+                "limit": 63005.0,
+                "quantity": -0.01,
+                "symbol": "BTC-26MAR27",
+                "tif": "GTC"
+              }
+            ],
+            "targets": [
+              "o-2-1"
+            ]
+          },
+          "event": "decision",
+          "observable_holdings": {
+            "BTC": 1.0101,
+            "USD": 99378.19397687499
+          },
+          "observed_market": {
+            "BTC-25DEC26": {
+              "amount": 5050.0,
+              "identifier": "432750737",
+              "index": 60943.18,
+              "price": 62362.5,
+              "received": 1780714794154,
+              "side": "sell",
+              "symbol": "BTC-25DEC26",
+              "time": 1780714793972
+            },
+            "BTC-26MAR27": {
+              "amount": 20.0,
+              "identifier": "432750602",
+              "index": 60921.18,
+              "price": 63005.0,
+              "received": 1780714692923,
+              "side": "buy",
+              "symbol": "BTC-26MAR27",
+              "time": 1780714692838
+            }
+          },
+          "pending": [],
+          "proposed": 4,
+          "time": 1780714800000
+        },
+        {
+          "data": [
+            "request-3",
+            {
+              "kind": "amend",
+              "orders": [
+                {
+                  "created": 1780714800000,
+                  "group": "g-2",
+                  "identifier": "o-2-1",
+                  "limit": 63005.0,
+                  "quantity": -0.01,
+                  "symbol": "BTC-26MAR27",
+                  "tif": "GTC"
+                }
+              ],
+              "targets": [
+                "o-2-1"
+              ]
+            }
+          ],
+          "event": "exchange_message",
+          "time": 1780714800083
+        },
+        {
+          "data": {
+            "kind": "ack",
+            "request": "request-3",
+            "snapshot": {
+              "o-2-1": {
+                "created": 1780714800000,
+                "group": "g-2",
+                "identifier": "o-2-1",
+                "limit": 63005.0,
+                "quantity": -0.01,
+                "symbol": "BTC-26MAR27",
+                "tif": "GTC"
+              }
+            }
+          },
+          "event": "received_ack",
+          "time": 1780714800196
+        }
+      ],
+      "verification": "PASS: regenerated decisions, candidate audits and exact fill prefix match saved study"
+    },
+    {
+      "end": 1786939200000,
+      "fills": [
+        {
+          "group": "g-0",
+          "order": "o-0-1",
+          "price": 64817.5,
+          "quantity": -0.0001,
+          "remaining": 0.009800000000000001,
+          "source_amount": 100.0,
+          "source_id": "440379827",
+          "source_price": 64830.0,
+          "source_time": 1786930227157,
+          "symbol": "BTC-26MAR27",
+          "time": 1786930227157,
+          "wait_ms": 5427157
+        },
+        {
+          "group": "g-0",
+          "order": "o-0-1",
+          "price": 64817.5,
+          "quantity": -0.0001,
+          "remaining": 0.009700000000000002,
+          "source_amount": 100.0,
+          "source_id": "440379828",
+          "source_price": 64830.0,
+          "source_time": 1786930227157,
+          "symbol": "BTC-26MAR27",
+          "time": 1786930227157,
+          "wait_ms": 5427157
+        },
+        {
+          "group": "g-0",
+          "order": "o-0-1",
+          "price": 64817.5,
+          "quantity": -0.0076,
+          "remaining": 0.002100000000000002,
+          "source_amount": 4930.0,
+          "source_id": "440379832",
+          "source_price": 64830.0,
+          "source_time": 1786930227164,
+          "symbol": "BTC-26MAR27",
+          "time": 1786930227164,
+          "wait_ms": 5427164
+        },
+        {
+          "group": "g-0",
+          "order": "o-0-1",
+          "price": 64817.5,
+          "quantity": -0.0001,
+          "remaining": 0.002000000000000002,
+          "source_amount": 110.0,
+          "source_id": "440379833",
+          "source_price": 64830.0,
+          "source_time": 1786930227164,
+          "symbol": "BTC-26MAR27",
+          "time": 1786930227164,
+          "wait_ms": 5427164
+        },
+        {
+          "group": "g-0",
+          "order": "o-0-1",
+          "price": 64817.5,
+          "quantity": -0.002,
+          "remaining": 2.168404344971009e-18,
+          "source_amount": 5110.0,
+          "source_id": "440380380",
+          "source_price": 64857.5,
+          "source_time": 1786930845775,
+          "symbol": "BTC-26MAR27",
+          "time": 1786930845775,
+          "wait_ms": 6045775
+        },
+        {
+          "group": "g-0",
+          "order": "o-0-0",
+          "price": 64102.5,
+          "quantity": 0.0029000000000000002,
+          "remaining": 0.0071,
+          "source_amount": 1860.0,
+          "source_id": "440381055",
+          "source_price": 64057.5,
+          "source_time": 1786932183087,
+          "symbol": "BTC-25DEC26",
+          "time": 1786932183087,
+          "wait_ms": 183087
+        },
+        {
+          "group": "g-0",
+          "order": "o-0-0",
+          "price": 64102.5,
+          "quantity": 0.0006000000000000001,
+          "remaining": 0.006500000000000001,
+          "source_amount": 410.0,
+          "source_id": "440381056",
+          "source_price": 64057.5,
+          "source_time": 1786932183087,
+          "symbol": "BTC-25DEC26",
+          "time": 1786932183087,
+          "wait_ms": 183087
+        },
+        {
+          "group": "g-0",
+          "order": "o-0-0",
+          "price": 64102.5,
+          "quantity": 0.006500000000000001,
+          "remaining": 0.0,
+          "source_amount": 5310.0,
+          "source_id": "440381556",
+          "source_price": 64080.0,
+          "source_time": 1786933386323,
+          "symbol": "BTC-25DEC26",
+          "time": 1786933386323,
+          "wait_ms": 1386323
+        }
+      ],
+      "final_contractual_holdings": {
+        "BTC": 1.0001,
+        "USD": 100000.539978175
+      },
+      "limitation": "Four-hour excerpt, not a terminal performance evaluation. Hypothetical linear orders on inverse-source trades; no realized settlement.",
+      "name": "test-original-s11-d1",
+      "preset": {
+        "name": "original",
+        "offsets": [
+          -0.005,
+          0.0,
+          0.005
+        ],
+        "quantities": [
+          0.005,
+          0.01
+        ]
+      },
+      "seed": 11,
+      "source_manifest": {
+        "bytes_read": 77838,
+        "coverage_claim": "Only the explicitly listed cached objects were verified; no fresh full-archive inventory",
+        "files": [
+          {
+            "bytes": 54026,
+            "file": "2026-08-17-BTC-25DEC26.jsonl.gz",
+            "first_ms": 1786924868267,
+            "last_ms": 1787011129476,
+            "ordinary_rows": 3079,
+            "raw_rows": 3112,
+            "sha256": "d096f22dfdbc30c0ae71648ceb5297c1e0fbece50d1c199f810ec9d189f1d313",
+            "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/d096f22dfdbc30c0ae71648ceb5297c1e0fbece50d1c199f810ec9d189f1d313/BTC-25DEC26.jsonl.gz"
+          },
+          {
+            "bytes": 23812,
+            "file": "2026-08-17-BTC-26MAR27.jsonl.gz",
+            "first_ms": 1786926704552,
+            "last_ms": 1787004832354,
+            "ordinary_rows": 1384,
+            "raw_rows": 1408,
+            "sha256": "9f6fba5fa40ac47bad5f67a70c08487c4f6d44d8d1ca06ba0a36c92f4bbaa922",
+            "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/9f6fba5fa40ac47bad5f67a70c08487c4f6d44d8d1ca06ba0a36c92f4bbaa922/BTC-26MAR27.jsonl.gz"
+          }
+        ],
+        "hypothetical_linear_capacity": "native USD amount / print price",
+        "instruments": {
+          "BTC-25DEC26": {
+            "expiry": 1798185600000,
+            "fee_bps": 1.0,
+            "lot": 0.0001,
+            "margin_fraction": 0.1,
+            "payoff": "linear",
+            "source_payoff": "inverse",
+            "symbol": "BTC-25DEC26",
+            "tick": 2.5
+          },
+          "BTC-26MAR27": {
+            "expiry": 1806048000000,
+            "fee_bps": 1.0,
+            "lot": 0.0001,
+            "margin_fraction": 0.1,
+            "payoff": "linear",
+            "source_payoff": "inverse",
+            "symbol": "BTC-26MAR27",
+            "tick": 2.5
+          }
+        },
+        "metadata": {
+          "input_coverage.json": "1deec1539c7f220d5895d51b0f7ed77f8e15d6a067a41eedfc5d04701a63021d",
+          "seeds.json": "82b424dd8d2a135c3c42fc92c2e33be30a32194a285cc5dbb8e6f7e3be664c1b",
+          "source_receipts.json": "bfdfdbce4b9f302a98039db4deff38f8cd8c1cf698d315e57e59ecca3123d720",
+          "specification.json": "f3dcdaedfa8e910f846c715087af89dd7bd471180b3c9fc6cac060f164c9f9f9"
+        },
+        "mode": "counterfactual linear on inverse-source tape",
+        "native_amount": "USD notional",
+        "no_quote_depth": true,
+        "ordering": "timestamp then symbol then trade id; sequence verified per daily object",
+        "raw_rows": 4520,
+        "settlement_evidence": "not present",
+        "source_payoff": "inverse",
+        "spot_execution": "disabled"
+      },
+      "source_result_sha256": "775ff96d0e87eadfb5df0157fdaec5d79460e8a0eea7c7af03496b56e41d4380",
+      "start": 1786924800000,
+      "trace": [
+        {
+          "accepted": 50,
+          "confirmed": {},
+          "data": {
+            "kind": "create",
+            "orders": [
+              {
+                "created": 1786924800000,
+                "group": "g-0",
+                "identifier": "o-0-0",
+                "limit": 63537.5,
+                "quantity": 0.01,
+                "symbol": "BTC-25DEC26",
+                "tif": "GTC"
+              },
+              {
+                "created": 1786924800000,
+                "group": "g-0",
+                "identifier": "o-0-1",
+                "limit": 64817.5,
+                "quantity": -0.0099,
+                "symbol": "BTC-26MAR27",
+                "tif": "GTC"
+              }
+            ],
+            "targets": []
+          },
+          "event": "decision",
+          "observable_holdings": {
+            "BTC": 1.0,
+            "USD": 100000.0
+          },
+          "observed_market": {
+            "BTC-25DEC26": {
+              "amount": 40.0,
+              "identifier": "440375835",
+              "index": 62833.97,
+              "price": 63857.5,
+              "received": 1786924440536,
+              "side": "sell",
+              "symbol": "BTC-25DEC26",
+              "time": 1786924440425
+            },
+            "BTC-26MAR27": {
+              "amount": 50.0,
+              "identifier": "440375140",
+              "index": 62816.37,
+              "price": 64495.0,
+              "received": 1786922220188,
+              "side": "buy",
+              "symbol": "BTC-26MAR27",
+              "time": 1786922220080
+            }
+          },
+          "pending": [],
+          "proposed": 50,
+          "time": 1786924800000
+        },
+        {
+          "data": [
+            "request-0",
+            {
+              "kind": "create",
+              "orders": [
+                {
+                  "created": 1786924800000,
+                  "group": "g-0",
+                  "identifier": "o-0-0",
+                  "limit": 63537.5,
+                  "quantity": 0.01,
+                  "symbol": "BTC-25DEC26",
+                  "tif": "GTC"
+                },
+                {
+                  "created": 1786924800000,
+                  "group": "g-0",
+                  "identifier": "o-0-1",
+                  "limit": 64817.5,
+                  "quantity": -0.0099,
+                  "symbol": "BTC-26MAR27",
+                  "tif": "GTC"
+                }
+              ],
+              "targets": []
+            }
+          ],
+          "event": "exchange_message",
+          "time": 1786924800152
+        },
+        {
+          "data": {
+            "kind": "ack",
+            "request": "request-0",
+            "snapshot": {
+              "o-0-0": {
+                "created": 1786924800000,
+                "group": "g-0",
+                "identifier": "o-0-0",
+                "limit": 63537.5,
+                "quantity": 0.01,
+                "symbol": "BTC-25DEC26",
+                "tif": "GTC"
+              },
+              "o-0-1": {
+                "created": 1786924800000,
+                "group": "g-0",
+                "identifier": "o-0-1",
+                "limit": 64817.5,
+                "quantity": -0.0099,
+                "symbol": "BTC-26MAR27",
+                "tif": "GTC"
+              }
+            }
+          },
+          "event": "received_ack",
+          "time": 1786924800291
+        },
+        {
+          "accepted": 5,
+          "confirmed": {
+            "o-0-0": {
+              "created": 1786924800000,
+              "group": "g-0",
+              "identifier": "o-0-0",
+              "limit": 63537.5,
+              "quantity": 0.01,
+              "symbol": "BTC-25DEC26",
+              "tif": "GTC"
+            },
+            "o-0-1": {
+              "created": 1786924800000,
+              "group": "g-0",
+              "identifier": "o-0-1",
+              "limit": 64817.5,
+              "quantity": -0.0099,
+              "symbol": "BTC-26MAR27",
+              "tif": "GTC"
+            }
+          },
+          "data": {
+            "kind": "wait",
+            "orders": [],
+            "targets": []
+          },
+          "event": "decision",
+          "observable_holdings": {
+            "BTC": 1.0,
+            "USD": 100000.0
+          },
+          "observed_market": {
+            "BTC-25DEC26": {
+              "amount": 70.0,
+              "identifier": "440377583",
+              "index": 62850.23,
+              "price": 63882.5,
+              "received": 1786928351893,
+              "side": "sell",
+              "symbol": "BTC-25DEC26",
+              "time": 1786928351710
+            },
+            "BTC-26MAR27": {
+              "amount": 100.0,
+              "identifier": "440377471",
+              "index": 62834.69,
+              "price": 64535.0,
+              "received": 1786928151429,
+              "side": "buy",
+              "symbol": "BTC-26MAR27",
+              "time": 1786928151343
+            }
+          },
+          "pending": [],
+          "proposed": 5,
+          "time": 1786928400000
+        },
+        {
+          "contractual_holdings": {
+            "BTC": 0.9999,
+            "USD": 100006.481101825
+          },
+          "data": {
+            "group": "g-0",
+            "order": "o-0-1",
+            "price": 64817.5,
+            "quantity": -0.0001,
+            "remaining": 0.009800000000000001,
+            "source_amount": 100.0,
+            "source_id": "440379827",
+            "source_price": 64830.0,
+            "source_time": 1786930227157,
+            "symbol": "BTC-26MAR27",
+            "time": 1786930227157,
+            "wait_ms": 5427157
+          },
+          "event": "exchange_fill",
+          "time": 1786930227157
+        },
+        {
+          "contractual_holdings": {
+            "BTC": 0.9998,
+            "USD": 100012.96220365
+          },
+          "data": {
+            "group": "g-0",
+            "order": "o-0-1",
+            "price": 64817.5,
+            "quantity": -0.0001,
+            "remaining": 0.009700000000000002,
+            "source_amount": 100.0,
+            "source_id": "440379828",
+            "source_price": 64830.0,
+            "source_time": 1786930227157,
+            "symbol": "BTC-26MAR27",
+            "time": 1786930227157,
+            "wait_ms": 5427157
+          },
+          "event": "exchange_fill",
+          "time": 1786930227157
+        },
+        {
+          "contractual_holdings": {
+            "BTC": 0.9922,
+            "USD": 100505.52594235
+          },
+          "data": {
+            "group": "g-0",
+            "order": "o-0-1",
+            "price": 64817.5,
+            "quantity": -0.0076,
+            "remaining": 0.002100000000000002,
+            "source_amount": 4930.0,
+            "source_id": "440379832",
+            "source_price": 64830.0,
+            "source_time": 1786930227164,
+            "symbol": "BTC-26MAR27",
+            "time": 1786930227164,
+            "wait_ms": 5427164
+          },
+          "event": "exchange_fill",
+          "time": 1786930227164
+        },
+        {
+          "contractual_holdings": {
+            "BTC": 0.9921,
+            "USD": 100512.007044175
+          },
+          "data": {
+            "group": "g-0",
+            "order": "o-0-1",
+            "price": 64817.5,
+            "quantity": -0.0001,
+            "remaining": 0.002000000000000002,
+            "source_amount": 110.0,
+            "source_id": "440379833",
+            "source_price": 64830.0,
+            "source_time": 1786930227164,
+            "symbol": "BTC-26MAR27",
+            "time": 1786930227164,
+            "wait_ms": 5427164
+          },
+          "event": "exchange_fill",
+          "time": 1786930227164
+        },
+        {
+          "data": {
+            "kind": "fill",
+            "order": {
+              "created": 1786924800000,
+              "group": "g-0",
+              "identifier": "o-0-1",
+              "limit": 64817.5,
+              "quantity": -0.0099,
+              "symbol": "BTC-26MAR27",
+              "tif": "GTC"
+            },
+            "quantity": -0.0001,
+            "remaining": {
+              "created": 1786924800000,
+              "group": "g-0",
+              "identifier": "o-0-1",
+              "limit": 64817.5,
+              "quantity": -0.009800000000000001,
+              "symbol": "BTC-26MAR27",
+              "tif": "GTC"
+            }
+          },
+          "event": "received_fill",
+          "time": 1786930227245
+        },
+        {
+          "data": {
+            "kind": "fill",
+            "order": {
+              "created": 1786924800000,
+              "group": "g-0",
+              "identifier": "o-0-1",
+              "limit": 64817.5,
+              "quantity": -0.009800000000000001,
+              "symbol": "BTC-26MAR27",
+              "tif": "GTC"
+            },
+            "quantity": -0.0001,
+            "remaining": {
+              "created": 1786924800000,
+              "group": "g-0",
+              "identifier": "o-0-1",
+              "limit": 64817.5,
+              "quantity": -0.009700000000000002,
+              "symbol": "BTC-26MAR27",
+              "tif": "GTC"
+            }
+          },
+          "event": "received_fill",
+          "time": 1786930227245
+        },
+        {
+          "data": {
+            "kind": "fill",
+            "order": {
+              "created": 1786924800000,
+              "group": "g-0",
+              "identifier": "o-0-1",
+              "limit": 64817.5,
+              "quantity": -0.009700000000000002,
+              "symbol": "BTC-26MAR27",
+              "tif": "GTC"
+            },
+            "quantity": -0.0076,
+            "remaining": {
+              "created": 1786924800000,
+              "group": "g-0",
+              "identifier": "o-0-1",
+              "limit": 64817.5,
+              "quantity": -0.002100000000000002,
+              "symbol": "BTC-26MAR27",
+              "tif": "GTC"
+            }
+          },
+          "event": "received_fill",
+          "time": 1786930227360
+        },
+        {
+          "data": {
+            "kind": "fill",
+            "order": {
+              "created": 1786924800000,
+              "group": "g-0",
+              "identifier": "o-0-1",
+              "limit": 64817.5,
+              "quantity": -0.002100000000000002,
+              "symbol": "BTC-26MAR27",
+              "tif": "GTC"
+            },
+            "quantity": -0.0001,
+            "remaining": {
+              "created": 1786924800000,
+              "group": "g-0",
+              "identifier": "o-0-1",
+              "limit": 64817.5,
+              "quantity": -0.002000000000000002,
+              "symbol": "BTC-26MAR27",
+              "tif": "GTC"
+            }
+          },
+          "event": "received_fill",
+          "time": 1786930227360
+        },
+        {
+          "contractual_holdings": {
+            "BTC": 0.9901,
+            "USD": 100641.62908067499
+          },
+          "data": {
+            "group": "g-0",
+            "order": "o-0-1",
+            "price": 64817.5,
+            "quantity": -0.002,
+            "remaining": 2.168404344971009e-18,
+            "source_amount": 5110.0,
+            "source_id": "440380380",
+            "source_price": 64857.5,
+            "source_time": 1786930845775,
+            "symbol": "BTC-26MAR27",
+            "time": 1786930845775,
+            "wait_ms": 6045775
+          },
+          "event": "exchange_fill",
+          "time": 1786930845775
+        },
+        {
+          "data": {
+            "kind": "fill",
+            "order": {
+              "created": 1786924800000,
+              "group": "g-0",
+              "identifier": "o-0-1",
+              "limit": 64817.5,
+              "quantity": -0.002000000000000002,
+              "symbol": "BTC-26MAR27",
+              "tif": "GTC"
+            },
+            "quantity": -0.002,
+            "remaining": null
+          },
+          "event": "received_fill",
+          "time": 1786930845957
+        },
+        {
+          "accepted": 4,
+          "confirmed": {
+            "o-0-0": {
+              "created": 1786924800000,
+              "group": "g-0",
+              "identifier": "o-0-0",
+              "limit": 63537.5,
+              "quantity": 0.01,
+              "symbol": "BTC-25DEC26",
+              "tif": "GTC"
+            }
+          },
+          "data": {
+            "kind": "amend",
+            "orders": [
+              {
+                "created": 1786932000000,
+                "group": "g-0",
+                "identifier": "o-0-0",
+                "limit": 64102.5,
+                "quantity": 0.01,
+                "symbol": "BTC-25DEC26",
+                "tif": "GTC"
+              }
+            ],
+            "targets": [
+              "o-0-0"
+            ]
+          },
+          "event": "decision",
+          "observable_holdings": {
+            "BTC": 0.9901,
+            "USD": 100641.62908067499
+          },
+          "observed_market": {
+            "BTC-25DEC26": {
+              "amount": 330.0,
+              "identifier": "440380847",
+              "index": 63083.25,
+              "price": 64102.5,
+              "received": 1786931686499,
+              "side": "sell",
+              "symbol": "BTC-25DEC26",
+              "time": 1786931686405
+            },
+            "BTC-26MAR27": {
+              "amount": 5110.0,
+              "identifier": "440380380",
+              "index": 63139.74,
+              "price": 64857.5,
+              "received": 1786930845908,
+              "side": "buy",
+              "symbol": "BTC-26MAR27",
+              "time": 1786930845775
+            }
+          },
+          "pending": [],
+          "proposed": 4,
+          "time": 1786932000000
+        },
+        {
+          "data": [
+            "request-1",
+            {
+              "kind": "amend",
+              "orders": [
+                {
+                  "created": 1786932000000,
+                  "group": "g-0",
+                  "identifier": "o-0-0",
+                  "limit": 64102.5,
+                  "quantity": 0.01,
+                  "symbol": "BTC-25DEC26",
+                  "tif": "GTC"
+                }
+              ],
+              "targets": [
+                "o-0-0"
+              ]
+            }
+          ],
+          "event": "exchange_message",
+          "time": 1786932000147
+        },
+        {
+          "data": {
+            "kind": "ack",
+            "request": "request-1",
+            "snapshot": {
+              "o-0-0": {
+                "created": 1786932000000,
+                "group": "g-0",
+                "identifier": "o-0-0",
+                "limit": 64102.5,
+                "quantity": 0.01,
+                "symbol": "BTC-25DEC26",
+                "tif": "GTC"
+              }
+            }
+          },
+          "event": "received_ack",
+          "time": 1786932000330
+        },
+        {
+          "contractual_holdings": {
+            "BTC": 0.993,
+            "USD": 100455.71324094999
+          },
+          "data": {
+            "group": "g-0",
+            "order": "o-0-0",
+            "price": 64102.5,
+            "quantity": 0.0029000000000000002,
+            "remaining": 0.0071,
+            "source_amount": 1860.0,
+            "source_id": "440381055",
+            "source_price": 64057.5,
+            "source_time": 1786932183087,
+            "symbol": "BTC-25DEC26",
+            "time": 1786932183087,
+            "wait_ms": 183087
+          },
+          "event": "exchange_fill",
+          "time": 1786932183087
+        },
+        {
+          "contractual_holdings": {
+            "BTC": 0.9935999999999999,
+            "USD": 100417.24789479999
+          },
+          "data": {
+            "group": "g-0",
+            "order": "o-0-0",
+            "price": 64102.5,
+            "quantity": 0.0006000000000000001,
+            "remaining": 0.006500000000000001,
+            "source_amount": 410.0,
+            "source_id": "440381056",
+            "source_price": 64057.5,
+            "source_time": 1786932183087,
+            "symbol": "BTC-25DEC26",
+            "time": 1786932183087,
+            "wait_ms": 183087
+          },
+          "event": "exchange_fill",
+          "time": 1786932183087
+        },
+        {
+          "data": {
+            "kind": "fill",
+            "order": {
+              "created": 1786932000000,
+              "group": "g-0",
+              "identifier": "o-0-0",
+              "limit": 64102.5,
+              "quantity": 0.01,
+              "symbol": "BTC-25DEC26",
+              "tif": "GTC"
+            },
+            "quantity": 0.0029000000000000002,
+            "remaining": {
+              "created": 1786932000000,
+              "group": "g-0",
+              "identifier": "o-0-0",
+              "limit": 64102.5,
+              "quantity": 0.0071,
+              "symbol": "BTC-25DEC26",
+              "tif": "GTC"
+            }
+          },
+          "event": "received_fill",
+          "time": 1786932183175
+        },
+        {
+          "data": {
+            "kind": "fill",
+            "order": {
+              "created": 1786932000000,
+              "group": "g-0",
+              "identifier": "o-0-0",
+              "limit": 64102.5,
+              "quantity": 0.0071,
+              "symbol": "BTC-25DEC26",
+              "tif": "GTC"
+            },
+            "quantity": 0.0006000000000000001,
+            "remaining": {
+              "created": 1786932000000,
+              "group": "g-0",
+              "identifier": "o-0-0",
+              "limit": 64102.5,
+              "quantity": 0.006500000000000001,
+              "symbol": "BTC-25DEC26",
+              "tif": "GTC"
+            }
+          },
+          "event": "received_fill",
+          "time": 1786932183259
+        },
+        {
+          "contractual_holdings": {
+            "BTC": 1.0001,
+            "USD": 100000.539978175
+          },
+          "data": {
+            "group": "g-0",
+            "order": "o-0-0",
+            "price": 64102.5,
+            "quantity": 0.006500000000000001,
+            "remaining": 0.0,
+            "source_amount": 5310.0,
+            "source_id": "440381556",
+            "source_price": 64080.0,
+            "source_time": 1786933386323,
+            "symbol": "BTC-25DEC26",
+            "time": 1786933386323,
+            "wait_ms": 1386323
+          },
+          "event": "exchange_fill",
+          "time": 1786933386323
+        },
+        {
+          "data": {
+            "kind": "fill",
+            "order": {
+              "created": 1786932000000,
+              "group": "g-0",
+              "identifier": "o-0-0",
+              "limit": 64102.5,
+              "quantity": 0.006500000000000001,
+              "symbol": "BTC-25DEC26",
+              "tif": "GTC"
+            },
+            "quantity": 0.006500000000000001,
+            "remaining": null
+          },
+          "event": "received_fill",
+          "time": 1786933386463
+        },
+        {
+          "accepted": 50,
+          "confirmed": {},
+          "data": {
+            "kind": "create",
+            "orders": [
+              {
+                "created": 1786935600000,
+                "group": "g-2",
+                "identifier": "o-2-0",
+                "limit": 64052.5,
+                "quantity": 0.01,
+                "symbol": "BTC-25DEC26",
+                "tif": "GTC"
+              },
+              {
+                "created": 1786935600000,
+                "group": "g-2",
+                "identifier": "o-2-1",
+                "limit": 65397.5,
+                "quantity": -0.01,
+                "symbol": "BTC-26MAR27",
+                "tif": "GTC"
+              }
+            ],
+            "targets": []
+          },
+          "event": "decision",
+          "observable_holdings": {
+            "BTC": 1.0001,
+            "USD": 100000.539978175
+          },
+          "observed_market": {
+            "BTC-25DEC26": {
+              "amount": 6630.0,
+              "identifier": "440384013",
+              "index": 63334.91,
+              "price": 64375.0,
+              "received": 1786935507569,
+              "side": "sell",
+              "symbol": "BTC-25DEC26",
+              "time": 1786935507417
+            },
+            "BTC-26MAR27": {
+              "amount": 10.0,
+              "identifier": "440383997",
+              "index": 63340.72,
+              "price": 65070.0,
+              "received": 1786935499133,
+              "side": "buy",
+              "symbol": "BTC-26MAR27",
+              "time": 1786935499036
+            }
+          },
+          "pending": [],
+          "proposed": 50,
+          "time": 1786935600000
+        },
+        {
+          "data": [
+            "request-2",
+            {
+              "kind": "create",
+              "orders": [
+                {
+                  "created": 1786935600000,
+                  "group": "g-2",
+                  "identifier": "o-2-0",
+                  "limit": 64052.5,
+                  "quantity": 0.01,
+                  "symbol": "BTC-25DEC26",
+                  "tif": "GTC"
+                },
+                {
+                  "created": 1786935600000,
+                  "group": "g-2",
+                  "identifier": "o-2-1",
+                  "limit": 65397.5,
+                  "quantity": -0.01,
+                  "symbol": "BTC-26MAR27",
+                  "tif": "GTC"
+                }
+              ],
+              "targets": []
+            }
+          ],
+          "event": "exchange_message",
+          "time": 1786935600186
+        },
+        {
+          "data": {
+            "kind": "ack",
+            "request": "request-2",
+            "snapshot": {
+              "o-2-0": {
+                "created": 1786935600000,
+                "group": "g-2",
+                "identifier": "o-2-0",
+                "limit": 64052.5,
+                "quantity": 0.01,
+                "symbol": "BTC-25DEC26",
+                "tif": "GTC"
+              },
+              "o-2-1": {
+                "created": 1786935600000,
+                "group": "g-2",
+                "identifier": "o-2-1",
+                "limit": 65397.5,
+                "quantity": -0.01,
+                "symbol": "BTC-26MAR27",
+                "tif": "GTC"
+              }
+            }
+          },
+          "event": "received_ack",
+          "time": 1786935600380
+        }
+      ],
+      "verification": "PASS: regenerated decisions, candidate audits and exact fill prefix match saved study"
+    },
+    {
+      "end": 1786939200000,
+      "fills": [],
+      "final_contractual_holdings": {
+        "BTC": 1.0,
+        "USD": 100000.0
+      },
+      "limitation": "Four-hour excerpt, not a terminal performance evaluation. Hypothetical linear orders on inverse-source trades; no realized settlement.",
+      "name": "test-small_tight-s11-d1",
+      "preset": {
+        "name": "small_tight",
+        "offsets": [
+          -0.001,
+          0.0,
+          0.001
+        ],
+        "quantities": [
+          0.0025,
+          0.005
+        ]
+      },
+      "seed": 11,
+      "source_manifest": {
+        "bytes_read": 77838,
+        "coverage_claim": "Only the explicitly listed cached objects were verified; no fresh full-archive inventory",
+        "files": [
+          {
+            "bytes": 54026,
+            "file": "2026-08-17-BTC-25DEC26.jsonl.gz",
+            "first_ms": 1786924868267,
+            "last_ms": 1787011129476,
+            "ordinary_rows": 3079,
+            "raw_rows": 3112,
+            "sha256": "d096f22dfdbc30c0ae71648ceb5297c1e0fbece50d1c199f810ec9d189f1d313",
+            "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/d096f22dfdbc30c0ae71648ceb5297c1e0fbece50d1c199f810ec9d189f1d313/BTC-25DEC26.jsonl.gz"
+          },
+          {
+            "bytes": 23812,
+            "file": "2026-08-17-BTC-26MAR27.jsonl.gz",
+            "first_ms": 1786926704552,
+            "last_ms": 1787004832354,
+            "ordinary_rows": 1384,
+            "raw_rows": 1408,
+            "sha256": "9f6fba5fa40ac47bad5f67a70c08487c4f6d44d8d1ca06ba0a36c92f4bbaa922",
+            "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/9f6fba5fa40ac47bad5f67a70c08487c4f6d44d8d1ca06ba0a36c92f4bbaa922/BTC-26MAR27.jsonl.gz"
+          }
+        ],
+        "hypothetical_linear_capacity": "native USD amount / print price",
+        "instruments": {
+          "BTC-25DEC26": {
+            "expiry": 1798185600000,
+            "fee_bps": 1.0,
+            "lot": 0.0001,
+            "margin_fraction": 0.1,
+            "payoff": "linear",
+            "source_payoff": "inverse",
+            "symbol": "BTC-25DEC26",
+            "tick": 2.5
+          },
+          "BTC-26MAR27": {
+            "expiry": 1806048000000,
+            "fee_bps": 1.0,
+            "lot": 0.0001,
+            "margin_fraction": 0.1,
+            "payoff": "linear",
+            "source_payoff": "inverse",
+            "symbol": "BTC-26MAR27",
+            "tick": 2.5
+          }
+        },
+        "metadata": {
+          "input_coverage.json": "1deec1539c7f220d5895d51b0f7ed77f8e15d6a067a41eedfc5d04701a63021d",
+          "seeds.json": "82b424dd8d2a135c3c42fc92c2e33be30a32194a285cc5dbb8e6f7e3be664c1b",
+          "source_receipts.json": "bfdfdbce4b9f302a98039db4deff38f8cd8c1cf698d315e57e59ecca3123d720",
+          "specification.json": "f3dcdaedfa8e910f846c715087af89dd7bd471180b3c9fc6cac060f164c9f9f9"
+        },
+        "mode": "counterfactual linear on inverse-source tape",
+        "native_amount": "USD notional",
+        "no_quote_depth": true,
+        "ordering": "timestamp then symbol then trade id; sequence verified per daily object",
+        "raw_rows": 4520,
+        "settlement_evidence": "not present",
+        "source_payoff": "inverse",
+        "spot_execution": "disabled"
+      },
+      "source_result_sha256": "c4db098c3279b3bae31ce27207d2a3f0c16aa47f81e423888fb2a5d2625b7470",
+      "start": 1786924800000,
+      "trace": [
+        {
+          "accepted": 50,
+          "confirmed": {},
+          "data": {
+            "kind": "wait",
+            "orders": [],
+            "targets": []
+          },
+          "event": "decision",
+          "observable_holdings": {
+            "BTC": 1.0,
+            "USD": 100000.0
+          },
+          "observed_market": {
+            "BTC-25DEC26": {
+              "amount": 40.0,
+              "identifier": "440375835",
+              "index": 62833.97,
+              "price": 63857.5,
+              "received": 1786924440536,
+              "side": "sell",
+              "symbol": "BTC-25DEC26",
+              "time": 1786924440425
+            },
+            "BTC-26MAR27": {
+              "amount": 50.0,
+              "identifier": "440375140",
+              "index": 62816.37,
+              "price": 64495.0,
+              "received": 1786922220188,
+              "side": "buy",
+              "symbol": "BTC-26MAR27",
+              "time": 1786922220080
+            }
+          },
+          "pending": [],
+          "proposed": 50,
+          "time": 1786924800000
+        },
+        {
+          "accepted": 50,
+          "confirmed": {},
+          "data": {
+            "kind": "wait",
+            "orders": [],
+            "targets": []
+          },
+          "event": "decision",
+          "observable_holdings": {
+            "BTC": 1.0,
+            "USD": 100000.0
+          },
+          "observed_market": {
+            "BTC-25DEC26": {
+              "amount": 70.0,
+              "identifier": "440377583",
+              "index": 62850.23,
+              "price": 63882.5,
+              "received": 1786928351893,
+              "side": "sell",
+              "symbol": "BTC-25DEC26",
+              "time": 1786928351710
+            },
+            "BTC-26MAR27": {
+              "amount": 100.0,
+              "identifier": "440377471",
+              "index": 62834.69,
+              "price": 64535.0,
+              "received": 1786928151429,
+              "side": "buy",
+              "symbol": "BTC-26MAR27",
+              "time": 1786928151343
+            }
+          },
+          "pending": [],
+          "proposed": 50,
+          "time": 1786928400000
+        },
+        {
+          "accepted": 50,
+          "confirmed": {},
+          "data": {
+            "kind": "wait",
+            "orders": [],
+            "targets": []
+          },
+          "event": "decision",
+          "observable_holdings": {
+            "BTC": 1.0,
+            "USD": 100000.0
+          },
+          "observed_market": {
+            "BTC-25DEC26": {
+              "amount": 330.0,
+              "identifier": "440380847",
+              "index": 63083.25,
+              "price": 64102.5,
+              "received": 1786931686499,
+              "side": "sell",
+              "symbol": "BTC-25DEC26",
+              "time": 1786931686405
+            },
+            "BTC-26MAR27": {
+              "amount": 5110.0,
+              "identifier": "440380380",
+              "index": 63139.74,
+              "price": 64857.5,
+              "received": 1786930845908,
+              "side": "buy",
+              "symbol": "BTC-26MAR27",
+              "time": 1786930845775
+            }
+          },
+          "pending": [],
+          "proposed": 50,
+          "time": 1786932000000
+        },
+        {
+          "accepted": 50,
+          "confirmed": {},
+          "data": {
+            "kind": "wait",
+            "orders": [],
+            "targets": []
+          },
+          "event": "decision",
+          "observable_holdings": {
+            "BTC": 1.0,
+            "USD": 100000.0
+          },
+          "observed_market": {
+            "BTC-25DEC26": {
+              "amount": 6630.0,
+              "identifier": "440384013",
+              "index": 63334.91,
+              "price": 64375.0,
+              "received": 1786935507569,
+              "side": "sell",
+              "symbol": "BTC-25DEC26",
+              "time": 1786935507417
+            },
+            "BTC-26MAR27": {
+              "amount": 10.0,
+              "identifier": "440383997",
+              "index": 63340.72,
+              "price": 65070.0,
+              "received": 1786935499133,
+              "side": "buy",
+              "symbol": "BTC-26MAR27",
+              "time": 1786935499036
+            }
+          },
+          "pending": [],
+          "proposed": 50,
+          "time": 1786935600000
+        }
+      ],
+      "verification": "PASS: regenerated decisions, candidate audits and exact fill prefix match saved study"
+    }
+  ],
+  "seconds": 6.86796355000115
+}

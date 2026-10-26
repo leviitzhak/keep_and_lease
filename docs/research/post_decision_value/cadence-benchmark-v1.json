@@ -1,0 +1,198 @@
+{
+  "elapsed_seconds": 143.74441380999997,
+  "environment": {
+    "cpu_model": "INTEL(R) XEON(R) PLATINUM 8573C",
+    "cpu_quota": "800000 100000",
+    "memory_limit_bytes": "8589934592",
+    "peak_rss_mib": 29.125,
+    "platform": "Linux-6.18.55-x86_64-with-glibc2.39",
+    "python": "3.12.14"
+  },
+  "limitations": [
+    "120-second early-window samples only; ledger/order complexity changes cost.",
+    "Single process; no GPU or neural inference measured.",
+    "Subsecond decisions use all exact recorded trade events, no interpolated prices.",
+    "90-day projections exclude collection/fitting/evaluation repetitions, long-ledger growth and I/O."
+  ],
+  "runs": [
+    {
+      "accepted_candidate_counts": {
+        "5": 239,
+        "50": 1
+      },
+      "cpu_seconds": 4.13005696,
+      "decisions": 240,
+      "events": 54,
+      "extrapolated_90_day_cpu_hours": 74.34102528,
+      "extrapolated_90_day_serial_wall_hours": 74.47090311001375,
+      "failures": false,
+      "fills": 0,
+      "interval_ms": 500,
+      "mean_decision_ms": 17.224240475161423,
+      "p50_ms": 14.153709500533296,
+      "p95_ms": 39.92048399959458,
+      "preset": "original",
+      "selected_actions": {
+        "create": 1,
+        "wait": 239
+      },
+      "simulated_seconds": 120,
+      "stage_seconds": {
+        "advance_observe": 0.24533225402774406,
+        "generate_filter": 3.1957913680271304,
+        "score": 0.07435670096310787,
+        "submit": 0.6183373910207592
+      },
+      "wall_seconds": 4.137272395000764
+    },
+    {
+      "accepted_candidate_counts": {
+        "5": 1199,
+        "50": 1
+      },
+      "cpu_seconds": 15.696835253,
+      "decisions": 1200,
+      "events": 54,
+      "extrapolated_90_day_cpu_hours": 282.543034554,
+      "extrapolated_90_day_serial_wall_hours": 283.0138785899981,
+      "failures": false,
+      "fills": 0,
+      "interval_ms": 100,
+      "mean_decision_ms": 13.087144028371162,
+      "p50_ms": 11.507826999149984,
+      "p95_ms": 25.239692000468494,
+      "preset": "original",
+      "selected_actions": {
+        "create": 1,
+        "wait": 1199
+      },
+      "simulated_seconds": 120,
+      "stage_seconds": {
+        "advance_observe": 0.8749396129933302,
+        "generate_filter": 12.086147043963138,
+        "score": 0.2982837140625634,
+        "submit": 2.4452024630263622
+      },
+      "wall_seconds": 15.722993254999892
+    },
+    {
+      "accepted_candidate_counts": {
+        "50": 240
+      },
+      "cpu_seconds": 25.429528262,
+      "decisions": 240,
+      "events": 52,
+      "extrapolated_90_day_cpu_hours": 457.73150871600006,
+      "extrapolated_90_day_serial_wall_hours": 463.300950689998,
+      "failures": false,
+      "fills": 0,
+      "interval_ms": 500,
+      "mean_decision_ms": 107.19923290847267,
+      "p50_ms": 78.16101900243666,
+      "p95_ms": 236.15484000038123,
+      "preset": "small_tight",
+      "selected_actions": {
+        "wait": 240
+      },
+      "simulated_seconds": 120,
+      "stage_seconds": {
+        "advance_observe": 0.2866488119980204,
+        "generate_filter": 24.28452071701031,
+        "score": 0.6366112420109857,
+        "submit": 0.5200351270141255
+      },
+      "wall_seconds": 25.73894170499989
+    },
+    {
+      "accepted_candidate_counts": {
+        "50": 1200
+      },
+      "cpu_seconds": 96.28079397300002,
+      "decisions": 1200,
+      "events": 52,
+      "extrapolated_90_day_cpu_hours": 1733.0542915140002,
+      "extrapolated_90_day_serial_wall_hours": 1743.6975837480204,
+      "failures": false,
+      "fills": 0,
+      "interval_ms": 100,
+      "mean_decision_ms": 80.7093681450624,
+      "p50_ms": 57.28105150046758,
+      "p95_ms": 162.74287600026582,
+      "preset": "small_tight",
+      "selected_actions": {
+        "wait": 1200
+      },
+      "simulated_seconds": 120,
+      "stage_seconds": {
+        "advance_observe": 0.7008057070015639,
+        "generate_filter": 92.40449565108429,
+        "score": 2.267433775916288,
+        "submit": 1.4785066400727374
+      },
+      "wall_seconds": 96.87208798600113
+    }
+  ],
+  "source_manifest": {
+    "bytes_read": 348949,
+    "coverage_claim": "Only the explicitly listed cached objects were verified; no fresh full-archive inventory",
+    "files": [
+      {
+        "bytes": 221778,
+        "file": "2026-06-06-BTC-25DEC26.jsonl.gz",
+        "first_ms": 1780704017455,
+        "last_ms": 1780790135291,
+        "ordinary_rows": 9279,
+        "raw_rows": 10614,
+        "sha256": "dfa06e919b8f3caa5a87ad43cec8c1a2887761c2fb126aaccafda615ed907f5f",
+        "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/dfa06e919b8f3caa5a87ad43cec8c1a2887761c2fb126aaccafda615ed907f5f/BTC-25DEC26.jsonl.gz"
+      },
+      {
+        "bytes": 127171,
+        "file": "2026-06-06-BTC-26MAR27.jsonl.gz",
+        "first_ms": 1780704054948,
+        "last_ms": 1780789325447,
+        "ordinary_rows": 5261,
+        "raw_rows": 5912,
+        "sha256": "4ff3f6e0ed2269fae32d0d3cdf3c849c522d9b93dec730fc55a29b995f249bb8",
+        "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/4ff3f6e0ed2269fae32d0d3cdf3c849c522d9b93dec730fc55a29b995f249bb8/BTC-26MAR27.jsonl.gz"
+      }
+    ],
+    "hypothetical_linear_capacity": "native USD amount / print price",
+    "instruments": {
+      "BTC-25DEC26": {
+        "expiry": 1798185600000,
+        "fee_bps": 1.0,
+        "lot": 0.0001,
+        "margin_fraction": 0.1,
+        "payoff": "linear",
+        "source_payoff": "inverse",
+        "symbol": "BTC-25DEC26",
+        "tick": 2.5
+      },
+      "BTC-26MAR27": {
+        "expiry": 1806048000000,
+        "fee_bps": 1.0,
+        "lot": 0.0001,
+        "margin_fraction": 0.1,
+        "payoff": "linear",
+        "source_payoff": "inverse",
+        "symbol": "BTC-26MAR27",
+        "tick": 2.5
+      }
+    },
+    "metadata": {
+      "input_coverage.json": "1deec1539c7f220d5895d51b0f7ed77f8e15d6a067a41eedfc5d04701a63021d",
+      "seeds.json": "82b424dd8d2a135c3c42fc92c2e33be30a32194a285cc5dbb8e6f7e3be664c1b",
+      "source_receipts.json": "bfdfdbce4b9f302a98039db4deff38f8cd8c1cf698d315e57e59ecca3123d720",
+      "specification.json": "f3dcdaedfa8e910f846c715087af89dd7bd471180b3c9fc6cac060f164c9f9f9"
+    },
+    "mode": "counterfactual linear on inverse-source tape",
+    "native_amount": "USD notional",
+    "no_quote_depth": true,
+    "ordering": "timestamp then symbol then trade id; sequence verified per daily object",
+    "raw_rows": 16526,
+    "settlement_evidence": "not present",
+    "source_payoff": "inverse",
+    "spot_execution": "disabled"
+  }
+}

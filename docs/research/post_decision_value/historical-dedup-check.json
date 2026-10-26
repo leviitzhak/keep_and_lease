@@ -1,0 +1,26 @@
+{
+  "status": "AVAILABLE_LOCAL_SOURCES_UNIFIED",
+  "input_rows": 21228,
+  "unique_rows": 10614,
+  "duplicate_rows": 10614,
+  "compressed_bytes": 443556,
+  "sources": 2,
+  "coverage": [
+    {
+      "symbol": "BTC-25DEC26",
+      "rows": 10614,
+      "first_ms": 1780704017455,
+      "last_ms": 1780790135291,
+      "first_seq": 375833,
+      "last_seq": 386446
+    }
+  ],
+  "sequence_gaps": [],
+  "seconds": 3.149143850998371,
+  "database_sha256": "e9ada94a6922f604045d9eae4ba82b0c3a9336d4af487a0873b53930c55cd37b",
+  "source_payoff": "inverse",
+  "amount_unit": "USD notional",
+  "settlement_evidence": "not supplied",
+  "mode": "Raw archive union; linear replay remains a counterfactual experiment",
+  "scope": "Actual cached historical object imported twice; validates deduplication, NOT equality to unavailable multi-year copy."
+}

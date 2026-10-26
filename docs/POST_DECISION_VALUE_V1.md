@@ -211,3 +211,11 @@ adds a neural-dependency-free runner with fixed 54/18/18-day calibration,
 validation and test sets, continuous portfolios within each set, all raw trades
 and hourly decisions. It documents the exact candidate count and larger-universe
 truncation bias. This extension does not rerun or change the neural pilot.
+
+The [unified data and replay extension](research/post_decision_value/UNIFIED_DATA_AND_REPLAYS.md)
+adds a bounded offline native archive union, strict sequence-prefix causal reader,
+three exact historical replay excerpts, and measured 100/500 ms CPU runtime probes.
+All available 90-day raw files were reconciled locally; the multi-year raw union
+remains incomplete because its receipts and objects are not available in this
+session. The report separates trade unification from settlement/spot bridge
+verification and documents the remaining operator/partitioned-reader work.
