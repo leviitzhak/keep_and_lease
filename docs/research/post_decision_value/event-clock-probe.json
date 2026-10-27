@@ -1,0 +1,1724 @@
+{
+  "config": {
+    "cadence_ms": 500,
+    "delays": {
+      "congestion": 0.5,
+      "decision": 10,
+      "delivery": 100,
+      "jitter": 0.5,
+      "observation": 100,
+      "report": 100
+    },
+    "pilot_seconds": 30,
+    "seed": 11,
+    "transition_cap": 1000,
+    "trigger": {
+      "max_wait_ms": 30000,
+      "min_gap_ms": 100,
+      "premium_bps": 2.0,
+      "price_bps": 2.0
+    }
+  },
+  "end": 1780707720000,
+  "identity": {
+    "simulator": "post-decision-v1",
+    "source_commit": "d562e1772470ded1b7d2345b0ead4760fe57ceba",
+    "source_sha256": "fa667129e075f3c6bef28339f6dfcb43260d96b6f0c798b39c80f5134b624058"
+  },
+  "limitations": [
+    "Two minutes of two-contract cached historical inverse prints, counterfactual linear mode.",
+    "Hold policy; no candidate search or neural inference timed. No speedup/return claim for learned policies.",
+    "All exact tape/report events processed; event clock only changes decision times."
+  ],
+  "matching_hold_outcomes": true,
+  "reduction_fraction": 0.975,
+  "results": [
+    {
+      "audit": [
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707600000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707600500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707601000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707601500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707602000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707602500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707603000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707603500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707604000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707604500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707605000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707605500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707606000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707606500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707607000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707607500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707608000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707608500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707609000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707609500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707610000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707610500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707611000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707611500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707612000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707612500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707613000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707613500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707614000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707614500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707615000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707615500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707616000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707616500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707617000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707617500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707618000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707618500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707619000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707619500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707620000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707620500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707621000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707621500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707622000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707622500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707623000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707623500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707624000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707624500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707625000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707625500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707626000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707626500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707627000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707627500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707628000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707628500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707629000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707629500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707630000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707630500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707631000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707631500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707632000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707632500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707633000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707633500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707634000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707634500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707635000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707635500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707636000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707636500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707637000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707637500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707638000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707638500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707639000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707639500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707640000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707640500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707641000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707641500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707642000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707642500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707643000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707643500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707644000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707644500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707645000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707645500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707646000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707646500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707647000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707647500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707648000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707648500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707649000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707649500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707650000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707650500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707651000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707651500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707652000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707652500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707653000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707653500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707654000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707654500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707655000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707655500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707656000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707656500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707657000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707657500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707658000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707658500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707659000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707659500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707660000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707660500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707661000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707661500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707662000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707662500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707663000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707663500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707664000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707664500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707665000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707665500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707666000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707666500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707667000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707667500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707668000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707668500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707669000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707669500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707670000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707670500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707671000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707671500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707672000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707672500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707673000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707673500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707674000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707674500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707675000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707675500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707676000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707676500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707677000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707677500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707678000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707678500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707679000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707679500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707680000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707680500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707681000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707681500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707682000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707682500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707683000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707683500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707684000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707684500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707685000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707685500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707686000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707686500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707687000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707687500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707688000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707688500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707689000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707689500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707690000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707690500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707691000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707691500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707692000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707692500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707693000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707693500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707694000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707694500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707695000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707695500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707696000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707696500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707697000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707697500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707698000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707698500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707699000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707699500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707700000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707700500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707701000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707701500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707702000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707702500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707703000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707703500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707704000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707704500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707705000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707705500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707706000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707706500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707707000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707707500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707708000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707708500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707709000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707709500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707710000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707710500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707711000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707711500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707712000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707712500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707713000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707713500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707714000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707714500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707715000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707715500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707716000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707716500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707717000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707717500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707718000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707718500
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707719000
+        },
+        {
+          "reasons": [
+            "fixed_cadence"
+          ],
+          "time": 1780707719500
+        }
+      ],
+      "cpu_seconds": 0.29386544099999945,
+      "decisions": 240,
+      "events": 14,
+      "mode": "fixed",
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "composition_error": 0.09999999999999998,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "fills": 0,
+        "fixed_reference_value": 200000.0,
+        "full_fills": 0,
+        "growth": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "holding_status": "realized",
+        "holdings": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "live_orders": 0,
+        "marked_wealth": {
+          "BTC": 2.6309786785419313,
+          "USD": 161312.88,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.09999999999999998,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 61259.47,
+        "objective": "weighted_growth",
+        "objective_parameters": {
+          "loss_aversion": 10.0,
+          "weights": {
+            "BTC": 0.5,
+            "USD": 0.5
+          }
+        },
+        "partial_fills": 0,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "projected_receipts": [],
+        "schedule": [],
+        "score_is_surrogate": false,
+        "truncated": false,
+        "turnover_btc": 0,
+        "turnover_usd": 0,
+        "utility": 0.0,
+        "wait_ms": []
+      },
+      "seconds": 0.2939172190017416
+    },
+    {
+      "audit": [
+        {
+          "reasons": [
+            "initial"
+          ],
+          "time": 1780707600000
+        },
+        {
+          "reasons": [
+            "price_change",
+            "index_change",
+            "premium_change"
+          ],
+          "time": 1780707609652
+        },
+        {
+          "reasons": [
+            "price_change",
+            "premium_change"
+          ],
+          "time": 1780707612641
+        },
+        {
+          "reasons": [
+            "heartbeat"
+          ],
+          "time": 1780707642641
+        },
+        {
+          "reasons": [
+            "price_change",
+            "index_change",
+            "premium_change"
+          ],
+          "time": 1780707671275
+        },
+        {
+          "reasons": [
+            "heartbeat"
+          ],
+          "time": 1780707701275
+        }
+      ],
+      "cpu_seconds": 0.007214881000000339,
+      "decisions": 6,
+      "events": 14,
+      "mode": "event",
+      "outcome": {
+        "attained": false,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "composition_error": 0.09999999999999998,
+        "credit_used": 0.0,
+        "done": true,
+        "failed": false,
+        "failures": [],
+        "fees": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "fills": 0,
+        "fixed_reference_value": 200000.0,
+        "full_fills": 0,
+        "growth": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "holding_status": "realized",
+        "holdings": {
+          "BTC": 1.0,
+          "USD": 100000.0
+        },
+        "live_orders": 0,
+        "marked_wealth": {
+          "BTC": 2.6309786785419313,
+          "USD": 161312.88,
+          "unmarked_assets": false
+        },
+        "min_floor_headroom": {
+          "BTC": 0.09999999999999998,
+          "USD": 10000.0
+        },
+        "min_funding_usd": 61259.47,
+        "objective": "weighted_growth",
+        "objective_parameters": {
+          "loss_aversion": 10.0,
+          "weights": {
+            "BTC": 0.5,
+            "USD": 0.5
+          }
+        },
+        "partial_fills": 0,
+        "peak_async_btc": 0.0,
+        "pending_messages": 0,
+        "projected_receipts": [],
+        "schedule": [],
+        "score_is_surrogate": false,
+        "truncated": false,
+        "turnover_btc": 0,
+        "turnover_usd": 0,
+        "utility": 0.0,
+        "wait_ms": []
+      },
+      "seconds": 0.007214676999865333
+    }
+  ],
+  "source": {
+    "bytes_read": 348949,
+    "coverage_claim": "Only the explicitly listed cached objects were verified; no fresh full-archive inventory",
+    "files": [
+      {
+        "bytes": 221778,
+        "file": "2026-06-06-BTC-25DEC26.jsonl.gz",
+        "first_ms": 1780704017455,
+        "last_ms": 1780790135291,
+        "ordinary_rows": 9279,
+        "raw_rows": 10614,
+        "sha256": "dfa06e919b8f3caa5a87ad43cec8c1a2887761c2fb126aaccafda615ed907f5f",
+        "source_uri": "gs://keep-and-lease-market-data/btc/raw/sha256/dfa06e919b8f3caa5a87ad43cec8c1a2887761c2fb126aaccafda615ed907f5f/BTC-25DEC26.jsonl.gz"
+      },
+      {
+        "bytes": 127171,
+        "file": "2026-06-06-BTC-26MAR27.jsonl.gz",
+        "first_ms": 1780704054948,
+        "last_ms": 1780789325447,
+        "ordinary_rows": 5261,
+        "raw_rows": 5912,
+        "sha256": "4ff3f6e0ed2269fae32d0d3cdf3c849c522d9b93dec730fc55a29b995f249bb8",
+        "source_uri": "gs://keep-and-lease-market-data/btc/research/deribit-history-extension-v1/objects/4ff3f6e0ed2269fae32d0d3cdf3c849c522d9b93dec730fc55a29b995f249bb8/BTC-26MAR27.jsonl.gz"
+      }
+    ],
+    "hypothetical_linear_capacity": "native USD amount / print price",
+    "instruments": {
+      "BTC-25DEC26": {
+        "cashflows": [],
+        "enabled": true,
+        "expiry": 1798185600000,
+        "fee_bps": 1.0,
+        "listed_at": 0,
+        "lot": 0.0001,
+        "margin_fraction": 0.1,
+        "payoff": "linear",
+        "source_payoff": "inverse",
+        "symbol": "BTC-25DEC26",
+        "tick": 2.5,
+        "underlying_per_unit": 1.0
+      },
+      "BTC-26MAR27": {
+        "cashflows": [],
+        "enabled": true,
+        "expiry": 1806048000000,
+        "fee_bps": 1.0,
+        "listed_at": 0,
+        "lot": 0.0001,
+        "margin_fraction": 0.1,
+        "payoff": "linear",
+        "source_payoff": "inverse",
+        "symbol": "BTC-26MAR27",
+        "tick": 2.5,
+        "underlying_per_unit": 1.0
+      }
+    },
+    "metadata": {
+      "input_coverage.json": "1deec1539c7f220d5895d51b0f7ed77f8e15d6a067a41eedfc5d04701a63021d",
+      "seeds.json": "82b424dd8d2a135c3c42fc92c2e33be30a32194a285cc5dbb8e6f7e3be664c1b",
+      "source_receipts.json": "bfdfdbce4b9f302a98039db4deff38f8cd8c1cf698d315e57e59ecca3123d720",
+      "specification.json": "f3dcdaedfa8e910f846c715087af89dd7bd471180b3c9fc6cac060f164c9f9f9"
+    },
+    "mode": "counterfactual linear on inverse-source tape",
+    "native_amount": "USD notional",
+    "no_quote_depth": true,
+    "ordering": "timestamp then symbol then trade id; sequence verified per daily object",
+    "raw_rows": 16526,
+    "settlement_evidence": "not present",
+    "source_payoff": "inverse",
+    "spot_execution": "disabled"
+  },
+  "start": 1780707600000
+}

@@ -1,5 +1,20 @@
 # TODO
 
+## Weighted/event-clock research, 27 October 2026
+
+- [x] Continuous weighted positive growth and penalty for each negative growth;
+  configurable weights/lambda, schema-3 features and label identity checks.
+- [x] Optional observable event triggers, exact exchange replay, checkpointed
+  anchors and a bounded cached-tape comparison with fixed cadence.
+- [x] Document conditional premium orders, CPU-day interpretation and a staged
+  Google Cloud campaign in [the plan](research/post_decision_value/WEIGHTED_EVENT_TRAINING_PLAN.md).
+- [ ] Pass isolated Treasury buy-and-hold learning, then carry/pair tests.
+- [ ] Implement and verify venue/client-hosted contingent orders before use;
+  not needed for the initial learning tests.
+- [ ] Build a bounded streaming multi-year collection driver and complete data
+  eligibility checks. Benchmark, set an explicit aggregate budget and obtain
+  authorization before provisioning or launching long cloud training.
+
 ## Cash-aware value learning, 27 October 2026
 
 - [x] Add funded spot/proxy/Treasury actions, dated receipts, native inventory

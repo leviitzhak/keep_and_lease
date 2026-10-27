@@ -74,8 +74,10 @@ fixed reference prices, a deadline, tolerances and optional band maintenance.
 The 60/40 exact-target minimum-value check is $225,000 for the specification's
 example. Target utility is labeled a surrogate; attainment is a separate flag.
 The archived historical pilot remains the initial-basket experiment, not target training.
-New pilot CLI runs default to `--objective gated_max`; `--objective basket`
-retains minimum growth. See the [cash/objective report](research/post_decision_value/CASH_ASSETS_AND_OBJECTIVE.md).
+New pilot CLI runs default to `--objective weighted_growth`, a weighted sum of
+positive growth minus a configurable penalty for every negative growth.
+`--objective basket` retains minimum growth and `gated_max` retains the previous
+conditional maximum. See the [weighted/event-clock update](research/post_decision_value/WEIGHTED_EVENT_TRAINING_PLAN.md).
 
 ## Execution, candidates and observations
 
@@ -151,9 +153,10 @@ Independent outputs predict the expected scalar trajectory utility, normalized
 terminal BTC/USD holdings, failure probability and target attainment. All outputs
 share the same versioned continuation. Scalar ranking never maximizes individual
 commodity heads and never substitutes utility of mean holdings. The default
-CLI scalar label is `min(growth)` when that minimum is negative, otherwise
-`max(growth)`, per complete trajectory, minus a finite penalty of 1 for failed
-paths. `--objective basket` and the low-level `Goal` default preserve the original
+CLI scalar label is the weighted sum of positive growth minus `loss_aversion`
+times the sum of negative growth magnitudes, per complete trajectory, minus a
+finite penalty of 1 for failed paths. Defaults: equal growth weights and loss
+aversion 10. `--objective basket` and the low-level `Goal` default preserve the original
 minimum label. All objectives use positive-initial commodities; explicit floors
 and scales remain necessary for zero-initial assets. No actor, desired-return token, tree search,
 fill gradient or intermediate reward double counting is used.
@@ -163,6 +166,13 @@ Schema 1 has 87,877 parameters. Schema 2 has 88,645: item input 28, history inpu
 Old checkpoints remain loadable for their original schema, but cannot score the
 new schema. New objective labels and continuation fingerprints require new
 training. The fit report now retains every training minibatch loss.
+
+Schema 3 adds weighted-objective parameters, has 39 global inputs and 88,901
+parameters. New weighted models require new training. Optional event-clock
+decisions use only received price/premium/account changes, known dates and a
+heartbeat while the engine processes every event exactly. The clock is part of
+the continuation and engine checkpoint. See the
+[design, tests and cloud proposal](research/post_decision_value/WEIGHTED_EVENT_TRAINING_PLAN.md).
 
 Stage 0 collects a declared stochastic analytical/random behavior policy and
 fits complete-outcome labels. Stage 1 collects fresh closed-loop trajectories
@@ -187,7 +197,7 @@ python -m unittest discover -s tests/post_decision_value -v
 python -m unittest tests.test_funded_ledger tests.test_paired_transfer_economics tests.test_paired_execution_study -v
 python -m research.post_decision_value.pilot \
   --input /path/to/existing/dec_mar_inputs \
-  --output /path/to/new/pilot-gated-max --objective gated_max
+  --output /path/to/new/pilot-weighted --objective weighted_growth
 ```
 
 Input is an **existing** export containing `specification.json`, `seeds.json`,
@@ -230,7 +240,7 @@ existing authorized operator; none are performed by this local pilot.
 ```bash
 python -m research.post_decision_value.pilot \
   --input /path/to/existing/dec_mar_inputs \
-  --output /path/to/new/pilot-gated-max --objective gated_max --resume
+  --output /path/to/new/pilot-weighted --objective weighted_growth --resume
 ```
 
 Resume reuses completed training stages, verifies source/config/data identities,

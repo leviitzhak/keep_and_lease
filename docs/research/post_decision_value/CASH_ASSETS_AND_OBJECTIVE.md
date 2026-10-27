@@ -1,5 +1,9 @@
 # Spot, proxy and Treasury actions; conditional maximum growth
 
+The later [weighted/event-clock update](WEIGHTED_EVENT_TRAINING_PLAN.md) adds a
+continuous weighted objective and changes the default for new CLI runs. This
+report and its saved synthetic models retain their original gated-max objective.
+
 Research update, 27 October 2026 (UTC). Branch
 `agent/btc-post-decision-value-v1`. No deployment, live orders, infrastructure,
 new data acquisition or long training. Earlier historical reports retain their

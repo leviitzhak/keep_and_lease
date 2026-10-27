@@ -21,6 +21,7 @@ from .model import ValueNetwork, features, action_features, fit, save_model, loa
 from .analytical import analytical, analytical_scores
 from .action_search import ActionDomain, SparseGridDomain, ValueActionSearch
 from .cash_data import load_cash_bundle, attach_cash_blocks
+from .decision_clock import DecisionSchedule, TriggerConfig
 
 
 def write_json(path, obj):
@@ -42,8 +43,11 @@ def code_identity():
 def continuation_identity(policy,config,model=None):
     base=policy if model is None else f'{policy}:{model.continuation}'
     if config.get('goal_mode','basket')!='basket' or config.get('cash_manifest_sha256'):
-        semantics={k:config.get(k) for k in ('goal_mode','cash_manifest_sha256','feature_version')}
+        semantics={k:config.get(k) for k in ('goal_mode','growth_weights','loss_aversion','cash_manifest_sha256','feature_version')}
         base+='|objective-assets:'+hashlib.sha256(json.dumps(semantics,sort_keys=True).encode()).hexdigest()[:24]
+    if config.get('decision_clock')=='event' or 'cadence_ms' in config:
+        timing=dict(mode='event',trigger=asdict(TriggerConfig(**config.get('trigger',{})))) if config.get('decision_clock')=='event' else dict(mode='fixed',cadence_ms=config['cadence_ms'])
+        base+='|clock:'+hashlib.sha256(json.dumps(timing,sort_keys=True).encode()).hexdigest()[:24]
     if config.get('action_space') not in ('full','grid'):return base
     details=dict(algorithm='native-state-search-v2',domain=config['action_domain'],
                  evaluations=config['search_evaluations'],rounds=config.get('search_rounds',4),
@@ -73,7 +77,8 @@ class Budget:
 def episode(block, instruments, seed, policy, config, budget, model=None, delay_multiplier=1., retain=False):
     initial=dict(BTC=config['initial_btc'],USD=config['initial_usd'])
     resolution=max([block['end']]+[i.expiry for i in instruments.values() if i.is_future or i.payoff=='treasury'])
-    goal=Goal(initial,block['end'],resolution,reference={'BTC':config['reference_btc'],'USD':1.},mode=config.get('goal_mode','basket'))
+    goal=Goal(initial,block['end'],resolution,reference={'BTC':config['reference_btc'],'USD':1.},mode=config.get('goal_mode','basket'),
+              growth_weights=config.get('growth_weights',{'BTC':.5,'USD':.5}),loss_aversion=config.get('loss_aversion',10.))
     delays=Delays(**{k:(round(v*delay_multiplier) if k in ('observation','decision','delivery','report') else v) for k,v in config['delays'].items()})
     replay=Engine(instruments,Ledger(initial.copy()),goal,seed,delays,participation=config['participation'],event_cap=config['event_cap'])
     replay.seed_market(block['seeds'],block['start']);replay.add_tape(block['tape'])
@@ -84,12 +89,9 @@ def episode(block, instruments, seed, policy, config, budget, model=None, delay_
     rng=random.Random(seed)
     records=[];decision_audit=[];predictions=[];submitted_orders=set()
     continuation=continuation_identity(policy,config,model)
-    for t in range(block['start'],block['end'],config['cadence_ms']):
-        try:budget.check()
-        except RuntimeError as e:
-            replay.truncated=True;replay.hidden.failures.append(dict(time=t,reason=str(e)));break
-        replay.advance(t)
-        if replay.truncated:break
+    schedule=DecisionSchedule(replay,block['end'],mode=config.get('decision_clock','fixed'),cadence_ms=config['cadence_ms'],
+                              trigger=config.get('trigger'),budget=budget)
+    for t,trigger_reasons in schedule:
         obs=replay.observe()
         history_cache={}
         if searcher is not None:
@@ -118,13 +120,14 @@ def episode(block, instruments, seed, policy, config, budget, model=None, delay_
             if policy=='collect_greedy_v1_eps015' and rng.random()<.15:chosen=rng.randrange(len(actions))
         action=actions[chosen]
         replay.submit(action)
+        schedule.accept()
         submitted_orders.update(o.identifier for o in action.orders)
         budget.transitions+=1
         if retain:
             records.append(dict(features=fs[chosen],time=t,remaining_ms=goal.horizon-t,goal=asdict(goal),
                                 instruction=action.payload(),continuation=continuation,
                                 block=block['id'],seed=seed,source_ids=[v['identifier'] for v in obs.market.values()]))
-        decision_audit.append(dict(time=t,selected=action.payload(),candidates=audit,
+        decision_audit.append(dict(time=t,trigger_reasons=trigger_reasons,selected=action.payload(),candidates=audit,
                                    predicted_score=float(predicted['objective'][chosen]) if predicted else None,
                                    search_info={k:v for k,v in search.items() if k!='proposals'} if searcher is not None else None,
                                    continuation=predicted['continuation'] if predicted else continuation))
@@ -187,11 +190,15 @@ def aggregate(results):
 
 def run(args):
     torch.set_num_threads(1);torch.manual_seed(19);np.random.seed(19)
-    config=dict(initial_btc=1.,initial_usd=100000.,reference_btc=100000.,candidate_budget=96,cadence_ms=120000,
+    config=dict(initial_btc=1.,initial_usd=100000.,reference_btc=100000.,candidate_budget=96,cadence_ms=getattr(args,'cadence_ms',120000),
                 transition_cap=20000,event_cap=30000,pilot_seconds=3600,optimizer_updates_per_stage=160,
                 participation=.1,delays=asdict(Delays()),seeds=[11,29],
                 dates=[f'2026-06-{d:02d}' for d in range(6,14)],episode_minutes=60,offset_minutes=60,
-                goal_mode=getattr(args,'objective','gated_max'),
+                goal_mode=getattr(args,'objective','weighted_growth'),
+                growth_weights=dict(BTC=getattr(args,'btc_growth_weight',.5),USD=1-getattr(args,'btc_growth_weight',.5)),
+                loss_aversion=getattr(args,'loss_aversion',10.),decision_clock=getattr(args,'decision_clock','fixed'),
+                trigger=asdict(TriggerConfig(price_bps=getattr(args,'trigger_price_bps',2.),premium_bps=getattr(args,'trigger_premium_bps',2.),
+                    min_gap_ms=getattr(args,'trigger_min_gap_ms',100),max_wait_ms=getattr(args,'trigger_max_wait_ms',30000))),
                 action_space=getattr(args,'action_space','grid'),action_domain=asdict(ActionDomain()),
                 search_evaluations=getattr(args,'search_evaluations',None) or (32 if getattr(args,'action_space','grid')=='grid' else 128),
                 search_rounds=getattr(args,'search_rounds',4),grid_random_points=getattr(args,'grid_random_points',2))
@@ -205,7 +212,7 @@ def run(args):
         if set(cash)&set(instruments):raise ValueError('Cash/futures identity collision')
         attach_cash_blocks(blocks,cash,cash_tape);instruments.update(cash)
         manifest['cash_assets']=cash_manifest;config['cash_manifest_sha256']=cash_manifest['manifest_sha256']
-    config['feature_version']=2 if config['goal_mode']=='gated_max' or any(not i.is_future for i in instruments.values()) else 1
+    config['feature_version']=3 if config['goal_mode']=='weighted_growth' else 2 if config['goal_mode']=='gated_max' or any(not i.is_future for i in instruments.values()) else 1
     identity=code_identity()
     identity.update(config_sha256=hashlib.sha256(json.dumps(config,sort_keys=True).encode()).hexdigest(),
                     data_sha256=hashlib.sha256(json.dumps(manifest,sort_keys=True).encode()).hexdigest())
@@ -306,7 +313,15 @@ def main():
     parser.add_argument('--input',required=True,help='Existing hash-receipted local export; no download')
     parser.add_argument('--output',required=True)
     parser.add_argument('--resume',action='store_true',help='Resume immutable completed training stages with identical code/data/config')
-    parser.add_argument('--objective',choices=('basket','gated_max','btc','target'),default='gated_max')
+    parser.add_argument('--objective',choices=('basket','gated_max','weighted_growth','btc','target'),default='weighted_growth')
+    parser.add_argument('--btc-growth-weight',type=float,default=.5,help='BTC positive-growth weight; USD weight is 1 minus this')
+    parser.add_argument('--loss-aversion',type=float,default=10.,help='Penalty multiplier for the sum of negative growth magnitudes')
+    parser.add_argument('--decision-clock',choices=('fixed','event'),default='fixed')
+    parser.add_argument('--cadence-ms',type=int,default=120000,help='Decision interval for fixed mode; event mode uses trigger parameters')
+    parser.add_argument('--trigger-price-bps',type=float,default=2.)
+    parser.add_argument('--trigger-premium-bps',type=float,default=2.)
+    parser.add_argument('--trigger-min-gap-ms',type=int,default=100)
+    parser.add_argument('--trigger-max-wait-ms',type=int,default=30000)
     parser.add_argument('--cash-input',help='Optional typed USD cash-asset bundle with hashes and explicit execution eligibility; no download')
     parser.add_argument('--action-space',choices=('grid','full','legacy'),default='grid',help='Sparse endpoint/random grid (default), full-domain sampling, or legacy menu')
     parser.add_argument('--search-evaluations',type=int,help='Proposal budget, 4..4096; grid default 32, full default 128')

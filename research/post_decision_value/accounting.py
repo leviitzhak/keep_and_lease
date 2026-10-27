@@ -353,11 +353,18 @@ class Goal:
     maintain_band: bool = False
     failure_penalty: float = 1.
     composition_penalty: float = 1.
+    growth_weights: dict = field(default_factory=lambda: {'BTC':.5,'USD':.5})
+    loss_aversion: float = 10.
 
     def __post_init__(self):
         drops = self.drawdown.values() if isinstance(self.drawdown, dict) else [self.drawdown]
-        if self.mode not in ("basket", "target", "btc", "gated_max") or any(not 0 <= d <= 1 for d in drops):
+        if self.mode not in ("basket", "target", "btc", "gated_max", "weighted_growth") or any(not 0 <= d <= 1 for d in drops):
             raise ValueError("Invalid goal")
+        if (set(self.growth_weights)!={'BTC','USD'} or
+            any(not math.isfinite(w) or w<0 for w in self.growth_weights.values()) or
+            abs(sum(self.growth_weights.values())-1)>EPS or
+            not math.isfinite(self.loss_aversion) or self.loss_aversion<=0):
+            raise ValueError('Nonnegative normalized growth weights and positive finite loss aversion required')
         if isinstance(self.drawdown, dict) and set(self.drawdown) != {"BTC", "USD"}:
             raise ValueError("Per-commodity drawdowns must cover BTC and USD")
         if self.resolution < self.horizon:
@@ -409,6 +416,10 @@ class Goal:
         if self.mode == "target":
             base = wealth / sum(self.initial[c] * self.reference[c] for c in self.initial) - 1
             utility = base - self.composition_penalty * max(0., error - self.tolerance)
+        elif self.mode=='weighted_growth':
+            active=[c for c in growth if self.initial[c]>0]
+            utility=sum(self.growth_weights[c]*max(0.,growth[c]) for c in active)
+            utility-=self.loss_aversion*sum(max(0.,-growth[c]) for c in active)
         elif self.mode=='gated_max':
             # Exact sign test: do not hide a small real loss behind a tolerance.
             active=[growth[c] for c in growth if self.initial[c]>0]
@@ -416,5 +427,6 @@ class Goal:
         else:
             utility = growth["BTC"] if self.mode == "btc" else min(growth[c] for c in growth if self.initial[c] > 0)
         return dict(growth=growth, utility=utility - self.failure_penalty * failed,objective=self.mode,
+                    objective_parameters=dict(weights=self.growth_weights.copy(),loss_aversion=self.loss_aversion) if self.mode=='weighted_growth' else {},
                     failed=bool(failed), attained=attained, composition_error=error,
                     fixed_reference_value=wealth, score_is_surrogate=self.mode == "target")

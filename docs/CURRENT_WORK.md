@@ -1,11 +1,22 @@
 # Current work
 
+## Weighted growth and event clock — 27 October 2026
+
+New pilot CLI runs use continuous weighted positive growth with an unweighted
+negative-growth penalty (default weights 0.5/0.5, lambda 10). Schema 3 has 88,901
+parameters. Optional event triggering uses received price/premium/report changes
+and known timers; exchange events remain exact. 207 tests pass; a two-minute
+cached hold probe reduced decisions 240 to 6 with identical outcomes and all 14
+events processed. This is not an annual speed or profitability result.
+Conditional premium orders and a checkpointed Google Cloud training campaign
+are documented, not launched. See [the plan](research/post_decision_value/WEIGHTED_EVENT_TRAINING_PLAN.md).
+
 ## Cash assets and conditional growth objective — 27 October 2026
 
 The research branch supports spot BTC, fixed-ratio proxy shares and Treasury
 units in its exact delayed replay, native action grid and schema-v2 value model.
 Cash purchases require settled USD; receipts follow owned units and explicit
-dates. New pilot runs default to the requested conditional maximum objective:
+dates. At that phase, new pilot runs defaulted to the conditional maximum objective:
 minimum growth if negative, maximum otherwise. Old reports/checkpoints keep
 their original semantics. The bounded multi-asset learning run is **synthetic**,
 underperforms hold, and is not accepted as a trading policy. Historical cash

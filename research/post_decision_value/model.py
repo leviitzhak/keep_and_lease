@@ -1,6 +1,7 @@
 """One shared continuation, independent scalar expected-utility regression head."""
 from dataclasses import asdict
 import hashlib
+import json
 import math
 import time
 from pathlib import Path
@@ -10,7 +11,7 @@ from torch import nn
 from .engine import post_decision
 
 CURRENCIES = ('BTC', 'USD')
-DIMENSIONS={1:(34,20,8),2:(35,28,11)}
+DIMENSIONS={1:(34,20,8),2:(35,28,11),3:(39,28,11)}
 
 
 def action_features(obs, action, goal, instruments):
@@ -26,7 +27,7 @@ def identity(symbol):
 def features(obs, goal, instruments):
     """Only observable arguments; fixed economic scaling, no fitted future stats."""
     ref = goal.reference['BTC']
-    version=2 if goal.mode=='gated_max' or any(not i.is_future for i in instruments.values()) else 1
+    version=3 if goal.mode=='weighted_growth' else 2 if goal.mode=='gated_max' or any(not i.is_future for i in instruments.values()) else 1
     hold = obs.ledger.holdings(instruments)
     drop = sum(goal.drawdown.values()) / 2 if isinstance(goal.drawdown, dict) else goal.drawdown
     g = [obs.time/1e12, (goal.horizon-obs.time)/86400000, (goal.resolution-obs.time)/31557600000,
@@ -49,13 +50,14 @@ def features(obs, goal, instruments):
         ins=instruments[symbol]
         usd_volume+=row['amount']*(row['price'] if ins.source_payoff!='inverse' else 1.)
     g.extend([float(np.std(returns)) if returns else 0.,math.log1p(usd_volume)/20])
-    if version==2:g.append(float(goal.mode=='gated_max'))
+    if version>=2:g.append(float(goal.mode=='gated_max'))
+    if version==3:g.extend([1.,goal.growth_weights['BTC'],goal.growth_weights['USD'],math.log1p(goal.loss_aversion)])
     items = []
     for symbol, ins in sorted(instruments.items()):
         if ins.listed_at>obs.time:continue
         market = obs.market.get(symbol)
         pos = obs.ledger.positions.get(symbol)
-        scale=ins.price_scale(ref) if version==2 else ref
+        scale=ins.price_scale(ref) if version>=2 else ref
         unit_scale=ref/scale
         term=(ins.expiry-obs.time)/31557600000 if ins.is_future or ins.payoff=='treasury' else 0.
         prefix = [*identity(symbol), term, float(ins.payoff=='inverse'),
@@ -69,8 +71,8 @@ def features(obs, goal, instruments):
         unpaid=sum(v for t,v in ins.cashflows if ins.payment_id(t) not in obs.ledger.settled_ids)
         extras=asset_kind+[ins.underlying_per_unit if ins.payoff=='proxy' else 0.,
                      (pos.quantity if pos else 0.)/unit_scale,unpaid/scale,0.,obs.reserved_assets.get(symbol,0.)/unit_scale]
-        items.append(prefix+[0.]*7+(extras if version==2 else []))
-        if version==2:
+        items.append(prefix+[0.]*7+(extras if version>=2 else []))
+        if version>=2:
             for date,amount in ins.cashflows:
                 if ins.payment_id(date) in obs.ledger.settled_ids:continue
                 items.append([*identity(symbol+':receipt'),(date-obs.time)/31557600000,1.,amount/scale,
@@ -88,19 +90,19 @@ def features(obs, goal, instruments):
                                    o.quantity*o.limit/ref,obs.reserved_assets.get(symbol,0.)/unit_scale]
                 items.append(prefix+[ins.btc(o.quantity,o.limit)/goal.scale('BTC')/.02, 100*(o.limit/(market['price'] if market else scale)-1),
                                      (obs.time-o.created)/60000, float(oid in obs.confirmed),
-                                     float(kind=='create'),float(kind=='amend'),float(kind in ('cancel','emergency'))]+(order_extras if version==2 else []))
+                                     float(kind=='create'),float(kind=='amend'),float(kind in ('cancel','emergency'))]+(order_extras if version>=2 else []))
     for flow in obs.ledger.flows:
         items.append([*identity(flow.identifier),(flow.date-obs.time)/31557600000,
-                      float(flow.currency=='BTC'),flow.amount/goal.scale(flow.currency),float(flow.kind=='debt')]+[0.]*(22 if version==2 else 14))
+                      float(flow.currency=='BTC'),flow.amount/goal.scale(flow.currency),float(flow.kind=='debt')]+[0.]*(22 if version>=2 else 14))
     # Item pooling supports a variable universe; never silently drop contracts.
     # Runner memory/runtime bounds govern the supplied universe, not a 32-token menu.
     history=[]
     for row in obs.history[-64:]:
-        ins=instruments[row['symbol']];scale=ins.price_scale(ref) if version==2 else ref
+        ins=instruments[row['symbol']];scale=ins.price_scale(ref) if version>=2 else ref
         history.append([*identity(row['symbol']), row['price']/scale,row['index']/ref,
                         math.log1p(row['amount'])/20, 1. if row['side']=='buy' else -1.,
                         (obs.time-row['received'])/60000,(row['received']-row['time'])/1000]+
-                       ([float(ins.payoff==k) for k in ('spot','proxy','treasury')] if version==2 else []))
+                       ([float(ins.payoff==k) for k in ('spot','proxy','treasury')] if version>=2 else []))
     if not history:
         history=[[0.]*DIMENSIONS[version][2]]
     return dict(schema_version=version,global_=g, items=items or [[0.]*DIMENSIONS[version][1]], history=history,
@@ -191,6 +193,7 @@ def labels(records):
     if len(versions)!=1:
         raise ValueError('Mixed continuations require an explicitly separate pretraining run')
     if len({r['outcome'].get('objective','basket') for r in records})!=1:raise ValueError('Mixed trajectory objectives')
+    if len({json.dumps(r['outcome'].get('objective_parameters',{}),sort_keys=True) for r in records})!=1:raise ValueError('Mixed objective parameters')
     y=[]
     for r in records:
         o=r['outcome']

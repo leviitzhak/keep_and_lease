@@ -1,5 +1,15 @@
 # Keep & Lease — Project State
 
+## Weighted growth and event-driven policy timing — 27 October 2026
+
+The research CLI now supports/defaults to continuous weighted positive growth
+with configurable loss aversion. Its optional causal event clock skips redundant
+policy searches while preserving exact exchange events and resumable trigger
+state. 207 tests pass. A future conditional-order design and bounded, checkpointed
+multi-year Google Cloud training proposal are documented in
+[WEIGHTED_EVENT_TRAINING_PLAN.md](research/post_decision_value/WEIGHTED_EVENT_TRAINING_PLAN.md).
+No cloud training, deployment or provisioning was launched.
+
 ## Cash-aware post-decision research — 27 October 2026
 
 Spot BTC, fixed-ratio proxy and Treasury order actions, dated cash receipts,
