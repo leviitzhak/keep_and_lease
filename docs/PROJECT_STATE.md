@@ -1,5 +1,14 @@
 # Keep & Lease — Project State
 
+## Learning/UI sequencing — 27 October 2026
+
+The next research task is bounded Treasury learning with exact synthetic
+same-policy/optimal references, repeated decisions and downloadable inference
+artifacts. The localhost explorer is planned for a separate task afterward:
+[learning handoff](research/post_decision_value/TREASURY_LEARNING_NEXT_PROMPT.md),
+[UI implementation plan](research/post_decision_value/STATE_VALUE_EXPLORER_PLAN.md).
+No new training, oracle implementation, hosted UI or checkpoint service exists.
+
 ## Treasury sanity result — 27 October 2026
 
 211 software tests pass. The isolated Treasury learning experiment is complete

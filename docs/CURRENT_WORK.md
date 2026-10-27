@@ -1,5 +1,14 @@
 # Current work
 
+## Next task scope — 27 October 2026
+
+[The revised handoff](research/post_decision_value/TREASURY_LEARNING_NEXT_PROMPT.md)
+adds exact synthetic policy/optimal reference values, error plots and repeated
+network decisions after an initial hold-only diagnostic. The interactive local
+explorer and Windows launcher are a **separate later implementation**, recorded
+in [the UI plan](research/post_decision_value/STATE_VALUE_EXPLORER_PLAN.md).
+These are documentation changes only; no new training, oracle or UI is claimed.
+
 ## Treasury learning gate and long-history readiness — 27 October 2026
 
 The bounded Treasury smoke completed in 18.13 seconds with 1,200 optimizer updates.

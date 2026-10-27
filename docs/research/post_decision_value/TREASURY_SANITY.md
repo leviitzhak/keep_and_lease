@@ -2,6 +2,11 @@
 
 27 October 2026, UTC. Research branch `agent/btc-post-decision-value-v1`.
 
+Next work is specified in [the revised learning prompt](TREASURY_LEARNING_NEXT_PROMPT.md):
+exact synthetic references and repeated decisions after the initial hold-only
+diagnostic. [The local explorer](STATE_VALUE_EXPLORER_PLAN.md) is a separate later
+task. The completed run described below remains unchanged and hold-only.
+
 **Infrastructure smoke passes; Treasury policy-learning gate fails. Years-long
 training is not ready end to end.** No cloud job, provisioning, deployment, data
 download or live order was performed. This is a bounded synthetic experiment,

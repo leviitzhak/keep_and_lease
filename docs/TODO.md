@@ -14,6 +14,13 @@
   [the report](research/post_decision_value/TREASURY_SANITY.md).
 - [ ] Diagnose feature scaling/Tanh saturation and label/loss balance, pass the
   Treasury gate on fresh frozen cases, then carry/pair learning tests.
+- [ ] Add exact synthetic same-policy/optimal reference values and error plots;
+  extend the hold-only diagnostic to repeated frozen-network decisions. Follow
+  [the revised learning prompt](research/post_decision_value/TREASURY_LEARNING_NEXT_PROMPT.md).
+- [ ] Separate subsequent task: local state-value explorer with editable orders,
+  learned/exact/error displays and downloadable checkpoints, then Windows setup
+  and launcher. [UI plan](research/post_decision_value/STATE_VALUE_EXPLORER_PLAN.md).
+  Do not implement the UI in the preceding learning task.
 - [ ] Implement and verify venue/client-hosted contingent orders before use;
   not needed for the initial learning tests.
 - [ ] Build a bounded streaming multi-year collection driver and complete data

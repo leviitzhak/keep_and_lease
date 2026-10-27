@@ -10,6 +10,11 @@ the learner chooses cash even for profitable bills. See
 [TREASURY_SANITY.md](TREASURY_SANITY.md). Years-long training remains blocked by
 the learning gate, streaming runner, data eligibility and cloud integration.
 
+The immediate [learning handoff](TREASURY_LEARNING_NEXT_PROMPT.md) now requires
+exact synthetic same-policy/optimal references and repeated-decision evaluation.
+[The interactive explorer](STATE_VALUE_EXPLORER_PLAN.md) is documented for a
+separate task afterward, including checkpoint downloads and reference/error views.
+
 ## Continuous weighted utility
 
 For normalized net terminal growth `g_c`, define `x+ = max(x,0)`:
