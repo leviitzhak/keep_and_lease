@@ -1,0 +1,93 @@
+{
+  "gates": {
+    "constrained": true,
+    "fees": true,
+    "overpriced": true,
+    "profitable": false,
+    "regret": false
+  },
+  "hold_baseline_utility": 0.0,
+  "identity": {
+    "config_sha256": "25d001c8f027e500acda4aa26b40424789c415fe8a9ff44e04ca3a398416a247",
+    "fixtures_sha256": "c16fc76bee2f2dfbc4d38450f9bdebdd0dd4d71a5d067f55d1a4017da9f5ddb4",
+    "simulator": "post-decision-v1",
+    "source_commit": "04c098018e0417b4ed4fce50c5c14fc5dcc50c2c",
+    "source_kind": "synthetic_fixture",
+    "source_sha256": "642218111526f796da9b660c1ed58eaf41a08567d153bffa00f841bd51af1cbf"
+  },
+  "limitations": [
+    "Synthetic deterministic execution paths with stochastic message/report delays; no historical return inference.",
+    "28/91/182/364 actual calendar-day maturities, sparse event jumps, one initial decision; not annual streaming throughput.",
+    "All heads use the same hold continuation. Complete replay outcomes only; no analytical target substituted.",
+    "Constraint filtering enforces cash safety; cash-constrained choices alone do not prove learned constraint reasoning.",
+    "Contractual Treasury payments are projected, not externally observed settlements.",
+    "Test loss evaluated once after validation checkpoint selection; test cases cannot remain untouched after this report."
+  ],
+  "oracle": "best funded initial order followed by hold; fixture benchmark, not learned",
+  "parameters": 88901,
+  "passed": false,
+  "resources": {
+    "cpu_seconds": 18.102523558999998,
+    "replay_events": 5520,
+    "threads": 1,
+    "training_seconds": 12.754763390003063,
+    "updates": 1200,
+    "wall_seconds": 18.129616361002263
+  },
+  "samples": {
+    "test": 208,
+    "train": 416,
+    "validation": 156
+  },
+  "selected_updates": 1200,
+  "source_kind": "synthetic_fixture",
+  "test": {
+    "all": {
+      "bought": 0,
+      "cases": 64,
+      "correct": 48,
+      "mean_oracle_utility": 0.0016985900195312497,
+      "mean_regret": 0.0016985900195312497,
+      "mean_usd_growth": 0.0,
+      "mean_utility": 0.0
+    },
+    "cash_constrained": {
+      "bought": 0,
+      "cases": 16,
+      "correct": 16,
+      "mean_oracle_utility": 0.0,
+      "mean_regret": 0.0,
+      "mean_usd_growth": 0.0,
+      "mean_utility": 0.0
+    },
+    "fee_erased": {
+      "bought": 0,
+      "cases": 16,
+      "correct": 16,
+      "mean_oracle_utility": 0.0,
+      "mean_regret": 0.0,
+      "mean_usd_growth": 0.0,
+      "mean_utility": 0.0
+    },
+    "overpriced": {
+      "bought": 0,
+      "cases": 16,
+      "correct": 16,
+      "mean_oracle_utility": 0.0,
+      "mean_regret": 0.0,
+      "mean_usd_growth": 0.0,
+      "mean_utility": 0.0
+    },
+    "profitable": {
+      "bought": 0,
+      "cases": 16,
+      "correct": 0,
+      "mean_oracle_utility": 0.006794360078124999,
+      "mean_regret": 0.006794360078124999,
+      "mean_usd_growth": 0.0,
+      "mean_utility": 0.0
+    }
+  },
+  "test_loss": 0.4484328765135545,
+  "test_objective_mae": 0.009965545497834682
+}

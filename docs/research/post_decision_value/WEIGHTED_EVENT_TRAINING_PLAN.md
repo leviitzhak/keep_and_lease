@@ -5,6 +5,11 @@ Implemented locally: weighted utility, optional causal decision clock, regressio
 tests and a bounded cached-data clock probe. Conditional orders and cloud training
 below are designs, not launched services or accepted profitability results.
 
+Readiness check and Treasury sanity run are complete: software tests pass, but
+the learner chooses cash even for profitable bills. See
+[TREASURY_SANITY.md](TREASURY_SANITY.md). Years-long training remains blocked by
+the learning gate, streaming runner, data eligibility and cloud integration.
+
 ## Continuous weighted utility
 
 For normalized net terminal growth `g_c`, define `x+ = max(x,0)`:
@@ -230,9 +235,15 @@ aggregate budget. No job, IAM change, provisioning or dispatch was performed.
    decisions/year projection, CPU/wall seconds, RAM, bytes, fill differences,
    utility and constraint failures. Preserve fixed seeds. Choose trigger thresholds
    using validation, not the final test period.
-4. **Chronological protocol:** provisional training 2016–2021, validation
-   2022–2023, held-out test 2024–2025, subject to verified joint data coverage.
-   Exclude incomplete 2026 from the first frozen annual test. Every episode's
+4. **Chronological protocol:** start with two independently fitted experiments:
+   train 2016–2018 / validate 2019 / test 2020; train 2021–2023 / validate 2024 /
+   test 2025–2026 available eligible history. Never train the 2020 evaluator on
+   2021–2023. Subject to verified coverage and runtime budget, add annual rolling
+   folds (three training years, one validation year, following year testing), and
+   compare expanding training windows on development folds. Some 2026 windows
+   were already examined in pilots: they are development evidence, not untouched
+   final holdouts. Incomplete 2026 cannot supply a complete calendar-year episode.
+   Every episode's
    full observation-to-resolution tail must remain inside its split; disallow
    opening contracts whose resolution would cross the boundary. Purge overlapping
    tails; keep seeds/overlapping windows grouped by market history. Publish exact

@@ -1,5 +1,15 @@
 # Current work
 
+## Treasury learning gate and long-history readiness — 27 October 2026
+
+The bounded Treasury smoke completed in 18.13 seconds with 1,200 optimizer updates.
+All 211 software tests pass, but the policy gate fails: the network chose cash in
+all 64 held-out synthetic cases, missing all 16 profitable bills and all 32
+profitable training cases. Configs, checkpoints, losses, action predictions and
+exact sources are in [the report](research/post_decision_value/TREASURY_SANITY.md).
+Years-long training still requires a streaming PDV runner, historical cash/funding/
+expiry eligibility, cloud integration and budget gates. No long job was launched.
+
 ## Weighted growth and event clock — 27 October 2026
 
 New pilot CLI runs use continuous weighted positive growth with an unweighted

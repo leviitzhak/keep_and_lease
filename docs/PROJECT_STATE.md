@@ -1,5 +1,14 @@
 # Keep & Lease — Project State
 
+## Treasury sanity result — 27 October 2026
+
+211 software tests pass. The isolated Treasury learning experiment is complete
+but **failed**: 0/16 profitable held-out cases bought a bill; the model also
+missed all profitable training cases. The 18.13-second run uses synthetic sparse
+events through 28–364-day maturities, not historical annual training. See
+[TREASURY_SANITY.md](research/post_decision_value/TREASURY_SANITY.md) for artifacts
+and remaining streaming/data/cloud readiness blockers.
+
 ## Weighted growth and event-driven policy timing — 27 October 2026
 
 The research CLI now supports/defaults to continuous weighted positive growth

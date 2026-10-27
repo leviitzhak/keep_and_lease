@@ -8,7 +8,12 @@
   anchors and a bounded cached-tape comparison with fixed cadence.
 - [x] Document conditional premium orders, CPU-day interpretation and a staged
   Google Cloud campaign in [the plan](research/post_decision_value/WEIGHTED_EVENT_TRAINING_PLAN.md).
-- [ ] Pass isolated Treasury buy-and-hold learning, then carry/pair tests.
+- [x] Run isolated Treasury learning with frozen train/validation/test fixtures,
+  loss curves and checkpoints. First gate FAILED: 0/16 profitable held-out buys;
+  all profitable training cases missed. See
+  [the report](research/post_decision_value/TREASURY_SANITY.md).
+- [ ] Diagnose feature scaling/Tanh saturation and label/loss balance, pass the
+  Treasury gate on fresh frozen cases, then carry/pair learning tests.
 - [ ] Implement and verify venue/client-hosted contingent orders before use;
   not needed for the initial learning tests.
 - [ ] Build a bounded streaming multi-year collection driver and complete data

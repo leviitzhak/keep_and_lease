@@ -1,5 +1,9 @@
 # Post-decision commodity value research v1
 
+Latest readiness/learning result: [Treasury sanity test](research/post_decision_value/TREASURY_SANITY.md).
+211 software tests pass, but the isolated learner misses profitable Treasury
+opportunities. Years-long cloud training remains unready; no long run launched.
+
 This standalone, CPU-only research pipeline implements the 25 October 2026
 [specification](https://chatgpt.com/library?file_id=libfile_538f5a61a28c8191a0a06e56709bc1a6&account_id=personal).
 It does not connect to an exchange, change the application, deploy, acquire data,
