@@ -16,20 +16,24 @@ class ActionDomain:
     max_btc: float=.02
     price_band_bps: float=50.
     max_new_orders: int=2
+    min_usd: float=field(default=100.,kw_only=True)
+    max_usd: float=field(default=2000.,kw_only=True)
 
     def __post_init__(self):
         if not all(math.isfinite(v) for v in (self.min_btc,self.max_btc,self.price_band_bps)) or not 0<self.min_btc<=self.max_btc or not 0<=self.price_band_bps<10000 or not 1<=self.max_new_orders<=6:
             raise ValueError('Invalid bounded native action domain')
+        if not all(math.isfinite(v) for v in (self.min_usd,self.max_usd)) or not 0<self.min_usd<=self.max_usd:raise ValueError('Invalid USD order range')
 
     def symbols(self,obs,goal,instruments):
-        return [s for s in sorted(instruments) if s in obs.market and obs.time<instruments[s].expiry<=goal.resolution]
+        return [s for s in sorted(instruments) if s in obs.market and instruments[s].tradable(obs.time,goal.resolution)]
 
     def price_ticks(self,obs,ins):
         ref=obs.market[ins.symbol]['price'];band=self.price_band_bps/10000
         return max(1,math.ceil(ref*(1-band)/ins.tick-1e-9)),math.floor(ref*(1+band)/ins.tick+1e-9)
 
     def quantity_lots(self,ins,price):
-        factor=1 if ins.payoff=='linear' else price
+        if ins.payoff=='treasury':return max(1,math.ceil(self.min_usd/price/ins.lot-1e-9)),math.floor(self.max_usd/price/ins.lot+1e-9)
+        factor=price if ins.payoff=='inverse' else 1/ins.underlying_per_unit if ins.payoff=='proxy' else 1
         return max(1,math.ceil(self.min_btc*factor/ins.lot-1e-9)),math.floor(self.max_btc*factor/ins.lot+1e-9)
 
     def quote(self,rng,obs,ins,identifier,group='',old=None,radius=None):
@@ -94,7 +98,7 @@ class ActionDomain:
         total=0
         for s in self.symbols(obs,goal,instruments):
             ins=instruments[s];lo,hi=self.price_ticks(obs,ins)
-            if ins.payoff=='linear':
+            if ins.payoff not in ('inverse','treasury'):
                 ql,qh=self.quantity_lots(ins,obs.market[s]['price']);total+=max(0,hi-lo+1)*max(0,qh-ql+1)*2
             else:
                 for tick in range(lo,hi+1):
@@ -127,7 +131,7 @@ class SparseGridDomain(ActionDomain):
             for tick in prices[s]:
                 ql,qh=self.quantity_lots(ins,tick*ins.tick)
                 quantities[s,tick]=sparse_levels(ql,qh,self.random_points,rng)
-        return PreparedGrid(self.min_btc,self.max_btc,self.price_band_bps,self.max_new_orders,prices,quantities)
+        return PreparedGrid(self.min_btc,self.max_btc,self.price_band_bps,self.max_new_orders,prices,quantities,min_usd=self.min_usd,max_usd=self.max_usd)
 
 
 @dataclass(frozen=True)

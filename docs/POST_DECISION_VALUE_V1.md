@@ -34,9 +34,13 @@ both the settled native balance and remaining basis. Closing or reversing a
 position realizes only the remaining payoff. Inverse aggregation uses a harmonic
 basis. Neither collateral pledging nor borrowing creates wealth.
 
-Treasury purchases are disabled unless explicitly enabled and consist of an
-explicit purchase price and unique dated coupon/principal receipts. No future
-interest or rollover is synthesized. Credit defaults to zero; enabled borrowing
+Cash instruments can now be supplied explicitly: direct BTC spot, fixed-ratio
+BTC proxy shares and Treasury units with known dated coupon/principal receipts.
+Purchases debit their full USD cost; sales require owned, unpledged inventory.
+The old direct `buy_treasury` helper remains opt-in. Treasury income is not an
+automatic interest credit on idle cash; no future rollover is synthesized.
+Contractual payments remain labeled projected even after the simulated cash
+credit. Credit defaults to zero; enabled borrowing
 requires a fixed principal limit, due date and explicitly priced interest.
 
 A linear expiry bridge settles the future and buys/sells `q` BTC. An inverse
@@ -69,7 +73,9 @@ normalizers; negative initial positions are excluded. Target composition uses
 fixed reference prices, a deadline, tolerances and optional band maintenance.
 The 60/40 exact-target minimum-value check is $225,000 for the specification's
 example. Target utility is labeled a surrogate; attainment is a separate flag.
-The historical pilot remains the initial-basket experiment, not target training.
+The archived historical pilot remains the initial-basket experiment, not target training.
+New pilot CLI runs default to `--objective gated_max`; `--objective basket`
+retains minimum growth. See the [cash/objective report](research/post_decision_value/CASH_ASSETS_AND_OBJECTIVE.md).
 
 ## Execution, candidates and observations
 
@@ -84,7 +90,8 @@ Counter-keyed seeded draws include a shared minute congestion factor and are
 made once per event. FIFO message and report channels, replacement-of-remaining
 quantity and loss of amendment priority are *hypothetical adapter assumptions*.
 Amendments of already completed orders are rejected. At equal timestamps,
-messages precede trades and reports follow trades. These tie rules are saved
+contractual Treasury payments precede messages, messages precede trades and
+reports follow trades. A purchase at a coupon timestamp is ex-coupon. These tie rules are saved
 research conventions, not inferred historical exchange behavior.
 
 Trades fill only strict-through opposite-aggressor orders at their posted limit.
@@ -92,7 +99,8 @@ A shared print capacity is consumed once, with native lot rounding and partial
 fills. Block/combo prints remain observations but cannot fill an order. For
 linear experiments using inverse-source prints, BTC capacity is `USD amount /
 print price`, then multiplied by participation. Quotes, depth and queue position
-are not invented. Historical spot execution is disabled in this pilot.
+are not invented. Cash execution requires an explicitly supplied typed tape;
+historical results already published contain no spot execution.
 
 `--action-space full` samples the full native tick/lot domain
 within configurable bounds: 0.0001–0.02 BTC equivalent per order and ±50 bp of
@@ -113,13 +121,18 @@ and up to two random interior native steps, with 32 proposal attempts. It priori
 boundary proposals, then samples combinations and amendments. Budget, rounds and
 random points have CLI controls; insufficient coverage of boundary proposals is
 reported. See [carry, grid and expiry inputs](research/post_decision_value/CARRY_GRID_AND_EXPIRY_INPUTS.md)
-for measured costs, public settlement/rate downloads and the remaining gap between
-ledger capabilities and learned spot/Treasury actions. The joint basket score
-still uses minimum commodity growth; no frozen training labels were changed.
+for measured costs and public settlement/rate downloads. Spot/proxy/Treasury
+actions now enter this same search. Treasury quantities use a separate default
+$100–$2,000 purchase-notional range; proxy sizes divide BTC units by the declared
+BTC/share ratio. Prices remain near the latest received price. Native inventory,
+pending orders and dated receipts enter schema-v2 network features. See the
+[cash/objective report](research/post_decision_value/CASH_ASSETS_AND_OBJECTIVE.md)
+for the input contract and remaining historical evidence gaps.
 
 `--action-space legacy` preserves the old 96-candidate pilot menu, 0.005/0.01 BTC
 sizes, 0.99/1 leg ratios, -50/0/+50 bp offsets and suppression of new packages
 while instructions remain unresolved. Frozen earlier reports used that menu.
+The legacy menu rejects cash bundles; use grid or full search for those assets.
 
 The emergency action cancels all known possible orders and admits no new risk.
 It cannot instantly undo a late fill or guarantee recovery. A failure is retained
@@ -138,9 +151,18 @@ Independent outputs predict the expected scalar trajectory utility, normalized
 terminal BTC/USD holdings, failure probability and target attainment. All outputs
 share the same versioned continuation. Scalar ranking never maximizes individual
 commodity heads and never substitutes utility of mean holdings. The default
-scalar label is `min(BTC growth, USD growth)` per complete trajectory, minus a
-finite penalty of 1 for failed paths. No actor, desired-return token, tree search,
+CLI scalar label is `min(growth)` when that minimum is negative, otherwise
+`max(growth)`, per complete trajectory, minus a finite penalty of 1 for failed
+paths. `--objective basket` and the low-level `Goal` default preserve the original
+minimum label. All objectives use positive-initial commodities; explicit floors
+and scales remain necessary for zero-initial assets. No actor, desired-return token, tree search,
 fill gradient or intermediate reward double counting is used.
+
+Schema 1 has 87,877 parameters. Schema 2 has 88,645: item input 28, history input
+11, global input 35, otherwise the same width-64/two-layer/four-head architecture.
+Old checkpoints remain loadable for their original schema, but cannot score the
+new schema. New objective labels and continuation fingerprints require new
+training. The fit report now retains every training minibatch loss.
 
 Stage 0 collects a declared stochastic analytical/random behavior policy and
 fits complete-outcome labels. Stage 1 collects fresh closed-loop trajectories
@@ -165,7 +187,7 @@ python -m unittest discover -s tests/post_decision_value -v
 python -m unittest tests.test_funded_ledger tests.test_paired_transfer_economics tests.test_paired_execution_study -v
 python -m research.post_decision_value.pilot \
   --input /path/to/existing/dec_mar_inputs \
-  --output docs/research/post_decision_value/pilot-v1
+  --output /path/to/new/pilot-gated-max --objective gated_max
 ```
 
 Input is an **existing** export containing `specification.json`, `seeds.json`,
@@ -176,6 +198,19 @@ loader never downloads. This pilot needs June 6–13, 2026; 01:00–02:00 UTC de
 windows; four training, two validation and two held-out days. There are no
 settlement-tail labels: each horizon is a complete contractual endpoint before
 expiry. All scenarios from one market day stay in the same split.
+
+`--cash-input /path/to/bundle` attaches additional cash tapes after hash, currency,
+native-unit and provenance checks. Indicative quotes cannot fill orders. There
+is no implicit USD/USDT conversion. An example synthetic bundle, complete
+multi-asset training audit and through-expiry carry fixtures can be reproduced:
+
+```bash
+OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python -m research.post_decision_value.cash_smoke \
+  --output /path/to/new/cash-smoke
+```
+
+This separate smoke uses a 240-second overall cap, 2,000-decision cap, 160 total
+optimizer updates and one Torch thread. It does not estimate historical returns.
 
 Limits: 20,000 decisions; 2,000 cumulative pilot optimizer updates; 1,200 seconds
 training; 3,600 seconds pilot; 100,000 input rows; 8 MB compressed input; 30,000
@@ -195,7 +230,7 @@ existing authorized operator; none are performed by this local pilot.
 ```bash
 python -m research.post_decision_value.pilot \
   --input /path/to/existing/dec_mar_inputs \
-  --output docs/research/post_decision_value/pilot-v1 --resume
+  --output /path/to/new/pilot-gated-max --objective gated_max --resume
 ```
 
 Resume reuses completed training stages, verifies source/config/data identities,

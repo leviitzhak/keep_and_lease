@@ -1,0 +1,548 @@
+{
+  "carry_outcomes": [
+    {
+      "attained": false,
+      "balances": {
+        "BTC": 1.0,
+        "USD": 100010.0
+      },
+      "composition_error": 0.10002499875006249,
+      "credit_used": 0.0,
+      "done": true,
+      "failed": false,
+      "failures": [],
+      "fees": {
+        "BTC": 0.0,
+        "USD": 0.0
+      },
+      "fills": 3,
+      "fixed_reference_value": 200010.0,
+      "full_fills": 3,
+      "growth": {
+        "BTC": 0.0,
+        "USD": 0.0001
+      },
+      "holding_status": "contractual/projected",
+      "holdings": {
+        "BTC": 1.0,
+        "USD": 100010.0
+      },
+      "live_orders": 0,
+      "marked_wealth": {
+        "BTC": 2.0001,
+        "USD": 200010.0,
+        "unmarked_assets": false
+      },
+      "min_floor_headroom": {
+        "BTC": 0.08999999999999997,
+        "USD": 9960.0
+      },
+      "min_funding_usd": 99000.0,
+      "objective": "gated_max",
+      "partial_fills": 0,
+      "peak_async_btc": 0.01,
+      "pending_messages": 0,
+      "projected_receipts": [
+        "asset:T:900",
+        "asset:T:1000"
+      ],
+      "schedule": [],
+      "score_is_surrogate": false,
+      "truncated": false,
+      "turnover_btc": 0.02,
+      "turnover_usd": 3040.0,
+      "utility": 0.0001,
+      "wait_ms": [
+        100,
+        200,
+        300
+      ]
+    },
+    {
+      "attained": false,
+      "balances": {
+        "BTC": 1.0,
+        "USD": 100010.0
+      },
+      "composition_error": 0.10002499875006249,
+      "credit_used": 0.0,
+      "done": true,
+      "failed": false,
+      "failures": [],
+      "fees": {
+        "BTC": 0.0,
+        "USD": 0.0
+      },
+      "fills": 3,
+      "fixed_reference_value": 200010.0,
+      "full_fills": 3,
+      "growth": {
+        "BTC": 0.0,
+        "USD": 0.0001
+      },
+      "holding_status": "contractual/projected",
+      "holdings": {
+        "BTC": 1.0,
+        "USD": 100010.0
+      },
+      "live_orders": 0,
+      "marked_wealth": {
+        "BTC": 2.0001,
+        "USD": 200010.0,
+        "unmarked_assets": false
+      },
+      "min_floor_headroom": {
+        "BTC": 0.08999999999999997,
+        "USD": 9960.0
+      },
+      "min_funding_usd": 99000.0,
+      "objective": "gated_max",
+      "partial_fills": 0,
+      "peak_async_btc": 0.01,
+      "pending_messages": 0,
+      "projected_receipts": [
+        "asset:T:900",
+        "asset:T:1000"
+      ],
+      "schedule": [],
+      "score_is_surrogate": false,
+      "truncated": false,
+      "turnover_btc": 0.02,
+      "turnover_usd": 3040.0,
+      "utility": 0.0001,
+      "wait_ms": [
+        100,
+        200,
+        300
+      ]
+    },
+    {
+      "attained": false,
+      "balances": {
+        "BTC": 1.000096,
+        "USD": 100000.01599999999
+      },
+      "composition_error": 0.09997604115194136,
+      "credit_used": 0.0,
+      "done": true,
+      "failed": false,
+      "failures": [],
+      "fees": {
+        "BTC": 0.0,
+        "USD": 0.0
+      },
+      "fills": 3,
+      "fixed_reference_value": 200009.61599999998,
+      "full_fills": 3,
+      "growth": {
+        "BTC": 9.600000000009601e-05,
+        "USD": 1.5999999988707714e-07
+      },
+      "holding_status": "contractual/projected",
+      "holdings": {
+        "BTC": 1.000096,
+        "USD": 100000.01599999999
+      },
+      "live_orders": 0,
+      "marked_wealth": {
+        "BTC": 2.00009616,
+        "USD": 200009.61599999998,
+        "unmarked_assets": false
+      },
+      "min_floor_headroom": {
+        "BTC": 0.08999999999999997,
+        "USD": 9950.016000000003
+      },
+      "min_funding_usd": 99000.0,
+      "objective": "gated_max",
+      "partial_fills": 0,
+      "peak_async_btc": 0.01,
+      "pending_messages": 0,
+      "projected_receipts": [
+        "asset:T:900",
+        "asset:T:1000"
+      ],
+      "schedule": [],
+      "score_is_surrogate": false,
+      "truncated": false,
+      "turnover_btc": 0.020096,
+      "turnover_usd": 3049.984,
+      "utility": 9.600000000009601e-05,
+      "wait_ms": [
+        100,
+        200,
+        300
+      ]
+    }
+  ],
+  "interpretation": "Compressed-time regression smoke; no historical profitability inference",
+  "limitations": [
+    "Two synthetic held-out scenarios are not independent market evidence.",
+    "Treasury cash receipts are contractual projections, not observed settlements.",
+    "Proxy BTC/share is fixed; custody, tracking, redemptions and securities settlement lags are not modeled.",
+    "Zero trading fees and engineered compressed-time cashflows cannot estimate economic returns."
+  ],
+  "parameters": 88645,
+  "resources": {
+    "decisions": 252,
+    "events": 5685,
+    "optimizer_updates": 160,
+    "seconds": 25.47193911400018,
+    "torch_threads": 1,
+    "training_seconds": 8.214557586999945
+  },
+  "selected_policy": "value_v2",
+  "source_kind": "synthetic_fixture",
+  "summary": {
+    "test/analytical/delay=1.0": {
+      "block_mean_range": [
+        -0.005092200000000011,
+        -0.005089750000000058
+      ],
+      "block_standard_error": 1.2249999999766788e-06,
+      "blocks": 2,
+      "completed": 4,
+      "episodes": 4,
+      "failed": 0,
+      "fees_usd": 0.0,
+      "fills": 16,
+      "mean_growth": {
+        "BTC": 0.0050000000000000044,
+        "USD": -0.005090975000000034
+      },
+      "mean_utility": -0.005090975000000034,
+      "min_floor_headroom": {
+        "BTC": 0.09999999999999998,
+        "USD": 8965.160000000003
+      },
+      "peak_async_btc": 0.01,
+      "prediction_mae": null
+    },
+    "test/hold/delay=1.0": {
+      "block_mean_range": [
+        0.0,
+        0.0
+      ],
+      "block_standard_error": 0.0,
+      "blocks": 2,
+      "completed": 4,
+      "episodes": 4,
+      "failed": 0,
+      "fees_usd": 0.0,
+      "fills": 0,
+      "mean_growth": {
+        "BTC": 0.0,
+        "USD": 0.0
+      },
+      "mean_utility": 0.0,
+      "min_floor_headroom": {
+        "BTC": 0.09999999999999998,
+        "USD": 10000.0
+      },
+      "peak_async_btc": 0.0,
+      "prediction_mae": null
+    },
+    "test/value_v2/delay=1.0": {
+      "block_mean_range": [
+        -0.08349999999999996,
+        -0.08349999999999996
+      ],
+      "block_standard_error": 0.0,
+      "blocks": 2,
+      "completed": 4,
+      "episodes": 4,
+      "failed": 0,
+      "fees_usd": 0.0,
+      "fills": 38,
+      "mean_growth": {
+        "BTC": -0.08349999999999996,
+        "USD": 0.08686546249999999
+      },
+      "mean_utility": -0.08349999999999996,
+      "min_floor_headroom": {
+        "BTC": 0.014000000000000012,
+        "USD": 10000.0
+      },
+      "peak_async_btc": 0.011,
+      "prediction_mae": 0.007328852792580904
+    },
+    "train/collect_greedy_v1_eps015/delay=1.0": {
+      "block_mean_range": [
+        -0.07804156999999992,
+        -0.07803531999999991
+      ],
+      "block_standard_error": 3.1250000000065947e-06,
+      "blocks": 2,
+      "completed": 4,
+      "episodes": 4,
+      "failed": 0,
+      "fees_usd": 0.0,
+      "fills": 36,
+      "mean_growth": {
+        "BTC": 0.07750000000000001,
+        "USD": -0.07803844499999991
+      },
+      "mean_utility": -0.07803844499999991,
+      "min_floor_headroom": {
+        "BTC": 0.09999999999999998,
+        "USD": 892.7000000000116
+      },
+      "peak_async_btc": 0.02,
+      "prediction_mae": 0.07753272756432933
+    },
+    "train/exploratory_v1/delay=1.0": {
+      "block_mean_range": [
+        -0.0023477500000000148,
+        -0.0023465000000000144
+      ],
+      "block_standard_error": 6.250000000001914e-07,
+      "blocks": 2,
+      "completed": 4,
+      "episodes": 4,
+      "failed": 0,
+      "fees_usd": 0.0,
+      "fills": 24,
+      "mean_growth": {
+        "BTC": 0.0024999999999999467,
+        "USD": -0.0023471250000000146
+      },
+      "mean_utility": -0.0023471250000000146,
+      "min_floor_headroom": {
+        "BTC": 0.09899999999999987,
+        "USD": 8964.649999999994
+      },
+      "peak_async_btc": 0.01,
+      "prediction_mae": null
+    },
+    "validation/value_v1/delay=1.0": {
+      "block_mean_range": [
+        -0.08882229999999997,
+        -0.08784487499999996
+      ],
+      "block_standard_error": 0.0004887125000000019,
+      "blocks": 2,
+      "completed": 4,
+      "episodes": 4,
+      "failed": 0,
+      "fees_usd": 0.0,
+      "fills": 39,
+      "mean_growth": {
+        "BTC": 0.08800000000000002,
+        "USD": -0.08833358749999996
+      },
+      "mean_utility": -0.08833358749999996,
+      "min_floor_headroom": {
+        "BTC": 0.09999999999999998,
+        "USD": 957.6000000000058
+      },
+      "peak_async_btc": 0.02,
+      "prediction_mae": 0.0880009775912153
+    },
+    "validation/value_v2/delay=1.0": {
+      "block_mean_range": [
+        -0.08349999999999996,
+        -0.08349999999999996
+      ],
+      "block_standard_error": 0.0,
+      "blocks": 2,
+      "completed": 4,
+      "episodes": 4,
+      "failed": 0,
+      "fees_usd": 0.0,
+      "fills": 38,
+      "mean_growth": {
+        "BTC": -0.08349999999999996,
+        "USD": 0.0867840875
+      },
+      "mean_utility": -0.08349999999999996,
+      "min_floor_headroom": {
+        "BTC": 0.014000000000000012,
+        "USD": 10000.0
+      },
+      "peak_async_btc": 0.011,
+      "prediction_mae": 0.004464525391658109
+    }
+  },
+  "training": [
+    {
+      "continuation": "exploratory_v1|objective-assets:2e70878d99da1312055efa2b|actions:8c0f2e0e164c4a0193950d1a",
+      "first_loss": 1.0440529584884644,
+      "last_loss": 0.08270131796598434,
+      "losses": [
+        1.0440529584884644,
+        1.0554547309875488,
+        1.0136922597885132,
+        1.0173540115356445,
+        0.999589741230011,
+        0.9810489416122437,
+        1.0136691331863403,
+        1.0013887882232666,
+        0.9643275141716003,
+        0.9584149122238159,
+        0.9424455761909485,
+        0.9510480761528015,
+        0.9439641237258911,
+        0.9181277751922607,
+        0.9047218561172485,
+        0.8723729848861694,
+        0.851862907409668,
+        0.929833710193634,
+        0.8467907905578613,
+        0.8439100384712219,
+        0.8288871049880981,
+        0.8327387571334839,
+        0.7591632008552551,
+        0.7930237650871277,
+        0.7855445146560669,
+        0.8223391175270081,
+        0.6764959096908569,
+        0.681052029132843,
+        0.6497278213500977,
+        0.7016265988349915,
+        0.6837397813796997,
+        0.6499090790748596,
+        0.578940212726593,
+        0.663850724697113,
+        0.6007477045059204,
+        0.5120532512664795,
+        0.5308614373207092,
+        0.4950506389141083,
+        0.4958069920539856,
+        0.49703556299209595,
+        0.41818463802337646,
+        0.41542932391166687,
+        0.4016711115837097,
+        0.31664836406707764,
+        0.31120339035987854,
+        0.27979210019111633,
+        0.29813897609710693,
+        0.27920541167259216,
+        0.2558613121509552,
+        0.22336800396442413,
+        0.23110488057136536,
+        0.23924259841442108,
+        0.20689965784549713,
+        0.2096766233444214,
+        0.17397509515285492,
+        0.17511674761772156,
+        0.17704416811466217,
+        0.16830560564994812,
+        0.17448154091835022,
+        0.16362391412258148,
+        0.15598830580711365,
+        0.1606963574886322,
+        0.12335234135389328,
+        0.14857003092765808,
+        0.1298801749944687,
+        0.13742002844810486,
+        0.1244373470544815,
+        0.11632706224918365,
+        0.11959873139858246,
+        0.11098099499940872,
+        0.10547703504562378,
+        0.09831364452838898,
+        0.10329068452119827,
+        0.07300689816474915,
+        0.08882425725460052,
+        0.09065105766057968,
+        0.0905609205365181,
+        0.08171799778938293,
+        0.0639365091919899,
+        0.08270131796598434
+      ],
+      "normalization": "training-only label moments",
+      "seconds": 3.7583955219997733,
+      "updates": 80
+    },
+    {
+      "continuation": "collect_greedy_v1_eps015:exploratory_v1|objective-assets:2e70878d99da1312055efa2b|actions:8c0f2e0e164c4a0193950d1a|objective-assets:2e70878d99da1312055efa2b|actions:3895cd7ec2376944242ffef6",
+      "first_loss": 1.0929985046386719,
+      "last_loss": 0.1216442883014679,
+      "losses": [
+        1.0929985046386719,
+        1.0628141164779663,
+        1.0550886392593384,
+        1.021597146987915,
+        1.0231318473815918,
+        1.0103083848953247,
+        1.0172032117843628,
+        1.0124292373657227,
+        0.9904129505157471,
+        0.9918621182441711,
+        0.9803792238235474,
+        0.9655097723007202,
+        0.9812434315681458,
+        0.9570335149765015,
+        0.9226472973823547,
+        0.9172139763832092,
+        0.924170196056366,
+        0.9670595526695251,
+        0.9541013836860657,
+        0.8869273066520691,
+        0.9204225540161133,
+        0.9595643281936646,
+        0.9434503316879272,
+        0.8763763904571533,
+        0.9041171073913574,
+        0.9369252920150757,
+        0.982649028301239,
+        0.9146432876586914,
+        0.8672999739646912,
+        0.8813453316688538,
+        0.8758725523948669,
+        0.9085080623626709,
+        0.8126783967018127,
+        0.8973970413208008,
+        0.9013317227363586,
+        0.852405846118927,
+        0.73306804895401,
+        0.7967811822891235,
+        0.7879868745803833,
+        0.7978761196136475,
+        0.8395518064498901,
+        0.7706422805786133,
+        0.7835516929626465,
+        0.7762837409973145,
+        0.7721386551856995,
+        0.7295164465904236,
+        0.7279960513114929,
+        0.6945570111274719,
+        0.6342131495475769,
+        0.5212821364402771,
+        0.59389728307724,
+        0.5429569482803345,
+        0.4993270933628082,
+        0.40918368101119995,
+        0.34373071789741516,
+        0.30525490641593933,
+        0.23428021371364594,
+        0.25317367911338806,
+        0.21583345532417297,
+        0.2257038950920105,
+        0.2641447186470032,
+        0.20969857275485992,
+        0.2141290009021759,
+        0.16951680183410645,
+        0.21397939324378967,
+        0.15513888001441956,
+        0.1438392996788025,
+        0.1725504994392395,
+        0.1401360034942627,
+        0.13289083540439606,
+        0.17870262265205383,
+        0.1416311264038086,
+        0.14210794866085052,
+        0.14242489635944366,
+        0.10018333047628403,
+        0.12468422204256058,
+        0.08225542306900024,
+        0.1342354714870453,
+        0.12669919431209564,
+        0.1216442883014679
+      ],
+      "normalization": "training-only label moments",
+      "seconds": 4.456162065000171,
+      "updates": 80
+    }
+  ]
+}

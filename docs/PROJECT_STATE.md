@@ -1,5 +1,15 @@
 # Keep & Lease — Project State
 
+## Cash-aware post-decision research — 27 October 2026
+
+Spot BTC, fixed-ratio proxy and Treasury order actions, dated cash receipts,
+native inventory constraints and the selectable `gated_max` objective are
+implemented on the research branch. Schema-v2 has 88,645 parameters; original
+models are preserved. Bounded synthetic collect–fit–improve–evaluate and carry
+replays are complete; the trained policy underperforms hold. No historical
+multi-asset profitability or deployment is claimed. See
+[CASH_ASSETS_AND_OBJECTIVE.md](research/post_decision_value/CASH_ASSETS_AND_OBJECTIVE.md).
+
 ## Analytical research extension — 26 October 2026
 
 The complete cached 90-day, two-contract analytical study uses fixed chronological

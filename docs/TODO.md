@@ -1,5 +1,19 @@
 # TODO
 
+## Cash-aware value learning, 27 October 2026
+
+- [x] Add funded spot/proxy/Treasury actions, dated receipts, native inventory
+  constraints, delayed reports and schema-v2 features/checkpoints.
+- [x] Add selectable conditional maximum growth, complete-outcome labels and
+  bounded synthetic collect–fit–improve–evaluate with matched baselines.
+- [ ] Normalize already acquired spot data with verified USD conversion and
+  causal timestamps; obtain executable Treasury/spot evidence before claiming
+  historical cash execution. Verify trade settlement, funding and bridge terms.
+- [ ] Replace fixed proxy look-through assumptions with dated underlying/share,
+  expenses, redemption eligibility and custody evidence before native proxy claims.
+- [ ] Conduct a separately frozen historical multi-asset experiment; synthetic
+  results do not establish profitability and the smoke model underperforms hold.
+
 ## Analytical post-decision research, 26 October 2026
 
 - [x] Full cached 90-day pair replay with frozen chronological calibration,
@@ -8,9 +22,11 @@
 - [ ] Design a separately frozen analytical experiment with a funding buffer and
   an executable recovery path for already-held futures; do not reinterpret the
   present failed paths as safe or realized liquidation outcomes.
-- [ ] Adapt the multi-year sequence-chunk archive, supply verified settlement and
-  executable bridge evidence, and balance candidates across a larger universe
-  before claiming full multi-year post-decision policy coverage.
+- [x] Adapt and reconcile the native multi-year sequence archive and balance
+  bounded action proposals across the instrument universe.
+- [ ] Complete executable bridge and financing evidence before claiming full
+  multi-year post-decision policy coverage. Public settlement prices alone do
+  not establish account cash movements or an executable spot bridge.
 
 ## Post-decision value research — 25 October 2026
 

@@ -10,6 +10,7 @@ from torch import nn
 from .engine import post_decision
 
 CURRENCIES = ('BTC', 'USD')
+DIMENSIONS={1:(34,20,8),2:(35,28,11)}
 
 
 def action_features(obs, action, goal, instruments):
@@ -25,6 +26,7 @@ def identity(symbol):
 def features(obs, goal, instruments):
     """Only observable arguments; fixed economic scaling, no fitted future stats."""
     ref = goal.reference['BTC']
+    version=2 if goal.mode=='gated_max' or any(not i.is_future for i in instruments.values()) else 1
     hold = obs.ledger.holdings(instruments)
     drop = sum(goal.drawdown.values()) / 2 if isinstance(goal.drawdown, dict) else goal.drawdown
     g = [obs.time/1e12, (goal.horizon-obs.time)/86400000, (goal.resolution-obs.time)/31557600000,
@@ -44,20 +46,35 @@ def features(obs, goal, instruments):
         symbol=row["symbol"]
         if symbol in previous:returns.append(math.log(row["price"]/previous[symbol]))
         previous[symbol]=row["price"]
-        usd_volume+=row["amount"]*(row["price"] if instruments[symbol].source_payoff=="linear" else 1.)
+        ins=instruments[symbol]
+        usd_volume+=row['amount']*(row['price'] if ins.source_payoff!='inverse' else 1.)
     g.extend([float(np.std(returns)) if returns else 0.,math.log1p(usd_volume)/20])
+    if version==2:g.append(float(goal.mode=='gated_max'))
     items = []
     for symbol, ins in sorted(instruments.items()):
+        if ins.listed_at>obs.time:continue
         market = obs.market.get(symbol)
         pos = obs.ledger.positions.get(symbol)
-        prefix = [*identity(symbol), (ins.expiry-obs.time)/31557600000, float(ins.payoff=='inverse'),
-                  ins.tick/ref, ins.lot if ins.payoff=='linear' else ins.lot/ref,
-                  ins.fee_bps/100, ins.margin_fraction,
+        scale=ins.price_scale(ref) if version==2 else ref
+        unit_scale=ref/scale
+        term=(ins.expiry-obs.time)/31557600000 if ins.is_future or ins.payoff=='treasury' else 0.
+        prefix = [*identity(symbol), term, float(ins.payoff=='inverse'),
+                  ins.tick/scale, ins.lot if ins.payoff=='linear' else ins.lot/ref,
+                  ins.fee_bps/100, ins.margin_fraction if ins.is_future else float(ins.enabled),
                   ins.btc(pos.quantity,pos.basis)/goal.scale('BTC') if pos else 0.,
-                  pos.basis/ref if pos else 0., market['price']/ref if market else 0.,
+                  pos.basis/scale if pos else 0., market['price']/scale if market else 0.,
                   min(100., (obs.time-market['received'])/60000) if market else 100.,
                   float(market is None)]
-        items.append(prefix+[0.]*7)
+        asset_kind=[float(ins.payoff==k) for k in ('spot','proxy','treasury')]
+        unpaid=sum(v for t,v in ins.cashflows if ins.payment_id(t) not in obs.ledger.settled_ids)
+        extras=asset_kind+[ins.underlying_per_unit if ins.payoff=='proxy' else 0.,
+                     (pos.quantity if pos else 0.)/unit_scale,unpaid/scale,0.,obs.reserved_assets.get(symbol,0.)/unit_scale]
+        items.append(prefix+[0.]*7+(extras if version==2 else []))
+        if version==2:
+            for date,amount in ins.cashflows:
+                if ins.payment_id(date) in obs.ledger.settled_ids:continue
+                items.append([*identity(symbol+':receipt'),(date-obs.time)/31557600000,1.,amount/scale,
+                              (pos.quantity if pos else 0.)*amount/goal.scale('USD')]+[0.]*14+asset_kind+[0.]*5)
         for oid, variants in sorted(obs.uncertain.items()):
             for o in variants:
                 if o.symbol != symbol:
@@ -67,22 +84,26 @@ def features(obs, goal, instruments):
                 if kind == 'batch':
                     instruction = pending[-1]['instruction']
                     kind = ('amend' if oid in instruction['targets'] else 'create') if any(v['identifier']==oid for v in instruction['orders']) else 'cancel'
-                items.append(prefix+[ins.btc(o.quantity,o.limit)/goal.scale('BTC')/.02, 100*(o.limit/(market['price'] if market else ref)-1),
+                order_extras=asset_kind+[ins.underlying_per_unit if ins.payoff=='proxy' else 0.,o.quantity/unit_scale,unpaid/scale,
+                                   o.quantity*o.limit/ref,obs.reserved_assets.get(symbol,0.)/unit_scale]
+                items.append(prefix+[ins.btc(o.quantity,o.limit)/goal.scale('BTC')/.02, 100*(o.limit/(market['price'] if market else scale)-1),
                                      (obs.time-o.created)/60000, float(oid in obs.confirmed),
-                                     float(kind=='create'),float(kind=='amend'),float(kind in ('cancel','emergency'))])
+                                     float(kind=='create'),float(kind=='amend'),float(kind in ('cancel','emergency'))]+(order_extras if version==2 else []))
     for flow in obs.ledger.flows:
         items.append([*identity(flow.identifier),(flow.date-obs.time)/31557600000,
-                      float(flow.currency=='BTC'),flow.amount/goal.scale(flow.currency),float(flow.kind=='debt')]+[0.]*14)
+                      float(flow.currency=='BTC'),flow.amount/goal.scale(flow.currency),float(flow.kind=='debt')]+[0.]*(22 if version==2 else 14))
     # Item pooling supports a variable universe; never silently drop contracts.
     # Runner memory/runtime bounds govern the supplied universe, not a 32-token menu.
     history=[]
     for row in obs.history[-64:]:
-        history.append([*identity(row['symbol']), row['price']/ref,row['index']/ref,
+        ins=instruments[row['symbol']];scale=ins.price_scale(ref) if version==2 else ref
+        history.append([*identity(row['symbol']), row['price']/scale,row['index']/ref,
                         math.log1p(row['amount'])/20, 1. if row['side']=='buy' else -1.,
-                        (obs.time-row['received'])/60000,(row['received']-row['time'])/1000])
+                        (obs.time-row['received'])/60000,(row['received']-row['time'])/1000]+
+                       ([float(ins.payoff==k) for k in ('spot','proxy','treasury')] if version==2 else []))
     if not history:
-        history=[[0.]*8]
-    return dict(global_=g, items=items or [[0.]*20], history=history,
+        history=[[0.]*DIMENSIONS[version][2]]
+    return dict(schema_version=version,global_=g, items=items or [[0.]*DIMENSIONS[version][1]], history=history,
                 initial=[goal.initial[c] for c in CURRENCIES], scales=[goal.scale(c) for c in CURRENCIES])
 
 
@@ -90,7 +111,11 @@ def batch(features_list):
     n=len(features_list)
     ni=max(len(f['items']) for f in features_list)
     nh=max(len(f['history']) for f in features_list)
-    items=torch.zeros(n,ni,20); hist=torch.zeros(n,nh,8)
+    versions={f.get('schema_version',1) for f in features_list}
+    if len(versions)!=1:raise ValueError('Mixed feature schemas')
+    gd,idim,hd=DIMENSIONS[versions.pop()]
+    if any(len(f['global_'])!=gd or any(len(x)!=idim for x in f['items']) or any(len(x)!=hd for x in f['history']) for f in features_list):raise ValueError('Feature schema dimensions')
+    items=torch.zeros(n,ni,idim); hist=torch.zeros(n,nh,hd)
     imask=torch.ones(n,ni,dtype=torch.bool); hmask=torch.ones(n,nh,dtype=torch.bool)
     for i,f in enumerate(features_list):
         items[i,:len(f['items'])]=torch.tensor(f['items'])
@@ -100,16 +125,18 @@ def batch(features_list):
 
 
 class ValueNetwork(nn.Module):
-    def __init__(self, width=64, layers=2, heads=4, history_mode='transformer'):
+    def __init__(self, width=64, layers=2, heads=4, history_mode='transformer',feature_version=1):
         super().__init__()
-        self.configuration=dict(width=width,layers=layers,heads=heads,history_mode=history_mode)
+        self.configuration=dict(width=width,layers=layers,heads=heads,history_mode=history_mode,feature_version=feature_version)
+        gd,idim,hd=DIMENSIONS[feature_version]
+        self.feature_version=feature_version
         self.history_mode=history_mode
-        self.item=nn.Sequential(nn.Linear(20,width),nn.Tanh(),nn.Linear(width,width))
-        self.hist=nn.Linear(8,width)
+        self.item=nn.Sequential(nn.Linear(idim,width),nn.Tanh(),nn.Linear(width,width))
+        self.hist=nn.Linear(hd,width)
         self.position=nn.Parameter(torch.zeros(64,width))
         layer=nn.TransformerEncoderLayer(width,heads,dim_feedforward=width*2,dropout=0.,batch_first=True,activation='gelu')
         self.encoder=nn.TransformerEncoder(layer,layers,enable_nested_tensor=False)
-        self.readout=nn.Sequential(nn.Linear(width*2+34,width),nn.Tanh(),nn.Linear(width,5))
+        self.readout=nn.Sequential(nn.Linear(width*2+gd,width),nn.Tanh(),nn.Linear(width,5))
         self.register_buffer('label_mean',torch.zeros(3))
         self.register_buffer('label_scale',torch.ones(3))
         self.continuation='unfitted'
@@ -131,6 +158,7 @@ class ValueNetwork(nn.Module):
         return self.readout(torch.cat((global_,ipool,hp),dim=1))
 
     def predict(self, fs, *, history_cache=None):
+        if any(f.get('schema_version',1)!=self.feature_version for f in fs):raise ValueError('Checkpoint feature schema mismatch; retraining required')
         self.eval()
         with torch.no_grad():
             global_,items,hist,imask,hmask=batch(fs)
@@ -162,6 +190,7 @@ def labels(records):
     versions={r['continuation'] for r in records}
     if len(versions)!=1:
         raise ValueError('Mixed continuations require an explicitly separate pretraining run')
+    if len({r['outcome'].get('objective','basket') for r in records})!=1:raise ValueError('Mixed trajectory objectives')
     y=[]
     for r in records:
         o=r['outcome']
@@ -173,6 +202,7 @@ def fit(model, records, *, updates=200, seed=7, optimizer=None, rng=None, wall_s
     if not 0<=updates<=2000 or wall_seconds>1200:
         raise ValueError('Training cap exceeded')
     y,continuation=labels(records)
+    if any(r['features'].get('schema_version',1)!=model.feature_version for r in records):raise ValueError('Training feature schema mismatch')
     model.continuation=continuation
     if normalize:
         model.label_mean.copy_(torch.tensor(y[:,:3].mean(0)))
@@ -195,6 +225,7 @@ def fit(model, records, *, updates=200, seed=7, optimizer=None, rng=None, wall_s
         loss.backward(); nn.utils.clip_grad_norm_(model.parameters(),5.); optimizer.step()
         losses.append(float(loss.detach()))
     return optimizer,rng,dict(updates=len(losses),seconds=time.monotonic()-started,
+                              losses=losses,
                               first_loss=losses[0] if losses else None,last_loss=losses[-1] if losses else None,
                               continuation=continuation,normalization='training-only label moments')
 

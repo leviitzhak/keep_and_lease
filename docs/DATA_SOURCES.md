@@ -149,3 +149,13 @@ The [expiry-input update](research/post_decision_value/CARRY_GRID_AND_EXPIRY_INP
 adds hash-receipted public Deribit delivery/daily settlement data and official
 Treasury bill quotations for 2016–2026. The committed archive and report distinguish
 observed prices/marks from unverified executable spot bridges and financing terms.
+
+The [cash/objective extension](research/post_decision_value/CASH_ASSETS_AND_OBJECTIVE.md)
+accepts explicitly typed, hash-receipted spot/proxy/Treasury bundles. Native amount
+is BTC, proxy shares or Treasury units respectively; price is all-in USD per unit.
+An observation carries availability time and original source time. Backdated
+observations and indicative Treasury quotes cannot trigger historical fills.
+USD/USDT parity, depth and transaction settlement are never inferred from a
+price series. Its committed `cash-smoke-v1.tar.gz` contains **synthetic** inputs,
+labels, checkpoints and fills; its Treasury payments are contractual projections.
+No new historical cash tape was acquired for this extension.

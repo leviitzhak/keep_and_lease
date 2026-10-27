@@ -1,5 +1,18 @@
 # Current work
 
+## Cash assets and conditional growth objective — 27 October 2026
+
+The research branch supports spot BTC, fixed-ratio proxy shares and Treasury
+units in its exact delayed replay, native action grid and schema-v2 value model.
+Cash purchases require settled USD; receipts follow owned units and explicit
+dates. New pilot runs default to the requested conditional maximum objective:
+minimum growth if negative, maximum otherwise. Old reports/checkpoints keep
+their original semantics. The bounded multi-asset learning run is **synthetic**,
+underperforms hold, and is not accepted as a trading policy. Historical cash
+execution and through-expiry financing evidence remain incomplete. See
+[the implementation and validation report](research/post_decision_value/CASH_ASSETS_AND_OBJECTIVE.md).
+No deployment, live order or data acquisition was performed.
+
 ## Sparse value search and expiry inputs — 26 October 2026
 
 The research-only branch now defaults to a 32-attempt endpoint/random action grid,
@@ -7,7 +20,7 @@ with configurable effort. The prior futures union is complete as a logical
 120,105,433-row dataset. Bounded public acquisition added delivery values for all
 528 expired contracts, 17,695 daily settlement events and 2,703 Treasury quote
 dates; 55 expired contracts still have missing daily events. The current neural
-action set remains futures-only, and its minimum-growth score does not reward
+action set at that phase remained futures-only, and its minimum-growth score did not reward
 growth of only one commodity. The new carry accounting fixtures and
 [report](research/post_decision_value/CARRY_GRID_AND_EXPIRY_INPUTS.md) describe
 these limits, measured search costs and reproduction. No deployment or annual

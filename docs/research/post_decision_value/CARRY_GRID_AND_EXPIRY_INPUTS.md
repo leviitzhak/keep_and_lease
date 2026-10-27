@@ -1,5 +1,10 @@
 # Carry economics, sparse action grids and expiry evidence
 
+The 27 October [cash/objective extension](CASH_ASSETS_AND_OBJECTIVE.md) supersedes
+this phase's futures-only action-space limitation and adds selectable conditional
+maximum growth. Data receipts, historical results and runtime measurements below
+retain their original scope.
+
 Research update, 26 October 2026. All source timestamps and experiment times use
 UTC. Research only: no deployment, master merge, purchases, infrastructure or
 long training. This updates the action-search default after

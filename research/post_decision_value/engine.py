@@ -1,6 +1,6 @@
 """Exact discrete-event research exchange with a separately copied observation.
 
-Ordering at identical milliseconds: due messages, exchange tape, reports. Messages
+Ordering at identical milliseconds: contractual cash receipts, due messages, exchange tape, reports. Messages
 and reports each use a FIFO adapter; amendments replace remaining quantity and
 lose priority. This is an explicit hypothetical adapter, not a venue-rule claim.
 """
@@ -65,6 +65,7 @@ class ObservableState:
     group_fills: dict = field(default_factory=dict)
     last_decision: int = 0
     failure_observed: bool = False
+    reserved_assets: dict = field(default_factory=dict)
 
 
 @dataclass
@@ -120,16 +121,24 @@ def post_decision(obs, action, instruments, *, _share_observations=False):
         x.uncertain.setdefault(o.identifier, []).append(o)
     # Cancel/edit keeps the previous order and its resources until a report.
     x.reserved = {"USD": 0., "BTC": 0.}
+    x.reserved_assets={}
     for variants in x.uncertain.values():
         costs = {"USD": 0., "BTC": 0.}
+        assets={}
         for o in variants:
             ins = instruments[o.symbol]
-            if ins.currency == "USD":
+            if not ins.is_future:
+                costs['USD']=max(costs['USD'],max(0.,o.quantity*o.limit)+ins.fee(o.quantity,o.limit))
+                if o.quantity<0:
+                    if ins.payoff=='spot':costs['BTC']=max(costs['BTC'],-o.quantity)
+                    else:assets[o.symbol]=max(assets.get(o.symbol,0.),-o.quantity)
+            elif ins.currency == "USD":
                 costs["USD"] = max(costs["USD"], abs(o.quantity * o.limit) + ins.fee(o.quantity, o.limit))
             else:
                 costs["BTC"] = max(costs["BTC"], abs(o.quantity / o.limit) + ins.fee(o.quantity, o.limit))
         for c in costs:
             x.reserved[c] += costs[c]
+        for s,q in assets.items():x.reserved_assets[s]=x.reserved_assets.get(s,0.)+q
     return x
 
 
@@ -162,7 +171,7 @@ def admissible(obs, action, goal, instruments, async_cap=.02):
             return False, "duplicate_order_id"
         for o in action.orders:
             ins = instruments[o.symbol]
-            if ins.expiry <= obs.time or ins.expiry > goal.resolution:
+            if not ins.tradable(obs.time,goal.resolution):
                 return False, "expiry_outside_support"
             if o.quantity == 0 or not math.isfinite(o.limit) or o.limit <= 0 or o.tif != "GTC":
                 return False, "invalid_order"
@@ -272,7 +281,8 @@ class Engine:
         self.truncated = False
         self.audit = []
         for ins in instruments.values():
-            self._event(ins.expiry, 3, "expiry_guard", ins.symbol)
+            if ins.is_future or ins.payoff=='treasury':self._event(ins.expiry, 3, "expiry_guard", ins.symbol)
+            for date,_ in ins.cashflows:self._event(date,-1,'asset_cashflow',ins.symbol)
         for flow in ledger.flows:
             self._event(flow.date, 3, "cashflow", None)
 
@@ -292,6 +302,13 @@ class Engine:
     def seed_market(self, trades, start):
         self.now = start
         self.observable.time = start
+        for ins in self.instruments.values():
+            if ins.expiry<start and ins.symbol in self.hidden.ledger.positions:raise ValueError('Expired inventory at replay start')
+            for date,_ in ins.cashflows:
+                if date<start:
+                    for ledger in (self.hidden.ledger,self.observable.ledger):
+                        if ins.payment_id(date) not in ledger.settled_ids:ledger.settled_ids.append(ins.payment_id(date))
+        self.hidden.queue=[x for x in self.hidden.queue if x[0]>=start];heapq.heapify(self.hidden.queue)
         for tr in trades:
             if tr.time + self.delays.draw(self.seed, "observation", tr.identifier, tr.time) > start:
                 raise ValueError("Seed is not yet observable")
@@ -379,7 +396,7 @@ class Engine:
                     h.orders.pop(target, None)
                 for order in action.orders:
                     replacing = action.kind == "amend" or (action.kind == "batch" and order.identifier in action.targets)
-                    if t < self.instruments[order.symbol].expiry and (not replacing or order.identifier in live_before):
+                    if self.instruments[order.symbol].tradable(t,self.goal.resolution) and (not replacing or order.identifier in live_before):
                         h.orders[order.identifier] = order
                 snapshot = {oid: h.orders.get(oid) for oid in set(action.targets) | {o.identifier for o in action.orders}}
                 self._report(dict(kind="ack", request=request, snapshot=snapshot), f"ack:{sequence}")
@@ -393,7 +410,7 @@ class Engine:
                         eligible = order.symbol == tr.symbol and ((order.quantity > 0 and tr.side == "sell" and tr.price < order.limit) or (order.quantity < 0 and tr.side == "buy" and tr.price > order.limit))
                         if not eligible:
                             continue
-                        qty = ins.round_quantity(min(abs(order.quantity), capacity))
+                        qty = ins.round_quantity(min(abs(order.quantity), capacity,h.ledger.cash_asset_capacity(ins,order.quantity,order.limit)))
                         if qty <= EPS:
                             continue
                         qty = math.copysign(qty, order.quantity)
@@ -428,6 +445,9 @@ class Engine:
                     self._confirm(order.identifier, data["remaining"])
                 elif data["kind"] == "settled":
                     self.observable.ledger.bridge(self.instruments[data["symbol"]], data["index"], data["spot"], observed=True)
+                elif data['kind']=='asset_cashflow':
+                    paid=self.observable.ledger.pay_asset(self.instruments[data['symbol']],data['date'])
+                    if abs(paid-data['amount'])>EPS:raise ValueError('Delayed asset cashflow ownership mismatch')
                 else:
                     self.observable.pending = [p for p in self.observable.pending if p["id"] != data["request"]]
                     for oid, order in data["snapshot"].items():
@@ -439,7 +459,11 @@ class Engine:
                         variants = self.observable.uncertain.setdefault(order.identifier, [])
                         if order not in variants:
                             variants.append(order)
-                self.observable.reserved = post_decision(self.observable, Instruction("cancel"), self.instruments).reserved
+                reserved = post_decision(self.observable, Instruction("cancel"), self.instruments)
+                self.observable.reserved,self.observable.reserved_assets=reserved.reserved,reserved.reserved_assets
+            elif kind=='asset_cashflow':
+                amount=h.ledger.pay_asset(self.instruments[data],t)
+                self._report(dict(kind='asset_cashflow',symbol=data,date=t,amount=amount),f'asset:{data}:{t}')
             elif kind == "settlement":
                 symbol, index, spot, observed = data
                 ins = self.instruments[symbol]
@@ -449,8 +473,10 @@ class Engine:
                 # Fixture settlement reports use the same delayed FIFO channel.
                 self._report(dict(kind="settled", symbol=symbol, index=index, spot=spot), f"settled:{sequence}")
             elif kind == "expiry_guard":
+                expired={k:None for k,o in h.orders.items() if o.symbol==data}
                 h.orders = {k:o for k,o in h.orders.items() if o.symbol != data}
-                if data in h.ledger.positions:
+                if expired:self._report(dict(kind='ack',request=None,snapshot=expired),f'expired:{data}')
+                if data in h.ledger.positions and self.instruments[data].is_future:
                     self.truncated = True
                     h.failures.append(dict(time=t, reason="missing_observed_settlement:"+data))
                     return
@@ -480,11 +506,12 @@ class Engine:
         holdings = h.ledger.holdings(self.instruments)
         summary = self.goal.outcome(holdings, bool(h.failures))
         summary.update(done=True, truncated=False, holdings=holdings, balances=dict(h.ledger.balances),
-                       holding_status="contractual/projected" if h.ledger.positions or h.ledger.flows else "realized",
+                       holding_status="contractual/projected" if h.ledger.positions or h.ledger.flows or h.ledger.projected_receipts else "realized",
+                       projected_receipts=list(h.ledger.projected_receipts),
                        marked_wealth=h.ledger.marked_wealth(self.instruments, h.last_marks, h.last_index),
                        min_floor_headroom=h.min_headroom, min_funding_usd=h.min_funding,
                        peak_async_btc=h.peak_async, credit_used=h.ledger.debt_principal,
-                       fills=len(h.fills), turnover_usd=sum(abs(f["quantity"])* (f["price"] if self.instruments[f["symbol"]].payoff == "linear" else 1) for f in h.fills),
+                       fills=len(h.fills), turnover_usd=sum(self.instruments[f['symbol']].notional_usd(f['quantity'],f['price']) for f in h.fills),
                        turnover_btc=sum(abs(self.instruments[f["symbol"]].btc(f["quantity"], f["price"])) for f in h.fills),
                        fees=dict(h.ledger.fees), failures=h.failures, schedule=h.ledger.schedule(self.instruments),
                        pending_messages=len(self.observable.pending), live_orders=len(h.orders),

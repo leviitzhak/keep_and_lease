@@ -20,6 +20,7 @@ from .data import load_archive, split_blocks
 from .model import ValueNetwork, features, action_features, fit, save_model, load_model
 from .analytical import analytical, analytical_scores
 from .action_search import ActionDomain, SparseGridDomain, ValueActionSearch
+from .cash_data import load_cash_bundle, attach_cash_blocks
 
 
 def write_json(path, obj):
@@ -40,6 +41,9 @@ def code_identity():
 
 def continuation_identity(policy,config,model=None):
     base=policy if model is None else f'{policy}:{model.continuation}'
+    if config.get('goal_mode','basket')!='basket' or config.get('cash_manifest_sha256'):
+        semantics={k:config.get(k) for k in ('goal_mode','cash_manifest_sha256','feature_version')}
+        base+='|objective-assets:'+hashlib.sha256(json.dumps(semantics,sort_keys=True).encode()).hexdigest()[:24]
     if config.get('action_space') not in ('full','grid'):return base
     details=dict(algorithm='native-state-search-v2',domain=config['action_domain'],
                  evaluations=config['search_evaluations'],rounds=config.get('search_rounds',4),
@@ -68,7 +72,8 @@ class Budget:
 
 def episode(block, instruments, seed, policy, config, budget, model=None, delay_multiplier=1., retain=False):
     initial=dict(BTC=config['initial_btc'],USD=config['initial_usd'])
-    goal=Goal(initial,block['end'],max(i.expiry for i in instruments.values()),reference={'BTC':config['reference_btc'],'USD':1.})
+    resolution=max([block['end']]+[i.expiry for i in instruments.values() if i.is_future or i.payoff=='treasury'])
+    goal=Goal(initial,block['end'],resolution,reference={'BTC':config['reference_btc'],'USD':1.},mode=config.get('goal_mode','basket'))
     delays=Delays(**{k:(round(v*delay_multiplier) if k in ('observation','decision','delivery','report') else v) for k,v in config['delays'].items()})
     replay=Engine(instruments,Ledger(initial.copy()),goal,seed,delays,participation=config['participation'],event_cap=config['event_cap'])
     replay.seed_market(block['seeds'],block['start']);replay.add_tape(block['tape'])
@@ -186,6 +191,7 @@ def run(args):
                 transition_cap=20000,event_cap=30000,pilot_seconds=3600,optimizer_updates_per_stage=160,
                 participation=.1,delays=asdict(Delays()),seeds=[11,29],
                 dates=[f'2026-06-{d:02d}' for d in range(6,14)],episode_minutes=60,offset_minutes=60,
+                goal_mode=getattr(args,'objective','gated_max'),
                 action_space=getattr(args,'action_space','grid'),action_domain=asdict(ActionDomain()),
                 search_evaluations=getattr(args,'search_evaluations',None) or (32 if getattr(args,'action_space','grid')=='grid' else 128),
                 search_rounds=getattr(args,'search_rounds',4),grid_random_points=getattr(args,'grid_random_points',2))
@@ -193,6 +199,13 @@ def run(args):
     budget=Budget(config)
     instruments,trades,seeds,manifest=load_archive(args.input,config['dates'])
     blocks=split_blocks(config['dates'],trades,seeds,offset_minutes=config['offset_minutes'],duration_minutes=config['episode_minutes'])
+    if getattr(args,'cash_input',None):
+        if config['action_space']=='legacy':raise ValueError('Cash assets require grid or full action search')
+        cash,cash_tape,cash_manifest=load_cash_bundle(args.cash_input)
+        if set(cash)&set(instruments):raise ValueError('Cash/futures identity collision')
+        attach_cash_blocks(blocks,cash,cash_tape);instruments.update(cash)
+        manifest['cash_assets']=cash_manifest;config['cash_manifest_sha256']=cash_manifest['manifest_sha256']
+    config['feature_version']=2 if config['goal_mode']=='gated_max' or any(not i.is_future for i in instruments.values()) else 1
     identity=code_identity()
     identity.update(config_sha256=hashlib.sha256(json.dumps(config,sort_keys=True).encode()).hexdigest(),
                     data_sha256=hashlib.sha256(json.dumps(manifest,sort_keys=True).encode()).hexdigest())
@@ -225,7 +238,7 @@ def run(args):
                 rows,result=episode(b,instruments,seed,policy,config,budget,models[-1] if models else None,retain=True)
                 records.extend(rows);stage_results.append(result)
         write_json(dataset,records)
-        model=ValueNetwork();optimizer,rng,info=fit(model,records,updates=config['optimizer_updates_per_stage'],seed=19+stage)
+        model=ValueNetwork(feature_version=config['feature_version']);optimizer,rng,info=fit(model,records,updates=config['optimizer_updates_per_stage'],seed=19+stage)
         budget.training(info);training.append(info);models.append(model)
         save_model(checkpoint,model,optimizer,rng,identity)
         write_json(output/f'training-{stage}.json',info);write_json(output/f'episodes-{stage}.json.gz',stage_results)
@@ -274,13 +287,14 @@ def run(args):
                 resources=dict(recorded_decisions=budget.transitions,exchange_and_report_events=budget.events,
                                optimizer_updates=budget.updates,training_seconds=budget.training_seconds,pilot_seconds=time.monotonic()-budget.started),
                 per_block=[{k:v for k,v in r.items() if k not in ('decisions','fills')} for r in all_results],
-                interpretation='Counterfactual linear futures on verified historical inverse trade prints; contractual endpoint, no observed settlement tail',
+                interpretation='Counterfactual linear futures on verified historical inverse trade prints; contractual endpoint, no observed settlement tail. Optional cash sources retain their own observed/indicative/synthetic provenance in data-manifest.json.',
                 limitations=['Two held-out market days are a smoke test, not profitability evidence.',
-                             'No spot execution, order-book depth, observed queue position or historical account margin schedule.',
+                             'Cash fills require an explicitly typed cash bundle; indicative quotes never fill. No order-book depth, observed queue position or historical account margin schedule.',
+                             'Treasury payments are contractual projections, not observed account receipts; fixed-ratio proxies are explicit modeling assumptions.',
                              'Trade participation, fees, ticks/lots, stress set and latency are explicit research assumptions.',
                              'Terminal predictions refer to their versioned training continuation; greedy improvement changes continuation and requires subsequent collection.',
                              'Prediction error against the improved policy is on-policy diagnostic, not unbiased fixed-continuation calibration.',
-                             'Target-composition objective is configured and tested separately; primary pilot uses basket growth.',
+                             'The objective is recorded in configuration; expected trajectory utility is regressed independently of the commodity heads.',
                              'GCS source receipts verified from existing local export; live full-archive and extended spot inventory not refreshed.'])
     write_json(output/'report.json',report)
     print(json.dumps(dict(selected=report['selected_policy'],resources=report['resources'],summary=report['summary'])),flush=True)
@@ -292,6 +306,8 @@ def main():
     parser.add_argument('--input',required=True,help='Existing hash-receipted local export; no download')
     parser.add_argument('--output',required=True)
     parser.add_argument('--resume',action='store_true',help='Resume immutable completed training stages with identical code/data/config')
+    parser.add_argument('--objective',choices=('basket','gated_max','btc','target'),default='gated_max')
+    parser.add_argument('--cash-input',help='Optional typed USD cash-asset bundle with hashes and explicit execution eligibility; no download')
     parser.add_argument('--action-space',choices=('grid','full','legacy'),default='grid',help='Sparse endpoint/random grid (default), full-domain sampling, or legacy menu')
     parser.add_argument('--search-evaluations',type=int,help='Proposal budget, 4..4096; grid default 32, full default 128')
     parser.add_argument('--search-rounds',type=int,default=4)
