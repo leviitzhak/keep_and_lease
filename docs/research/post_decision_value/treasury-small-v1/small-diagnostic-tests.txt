@@ -1,0 +1,12 @@
+test_four_actual_causal_steps_preserve_purchase_price (test_treasury_small_diagnostic.SmallTreasuryDiagnosticTest.test_four_actual_causal_steps_preserve_purchase_price) ... ok
+test_freeze_preserves_objective_and_small_update_limit (test_treasury_small_diagnostic.SmallTreasuryDiagnosticTest.test_freeze_preserves_objective_and_small_update_limit) ... ok
+test_full_maturity_and_boundary_labels_preserved (test_treasury_small_diagnostic.SmallTreasuryDiagnosticTest.test_full_maturity_and_boundary_labels_preserved) ... ok
+test_new_checkpoint_restores_and_legacy_loader_rejects (test_treasury_small_diagnostic.SmallTreasuryDiagnosticTest.test_new_checkpoint_restores_and_legacy_loader_rejects) ... ok
+test_truncation_uses_only_latest_four_received_steps (test_treasury_small_diagnostic.SmallTreasuryDiagnosticTest.test_truncation_uses_only_latest_four_received_steps) ... ok
+test_verification_rejects_checkpoint_not_frozen_before_test (test_treasury_small_diagnostic.SmallTreasuryDiagnosticTest.test_verification_rejects_checkpoint_not_frozen_before_test) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.242s
+
+OK
+

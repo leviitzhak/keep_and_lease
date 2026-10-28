@@ -2,6 +2,11 @@
 
 28 October 2026. Research-only branch `agent/btc-post-decision-value-v1`.
 
+Follow-up: a [smaller four-history-step diagnostic](TREASURY_SMALL_DIAGNOSTIC.md)
+completed a separate 500-update fit. Initial choices were all correct, but
+scalar-value calibration failed and its fresh test was withheld. It does not
+change the original campaign evidence below or resolve repeated-policy churn.
+
 **Implementation delivered; repeated-policy learning is not accepted.** The
 one permitted campaign passed the tiny hold/boundary diagnostic, then stopped
 at the shared 20,000-decision cap during collection. No rollout refit, recollect

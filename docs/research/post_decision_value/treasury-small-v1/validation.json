@@ -1,0 +1,7 @@
+{
+  "accounting_tests": 18,
+  "robust_tests": 25,
+  "short_history_tests": 6,
+  "total_passed": 49,
+  "note": "Robust checkpoint test passed after changing Windows TEMP/TMP to writable workspace; no final fresh test evaluated."
+}

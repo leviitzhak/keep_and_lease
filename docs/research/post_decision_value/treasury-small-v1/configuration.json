@@ -1,0 +1,87 @@
+{
+  "acceptance": {
+    "accounting_atol": 1e-08,
+    "diagnosis_max_error": 0.003,
+    "quantity_atol": 1e-08
+  },
+  "architecture": {
+    "width": 24
+  },
+  "clock": {
+    "cadence_ms": 86400000,
+    "mode": "event",
+    "trigger": {
+      "max_wait_ms": 2419200000,
+      "min_gap_ms": 100,
+      "premium_bps": 2,
+      "price_bps": 2
+    }
+  },
+  "closing": {
+    "max_trades": 1000,
+    "participation": 1.0,
+    "tail_ms": 172800000,
+    "version": "subsequent-print-v1"
+  },
+  "delays": {
+    "congestion": 0.25,
+    "decision": 10,
+    "delivery": 30,
+    "jitter": 0.25,
+    "observation": 20,
+    "report": 50
+  },
+  "diagnosis_updates": 500,
+  "history_spacing_ms": 1000,
+  "history_steps": 4,
+  "inventory_cap": 60,
+  "limits": {
+    "compressed_bytes": 8000000,
+    "decisions": 20000,
+    "events_per_replay": 30000,
+    "fit_seconds": 120,
+    "input_rows": 100000,
+    "oracle_controllers": 4096,
+    "updates": 500,
+    "wall_seconds": 240
+  },
+  "objective": {
+    "BTC": 0.5,
+    "USD": 0.5,
+    "drawdown": 0.1,
+    "failure_penalty": 1,
+    "lambda": 10
+  },
+  "price_offsets": [
+    0
+  ],
+  "quantities": [
+    5,
+    25,
+    60
+  ],
+  "scenario_law": "Fixed synthetic Treasury tape, one hold continuation, declared message/report jitter; no market-return uncertainty model",
+  "schema": "treasury-small-history-diagnostic-v1",
+  "scope": "Diagnostic initial hold-through-28-day-redemption and owned-inventory liquidation boundary only; no repeated policy or sampled max-min training",
+  "seed": 28102641,
+  "selection": "Minimum validation normalized scalar MSE at each 25-update checkpoint; earliest checkpoint wins exact ties; one fresh test evaluation only after selected training and validation gates pass",
+  "source_kind": "synthetic_fixture",
+  "splits": {
+    "test": {
+      "count": 4,
+      "seed": 281047,
+      "year": 2023
+    },
+    "train": {
+      "count": 8,
+      "seed": 281041,
+      "year": 2016
+    },
+    "validation": {
+      "count": 4,
+      "seed": 281043,
+      "year": 2019
+    }
+  },
+  "tie_margin": 1e-06
+}

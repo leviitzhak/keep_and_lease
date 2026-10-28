@@ -1,0 +1,782 @@
+[
+  {
+    "case": "treasury-maxmin-v1-train-0",
+    "category": "profitable",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": -0.0013138093054294586,
+    "quantity": 0,
+    "split": "train",
+    "target": 0.0
+  },
+  {
+    "case": "treasury-maxmin-v1-train-0",
+    "category": "profitable",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": 0.0015882709994912148,
+    "quantity": 0,
+    "split": "train",
+    "target": 0.0
+  },
+  {
+    "case": "treasury-maxmin-v1-train-0",
+    "category": "profitable",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": 0.0011165523901581764,
+    "quantity": 5,
+    "split": "train",
+    "target": 0.0005024999999999636
+  },
+  {
+    "case": "treasury-maxmin-v1-train-0",
+    "category": "profitable",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.00028218328952789307,
+    "quantity": 5,
+    "split": "train",
+    "target": -0.001
+  },
+  {
+    "case": "treasury-maxmin-v1-train-0",
+    "category": "profitable",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": 0.002650417387485504,
+    "quantity": 25,
+    "split": "train",
+    "target": 0.0025125
+  },
+  {
+    "case": "treasury-maxmin-v1-train-0",
+    "category": "profitable",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.004769538529217243,
+    "quantity": 25,
+    "split": "train",
+    "target": -0.005
+  },
+  {
+    "case": "treasury-maxmin-v1-train-0",
+    "category": "profitable",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": 0.005762718617916107,
+    "quantity": 60,
+    "split": "train",
+    "target": 0.006029999999999927
+  },
+  {
+    "case": "treasury-maxmin-v1-train-0",
+    "category": "profitable",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.012636527419090271,
+    "quantity": 60,
+    "split": "train",
+    "target": -0.012000000000001818
+  },
+  {
+    "case": "treasury-maxmin-v1-train-1",
+    "category": "overpriced",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": -0.00014775525778532028,
+    "quantity": 0,
+    "split": "train",
+    "target": 0.0
+  },
+  {
+    "case": "treasury-maxmin-v1-train-1",
+    "category": "overpriced",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.0011814180761575699,
+    "quantity": 0,
+    "split": "train",
+    "target": 0.0
+  },
+  {
+    "case": "treasury-maxmin-v1-train-1",
+    "category": "overpriced",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": -0.0019151382148265839,
+    "quantity": 5,
+    "split": "train",
+    "target": -0.0022009749999997437
+  },
+  {
+    "case": "treasury-maxmin-v1-train-1",
+    "category": "overpriced",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.002255823463201523,
+    "quantity": 5,
+    "split": "train",
+    "target": -0.0015014499999997499
+  },
+  {
+    "case": "treasury-maxmin-v1-train-1",
+    "category": "overpriced",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": -0.0077385492622852325,
+    "quantity": 25,
+    "split": "train",
+    "target": -0.011004875000000539
+  },
+  {
+    "case": "treasury-maxmin-v1-train-1",
+    "category": "overpriced",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.007640497758984566,
+    "quantity": 25,
+    "split": "train",
+    "target": -0.007507250000000567
+  },
+  {
+    "case": "treasury-maxmin-v1-train-1",
+    "category": "overpriced",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": -0.027746394276618958,
+    "quantity": 60,
+    "split": "train",
+    "target": -0.026411700000000565
+  },
+  {
+    "case": "treasury-maxmin-v1-train-1",
+    "category": "overpriced",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.018611006438732147,
+    "quantity": 60,
+    "split": "train",
+    "target": -0.018017400000000634
+  },
+  {
+    "case": "treasury-maxmin-v1-train-2",
+    "category": "fee_erased",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": 0.001293662004172802,
+    "quantity": 0,
+    "split": "train",
+    "target": 0.0
+  },
+  {
+    "case": "treasury-maxmin-v1-train-2",
+    "category": "fee_erased",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.00015290174633264542,
+    "quantity": 0,
+    "split": "train",
+    "target": 0.0
+  },
+  {
+    "case": "treasury-maxmin-v1-train-2",
+    "category": "fee_erased",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": -0.0032981280237436295,
+    "quantity": 5,
+    "split": "train",
+    "target": -0.0027988000000004833
+  },
+  {
+    "case": "treasury-maxmin-v1-train-2",
+    "category": "fee_erased",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.005506455432623625,
+    "quantity": 5,
+    "split": "train",
+    "target": -0.006991600000001199
+  },
+  {
+    "case": "treasury-maxmin-v1-train-2",
+    "category": "fee_erased",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": -0.012225382030010223,
+    "quantity": 25,
+    "split": "train",
+    "target": -0.013994000000000596
+  },
+  {
+    "case": "treasury-maxmin-v1-train-2",
+    "category": "fee_erased",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.034752871841192245,
+    "quantity": 25,
+    "split": "train",
+    "target": -0.03495800000000054
+  },
+  {
+    "case": "treasury-maxmin-v1-train-2",
+    "category": "fee_erased",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": -0.03481198102235794,
+    "quantity": 60,
+    "split": "train",
+    "target": -0.03358560000000034
+  },
+  {
+    "case": "treasury-maxmin-v1-train-2",
+    "category": "fee_erased",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.08560032397508621,
+    "quantity": 60,
+    "split": "train",
+    "target": -0.08389919999999983
+  },
+  {
+    "case": "treasury-maxmin-v1-train-3",
+    "category": "cash_constrained",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": 0.000507148914039135,
+    "quantity": 0,
+    "split": "train",
+    "target": 0.0
+  },
+  {
+    "case": "treasury-maxmin-v1-train-3",
+    "category": "cash_constrained",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": 0.0006125327199697495,
+    "quantity": 0,
+    "split": "train",
+    "target": 0.0
+  },
+  {
+    "case": "treasury-maxmin-v1-train-4",
+    "category": "profitable",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": -0.0009034834802150726,
+    "quantity": 0,
+    "split": "train",
+    "target": 0.0
+  },
+  {
+    "case": "treasury-maxmin-v1-train-4",
+    "category": "profitable",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.00024694856256246567,
+    "quantity": 0,
+    "split": "train",
+    "target": 0.0
+  },
+  {
+    "case": "treasury-maxmin-v1-train-4",
+    "category": "profitable",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": 0.0013462034985423088,
+    "quantity": 5,
+    "split": "train",
+    "target": 0.0006156399999999849
+  },
+  {
+    "case": "treasury-maxmin-v1-train-4",
+    "category": "profitable",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.0032140500843524933,
+    "quantity": 5,
+    "split": "train",
+    "target": -0.0019734000000007656
+  },
+  {
+    "case": "treasury-maxmin-v1-train-4",
+    "category": "profitable",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": 0.003141835331916809,
+    "quantity": 25,
+    "split": "train",
+    "target": 0.0030782000000000153
+  },
+  {
+    "case": "treasury-maxmin-v1-train-4",
+    "category": "profitable",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.010444891639053822,
+    "quantity": 25,
+    "split": "train",
+    "target": -0.00986700000000019
+  },
+  {
+    "case": "treasury-maxmin-v1-train-4",
+    "category": "profitable",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": 0.006693048402667046,
+    "quantity": 60,
+    "split": "train",
+    "target": 0.007387680000000001
+  },
+  {
+    "case": "treasury-maxmin-v1-train-4",
+    "category": "profitable",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.022807428613305092,
+    "quantity": 60,
+    "split": "train",
+    "target": -0.02368080000000009
+  },
+  {
+    "case": "treasury-maxmin-v1-train-5",
+    "category": "overpriced",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": -0.00014953222125768661,
+    "quantity": 0,
+    "split": "train",
+    "target": 0.0
+  },
+  {
+    "case": "treasury-maxmin-v1-train-5",
+    "category": "overpriced",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.00040542613714933395,
+    "quantity": 0,
+    "split": "train",
+    "target": 0.0
+  },
+  {
+    "case": "treasury-maxmin-v1-train-5",
+    "category": "overpriced",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": -0.007957756519317627,
+    "quantity": 5,
+    "split": "train",
+    "target": -0.004504000000000815
+  },
+  {
+    "case": "treasury-maxmin-v1-train-5",
+    "category": "overpriced",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.001376694068312645,
+    "quantity": 5,
+    "split": "train",
+    "target": -0.002007000000001426
+  },
+  {
+    "case": "treasury-maxmin-v1-train-5",
+    "category": "overpriced",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": -0.021107304841279984,
+    "quantity": 25,
+    "split": "train",
+    "target": -0.022520000000000436
+  },
+  {
+    "case": "treasury-maxmin-v1-train-5",
+    "category": "overpriced",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.00799601897597313,
+    "quantity": 25,
+    "split": "train",
+    "target": -0.010034999999999855
+  },
+  {
+    "case": "treasury-maxmin-v1-train-5",
+    "category": "overpriced",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": -0.05373625084757805,
+    "quantity": 60,
+    "split": "train",
+    "target": -0.05404799999999887
+  },
+  {
+    "case": "treasury-maxmin-v1-train-5",
+    "category": "overpriced",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.024055076763033867,
+    "quantity": 60,
+    "split": "train",
+    "target": -0.024083999999998922
+  },
+  {
+    "case": "treasury-maxmin-v1-train-6",
+    "category": "fee_erased",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": -0.0007262760773301125,
+    "quantity": 0,
+    "split": "train",
+    "target": 0.0
+  },
+  {
+    "case": "treasury-maxmin-v1-train-6",
+    "category": "fee_erased",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.0016029421240091324,
+    "quantity": 0,
+    "split": "train",
+    "target": 0.0
+  },
+  {
+    "case": "treasury-maxmin-v1-train-6",
+    "category": "fee_erased",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": -0.004849596414715052,
+    "quantity": 5,
+    "split": "train",
+    "target": -0.0026478999999999357
+  },
+  {
+    "case": "treasury-maxmin-v1-train-6",
+    "category": "fee_erased",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.0069588711485266685,
+    "quantity": 5,
+    "split": "train",
+    "target": -0.006989799999999377
+  },
+  {
+    "case": "treasury-maxmin-v1-train-6",
+    "category": "fee_erased",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": -0.012599948793649673,
+    "quantity": 25,
+    "split": "train",
+    "target": -0.01323949999999968
+  },
+  {
+    "case": "treasury-maxmin-v1-train-6",
+    "category": "fee_erased",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.0347968228161335,
+    "quantity": 25,
+    "split": "train",
+    "target": -0.03494900000000052
+  },
+  {
+    "case": "treasury-maxmin-v1-train-6",
+    "category": "fee_erased",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": -0.03086794726550579,
+    "quantity": 60,
+    "split": "train",
+    "target": -0.03177479999999923
+  },
+  {
+    "case": "treasury-maxmin-v1-train-6",
+    "category": "fee_erased",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.08248588442802429,
+    "quantity": 60,
+    "split": "train",
+    "target": -0.0838775999999998
+  },
+  {
+    "case": "treasury-maxmin-v1-train-7",
+    "category": "cash_constrained",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": 0.0002538925036787987,
+    "quantity": 0,
+    "split": "train",
+    "target": 0.0
+  },
+  {
+    "case": "treasury-maxmin-v1-train-7",
+    "category": "cash_constrained",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.0007809484377503395,
+    "quantity": 0,
+    "split": "train",
+    "target": 0.0
+  },
+  {
+    "case": "treasury-maxmin-v1-validation-0",
+    "category": "profitable",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": -0.000634792260825634,
+    "quantity": 0,
+    "split": "validation",
+    "target": 0.0
+  },
+  {
+    "case": "treasury-maxmin-v1-validation-0",
+    "category": "profitable",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": 0.0014961464330554008,
+    "quantity": 0,
+    "split": "validation",
+    "target": 0.0
+  },
+  {
+    "case": "treasury-maxmin-v1-validation-0",
+    "category": "profitable",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": 0.0020982036367058754,
+    "quantity": 5,
+    "split": "validation",
+    "target": 0.0007833075000000463
+  },
+  {
+    "case": "treasury-maxmin-v1-validation-0",
+    "category": "profitable",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.0016509881243109703,
+    "quantity": 5,
+    "split": "validation",
+    "target": -0.001966699999999037
+  },
+  {
+    "case": "treasury-maxmin-v1-validation-0",
+    "category": "profitable",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": 0.0037133442237973213,
+    "quantity": 25,
+    "split": "validation",
+    "target": 0.0039165375000000495
+  },
+  {
+    "case": "treasury-maxmin-v1-validation-0",
+    "category": "profitable",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.010553212836384773,
+    "quantity": 25,
+    "split": "validation",
+    "target": -0.00983350000000064
+  },
+  {
+    "case": "treasury-maxmin-v1-validation-0",
+    "category": "profitable",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": 0.0069890450686216354,
+    "quantity": 60,
+    "split": "validation",
+    "target": 0.00939969000000001
+  },
+  {
+    "case": "treasury-maxmin-v1-validation-0",
+    "category": "profitable",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.027240196242928505,
+    "quantity": 60,
+    "split": "validation",
+    "target": -0.023600399999999352
+  },
+  {
+    "case": "treasury-maxmin-v1-validation-1",
+    "category": "overpriced",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": -1.1712312698364258e-05,
+    "quantity": 0,
+    "split": "validation",
+    "target": 0.0
+  },
+  {
+    "case": "treasury-maxmin-v1-validation-1",
+    "category": "overpriced",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.0015453873202204704,
+    "quantity": 0,
+    "split": "validation",
+    "target": 0.0
+  },
+  {
+    "case": "treasury-maxmin-v1-validation-1",
+    "category": "overpriced",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": -0.005658234469592571,
+    "quantity": 5,
+    "split": "validation",
+    "target": -0.007103424999999334
+  },
+  {
+    "case": "treasury-maxmin-v1-validation-1",
+    "category": "overpriced",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.002081889659166336,
+    "quantity": 5,
+    "split": "validation",
+    "target": -0.0015063499999996566
+  },
+  {
+    "case": "treasury-maxmin-v1-validation-1",
+    "category": "overpriced",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": -0.015299657359719276,
+    "quantity": 25,
+    "split": "validation",
+    "target": -0.0355171250000003
+  },
+  {
+    "case": "treasury-maxmin-v1-validation-1",
+    "category": "overpriced",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.00708299595862627,
+    "quantity": 25,
+    "split": "validation",
+    "target": -0.007531750000000103
+  },
+  {
+    "case": "treasury-maxmin-v1-validation-1",
+    "category": "overpriced",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": -0.04143090546131134,
+    "quantity": 60,
+    "split": "validation",
+    "target": -0.0852411000000011
+  },
+  {
+    "case": "treasury-maxmin-v1-validation-1",
+    "category": "overpriced",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.018737345933914185,
+    "quantity": 60,
+    "split": "validation",
+    "target": -0.018076200000001336
+  },
+  {
+    "case": "treasury-maxmin-v1-validation-2",
+    "category": "fee_erased",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": -0.000507068820297718,
+    "quantity": 0,
+    "split": "validation",
+    "target": 0.0
+  },
+  {
+    "case": "treasury-maxmin-v1-validation-2",
+    "category": "fee_erased",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.00039995741099119186,
+    "quantity": 0,
+    "split": "validation",
+    "target": 0.0
+  },
+  {
+    "case": "treasury-maxmin-v1-validation-2",
+    "category": "fee_erased",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": -0.002569574862718582,
+    "quantity": 5,
+    "split": "validation",
+    "target": -0.0026478999999999357
+  },
+  {
+    "case": "treasury-maxmin-v1-validation-2",
+    "category": "fee_erased",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.004213243722915649,
+    "quantity": 5,
+    "split": "validation",
+    "target": -0.006989799999999377
+  },
+  {
+    "case": "treasury-maxmin-v1-validation-2",
+    "category": "fee_erased",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": -0.007721384055912495,
+    "quantity": 25,
+    "split": "validation",
+    "target": -0.01323949999999968
+  },
+  {
+    "case": "treasury-maxmin-v1-validation-2",
+    "category": "fee_erased",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.024552665650844574,
+    "quantity": 25,
+    "split": "validation",
+    "target": -0.03494900000000052
+  },
+  {
+    "case": "treasury-maxmin-v1-validation-2",
+    "category": "fee_erased",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": -0.022557690739631653,
+    "quantity": 60,
+    "split": "validation",
+    "target": -0.03177479999999923
+  },
+  {
+    "case": "treasury-maxmin-v1-validation-2",
+    "category": "fee_erased",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": -0.06372915208339691,
+    "quantity": 60,
+    "split": "validation",
+    "target": -0.0838775999999998
+  },
+  {
+    "case": "treasury-maxmin-v1-validation-3",
+    "category": "cash_constrained",
+    "history_steps": 4,
+    "kind": "hold",
+    "prediction": 0.001033741980791092,
+    "quantity": 0,
+    "split": "validation",
+    "target": 0.0
+  },
+  {
+    "case": "treasury-maxmin-v1-validation-3",
+    "category": "cash_constrained",
+    "history_steps": 4,
+    "kind": "boundary",
+    "prediction": 0.0024939635768532753,
+    "quantity": 0,
+    "split": "validation",
+    "target": 0.0
+  }
+]

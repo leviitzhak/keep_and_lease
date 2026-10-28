@@ -1,0 +1,13 @@
+{
+  "status": "code_and_numerical_results_published_binary_upload_interrupted",
+  "training_completed": true,
+  "analysis_completed": true,
+  "local_archive_verified": true,
+  "binary_checkpoint_uploaded": false,
+  "compressed_replay_rows_uploaded": false,
+  "archive_uploaded": false,
+  "cause": "Execution environment became unavailable during publication",
+  "local_archive_sha256": "655fc1b512c5a21003a54d9cf68f3ee60c8e4f601770c124626324f77bf015bc",
+  "plot": "analysis.svg reconstructed from saved learning-curve.json and predictions.json; original PNG unavailable",
+  "fresh_test_evaluations": 0
+}

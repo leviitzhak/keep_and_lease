@@ -12,7 +12,6 @@ import json
 import os
 from pathlib import Path
 import platform
-import resource
 import time
 
 import numpy as np
@@ -225,6 +224,8 @@ def evaluate(cases, config, budget, model):
 
 
 def run(output, config_path=DEFAULT_CONFIG):
+    # Linux-only campaign metrics must not block portable diagnostic imports.
+    import resource
     config=read(config_path)
     validate_config(config)
     output=Path(output);output.mkdir(parents=True,exist_ok=False)

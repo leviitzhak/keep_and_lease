@@ -1,0 +1,32 @@
+{
+  "schema": "treasury-small-history-diagnostic-v1",
+  "source_kind": "synthetic_fixture",
+  "seed": 28102641,
+  "splits": {
+    "train": {"seed": 281041, "year": 2016, "count": 8},
+    "validation": {"seed": 281043, "year": 2019, "count": 4},
+    "test": {"seed": 281047, "year": 2023, "count": 4}
+  },
+  "limits": {
+    "wall_seconds": 240, "fit_seconds": 120, "updates": 500,
+    "decisions": 20000, "events_per_replay": 30000,
+    "input_rows": 100000, "compressed_bytes": 8000000,
+    "oracle_controllers": 4096
+  },
+  "diagnosis_updates": 500,
+  "architecture": {"width": 24},
+  "history_steps": 4,
+  "history_spacing_ms": 1000,
+  "objective": {"BTC": 0.5, "USD": 0.5, "lambda": 10, "failure_penalty": 1, "drawdown": 0.1},
+  "quantities": [5, 25, 60],
+  "price_offsets": [0],
+  "inventory_cap": 60,
+  "delays": {"observation": 20, "decision": 10, "delivery": 30, "report": 50, "jitter": 0.25, "congestion": 0.25},
+  "clock": {"mode": "event", "cadence_ms": 86400000, "trigger": {"price_bps": 2, "premium_bps": 2, "min_gap_ms": 100, "max_wait_ms": 2419200000}},
+  "closing": {"tail_ms": 172800000, "max_trades": 1000, "participation": 1.0, "version": "subsequent-print-v1"},
+  "scenario_law": "Fixed synthetic Treasury tape, one hold continuation, declared message/report jitter; no market-return uncertainty model",
+  "tie_margin": 0.000001,
+  "acceptance": {"accounting_atol": 0.00000001, "diagnosis_max_error": 0.003, "quantity_atol": 0.00000001},
+  "selection": "Minimum validation normalized scalar MSE at each 25-update checkpoint; earliest checkpoint wins exact ties; one fresh test evaluation only after selected training and validation gates pass",
+  "scope": "Diagnostic initial hold-through-28-day-redemption and owned-inventory liquidation boundary only; no repeated policy or sampled max-min training"
+}

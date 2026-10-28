@@ -1,13 +1,22 @@
 # Post-decision commodity value research v1
 
-28 October update: [implementation and capped campaign](research/post_decision_value/TREASURY_MAXMIN_RESULTS.md).
+Latest 28 October update: [small single-BILL, four-step diagnostic](research/post_decision_value/TREASURY_SMALL_DIAGNOSTIC.md).
+The 1,705-parameter model trained for 500 updates in 12.09 seconds. Initial choices
+were correct in 8/8 training and 4/4 validation cases, but scalar calibration
+failed; its four-case fresh test remains untouched. This is a separate diagnostic
+checkpoint, not a robust-policy refit or replacement for the explorer model.
+Code and numerical results are published; the execution host disconnected before
+the local checkpoint/archive binaries could be uploaded.
+
+Earlier 28 October update: [implementation and capped campaign](research/post_decision_value/TREASURY_MAXMIN_RESULTS.md).
 The new hold/boundary diagnostic passes; repeated collection hits its decision
 cap, so no fitted robust model or fresh test result exists. No deployment.
 
 The follow-up [local explorer and opt-in market simulator](research/post_decision_value/STATE_VALUE_EXPLORER.md)
 are now implemented, including Windows setup/launch scripts, actual checkpoint
 inference, guarded references and bounded replay. Linux setup/API tested; Windows
-and rendered browser acceptance remain unverified. No new learning campaign ran.
+and rendered browser acceptance remain unverified. That explorer work did not run
+a learning campaign; the separate small diagnostic is reported above.
 
 Strategy contract: [sampled max–min rollout specification](research/post_decision_value/ROLLOUT_MAXMIN_SPEC.md)
 and [implementation plan](research/post_decision_value/TREASURY_LEARNING_IMPLEMENTATION_PLAN.md).

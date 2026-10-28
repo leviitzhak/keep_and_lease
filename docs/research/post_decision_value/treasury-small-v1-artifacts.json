@@ -1,0 +1,12 @@
+{
+  "archive": "treasury-small-v1.tar.gz",
+  "bytes": 750658,
+  "sha256": "655fc1b512c5a21003a54d9cf68f3ee60c8e4f601770c124626324f77bf015bc",
+  "files": 61,
+  "verified": true,
+  "source_commit": "fd86e274a0d1fb664797be34c2a7acb158aa4575",
+  "checkpoint_model_sha256": "93974b72a5b064f0752679478ed4579918e3bf84400f7040f4cd30a5ec2dd3f8",
+  "verification_scope": "local archive verified before environment disconnected",
+  "uploaded": false,
+  "publication_status": "treasury-small-v1/publication-status.json"
+}

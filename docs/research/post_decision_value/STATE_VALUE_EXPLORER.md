@@ -6,6 +6,11 @@ production application, deploy a service, submit live orders, or start a learnin
 campaign. The current published model remains **diagnostic-only: its repeated
 network policy failed acceptance**. There is no accepted fitted max–min model.
 
+The subsequent [four-step, small single-BILL diagnostic](TREASURY_SMALL_DIAGNOSTIC.md)
+uses a separate 44-feature checkpoint and failed scalar calibration. This explorer
+and its downloadable package retain their original 20-feature model; the new
+checkpoint is not compatible with the explorer's existing loader.
+
 ## Start on your computer
 
 Clone or update this research branch, then run from its repository directory.
