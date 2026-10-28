@@ -1,0 +1,114 @@
+{
+  "schema": "explorer-validation-v1",
+  "environment": {
+    "os": "Linux",
+    "architecture": "x86_64",
+    "python": "3.12.14",
+    "torch": "2.14.1+cpu",
+    "numpy": "2.3.5"
+  },
+  "tests": {
+    "research": 183,
+    "legacy": 83,
+    "total": 266,
+    "javascript_syntax": "passed",
+    "static_dom_contract": "passed",
+    "fresh_linux_setup": "passed",
+    "rendered_browser": "unverified: cloud browser ERR_CONNECTION_REFUSED for workspace loopback",
+    "windows": "not executed",
+    "fresh_installed_cli_http_inference": "passed",
+    "actual_immutable_download": "passed; 2329910 bytes; published SHA-256 matched"
+  },
+  "diagnostic_example": {
+    "case": "treasury-maxmin-v1-train-0",
+    "request": {
+      "market_id": "d5459a5c4cf5f4169dbbed7ee0eb7dde30c250ab88549bc2d605b0c78e6e82d0",
+      "state": {
+        "time": 1451606410000,
+        "horizon_ms": 2419202000,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 10000.0
+        },
+        "collateral": {
+          "BTC": 0.0,
+          "USD": 0.0
+        },
+        "positions": {},
+        "flows": [],
+        "orders": [],
+        "action": {
+          "kind": "create",
+          "orders": [
+            {
+              "identifier": "example-buy",
+              "symbol": "BILL",
+              "quantity": 25,
+              "limit": 96.87
+            }
+          ]
+        }
+      }
+    },
+    "prediction": 0.0031937770545482635,
+    "reference": {
+      "value": 0.0038519562499999666,
+      "kind": "exact diagnostic purchase then hold",
+      "scope": "Independent fixed-fixture cash arithmetic; same diagnostic target",
+      "outcome": {
+        "utility": 0.0038519562499999666,
+        "balances": {
+          "BTC": 1.0,
+          "USD": 10077.039125
+        },
+        "quantity": 25,
+        "growth": {
+          "BTC": 0.0,
+          "USD": 0.007703912499999933
+        },
+        "failed": false
+      }
+    },
+    "signed_error": -0.0006581791954517031,
+    "hold_utility": 0.0038519562499999666,
+    "network_cap_outcome": {
+      "done": false,
+      "truncated": true,
+      "reason": "campaign_decision_cap"
+    }
+  },
+  "simulation": {
+    "version": "synthetic-market-v1",
+    "configuration": {
+      "enabled": true,
+      "seed": 280126,
+      "start": 1767225610000,
+      "days": 28,
+      "step_hours": 6,
+      "tail_days": 2,
+      "universe": "full",
+      "trend": "flat",
+      "trend_annual": 0.2,
+      "volatility_annual": 0.2,
+      "initial_spot": 100000.0,
+      "rate_annual": 0.04,
+      "rate_volatility": 0.005,
+      "premium_annual": -0.04,
+      "premium_volatility": 0.02,
+      "mean_reversion": 8.0,
+      "spread_bps": 4.0,
+      "liquidity": 1.0,
+      "funding_daily_bps": 2,
+      "fee_bps": 5.0,
+      "future_payoff": "linear",
+      "maturity_days": 28,
+      "future_expiry_days": 35,
+      "row_cap": 10000
+    },
+    "sha256": "bfcb96299be13b383a0b479f4f8f93b0461bde92ab915fc06bf729cc2134520a",
+    "trade_rows": 706,
+    "funding_events": 30
+  },
+  "training_campaign_started": false,
+  "deployed": false
+}

@@ -4,9 +4,11 @@
 [Actual results and artifact semantics](TREASURY_MAXMIN_RESULTS.md). The published checkpoint
 is a hold/boundary diagnostic, not a fitted sampled-max–min model. This supersedes
 conflicting expected-value/hold-only instructions in earlier handoffs, not the
-historical descriptions of completed experiments. The next executable task is
-[TREASURY_LEARNING_IMPLEMENTATION_PLAN.md](TREASURY_LEARNING_IMPLEMENTATION_PLAN.md); the UI remains
-[a separate later task](STATE_VALUE_EXPLORER_PLAN.md).
+historical descriptions of completed experiments. The bounded learning task is
+implemented under [its contract](TREASURY_LEARNING_IMPLEMENTATION_PLAN.md). A
+subsequent [local explorer and optional market simulator](STATE_VALUE_EXPLORER.md)
+are now implemented; Windows/rendered-browser verification and further training
+remain outstanding.
 
 ## Objective and policy
 
@@ -379,11 +381,13 @@ under a new controller must get a new policy/target identity.
 
 ## Deferred next steps
 
-1. Horizon-policy comparison above, and a separate local interactive explorer/Windows
-   package after the learning task. Expose policy identity and horizon behavior.
-2. Broader synthetic market generator for training and stress testing: diverse spot
+1. Horizon-policy comparison above. The local explorer/Windows launcher is now
+   implemented and exposes target/policy identity and countdown; rendered GUI and
+   Windows execution acceptance remain unverified.
+2. The opt-in synthetic market generator now supplies diverse spot
    paths, premium curves/mean reversion and maturity convergence, rates/cashflows,
-   costs, liquidity and execution/funding shocks. Calibrate on training data only;
+   costs, liquidity and explicit funding. Calibration and stress training remain
+   separate follow-ups. Calibrate on training data only;
    preserve positivity, units, cashflow identities and causal information. Keep
    known-opportunity and no-opportunity controls to detect simulator shortcuts.
    Vary spot direction/volatility with economic carry structure held comparable;
@@ -392,7 +396,7 @@ under a new controller must get a new policy/target identity.
    cancellation/closing execution, then
    historical spot/Treasury/funding/expiry data completion and long-history runner.
 
-Only tiny explicit Treasury fixtures are required now. The broader simulator,
-years-long training, UI and new infrastructure are not part of the next learning
-implementation. Existing runtime limits remain in force; cap the aggregate J*K
+Only tiny explicit Treasury fixtures were required for the completed learning
+implementation. The subsequent simulator/UI task did not run further training or
+provision infrastructure. Existing runtime limits remain in force; cap the aggregate J*K
 rollout work and fitting budget, and do not launch recursive or unattended searches.

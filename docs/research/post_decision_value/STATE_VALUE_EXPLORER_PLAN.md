@@ -1,9 +1,13 @@
-# State-value explorer: separate next implementation
+# State-value explorer: implementation contract and delivery status
 
-Updated 28 October 2026. **Planned, not built, hosted or deployed.** Implement after the
-[Treasury learning/reference task](TREASURY_LEARNING_IMPLEMENTATION_PLAN.md); this document
-does not authorize starting the UI during that task. A failed checkpoint can be
-inspected for diagnosis but must retain its failed acceptance status visibly.
+Updated 28 October 2026. **Local scalar explorer and optional simulator implemented;
+not hosted or deployed.** See [the launch guide and exact delivered scope](STATE_VALUE_EXPLORER.md).
+Linux setup and API/inference tests pass. Windows and rendered-browser acceptance
+remain unverified: the available cloud browser cannot reach workspace localhost.
+Legacy Transformer UI, matching sampled-search references and repeated-replica UI
+comparison remain follow-ups. The requirements below describe the full intended
+contract, not a claim that every acceptance item is complete. Failed checkpoint
+acceptance stays visible. No new training campaign was run for this UI task.
 
 The new [sampled max–min design](ROLLOUT_MAXMIN_SPEC.md) supersedes the earlier
 expected-utility-only explorer semantics for future checkpoints. Existing archived
@@ -26,8 +30,9 @@ user's Windows computer or a GCP trainer. Its scratch output was
 
 Verified repository artifact path:
 [previous run archive](https://github.com/leviitzhak/keep_and_lease/blob/968f1afb47d603b3ee53dc2b0f586e423a174ce1/docs/research/post_decision_value/treasury-sanity-v1.tar.gz).
-This is the **failed** model, not a new accepted checkpoint. No online checkpoint
-catalog or UI download control exists yet.
+This is the **failed** model, not a new accepted checkpoint. The local UI now offers
+a verified download control for the later scalar diagnostic
+bundle. This older Transformer remains unsupported by the first UI.
 
 The learning task must publish immutable small inference bundles and a manifest
 with URL, hash/size, source identity, model/feature/normalization versions,
@@ -36,8 +41,8 @@ result and oracle support. New bundles also identify J/K, uncertainty scenarios,
 candidate-controller law, training horizons, countdown rule, growth benchmark and
 liquidation rule, complete tail-data identity and duration-ignored flag. Later
 policy configurations also declare fixed lookahead or
-ratio horizon grids/minima/thresholds. UI task: add a run/checkpoint selector, user-triggered
-download, hash verification, bounded safe extraction/local cache and load-from-file.
+ratio horizon grids/minima/thresholds. The scalar UI provides a run/checkpoint selector, user-triggered
+download, hash verification, bounded archive-member reads/local cache and load-from-file.
 Use actual accessible GitHub artifact URLs or an existing verified storage access
 path. Do not assume a private GCS URI is a browser-downloadable URL. Bundle an
 example model/dataset so offline operation works after setup.
@@ -153,5 +158,7 @@ cancel states that caused the observed churn. Future-price labels are never inpu
 
 The bundle includes exact held/boundary arithmetic and a limited causal toy
 oracle; missing/incomplete rollout references stay unavailable. Use the receipt's
-immutable URL/hash and bounded `treasury_artifacts.restore` before loading.
-No UI or Windows launcher was built in this task.
+immutable URL/hash and bounded archive validation before loading. The explorer
+reads only the required members without extracting or executing archived source.
+The learning task did not build a UI. The subsequent authorized implementation
+now supplies the standalone explorer and Windows launcher; see the launch guide.

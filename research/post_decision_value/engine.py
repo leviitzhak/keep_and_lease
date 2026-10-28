@@ -318,6 +318,23 @@ class Engine:
             self.hidden.last_index = tr.index
         self._check()
 
+    def add_funding(self, events):
+        """Opt-in synthetic funding on actual inventory, reported with latency."""
+        seen = {(v[4]['symbol'], v[0]) for v in self.hidden.queue if v[3] == 'funding'}
+        for row in events:
+            ins = self.instruments[row['symbol']]
+            key = (ins.symbol, row['time'])
+            if (row.get('source') != 'synthetic_market' or not ins.is_future or
+                    type(row['time']) is not int or not self.now <= row['time'] < ins.expiry or
+                    not math.isfinite(row['rate']) or abs(row['rate']) > .01 or
+                    not math.isfinite(row['price']) or row['price'] <= 0 or key in seen):
+                raise ValueError('Invalid or duplicate synthetic funding event')
+            seen.add(key)
+        if len(self.hidden.queue) + len(events) > self.event_cap:
+            raise ValueError('Funding event cap')
+        for row in events:
+            self._event(row['time'], -1, 'funding', dict(row))
+
     def observe(self):
         # Only this type reaches candidates/model. No queue, future tape or true
         # balances are included, even when exchange fills have already occurred.
@@ -399,6 +416,10 @@ class Engine:
                     row.update(request=data[0], instruction=data[1].payload())
                 elif kind in ('trade', 'observation'):
                     row.update(trade_id=data.identifier, symbol=data.symbol, price=data.price)
+                elif kind == 'funding':
+                    row.update(funding=dict(data))
+                elif kind == 'report':
+                    row.update(report_kind=data['kind'])
                 self.event_trace.append(row)
             if kind == "message":
                 request, action = data
@@ -459,6 +480,12 @@ class Engine:
                 elif data['kind']=='asset_cashflow':
                     paid=self.observable.ledger.pay_asset(self.instruments[data['symbol']],data['date'])
                     if abs(paid-data['amount'])>EPS:raise ValueError('Delayed asset cashflow ownership mismatch')
+                elif data['kind'] == 'funding':
+                    event = data['event']
+                    paid = self.observable.ledger.pay_funding(self.instruments[event['symbol']],
+                                                              event['time'], event['rate'], event['price'])
+                    if abs(paid-data['amount']) > EPS:
+                        raise ValueError('Delayed funding ownership mismatch')
                 else:
                     self.observable.pending = [p for p in self.observable.pending if p["id"] != data["request"]]
                     for oid, order in data["snapshot"].items():
@@ -472,6 +499,9 @@ class Engine:
                             variants.append(order)
                 reserved = post_decision(self.observable, Instruction("cancel"), self.instruments)
                 self.observable.reserved,self.observable.reserved_assets=reserved.reserved,reserved.reserved_assets
+            elif kind == 'funding':
+                amount = h.ledger.pay_funding(self.instruments[data['symbol']], t, data['rate'], data['price'])
+                self._report(dict(kind='funding', event=data, amount=amount), f'funding:{sequence}')
             elif kind=='asset_cashflow':
                 amount=h.ledger.pay_asset(self.instruments[data],t)
                 self._report(dict(kind='asset_cashflow',symbol=data,date=t,amount=amount),f'asset:{data}:{t}')
@@ -500,7 +530,9 @@ class Engine:
             self._check()
             if hasattr(self, 'event_trace'):
                 row.update(balances_after=h.ledger.balances.copy(),
-                           positions_after={s:asdict(p) for s,p in h.ledger.positions.items()})
+                           positions_after={s:asdict(p) for s,p in h.ledger.positions.items()},
+                           observed_balances_after=self.observable.ledger.balances.copy(),
+                           observed_positions_after={s:asdict(p) for s,p in self.observable.ledger.positions.items()})
         self.now = until
         self.observable.time = until
         self._check()

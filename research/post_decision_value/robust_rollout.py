@@ -93,9 +93,12 @@ class CampaignBudget:
 
     def input(self, scenario):
         import gzip
-        payload = json.dumps([asdict(t) for t in scenario['trades']], sort_keys=True).encode()
+        value = [asdict(t) for t in scenario['trades']]
+        if scenario.get('funding'):
+            value = dict(trades=value, funding=scenario['funding'])
+        payload = json.dumps(value, sort_keys=True).encode()
         key = hashlib.sha256(payload).hexdigest()
-        self.inputs[key] = dict(rows=len(scenario['trades']), bytes=len(gzip.compress(payload,mtime=0)))
+        self.inputs[key] = dict(rows=len(scenario['trades'])+len(scenario.get('funding',[])), bytes=len(gzip.compress(payload,mtime=0)))
         if sum(v['rows'] for v in self.inputs.values()) > self.limits['input_rows'] or sum(v['bytes'] for v in self.inputs.values()) > self.limits['compressed_bytes']:
             raise RuntimeError('campaign_input_cap')
 
@@ -129,12 +132,13 @@ def scenario_clone(parent, scenario):
     e.event_trace = []
     # Preserve already sampled messages/reports and the clock anchor. Only
     # future tape is replaced; delayed observations of past trades survive.
-    e.hidden.queue = [v for v in e.hidden.queue if v[3] != 'trade' and
+    e.hidden.queue = [v for v in e.hidden.queue if v[3] not in ('trade', 'funding') and
                       not (v[3] == 'observation' and v[4].time > parent.now)]
     import heapq
     heapq.heapify(e.hidden.queue)
     e.seed = scenario['seed']
     e.add_tape([tr for tr in scenario['trades'] if tr.time > parent.now])
+    e.add_funding([f for f in scenario.get('funding', []) if f['time'] > parent.now])
     return e
 
 

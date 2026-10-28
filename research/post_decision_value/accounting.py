@@ -206,6 +206,25 @@ class Ledger:
                      else q / (old.quantity / old.basis + quantity / price))
             self.positions[instrument.symbol] = Position(q, basis)
 
+    def pay_funding(self, instrument, date, rate, price):
+        """Explicit signed synthetic funding; positive rate is paid by longs.
+
+        Linear contracts pay quantity * price * rate USD; inverse contracts
+        pay quantity / price * rate BTC. No funding schedule is implied.
+        """
+        if (not instrument.is_future or not math.isfinite(rate) or
+                abs(rate) > .01 or not math.isfinite(price) or price <= 0):
+            raise ValueError('Invalid explicit funding event')
+        key = f'funding:{instrument.symbol}:{date}'
+        if key in self.settled_ids:
+            return 0.
+        self.settled_ids.append(key)
+        pos = self.positions.get(instrument.symbol)
+        q = pos.quantity if pos else 0.
+        amount = -rate * (q / price if instrument.payoff == 'inverse' else q * price)
+        self.balances[instrument.currency] += amount
+        return amount
+
     def variation(self, instrument, price):
         if not instrument.is_future:raise ValueError('No variation on cash assets')
         p = self.positions.get(instrument.symbol)

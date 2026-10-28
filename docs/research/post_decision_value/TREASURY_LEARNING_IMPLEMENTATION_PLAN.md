@@ -10,7 +10,10 @@ Deliver a bounded Treasury-learning experiment with a scalar value function,
 independent reference values, static data/learning plots and downloadable artifacts.
 The [strategy specification](ROLLOUT_MAXMIN_SPEC.md) defines the economic semantics;
 this plan defines implementation order, verification gates and delivery. Keep both
-consistent. The [UI plan](STATE_VALUE_EXPLORER_PLAN.md) remains a separate later task.
+consistent. The [UI plan](STATE_VALUE_EXPLORER_PLAN.md) is a separate workstream;
+its subsequent [local implementation](STATE_VALUE_EXPLORER.md) is now delivered
+with explicit Windows/browser validation gaps. The historical learning-task scope
+below remains unchanged.
 
 - Repository: [leviitzhak/keep_and_lease](https://github.com/leviitzhak/keep_and_lease)
 - Branch: `agent/btc-post-decision-value-v1`

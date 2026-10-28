@@ -82,3 +82,6 @@ public/data/*.tmp
 
 # Owner-run diagnostic output. Use --output outside the checkout for other names.
 /run-cost-diagnostics/
+
+# Standalone research explorer dependencies and local cache.
+/.venv-explorer/

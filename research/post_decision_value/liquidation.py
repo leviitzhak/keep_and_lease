@@ -65,6 +65,8 @@ def liquidate(replay, trades, label_end, rule=None, budget=None):
         if ins.expiry <= start:
             reason = 'unresolved_expired_inventory'
     events = [(t, 0, '', None) for t in dates]
+    events += [(v[0], -1, v[4]['symbol'], v[4]) for v in replay.hidden.queue
+               if v[3] == 'funding' and start < v[0] <= end]
     seen = set()
     for tr in trades:
         if not start < tr.time <= end:
@@ -81,6 +83,13 @@ def liquidate(replay, trades, label_end, rule=None, budget=None):
         if budget:
             budget.check()
             budget.event()
+        if isinstance(tr, dict):
+            ins = replay.instruments[tr['symbol']]
+            amount = p.pay_funding(ins, t, tr['rate'], tr['price'])
+            trace.append(dict(time=t, kind='synthetic_funding', symbol=ins.symbol,
+                              currency=ins.currency, amount=amount))
+            check(t)
+            continue
         if tr is None:
             for s in list(p.positions):
                 ins = replay.instruments[s]

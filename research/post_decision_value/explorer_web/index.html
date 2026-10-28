@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Treasury · State explorer</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script defer src="/app.js"></script>
+  </head>
+  <body>
+    <header>
+      <a class="brand" href="/" aria-label="Treasury explorer home"
+        ><span class="mark">T</span> TREASURY <span class="divider">/</span>
+        <span class="light">RESEARCH LAB</span></a
+      ><span class="local"><i></i> LOCAL · NO LIVE ORDERS</span>
+    </header>
+    <main>
+      <div class="heading">
+        <div>
+          <div class="eyebrow">POST-DECISION VALUE EXPLORER</div>
+          <h1>Explore the state.<br /><span>Understand the decision.</span></h1>
+          <p>
+            Inspect a real checkpoint, compare supported references, and replay
+            a declared market path.
+          </p>
+        </div>
+        <div class="run-card">
+          <span class="eyebrow">ACTIVE CHECKPOINT</span
+          ><strong id="checkpointName">Loading local model…</strong
+          ><span id="targetLabel" class="mono">Connecting</span
+          ><span class="badge amber" id="acceptance">Diagnostic only</span>
+        </div>
+      </div>
+      <nav aria-label="Explorer sections">
+        <button class="tab active" data-tab="state">
+          01 <span>State & value</span></button
+        ><button class="tab" data-tab="market">
+          02 <span>Market simulation</span></button
+        ><button class="tab" data-tab="replay">
+          03 <span>Forward replay</span></button
+        ><button class="tab" data-tab="checkpoint">
+          04 <span>Checkpoint</span>
+        </button>
+      </nav>
+      <div id="notice" role="status" aria-live="polite">
+        Loading the bundled checkpoint and development fixtures…
+      </div>
+      <section id="stateTab" class="panel active">
+        <div class="workspace">
+          <aside class="card controls">
+            <div class="card-top">
+              <h2>Define the state</h2>
+              <span class="small">01 / INPUT</span>
+            </div>
+            <label>Data source<select id="dataset"></select></label>
+            <div class="source-tag" id="sourceTag">
+              Synthetic development fixture
+            </div>
+            <div class="two">
+              <label
+                >Decision time · UTC<input
+                  id="time"
+                  type="datetime-local"
+                  step="1" /></label
+              ><label
+                >Remaining horizon · days<input
+                  id="horizon"
+                  type="number"
+                  min="0"
+                  step="any"
+              /></label>
+            </div>
+            <div class="pills">
+              <button id="boundary" class="mini">H = 0 boundary</button
+              ><button id="maturity" class="mini">Through maturity</button>
+            </div>
+            <div class="section-label">
+              CURRENT CASH <span>Benchmark stays BTC 1 / USD 10,000</span>
+            </div>
+            <div class="two">
+              <label
+                >BTC balance<input
+                  id="btc"
+                  type="number"
+                  step="any"
+                  min="0"
+                  value="1" /></label
+              ><label
+                >USD balance<input
+                  id="usd"
+                  type="number"
+                  step="any"
+                  min="0"
+                  value="10000"
+              /></label>
+            </div>
+            <div class="two">
+              <label
+                >BTC collateral<input
+                  id="btcCollateral"
+                  type="number"
+                  step="any"
+                  min="0"
+                  value="0" /></label
+              ><label
+                >USD collateral<input
+                  id="usdCollateral"
+                  type="number"
+                  step="any"
+                  min="0"
+                  value="0"
+              /></label>
+            </div>
+            <div class="section-label">INVENTORY <span>Native units</span></div>
+            <div id="inventory"></div>
+            <details>
+              <summary>Dated liabilities</summary>
+              <p class="small">
+                Negative amounts; future payments in this dataset. The
+                diagnostic model does not support liabilities.
+              </p>
+              <textarea id="flows" rows="3" aria-label="Liabilities JSON">
+[]</textarea
+              >
+              <p class="small mono">
+                [{"date": milliseconds, "currency":"USD", "amount":-50}]
+              </p>
+            </details>
+            <details>
+              <summary>Saved example states</summary>
+              <div class="pills">
+                <button class="mini" id="exampleCash">Cash only</button
+                ><button class="mini" id="exampleBuy">Buy 25, then hold</button
+                ><button class="mini" id="exampleOwned">
+                  Owned 25 · boundary
+                </button>
+              </div>
+            </details>
+          </aside>
+          <div class="results">
+            <div class="card chart-card">
+              <div class="card-top">
+                <div>
+                  <h2>Received market</h2>
+                  <p class="small" id="marketCaption">
+                    Only observations available at the selected time.
+                  </p>
+                </div>
+                <select id="chartSymbol" aria-label="Chart instrument"></select>
+              </div>
+              <div id="marketChart" class="chart">
+                <div class="empty">
+                  Evaluate a state to see received trades.
+                </div>
+              </div>
+              <div class="chart-footer">
+                <span><i class="dot teal"></i> Received prints</span
+                ><span><i class="dot orange"></i> Order limit</span
+                ><span>Trades are not quotes</span>
+              </div>
+            </div>
+            <div class="metrics">
+              <div class="metric">
+                <span>LEARNED V̂</span><strong id="predicted">—</strong
+                ><small id="predictionNote"
+                  >Immediate post-state · before fills</small
+                >
+              </div>
+              <div class="metric">
+                <span>MATCHING REFERENCE</span><strong id="reference">—</strong
+                ><small id="referenceNote"
+                  >Available only within declared support</small
+                >
+              </div>
+              <div class="metric">
+                <span>SIGNED ERROR</span><strong id="errorValue">—</strong
+                ><small>Prediction minus matching reference</small>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-top">
+                <h2>Order portfolio</h2>
+                <button class="mini" id="addOrder">+ Add order</button>
+              </div>
+              <p class="small">
+                Working and pending orders describe the current hypothetical
+                state. Candidate rows form one new instruction. Maximum six
+                uncertain versions.
+              </p>
+              <div class="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Instrument</th>
+                      <th>Quantity ±</th>
+                      <th>Limit</th>
+                      <th>State</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="orders"></tbody>
+                </table>
+              </div>
+              <div class="action-row">
+                <label
+                  >Instruction<select id="actionKind">
+                    <option value="wait">Wait</option>
+                    <option value="create">Create candidates</option>
+                    <option value="amend">Amend targets</option>
+                    <option value="cancel">Cancel targets</option>
+                    <option value="batch">Replace / batch</option>
+                  </select></label
+                ><label
+                  >Target IDs · comma separated<input
+                    id="targets"
+                    placeholder="e.g. working-1" /></label
+                ><button id="evaluate" class="primary">
+                  Evaluate state <span>↗</span>
+                </button>
+              </div>
+              <div id="admission" class="small">
+                Admission checks run against cash, native lots and uncertain
+                fills.
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-top">
+                <div>
+                  <h2>Action value surface</h2>
+                  <p class="small">
+                    Compare one candidate order against wait at the selected
+                    horizon.
+                  </p>
+                </div>
+                <select id="surfaceMetric" aria-label="Surface metric">
+                  <option value="value">Prediction</option>
+                  <option value="reference">Matching reference</option>
+                  <option value="error">Signed error</option>
+                </select>
+              </div>
+              <div class="surface-controls">
+                <label>Instrument<select id="surfaceSymbol"></select></label
+                ><label
+                  >Quantities · comma separated<input
+                    id="surfaceQ"
+                    value="0,5,25,60" /></label
+                ><label
+                  >Limit prices · comma separated<input id="surfaceP" /></label
+                ><button id="surface" class="secondary">Build surface</button>
+              </div>
+              <div id="heatmap" class="empty">
+                Generate a surface to compare quantity and price.
+              </div>
+              <div class="small" id="surfaceNote">
+                Blank references are unavailable. Infeasible orders are marked
+                separately.
+              </div>
+            </div>
+            <div class="two refs">
+              <div class="card">
+                <h3>Liquidation boundary · L_trade</h3>
+                <strong id="boundaryValue">—</strong>
+                <p class="small" id="boundaryNote">
+                  Ex-post subsequent-print closing of the current portfolio.
+                  Atomic cancellation; duration ignored.
+                </p>
+                <details>
+                  <summary>Closing trades and receipts</summary>
+                  <pre id="closingDetail"></pre>
+                </details>
+              </div>
+              <div class="card">
+                <h3>Finite toy optimum</h3>
+                <strong id="toyValue">—</strong>
+                <p class="small" id="toyNote">
+                  A separate two-opportunity quantity oracle, not a matching
+                  label for this diagnostic model.
+                </p>
+                <p class="small">
+                  Sampled max–min reference: <b>unavailable</b> for edited
+                  states.
+                </p>
+              </div>
+            </div>
+            <details class="card">
+              <summary>Observable state, instrument terms & provenance</summary>
+              <pre id="stateDetail"></pre>
+            </details>
+          </div>
+        </div>
+      </section>
+      <section id="marketTab" class="panel">
+        <div class="section-intro">
+          <div class="eyebrow">
+            OPTIONAL · REPRODUCIBLE · EXPLICITLY SYNTHETIC
+          </div>
+          <h2>A market you can vary.</h2>
+          <p>
+            Generate trade prints from a seeded joint spot, rate and
+            futures-premium process. Contractual bill receipts and native
+            funding stay in the event ledger. No historical calibration is
+            implied.
+          </p>
+        </div>
+        <div class="market-grid">
+          <div class="card">
+            <label class="toggle"
+              ><input type="checkbox" id="simEnabled" /><span
+                >Enable market simulation</span
+              ><span class="badge" id="simStatus">OFF</span></label
+            >
+            <p class="small">
+              Off uses the selected development fixture. Generation occurs only
+              when you press Generate.
+            </p>
+            <div class="two">
+              <label
+                >Seed<input id="simSeed" type="number" value="280126" /></label
+              ><label
+                >Universe<select id="simUniverse">
+                  <option value="treasury">BILL only · model can encode</option>
+                  <option value="full">BILL + BTC spot + future</option>
+                </select></label
+              ><label
+                >Spot regime<select id="simTrend">
+                  <option value="flat">Flat drift</option>
+                  <option value="up">Rising drift</option>
+                  <option value="down">Falling drift</option>
+                </select></label
+              ><label
+                >Annual spot volatility<input
+                  id="simVol"
+                  type="number"
+                  value="0.2"
+                  step="0.05"
+                  min="0"
+                  max="1" /></label
+              ><label
+                >Initial BTC / USD<input
+                  id="simSpot"
+                  type="number"
+                  value="100000" /></label
+              ><label
+                >Annual short rate<input
+                  id="simRate"
+                  type="number"
+                  value="0.04"
+                  step="0.01" /></label
+              ><label
+                >Annual futures premium<input
+                  id="simPremium"
+                  type="number"
+                  value="-0.04"
+                  step="0.01" /></label
+              ><label
+                >Liquidity multiplier<input
+                  id="simLiquidity"
+                  type="number"
+                  value="1"
+                  step="0.1"
+                  min="0.001"
+                  max="10" /></label
+              ><label
+                >Funding · bps / day<input
+                  id="simFunding"
+                  type="number"
+                  value="0"
+                  step="1"
+                  min="-100"
+                  max="100" /></label
+              ><label
+                >Fees · bps<input
+                  id="simFees"
+                  type="number"
+                  value="5"
+                  min="0"
+                  max="99" /></label
+              ><label
+                >Future native payoff<select id="simPayoff">
+                  <option value="linear">Linear · USD</option>
+                  <option value="inverse">Inverse · BTC</option>
+                </select></label
+              ><label
+                >Print cadence<select id="simStep">
+                  <option value="6">Every 6 hours</option>
+                  <option value="1">Every hour</option>
+                  <option value="24">Every day</option>
+                </select></label
+              >
+            </div>
+            <div class="action-row">
+              <button id="generate" class="primary" disabled>
+                Generate & select path ↗</button
+              ><button id="exportMarket" class="secondary">
+                Export selected dataset
+              </button>
+            </div>
+            <div id="simulationReceipt" class="small">
+              28-day strategic window + 2-day closing tail. Rates and premiums
+              mean-revert; maturity terms remain fixed.
+            </div>
+          </div>
+          <div>
+            <div class="card law">
+              <span class="eyebrow">MODEL BOUNDARIES</span>
+              <h2>The law is explicit.<br />The value is conditional.</h2>
+              <p>
+                A new simulated market is outside the checkpoint’s validated
+                training domain. A BILL-only state can still be encoded, with an
+                unvalidated label. The full universe supports accounting and
+                hold replay; its learned value is unavailable.
+              </p>
+              <ul>
+                <li>One shared BTC spot path across instruments.</li>
+                <li>
+                  Rate-discounted BILL price converges to its dated $100
+                  receipt.
+                </li>
+                <li>
+                  Futures premium mean-reverts and converges toward expiry.
+                </li>
+                <li>
+                  Strict-through fills use finite synthetic print capacity.
+                </li>
+                <li>Funding pays on actual inventory, in native currency.</li>
+              </ul>
+              <p class="small">
+                Cash carries no automatic yield. Futures expiry is beyond the
+                replay tail; closing requires actual subsequent synthetic
+                prints.
+              </p>
+            </div>
+            <div class="card">
+              <h3>Load a bounded dataset</h3>
+              <p class="small">
+                Import an exported market bundle with its SHA-256 and explicit
+                provenance. Indicative records cannot fill. Imported data never
+                gains the built-in toy oracle.
+              </p>
+              <label
+                >Market bundle · JSON<input
+                  type="file"
+                  id="marketFile"
+                  accept=".json" /></label
+              ><button id="importMarket" class="secondary">
+                Verify & select
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section id="replayTab" class="panel">
+        <div class="section-intro">
+          <div class="eyebrow">OPTIONAL · EX-POST DIAGNOSTIC</div>
+          <h2>Follow the decision through time.</h2>
+          <p>
+            The current edited state and instruction are the starting point.
+            Future tape stays out of inference. A replay is one realized path,
+            separate from the learned target.
+          </p>
+        </div>
+        <div class="card">
+          <div class="replay-controls">
+            <label
+              >Continuation policy<select id="replayPolicy">
+                <option value="hold">Submit instruction, then hold</option>
+                <option value="network">
+                  Frozen network · fixture domain only
+                </option>
+              </select></label
+            ><label
+              >Execution seed<input
+                id="replaySeed"
+                type="number"
+                value="211"
+                min="0" /></label
+            ><label
+              >Decision cap<input
+                id="replayCap"
+                type="number"
+                value="200"
+                min="1"
+                max="200" /></label
+            ><button id="replay" class="primary">Run bounded replay ↗</button>
+          </div>
+          <p class="small">
+            Fixed deadline with physical countdown. Network policy is diagnostic
+            and previously failed through create/cancel churn. Cap: 8 seconds,
+            200 decisions, 30,000 events. No training.
+          </p>
+        </div>
+        <div class="metrics">
+          <div class="metric">
+            <span>REALIZED UTILITY</span><strong id="replayValue">—</strong
+            ><small id="replayStatus">Not run</small>
+          </div>
+          <div class="metric">
+            <span>STRATEGIC FILLS</span><strong id="fillCount">—</strong
+            ><small id="decisionCount">Exact exchange events</small>
+          </div>
+          <div class="metric">
+            <span>FINAL CASH · USD / BTC</span><strong id="finalCash">—</strong
+            ><small>After bounded subsequent-print closing</small>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-top">
+            <h2>Cash through replay</h2>
+            <span class="badge">Hidden exchange ledger</span>
+          </div>
+          <div id="replayChart" class="chart">
+            <div class="empty">Replay to inspect the cash path.</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-top">
+            <h2>Event timeline</h2>
+            <select id="eventFilter" aria-label="Event visibility">
+              <option value="all">All events</option>
+              <option value="received">Received only</option>
+              <option value="hidden">Hidden only</option>
+              <option value="decisions">Policy decisions</option>
+              <option value="fills">Fills</option>
+            </select>
+          </div>
+          <p class="small">
+            Hidden events below are diagnostic output. They were not available
+            to the policy when they occurred.
+          </p>
+          <div id="timeline" class="timeline empty">No replay yet.</div>
+          <details>
+            <summary>Separate closing tail</summary>
+            <pre id="replayTail"></pre>
+          </details>
+          <button class="secondary" id="exportReplay" disabled>
+            Export complete replay JSON
+          </button>
+        </div>
+      </section>
+      <section id="checkpointTab" class="panel">
+        <div class="section-intro">
+          <div class="eyebrow">REAL WEIGHTS · OFFLINE STARTUP</div>
+          <h2>Know what you are inspecting.</h2>
+          <p>
+            The published bundle is included in this checkout. Launching the
+            explorer and evaluating a state never starts training or downloads
+            data.
+          </p>
+        </div>
+        <div class="market-grid">
+          <div class="card">
+            <label>Checkpoint<select id="checkpoints"></select></label>
+            <div class="pills">
+              <button id="selectCheckpoint" class="primary">
+                Load selected checkpoint</button
+              ><button id="downloadCheckpoint" class="secondary">
+                Download & verify published bundle
+              </button>
+            </div>
+            <p class="small">
+              The download button uses one immutable GitHub URL and verifies its
+              known size and SHA-256 before caching. A failed download leaves
+              the active model intact.
+            </p>
+            <details open>
+              <summary>Load your scalar checkpoint</summary>
+              <p class="small">
+                Tensor-only .pt format, at most 2 MB. Enter an independently
+                obtained SHA-256. Acceptance remains unverified; legacy
+                Transformer files are rejected without changing their semantics.
+              </p>
+              <label
+                >Checkpoint file<input
+                  id="checkpointFile"
+                  type="file"
+                  accept=".pt" /></label
+              ><label
+                >Expected SHA-256<input
+                  id="checkpointHash"
+                  class="mono"
+                  placeholder="64 hexadecimal characters"
+                  maxlength="64" /></label
+              ><button id="importCheckpoint" class="secondary">
+                Verify & load local file
+              </button>
+            </details>
+          </div>
+          <div class="card">
+            <h3>Manifest & acceptance</h3>
+            <pre id="manifest"></pre>
+          </div>
+        </div>
+      </section>
+      <footer>
+        <span>TREASURY / RESEARCH LAB</span
+        ><span>Local inference · Explicit provenance · No live trading</span
+        ><button id="exportSession" class="mini">Save state JSON</button>
+      </footer>
+    </main>
+  </body>
+</html>

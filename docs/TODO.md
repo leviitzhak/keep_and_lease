@@ -34,9 +34,11 @@
 - [x] Keep long-rollout sampling at K complete paths per controller, never K children
   at every node; exact enumeration is for tiny toys only. Use matched K and fresh
   winner audits. Optional later screening/stress must preserve declared target identity.
-- [ ] Later: broad synthetic spot/premium/rate/liquidity/funding market generator
-  for carry/spread invariance and stress training, calibrated on training data only.
-  Tiny Treasury fixtures now are not this broader simulator.
+- [x] Optional seeded spot/premium/rate/liquidity/funding market generator, native
+  linear/inverse funding and bounded dataset import/export. Disabled preserves input.
+  [Implementation and law](research/post_decision_value/STATE_VALUE_EXPLORER.md).
+- [ ] Train-only calibration and matched carry/spread invariance/stress-training study;
+  no checkpoint has been trained or accepted on the new synthetic market law.
 - [x] Calculate initial liquidation labels from sequential subsequent trades under
   a declared fill rule, ignoring duration in the horizon/objective. Keep cancellation
   idealization explicit and complete closing tails inside their data split. Test that
@@ -64,10 +66,13 @@
 - [x] Add exact synthetic same-policy/optimal reference values and error plots;
   extend the hold-only diagnostic to repeated frozen-network decisions. Follow
   [the implementation plan](research/post_decision_value/TREASURY_LEARNING_IMPLEMENTATION_PLAN.md).
-- [ ] Separate subsequent task: local state-value explorer with editable orders,
-  learned/exact/error displays and downloadable checkpoints, then Windows setup
-  and launcher. [UI plan](research/post_decision_value/STATE_VALUE_EXPLORER_PLAN.md).
-  Do not implement the UI in the preceding learning task.
+- [x] Standalone local explorer: real scalar inference, editable states/orders,
+  supported diagnostic references/errors, value surfaces, optional bounded replay,
+  checkpoint verification/download, Windows setup/launcher.
+  [Launch guide](research/post_decision_value/STATE_VALUE_EXPLORER.md).
+- [ ] Rendered desktop/mobile and Windows execution acceptance; cloud browser cannot
+  reach workspace localhost. Legacy Transformer UI, matching sampled-search reference
+  retrieval and repeated-replica comparisons remain unimplemented.
 - [ ] Implement and verify venue/client-hosted contingent orders before use;
   not needed for the initial learning tests.
 - [ ] Build a bounded streaming multi-year collection driver and complete data

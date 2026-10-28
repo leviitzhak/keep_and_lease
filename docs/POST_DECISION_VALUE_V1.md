@@ -4,6 +4,11 @@
 The new hold/boundary diagnostic passes; repeated collection hits its decision
 cap, so no fitted robust model or fresh test result exists. No deployment.
 
+The follow-up [local explorer and opt-in market simulator](research/post_decision_value/STATE_VALUE_EXPLORER.md)
+are now implemented, including Windows setup/launch scripts, actual checkpoint
+inference, guarded references and bounded replay. Linux setup/API tested; Windows
+and rendered browser acceptance remain unverified. No new learning campaign ran.
+
 Strategy contract: [sampled max–min rollout specification](research/post_decision_value/ROLLOUT_MAXMIN_SPEC.md)
 and [implementation plan](research/post_decision_value/TREASURY_LEARNING_IMPLEMENTATION_PLAN.md).
 This is a new target/terminal-valuation mode; existing checkpoints keep their

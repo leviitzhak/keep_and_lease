@@ -186,7 +186,9 @@ Files: [machine-readable report](treasury-maxmin-v1-report.json),
 [complete bundle](treasury-maxmin-v1.tar.gz). The inference manifest states the
 active diagnostic target, failed repeated-policy status, objective, normalization,
 scenario/controller identities, closing convention and domain restrictions.
-The local explorer and broader market simulator remain deferred.
+Subsequent UI task: the [local explorer and optional market simulator](STATE_VALUE_EXPLORER.md)
+are now implemented. They preserve this failed repeated-policy acceptance and do
+not change these learning results. No new campaign ran.
 
 Publication verification: downloaded the immutable archive in the receipt, checked
 SHA256/size and every manifest entry, safely extracted it, then ran its standalone
