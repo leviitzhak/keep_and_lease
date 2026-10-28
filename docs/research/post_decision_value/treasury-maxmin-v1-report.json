@@ -1,0 +1,53 @@
+{
+  "identity": {
+    "configuration_sha256": "74b04929eb3d17f4c7da31b41830ee6412231b861a92281769d302a39cc4b987",
+    "feature_version": "treasury-observable-v1",
+    "fixtures_sha256": "33b27ca98c901982437d5deb10c4285adee21b31fca27d5e601f575d61d3c26c",
+    "simulator": "post-decision-v1",
+    "source_commit": "09430ca8d24716253c3b2c629f235dcdf146f9ff",
+    "source_sha256": "80927c969570dd974a5980d0e2bcafb005e2191cf07684ca4f9df895782d3c5f",
+    "target_version": "sampled-maxmin-sequential-close-v1"
+  },
+  "limitations": [
+    "Tiny synthetic Treasury only; no historical profitability evidence.",
+    "K reseeds future execution delays on one fixed tape; it does not sample market movements.",
+    "Exact oracle covers the declared constant-price two-purchase toy only.",
+    "Liquidation assumes atomic cancellation and print-price closing with declared participation.",
+    "Treasury payments remain contractual projections; closing duration is ignored.",
+    "Scalar inputs/model support one BILL and the frozen objective, not the general legacy instrument universe."
+  ],
+  "parameters": 3409,
+  "passed": false,
+  "reason": "Incomplete supported replica; cycle not fitted",
+  "resources": {
+    "compressed_input_bytes": 5416,
+    "cpu_seconds": 88.318298039,
+    "decisions": 20000,
+    "exchange_report_closing_events": 43312,
+    "fitting_seconds": 0.30135768898617243,
+    "optimizer_updates": 500,
+    "oracle_controllers": 0,
+    "peak_rss_kb": 1218012,
+    "unique_input_rows": 372,
+    "wall_seconds": 88.33333100399977
+  },
+  "source_kind": "synthetic_fixture",
+  "stages": {
+    "0": "implemented",
+    "1": "implemented",
+    "2": "implemented",
+    "3": "implemented",
+    "4": "implemented_and_unit_tested; campaign_comparison_blocked_by_cap",
+    "5": "blocked_or_capped",
+    "6": "artifacts_complete; immutable publication and restoration evidence in external receipt"
+  },
+  "checkpoint_target_version": "diagnostic-hold-boundary-v1",
+  "checkpoint_label_identity": "training-diagnostic-hold-boundary-v1",
+  "test_evaluations": 0,
+  "metadata_correction": "Diagnostic hold/boundary checkpoint explicitly distinguished from the unfitted sampled max-min target; weights, optimizer and RNG unchanged.",
+  "software_validation": {
+    "post_decision_tests": 152,
+    "existing_regression_tests": 83,
+    "passed": true
+  }
+}

@@ -6,6 +6,9 @@
 earlier handoff semantics for future work. It does not change this failed run,
 which used expected-value regression and one initial instruction followed by hold.
 
+Implementation follow-up: [new scalar diagnosis and capped repeated collection](TREASURY_MAXMIN_RESULTS.md).
+This page retains the earlier failed Transformer experiment unchanged.
+
 Next work is specified in [the implementation plan](TREASURY_LEARNING_IMPLEMENTATION_PLAN.md):
 exact synthetic references and repeated decisions after the initial hold-only
 diagnostic. [The local explorer](STATE_VALUE_EXPLORER_PLAN.md) is a separate later

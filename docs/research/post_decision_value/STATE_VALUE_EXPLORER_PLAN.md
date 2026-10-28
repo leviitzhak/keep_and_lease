@@ -132,3 +132,26 @@ oracle states, checkpoint compatibility/hash failure, offline bundled startup,
 download/load and training-free inference. Deliver screenshots, example states,
 launch instructions and the actual tested environments. No application deployment
 or public hosting is authorized by this plan.
+
+## Delivered checkpoint interface (28 October implementation)
+
+See [the bounded result](TREASURY_MAXMIN_RESULTS.md) and
+[artifact receipt](treasury-maxmin-v1-artifacts.json). `selected-model.pt` uses
+`treasury-scalar-checkpoint-v1`, `treasury-observable-v1` and the active target
+`diagnostic-hold-boundary-v1`. Its `label_identity` is explicit; it must never
+be presented as an accepted max–min checkpoint. The planned max–min target
+remains `sampled-maxmin-sequential-close-v1`.
+
+Use `treasury_model.load_scalar(path, expected_identity)` for tensor-only
+restoration, `encode(observable, instruction, goal, instruments, horizon_ms)`
+and `model.predict(feature_rows)` for scalar inference. It supports one BILL
+and the fixed objective only. Feature scales are checkpoint buffers. The
+`inference-manifest.json` and `inference-examples.json` in the bundle identify
+the accepted diagnostic domain and failed repeated-policy status. Outside that
+domain, mark predictions unvalidated, including intermediate-horizon pending/
+cancel states that caused the observed churn. Future-price labels are never inputs.
+
+The bundle includes exact held/boundary arithmetic and a limited causal toy
+oracle; missing/incomplete rollout references stay unavailable. Use the receipt's
+immutable URL/hash and bounded `treasury_artifacts.restore` before loading.
+No UI or Windows launcher was built in this task.

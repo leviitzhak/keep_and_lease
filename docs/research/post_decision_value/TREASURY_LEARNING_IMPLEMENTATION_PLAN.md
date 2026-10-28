@@ -1,9 +1,10 @@
 # Treasury value learning — implementation plan
 
-28 October 2026. **Plan published; revised collector implementation pending.**
-This is the canonical implementation plan, promoted from the conversation prompt.
-Publishing it does not launch implementation, training or UI development. All
-stages below remain pending unless an existing capability is explicitly identified.
+28 October 2026. **Implementation delivered; bounded campaign capped during collection.**
+This remains the canonical implementation contract. See [actual stage results](TREASURY_MAXMIN_RESULTS.md):
+the hold/boundary diagnostic passed, but repeated collection exhausted 20,000
+decisions through cancel/repost churn. No robust refit or fresh test evaluation
+was performed. The remaining unchecked campaign steps are blocked, not complete.
 
 Deliver a bounded Treasury-learning experiment with a scalar value function,
 independent reference values, static data/learning plots and downloadable artifacts.
@@ -13,7 +14,7 @@ consistent. The [UI plan](STATE_VALUE_EXPLORER_PLAN.md) remains a separate later
 
 - Repository: [leviitzhak/keep_and_lease](https://github.com/leviitzhak/keep_and_lease)
 - Branch: `agent/btc-post-decision-value-v1`
-- Latest known implementation commit: `968f1afb47d603b3ee53dc2b0f586e423a174ce1`
+- Pre-task implementation baseline: `968f1afb47d603b3ee53dc2b0f586e423a174ce1`
 
 Later commits update the design. Fetch/inspect the current remote branch and
 preserve all subsequent work. Read AGENTS.md and:
@@ -35,7 +36,7 @@ Old expected-continuation labels/checkpoints do not implement the new target bel
 
 The optional event clock already exists in the pilot. Its nine focused tests passed
 in the preceding documentation turn; those and the old 211-test result do not
-validate the proposed collector. No revised max–min checkpoint exists yet.
+validate the proposed collector. No fitted max–min checkpoint exists: the delivered checkpoint is explicitly diagnostic-hold-boundary-v1. The collector and references now exist; see the delivered results.
 
 ## Implementation sequence
 
@@ -79,26 +80,26 @@ budget. Physical remaining time counts down even without a policy wakeup.
 
 ## Stage 0 — freeze scope, configuration and budgets
 
-- [ ] Fetch the current research branch, read AGENTS.md, preserve unrelated work
+- [x] Fetch the current research branch, read AGENTS.md, preserve unrelated work
   and verify deployment exclusion. The implementation SHA above is a baseline,
   not a request to reset the branch to an earlier revision.
-- [ ] Recover the old archive if needed; inspect encoders/model, accounting,
+- [x] Recover the old archive if needed; inspect encoders/model, accounting,
   replay, action search, clock, checkpoints and existing artifact infrastructure.
   Record source hashes, actual host, CPU/GPU, thread count and RAM.
-- [ ] Save a versioned configuration for fixtures, seeds/splits, initial holdings,
+- [x] Save a versioned configuration for fixtures, seeds/splits, initial holdings,
   floors, utility, actions, horizons, J/K, exploration, clock, liquidation rule,
   tail caps/buffers, horizon support and all runtime limits. Previously inspected
   test cases become development data; reserve fresh test cases.
-- [ ] Freeze numeric error tolerances, ranking/tie margins, quantity/constraint
+- [x] Freeze numeric error tolerances, ranking/tie margins, quantity/constraint
   gates and policy/search acceptance thresholds before fitting or inspecting the
   fresh test set. Do not weaken thresholds after seeing results.
-- [ ] Cap the first learning campaign at **240 seconds total wall time, 120 seconds
+- [x] Cap the first learning campaign at **240 seconds total wall time, 120 seconds
   fitting, 1,200 cumulative optimizer updates and one Torch/BLAS thread**, matching
   the stricter prior Treasury sanity limits. Count diagnoses/ablations, all collection
   branches, refits and evaluation against the shared budget; do not reset per stage.
   Any stricter applicable harness limit wins. These are caps, not a throughput claim.
   They bound executed experiment work, not coding or review time.
-- [ ] Also retain project ceilings of 20,000 decisions, 30,000 exchange/report events
+- [x] Also retain project ceilings of 20,000 decisions, 30,000 exchange/report events
   per replay, 100,000 input rows and 8 MB compressed input. Bound oracle enumeration
   separately inside the overall budget. Reduce fixtures/grids or stop and checkpoint
   when capped; count liquidation tails and every horizon/controller/scenario branch.
@@ -314,7 +315,7 @@ retain visible failed status. The later local UI consumes the bundle without tra
 
 Supply exact config-driven collection/training/evaluation and plot-reproduction
 commands once implemented. Do not describe a proposed CLI as already available.
-Existing baseline checks include:
+Delivered CLI: `python -m research.post_decision_value.treasury_learning {run,verify,plots}` with `--output`, and `--config` for a new run. Exact commands and artifact restoration are in [the results](TREASURY_MAXMIN_RESULTS.md). Existing baseline checks include:
 
 ```bash
 python -m unittest tests.post_decision_value.test_weighted_clock -v
@@ -367,11 +368,11 @@ market-independent profitability is a hypothesis to test, not a guarantee.
 
 ## Completion and publication
 
-- [ ] Every stage has an implemented/failed/blocked status supported by evidence.
-- [ ] Distinguish software correctness, learning acceptance, synthetic experiments,
+- [x] Every stage has an implemented/failed/blocked status in TREASURY_MAXMIN_RESULTS.md.
+- [x] Distinguish software correctness, learning acceptance, synthetic experiments,
   any actual historical results and remaining access/data limitations.
 - [ ] Reports contain exact reproduction commands and verified artifact URLs/hashes.
-- [ ] Update the strategy specification, project status, TODO and explorer interface
+- [x] Update the strategy specification, project status, TODO and explorer interface
   documentation to match the delivered implementation.
 - [ ] Push only the research branch with `[skip ci]` after checking deployment
   exclusion. Record branch/full SHA; no merge, deployment or live trading.

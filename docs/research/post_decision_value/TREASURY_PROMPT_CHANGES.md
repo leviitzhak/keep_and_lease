@@ -1,5 +1,8 @@
 # Latest prompt changes — 28 October 2026
 
+Implementation follow-up: [collector, diagnostic result and bounded failure](TREASURY_MAXMIN_RESULTS.md).
+The notes below describe the preceding design-only turn; the collector now exists.
+
 The handoff has now been promoted to
 [TREASURY_LEARNING_IMPLEMENTATION_PLAN.md](TREASURY_LEARNING_IMPLEMENTATION_PLAN.md).
 This format update adds execution stages, gates, cumulative budgets and delivery
@@ -54,8 +57,8 @@ Inner subtrajectory decisions use only network evaluations; no recursive branchi
 A long trajectory's prefixes are not automatically shorter-horizon policy targets.
 ```
 
-This makes the existing multi-horizon intention explicit. The new max–min collector
-has not been implemented; the earlier Treasury run used an initial action and hold.
+This makes the existing multi-horizon intention explicit. At publication of these design notes, the new max–min collector
+had not been implemented; the earlier Treasury run used an initial action and hold.
 
 ## 4. Explicitly reuse the existing event-based decision clock
 

@@ -389,6 +389,17 @@ class Engine:
             self.now = t
             self.observable.time = t
             h.processed += 1
+            # Opt-in research provenance. Hidden events are never passed to the
+            # policy; existing replay/checkpoint behavior is unchanged by default.
+            if hasattr(self, 'event_trace'):
+                row = dict(time=t, kind=kind, sequence=sequence,
+                           visibility='received' if kind in ('report', 'observation') else 'hidden',
+                           balances_before=h.ledger.balances.copy())
+                if kind == 'message':
+                    row.update(request=data[0], instruction=data[1].payload())
+                elif kind in ('trade', 'observation'):
+                    row.update(trade_id=data.identifier, symbol=data.symbol, price=data.price)
+                self.event_trace.append(row)
             if kind == "message":
                 request, action = data
                 live_before = set(h.orders)
@@ -487,6 +498,9 @@ class Engine:
             h.ledger.resolve_cashflows(t)
             self.observable.ledger.resolve_cashflows(t)
             self._check()
+            if hasattr(self, 'event_trace'):
+                row.update(balances_after=h.ledger.balances.copy(),
+                           positions_after={s:asdict(p) for s,p in h.ledger.positions.items()})
         self.now = until
         self.observable.time = until
         self._check()

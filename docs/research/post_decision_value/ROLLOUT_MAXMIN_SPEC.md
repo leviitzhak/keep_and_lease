@@ -1,6 +1,8 @@
 # Value-only rollout search: sampled max–min specification
 
-28 October 2026. **Design update only. Not implemented or trained.** This supersedes
+28 October 2026. **Collector/reference implementation delivered; robust training blocked by the campaign cap.**
+[Actual results and artifact semantics](TREASURY_MAXMIN_RESULTS.md). The published checkpoint
+is a hold/boundary diagnostic, not a fitted sampled-max–min model. This supersedes
 conflicting expected-value/hold-only instructions in earlier handoffs, not the
 historical descriptions of completed experiments. The next executable task is
 [TREASURY_LEARNING_IMPLEMENTATION_PLAN.md](TREASURY_LEARNING_IMPLEMENTATION_PLAN.md); the UI remains
@@ -43,7 +45,7 @@ comparison below; this supersedes the earlier handoff's immediate `V/h` rule.
 
 `research/post_decision_value/decision_clock.py` implements `DecisionSchedule` and
 is already wired into the existing pilot as optional `--decision-clock event`.
-It is not yet wired into the new max–min collector, which remains design only.
+It is also wired into `robust_rollout.py` for the new max–min collector.
 The legacy pilot CLI still defaults to fixed cadence. Use the existing event clock
 for the new repeated-decision collector; retain fixed cadence as an explicit control.
 

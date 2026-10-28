@@ -3,7 +3,10 @@
 28 October design addendum: [sampled max–min rollout specification](ROLLOUT_MAXMIN_SPEC.md)
 and [implementation plan](TREASURY_LEARNING_IMPLEMENTATION_PLAN.md) define the next task.
 The terminal U formula is retained, but its aggregation changes to sampled max–min;
-that is not implemented in the expected-utility models described below. A broader
+that is not implemented in the expected-utility models described below. The
+new collector now exists; [the bounded campaign](TREASURY_MAXMIN_RESULTS.md) passed
+tiny hold/boundary controls but capped during repeated collection. No fitted
+robust checkpoint or fresh held-out policy result was produced. A broader
 synthetic market generator and separate liquidation-value/time learning are
 documented later work, not requirements to launch now.
 The follow-up keeps initial learning on fixed-deadline countdowns and K complete

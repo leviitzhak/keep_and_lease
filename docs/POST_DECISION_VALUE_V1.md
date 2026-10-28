@@ -1,6 +1,10 @@
 # Post-decision commodity value research v1
 
-28 October design update (not implemented): [sampled max–min rollout specification](research/post_decision_value/ROLLOUT_MAXMIN_SPEC.md)
+28 October update: [implementation and capped campaign](research/post_decision_value/TREASURY_MAXMIN_RESULTS.md).
+The new hold/boundary diagnostic passes; repeated collection hits its decision
+cap, so no fitted robust model or fresh test result exists. No deployment.
+
+Strategy contract: [sampled max–min rollout specification](research/post_decision_value/ROLLOUT_MAXMIN_SPEC.md)
 and [implementation plan](research/post_decision_value/TREASURY_LEARNING_IMPLEMENTATION_PLAN.md).
 This is a new target/terminal-valuation mode; existing checkpoints keep their
 original expected-utility and accounting semantics.
@@ -11,9 +15,10 @@ Liquidation clarification: construct labels from sequential subsequent trades,
 ignore closing duration in the current objective/horizon, and defer separate
 liquidation-value/time learning. Future data supplies labels, not policy features.
 
-Latest readiness/learning result: [Treasury sanity test](research/post_decision_value/TREASURY_SANITY.md).
-211 software tests pass, but the isolated learner misses profitable Treasury
-opportunities. Years-long cloud training remains unready; no long run launched.
+Latest readiness/learning result: [bounded max–min implementation](research/post_decision_value/TREASURY_MAXMIN_RESULTS.md).
+The earlier [Treasury sanity test](research/post_decision_value/TREASURY_SANITY.md)
+remains historical failed-Transformer evidence. Tiny controls now pass, but repeated
+collection is blocked by cancel/repost churn. Years-long cloud training remains unready; no long run launched.
 
 This standalone, CPU-only research pipeline implements the 25 October 2026
 [specification](https://chatgpt.com/library?file_id=libfile_538f5a61a28c8191a0a06e56709bc1a6&account_id=personal).

@@ -3,8 +3,11 @@
 - [x] Promote the conversation prompt to the canonical
   [Treasury learning implementation plan](research/post_decision_value/TREASURY_LEARNING_IMPLEMENTATION_PLAN.md),
   preserving agreed semantics, updating incoming links and retaining the old path.
-- [ ] Execute plan stages 0–6 within their shared bounds and report each stage's
-  actual software/learning acceptance status. Publication alone does not complete them.
+- [x] Implement stages 0–6 and run the bounded campaign with explicit statuses:
+  [results](research/post_decision_value/TREASURY_MAXMIN_RESULTS.md). Diagnostic passes;
+  collection capped, no robust refit or fresh held-out policy result.
+- [ ] Separately bounded follow-up: cover short-horizon pending/cancel states,
+  then complete collect–fit–improve–evaluate without decision churn.
 
 ## Sampled max–min rollout design, 28 October 2026
 
@@ -13,34 +16,35 @@
   outcome-only max-over-controllers/min-over-complete-paths, fixed-deadline policy and
   sequential subsequent-trade liquidation with unpriced closing duration.
   [Exact design and limitations](research/post_decision_value/ROLLOUT_MAXMIN_SPEC.md).
-- [ ] Implement the small Treasury learning/reference experiment with versioned
+- [x] Implement the small Treasury learning/reference experiment with versioned
   target semantics, fixed scenario/search budgets, fresh-seed reevaluation and
   causal held-out network-only policy tests. No robustness guarantee from a few seeds.
-- [ ] At sampled training decision states, branch several supported initial horizons
+- [x] At sampled training decision states, branch several supported initial horizons
   from the same post-state and produce separate max–min labels; budget their total
   work and keep inner decisions network-only. Preserve parent checkpoints/benchmarks.
-- [ ] Reuse the implemented optional DecisionSchedule event clock in that new collector,
+- [x] Reuse the implemented optional DecisionSchedule event clock in that new collector,
   record trigger settings/reasons and compare fixed cadence only as an explicit control.
-- [ ] Publish each split's decision window, reserved closing buffer, full label-data
+- [x] Publish each split's decision window, reserved closing buffer, full label-data
   window and per-horizon support masks. H=0 can be unsupported near the raw-data end;
   do not fabricate labels or silently omit adverse incomplete closing paths.
 - [ ] Later: compare fixed-deadline decisions, constant-lookahead argmax_a V(post,T)
   with T reset unchanged each decision, and argmax_(a,h) V(post,h)/h using a frozen
   multi-horizon checkpoint and matched held-out scoring windows. Resolve raw versus
   incremental growth and ratio thresholds in that later study, not initial training.
-- [ ] Keep long-rollout sampling at K complete paths per controller, never K children
+- [x] Keep long-rollout sampling at K complete paths per controller, never K children
   at every node; exact enumeration is for tiny toys only. Use matched K and fresh
   winner audits. Optional later screening/stress must preserve declared target identity.
 - [ ] Later: broad synthetic spot/premium/rate/liquidity/funding market generator
   for carry/spread invariance and stress training, calibrated on training data only.
   Tiny Treasury fixtures now are not this broader simulator.
-- [ ] Calculate initial liquidation labels from sequential subsequent trades under
+- [x] Calculate initial liquidation labels from sequential subsequent trades under
   a declared fill rule, ignoring duration in the horizon/objective. Keep cancellation
   idealization explicit and complete closing tails inside their data split. Test that
   future trades affect labels but never current features; incomplete tails stay visible.
 - [ ] Later: separately learn liquidation value and time, use them in decisions,
   and refine cancellation/closing execution. No current model-predicted boundary labels.
-- [ ] Verify that carry learning chooses explicit BTC repurchases; do not repair
+- [x] Verify explicit BTC repurchase accounting after spot-funded futures in a bounded fixture.
+- [ ] Verify that later carry learning chooses explicit BTC repurchases; do not repair
   commodity holdings automatically in terminal liquidation.
 
 ## Weighted/event-clock research, 27 October 2026
@@ -57,7 +61,7 @@
   [the report](research/post_decision_value/TREASURY_SANITY.md).
 - [ ] Diagnose feature scaling/Tanh saturation and label/loss balance, pass the
   Treasury gate on fresh frozen cases, then carry/pair learning tests.
-- [ ] Add exact synthetic same-policy/optimal reference values and error plots;
+- [x] Add exact synthetic same-policy/optimal reference values and error plots;
   extend the hold-only diagnostic to repeated frozen-network decisions. Follow
   [the implementation plan](research/post_decision_value/TREASURY_LEARNING_IMPLEMENTATION_PLAN.md).
 - [ ] Separate subsequent task: local state-value explorer with editable orders,
