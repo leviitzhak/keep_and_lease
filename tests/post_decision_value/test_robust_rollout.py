@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 import torch
@@ -265,6 +266,17 @@ class RobustTests(unittest.TestCase):
         e.add_tape(self.scenarios()[0]['trades']);e.advance(e.now+2000)
         kinds={r['kind']:r['visibility'] for r in e.event_trace}
         self.assertEqual(kinds['message'],'hidden');self.assertEqual(kinds['report'],'received')
+
+    def test_fitting_budget_counts_validation_and_checkpoint_time_on_interrupt(self):
+        with patch('research.post_decision_value.robust_rollout.time.monotonic') as clock:
+            clock.return_value=0.
+            budget=CampaignBudget(self.c['limits'])
+            with self.assertRaisesRegex(RuntimeError,'campaign_fit_cap'):
+                with budget.fitting():
+                    clock.return_value=121.
+                    with self.assertRaisesRegex(RuntimeError,'campaign_fit_cap'):budget.fit_check()
+            self.assertEqual(budget.fit_seconds,121.)
+            self.assertIsNone(budget.fit_started)
 
 
 if __name__ == '__main__':

@@ -1,0 +1,33 @@
+{
+  "schema": "treasury-publication-receipt-v1",
+  "branch": "agent/btc-post-decision-value-v1",
+  "artifact_commit": "cd7839d46ed0a7004546d7d6a6a36844dc959b73",
+  "archive": {
+    "url": "https://raw.githubusercontent.com/leviitzhak/keep_and_lease/cd7839d46ed0a7004546d7d6a6a36844dc959b73/docs/research/post_decision_value/treasury-maxmin-v1.tar.gz",
+    "sha256": "c417e6b00cfe79cd09faa24a40d1de1190dd69bbf8ffe47fb18344647d8b2c3f",
+    "bytes": 2329910
+  },
+  "verification": {
+    "downloaded_from_immutable_github_url": true,
+    "sha256_and_size": true,
+    "all_manifest_files": true,
+    "standalone_offline_inference": true,
+    "inference_examples": 4,
+    "independent_references_recomputed": 52,
+    "model_fingerprint": "7860ed488a8743f449a51d332a932d9dcd0724664106c358177e6d5a29f040c5"
+  },
+  "checkpoint_target_version": "diagnostic-hold-boundary-v1",
+  "intended_unfitted_target": "sampled-maxmin-sequential-close-v1",
+  "acceptance": {
+    "diagnostic": true,
+    "repeated_policy": false,
+    "fresh_test_evaluations": 0
+  },
+  "software_tests": {
+    "post_decision": 153,
+    "legacy": 83,
+    "total": 236,
+    "passed": true
+  },
+  "resource_measurement_note": "The executed snapshot timed 0.301 seconds of optimizer-update work; full fitting-phase wall was not separately measured. The entire campaign was 88.33 seconds, below the 120-second fitting cap. Final source now counts normalization, validation and checkpoint I/O in the shared fitting timer, with a focused regression test. No additional training was run."
+}

@@ -5,6 +5,7 @@ are copied solely by the simulator driver. A controller's RNG is independent of
 scenario randomness and is restarted identically in each uncertainty replica.
 """
 from copy import deepcopy
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 import hashlib
 import json
@@ -36,6 +37,7 @@ class CampaignBudget:
         self.cpu_started = time.process_time()
         self.decisions = self.events = self.updates = self.oracle_controllers = 0
         self.fit_seconds = 0.
+        self.fit_started = None
         self.inputs = {}
 
     def check(self):
@@ -60,8 +62,25 @@ class CampaignBudget:
 
     def fit_check(self):
         self.check()
-        if self.updates >= self.limits['updates'] or self.fit_seconds >= self.limits['fit_seconds']:
+        elapsed = 0. if self.fit_started is None else time.monotonic()-self.fit_started
+        if self.updates >= self.limits['updates'] or self.fit_seconds+elapsed >= self.limits['fit_seconds']:
             raise RuntimeError('campaign_fit_cap')
+
+    @contextmanager
+    def fitting(self):
+        if self.fit_started is not None: raise ValueError('Nested fit phase')
+        self.fit_check()
+        self.fit_started = time.monotonic()
+        try:
+            yield
+        finally:
+            # Include normalization, validation metrics and checkpoint I/O,
+            # even when a cap or failed gate interrupts the fit.
+            self.fit_seconds += time.monotonic()-self.fit_started
+            self.fit_started = None
+            if self.fit_seconds > self.limits['fit_seconds']:
+                raise RuntimeError('campaign_fit_cap')
+            self.check()
 
     def summary(self):
         return dict(wall_seconds=time.monotonic()-self.started,

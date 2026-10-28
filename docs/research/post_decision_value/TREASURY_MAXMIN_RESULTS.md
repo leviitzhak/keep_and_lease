@@ -8,7 +8,7 @@ at the shared 20,000-decision cap during collection. No rollout refit, recollect
 or fresh held-out evaluation occurred. The test generator specifications are
 frozen, but its tape/outcomes were not evaluated. No deployment or live trading.
 
-**235 software tests passed:** 152 post-decision tests (including 24 new semantic/integration checks)
+**236 software tests passed:** 153 post-decision tests (including 25 new semantic/integration checks)
 and 83 existing funded-ledger/transfer-economics/execution regressions.
 
 ## Stage evidence
@@ -139,10 +139,14 @@ buffer are not a rolling-horizon or rate-based policy experiment.
 The campaign ran in ChatGPT's Linux workspace, on an AMD EPYC 9V74 CPU, one
 Torch/BLAS thread, Python 3.12.14, Torch 2.14.1+cpu and NumPy 2.3.5. It did not
 run on the user's Windows computer or GCP. Recorded campaign work: **88.33 wall
-seconds / 88.32 CPU seconds**, 500 optimizer updates, 0.301 fitting seconds,
+seconds / 88.32 CPU seconds**, 500 optimizer updates, 0.301 seconds of timed optimizer-update work,
 20,000 decisions, 43,312 aggregate exchange/report/closing events, 372 distinct
 input rows (5,416 compressed bytes), peak RSS approximately 1.16 GiB. Event
 counts are cumulative across branches; the per-replay ceiling is 30,000.
+The executed snapshot did not separately time the complete fitting phase; total
+campaign wall time was itself below the 120-second fitting ceiling. Final source
+counts normalization, validation and checkpoint I/O in the fitting timer, including
+interrupted fits; that correction is unit-tested without another training run.
 Software regression checks, artifact plotting and packaging are reported
 separately from campaign work; none is an additional learning campaign.
 
@@ -183,3 +187,10 @@ Files: [machine-readable report](treasury-maxmin-v1-report.json),
 active diagnostic target, failed repeated-policy status, objective, normalization,
 scenario/controller identities, closing convention and domain restrictions.
 The local explorer and broader market simulator remain deferred.
+
+Publication verification: downloaded the immutable archive in the receipt, checked
+SHA256/size and every manifest entry, safely extracted it, then ran its standalone
+`verify_inference.py`: four predictions and 52 independently recomputed reference
+values passed. The artifact commit is `cd7839d46ed0a7004546d7d6a6a36844dc959b73`.
+The bundle retains the 235-test publication snapshot; the final fitting-timer
+regression brings the delivery checkout to 236 passing tests.

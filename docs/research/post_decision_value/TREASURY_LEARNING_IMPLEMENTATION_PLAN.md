@@ -371,10 +371,10 @@ market-independent profitability is a hypothesis to test, not a guarantee.
 - [x] Every stage has an implemented/failed/blocked status in TREASURY_MAXMIN_RESULTS.md.
 - [x] Distinguish software correctness, learning acceptance, synthetic experiments,
   any actual historical results and remaining access/data limitations.
-- [ ] Reports contain exact reproduction commands and verified artifact URLs/hashes.
+- [x] Reports contain exact reproduction commands and verified artifact URLs/hashes.
 - [x] Update the strategy specification, project status, TODO and explorer interface
   documentation to match the delivered implementation.
-- [ ] Push only the research branch with `[skip ci]` after checking deployment
+- [x] Publish only the research branch with `[skip ci]` after checking deployment
   exclusion. Record branch/full SHA; no merge, deployment or live trading.
 
 Set an aggregate J*K rollout/fitting budget and obey stricter existing runtime

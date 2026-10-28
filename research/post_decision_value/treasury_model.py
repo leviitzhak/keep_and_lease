@@ -103,6 +103,13 @@ def error(model, rows):
 
 def fit_scalar(model, train, validation, updates, budget, *, optimizer=None,
                normalize=True, learning_rate=.003, callback=None):
+    with budget.fitting():
+        return _fit_scalar(model, train, validation, updates, budget, optimizer=optimizer,
+                           normalize=normalize, learning_rate=learning_rate, callback=callback)
+
+
+def _fit_scalar(model, train, validation, updates, budget, *, optimizer=None,
+                normalize=True, learning_rate=.003, callback=None):
     x, y = tensors(train)
     if any(r['target_version'] != train[0]['target_version'] or r['identity'] != train[0]['identity'] for r in validation):
         raise ValueError('Validation must match the frozen training continuation')
@@ -121,7 +128,6 @@ def fit_scalar(model, train, validation, updates, budget, *, optimizer=None,
     best_loss = float('inf')
     for step in range(updates):
         budget.fit_check()
-        start = time.monotonic()
         optimizer.zero_grad()
         model.train()
         prediction = model(x)
@@ -132,7 +138,6 @@ def fit_scalar(model, train, validation, updates, budget, *, optimizer=None,
         gradient = float(nn.utils.clip_grad_norm_(model.parameters(), 5.))
         optimizer.step()
         budget.updates += 1
-        budget.fit_seconds += time.monotonic()-start
         if (step+1) % 25 == 0 or step+1 == updates:
             tr, va = error(model, train), error(model, validation)
             with torch.no_grad():
