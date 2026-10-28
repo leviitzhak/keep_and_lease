@@ -2,8 +2,10 @@
 
 ## Sampled max–min design — 28 October 2026
 
-The next task now uses max-over-candidate/min-over-scenario terminal labels and
-the user's thresholded V/h action/horizon grid. It initially values liquidation
+The next task now uses max-over-candidate/min-over-scenario terminal labels from
+complete sampled paths, with fixed-deadline V(post-state,remaining time) decisions.
+Constant-lookahead T and horizon-selected V/h are later policy comparisons, not
+initial requirements. Exact search is restricted to tiny toys. The task values liquidation
 with idealized cancellation and contemporaneous marks, separately from execution.
 This new scalar is not the old expected-utility head and needs new label/model
 identity. [Specification](research/post_decision_value/ROLLOUT_MAXMIN_SPEC.md).

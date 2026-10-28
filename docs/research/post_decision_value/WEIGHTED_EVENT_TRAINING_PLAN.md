@@ -6,6 +6,9 @@ The terminal U formula is retained, but its aggregation changes to sampled maxâ€
 that is not implemented in the expected-utility models described below. A broader
 synthetic market generator and independent realistic liquidation learning are
 documented later work, not requirements to launch now.
+The follow-up keeps initial learning on fixed-deadline countdowns and K complete
+sampled paths per controller. Constant-lookahead and V/h policies are later
+comparisons; long trajectories never require exhaustive uncertainty trees.
 
 27 October 2026, UTC. Research branch `agent/btc-post-decision-value-v1`.
 Implemented locally: weighted utility, optional causal decision clock, regression

@@ -4,6 +4,9 @@
 and [rewritten next-task prompt](research/post_decision_value/TREASURY_LEARNING_NEXT_PROMPT.md).
 This is a new target/terminal-valuation mode; existing checkpoints keep their
 original expected-utility and accounting semantics.
+Follow-up clarification: long rollouts sample complete paths; exhaustive search is
+only a tiny-toy reference. Initial learning counts down to fixed deadlines;
+constant-lookahead and V/h horizon selection are deferred policy experiments.
 
 Latest readiness/learning result: [Treasury sanity test](research/post_decision_value/TREASURY_SANITY.md).
 211 software tests pass, but the isolated learner misses profitable Treasury

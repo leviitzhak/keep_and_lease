@@ -39,16 +39,14 @@ Use a small MLP ablation if useful; do not replace learned choices with an oracl
 
 2. VALUE AND ACTION SELECTION
 Learn one scalar decision function V(post_state,h). The post-state includes the
-submitted instruction immediately, before any arrival/fill. At each decision
-search (action,horizon) pairs and choose the greatest V(post(s,a),h)/h, subject
-to admissibility, h>=h_min>0 and V>=v_min. Include wait, deterministic ties and a
-wait fallback; required safety cancellation must not depend on a profit threshold.
-Use documented physical time units and no compounding of utility. Inside a rollout
-h cannot exceed remaining time and the outer deadline must never move forward.
-Keep the requested literal raw V/h rule. The current utility is relative to
-original episode holdings: document that past gains can favor tiny horizons.
-Show wait/incremental-value comparisons and test this artifact; do not silently
-change the user's rule. Baseline choice is explicitly noted in the specification.
+submitted instruction immediately, before any arrival/fill. For the initial
+learner, fix each rollout's terminal deadline and choose the admissible action
+maximizing V(post(s,a),r), where r is its remaining physical time. Decrease r by
+elapsed time; never move the deadline. Allow exploration during collection and
+include wait, deterministic ties and mandatory safety responses. At r=0 use the
+liquidation boundary. Learn across several initial horizons, with each rollout
+counting down independently. Constant-lookahead T and max_h V/h are later policy
+experiments, not the initial rule; neither their thresholds nor tuning is required.
 Keep weights BTC/USD=.5/.5, loss penalty lambda=10 and existing failure penalties,
 financing constraints and initial-holding floors. No actor or MCTS is required.
 
@@ -59,6 +57,13 @@ reproducible exploration. Hold each candidate's action/exploration rule fixed
 across K uncertainty replicas; vary specified execution/market uncertainty with
 separate seeds. Each replica reacts to its own received observations. Use matched
 scenario sets across candidates. Do not replay future-dependent order scripts.
+Sample complete paths: draw one next uncertainty outcome per step, reach the
+endpoint and repeat K times. Do not branch into K children at every node. Keep K
+equal across compared candidates; budget roughly J*K*L decision steps for L-step
+paths plus action-grid inference and event processing. Exact worst-case enumeration
+is only for tiny reference fixtures. Retain a fresh independent winner audit set;
+targeted stress and adaptive screening are optional later enhancements, not exact
+worst-case guarantees. Preserve temporal dependence and declared scenario laws.
 Inside subtrajectories use network evaluations only for decisions; no nested
 rollouts. At remaining time zero compute terminal liquidation utility G[j,k].
 Define R[j]=min_k G[j,k], then training target y=max_j R[j]. Do not maximize over
@@ -68,7 +73,7 @@ winning controller and worst joint-utility replica. Never independently minimize
 BTC/USD heads or combine incompatible scenario holdings.
 This is a sampled conservative search statistic, not expected utility or a
 certified worst-case guarantee. Version J,K, scenario law, policy/exploration,
-horizons, thresholds, marking mode and benchmark. Keep budgets fixed in comparisons,
+horizons, marking mode and benchmark. Keep budgets fixed in comparisons,
 reevaluate selected candidates on independent seeds, and report mean/minimum/tails
 and failures without silently changing the max–min training objective.
 Fit, recollect and evaluate in a bounded cycle. Distinguish search-generated target
@@ -114,7 +119,8 @@ Compare cash hold, analytical bill hold, network-only policy, sampled search and
 toy optimum with matching budgets/conventions. Show proxy liquidation labels.
 Test controlled +1/-1 actions versus stochastic outcomes, sample minima, stable
 controller identity, independent reevaluation, terminal marking/cancellation,
-spot repurchase, causality, fees and checkpoint restoration. Failure is a result.
+spot repurchase, causality, fees, horizon countdown and checkpoint restoration.
+Failure is a result. No exponential-tree exact search for long trajectories.
 
 6. COMPUTE AND DURABLE ARTIFACTS
 Run bounded training in the available environment and report actual host, CPU/GPU,
@@ -125,11 +131,22 @@ retrieve the committed archive when absent. Preserve configs, seeds, source/data
 identities, target matrices, reference values, plots and checkpoints/optimizer/RNG.
 Publish a small immutable inference bundle and manifest with real download URL,
 SHA256/size, feature/scaling/model versions, target semantics, J/K/scenario identity,
-objective/benchmark, horizons/thresholds, marking mode, acceptance status and examples.
+objective/benchmark, horizons/continuation rule, marking mode, acceptance status and
+examples. Later policies must also record any ratio thresholds.
 Verify loading/downloading via existing artifact infrastructure. Do not provision
 storage or invent GCS URLs. The later local UI consumes this bundle, without training.
 
 7. DEFERRED WORK, DOCUMENTATION ONLY
+After multi-horizon learning, compare the initial fixed-deadline policy against:
+(a) argmax_a V(post(s,a),T), keeping T constant at every decision, and
+(b) argmax_(a,h) V(post(s,a),h)/h over positive supported horizons, investigating
+the minimum absolute utility threshold and raw versus incremental growth then.
+Use the same frozen checkpoint first; compare attained performance on matched
+held-out starts/seeds, common real scoring windows and terminal conventions.
+Rolling planning deadlines must not extend the scoring period. A changed policy
+does not automatically inherit value calibration; record its continuation identity,
+data/horizon support and end-of-data handling. Do not implement/tune these policy
+experiments during the initial learning task.
 Keep the UI in STATE_VALUE_EXPLORER_PLAN.md as a separate later implementation:
 localhost Python inference/browser, Windows setup/launch, date/instrument/trades,
 portfolio/order editor, checkpoint downloads and matching learned/reference/error
@@ -145,7 +162,8 @@ Set an aggregate J*K rollout/fitting budget and obey stricter existing runtime
 limits; no recursive or large unattended search. Preserve unrelated work, update
 docs, and commit/push the research branch only after verifying deployment exclusion.
 No master merge, deployment, live orders, data purchases/bulk downloads, new
-infrastructure, broad simulator or years-long training. Return diagnosis, changes,
-software/learning results, plots, exact-reference scope, actual compute location,
+infrastructure, horizon-policy comparison, broad simulator or years-long training.
+Return diagnosis, changes, software/learning results, plots, exact-reference scope,
+actual compute location,
 reproduction commands, downloadable artifacts, branch/full commit and limitations.
 ```

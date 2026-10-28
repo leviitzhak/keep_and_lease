@@ -1,80 +1,52 @@
-# Specific prompt changes — 28 October 2026
+# Latest prompt changes — 28 October 2026
 
-Only the changed instructions are reproduced below. The complete standalone
-rewrite is [TREASURY_LEARNING_NEXT_PROMPT.md](TREASURY_LEARNING_NEXT_PROMPT.md).
-The precise definitions/caveats are in [ROLLOUT_MAXMIN_SPEC.md](ROLLOUT_MAXMIN_SPEC.md).
-UI separation, Windows-local hosting and durable downloads remain required later.
+These are the follow-up changes relative to the previous max–min handoff at
+`12ae4b6df5fbd970e20246f9308fce0abff6d194`. The complete standalone prompt is
+[TREASURY_LEARNING_NEXT_PROMPT.md](TREASURY_LEARNING_NEXT_PROMPT.md); definitions
+are in [ROLLOUT_MAXMIN_SPEC.md](ROLLOUT_MAXMIN_SPEC.md). The liquidation boundary,
+max–min endpoint target, explicit BTC repurchases, and separate later UI remain.
 
-## 1. Replace the expected-continuation target with sampled max–min rollout search
-
-```text
-From each post-state and horizon propose J causal candidate continuations using
-the frozen network plus reproducible exploration. For each candidate repeat K
-uncertainty scenarios while retaining the same controller/exploration rule. Actions
-may respond to each replica's own observations; future-dependent scripts may not.
-At the fixed endpoint compute G[j,k]=joint terminal liquidation utility.
-Train on y=max_j min_k G[j,k]. Use no intermediate-value maximum and no current
-prediction in the target. Preserve downward corrections and all failed paths.
-```
-
-This replaces the earlier blanket expected-utility description. It is conservative
-only over sampled scenarios, not a guaranteed worst case or market-independent
-return. Version J/K and uncertainty law; independent winner reevaluation is required.
-
-## 2. Make the action/horizon rule explicit
+## 1. Initial learning counts down to a fixed deadline
 
 ```text
-At each decision choose the admissible (action,horizon) pair maximizing
-V(post(state,action),horizon)/horizon, with horizon>=h_min>0 and V>=v_min.
-Inside subtrajectories use network evaluations, with exploration, until the fixed
-outer deadline; do not run recursive subtrajectory searches or extend that deadline.
-Define ties/wait fallback and keep safety responses outside the profit threshold.
+For the initial learner, fix each rollout's terminal deadline and choose the
+admissible action maximizing V(post(s,a),r), where r is its remaining physical
+time. Decrease r by elapsed time; never move the deadline. Allow exploration
+while collecting data. At r=0 use the liquidation boundary. Learn across several
+initial horizons, with each rollout counting down independently.
 ```
 
-The requested raw rule is retained. With original-episode growth as the benchmark,
-past gains can favor short horizons. Plot wait/incremental comparisons and document
-this issue; do not silently replace the rule or claim the benchmark choice settled.
+This replaces the previous immediate V/h selection and threshold requirement.
+No ratio-policy tuning or raw-versus-incremental choice blocks the initial test.
 
-## 3. Replace executable-unwind requirement for the initial boundary
+## 2. Sample complete long paths; exact search remains a tiny-toy diagnostic
 
 ```text
-For now L_mark directly values a copy of the portfolio by idealized immediate
-cancellation of pending/live orders and closing non-base instruments at contemporaneous
-marks, with native P&L, fees, collateral and net obligations accounted for. Retain
-USD/BTC or the configured base proxy. Label this a terminal valuation proxy.
-Train V(state,0) on this independent calculation. Within-trajectory delay/fill/cancel
-semantics remain unchanged. Independently learned liquidation and realistic unwind
-are later extensions. Do not treat market marks as executable quotes.
+For each candidate controller sample K complete uncertainty paths. Draw one next
+outcome per step, reach the endpoint, and repeat; do not branch into K children
+at every node. With J controllers and L decisions per path, budget roughly J*K*L
+rollout decision steps plus action-grid inference and exchange-event processing.
+Use matched K/scenarios, separate exploration/uncertainty seeds and fresh winner
+audits. Preserve temporal dependence. Exact enumeration is only for tiny references.
 ```
 
-## 4. Explicit BTC repurchase belongs to the learner
+Matched sampling and batching are the initial practical refinements. Adaptive
+screening and targeted stress may be studied later, with equal finalist budgets,
+fresh audit data, explicit scenario laws and no worst-case guarantee.
+
+## 3. Compare horizon policies later using the same multi-horizon network
 
 ```text
-When a futures purchase was funded by selling BTC, allow the policy to choose an
-explicit funded BTC repurchase after closing the future. Do not repair BTC holdings
-automatically inside liquidation. Test the full economic sequence. Positive scalar
-utility with finite lambda need not imply positive growth in both commodities.
+After multi-horizon learning, compare the initial fixed-deadline policy against:
+(a) argmax_a V(post(s,a),T), keeping T constant at every decision, and
+(b) argmax_(a,h) V(post(s,a),h)/h over positive supported horizons, investigating
+minimum absolute utility and raw versus incremental growth in that later study.
+Use the same frozen checkpoint first, matched held-out starts/seeds and a common
+real scoring window. Resetting a planning horizon must not extend that window.
+A changed policy does not automatically inherit value calibration; measure actual
+performance and record continuation identity, support and end-of-data handling.
+Do not implement or tune these later policies in the initial learning task.
 ```
 
-## 5. Align ground truth and plots with the new target
-
-```text
-Separate marked boundary value, exact sampled-max–min search value, full finite-toy
-optimum and attained network-only policy results. Match information/actions/scenarios
-and apply nonanticipative controller choices. Plot learned-minus-MATCHING-reference
-errors and sampled-search/policy gaps; do not call expected-versus-robust differences
-regression error. Test controllable actions separately from uncontrollable outcomes.
-```
-
-## 6. Clarify training/test causality and defer broader market simulation
-
-```text
-Use future training tape to produce offline labels, and causal network-only action
-selection on held-out tests. A test split checks generalization but does not turn
-best-on-one-tape labels into uncertainty-robust truth; execution seeds alone do not
-sample market paths. Report both search labels and actual held-out policy outcomes.
-Document a broader synthetic market generator as later work: vary spot direction,
-premiums, rates, liquidity and funding with consistent economics and no-opportunity
-controls. Only tiny Treasury fixtures are needed now. The UI also remains a separate
-later task; its displayed value semantics and bundle metadata must reflect max–min.
-```
+The UI plan and project status now reflect this separation. No model, training
+result, deployment or implementation changed in this documentation update.

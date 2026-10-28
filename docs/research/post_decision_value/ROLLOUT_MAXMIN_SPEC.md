@@ -22,32 +22,28 @@ floors remain part of the experiment/state identity. Do not silently relax them.
 A large finite loss penalty does not mathematically require both growths to be
 nonnegative; imposing that as a terminal constraint would be a separate change.
 
-At an observed state `s`, enumerate a bounded native action grid and positive
-horizon grid. The user's requested policy is literal:
+Initial learning uses a fixed terminal deadline for each rollout. At an observed
+state `s` with remaining physical time `r > 0`, enumerate a bounded native action
+grid and select:
 
-`(a*,h*) = argmax V_theta(post(s,a),h) / h`
+`a* = argmax_a V_theta(post(s,a), r)`
 
-subject to admissibility, `h >= h_min > 0`, and `V_theta(post(s,a),h) >= v_min`.
-Times have one documented unit. Multiplication by seconds/year is a display scale,
-not compounding a utility as if it were a financial return. Include wait and
-required cancellation/emergency behavior; define deterministic ties and a wait
-fallback when nothing meets the discretionary threshold. Safety responses cannot
-be disabled by a profit threshold. Never divide a zero-horizon value by zero.
+over admissible actions, with exploration during collection. Include wait,
+deterministic ties and required cancellation/emergency behavior. After elapsed
+time `dt`, query `r-dt`; never restart the deadline. At `r=0`, stop decisions and
+calculate terminal liquidation. Learn this function for several initial horizons
+H, with every individual rollout counting down to its own fixed endpoint.
 
-**Benchmark issue kept explicit:** the implemented historical utility is relative
-to original episode holdings. With that convention, already accumulated gains
-can make `V/h` favor short horizons even without new opportunity. Preserve the
-requested raw rule in the initial experiment, require finite `h_min`, and show
-wait values, `V(a,h)-V(wait,h)` and `V(a,h)-L_mark(s)` as diagnostics. Do not silently
-replace the rule with an incremental-score rule. Whether the threshold/rate should
-instead apply to incremental growth remains a preference to resolve before
-calibration or economic claims. This does not block the initial zero-gain fixtures.
+The user's follow-up explicitly defers constant-lookahead and `V/h` selection to
+later policy experiments. Neither horizon maximization nor the optional minimum
+utility threshold is an initial training-policy requirement. See the dedicated
+comparison below; this supersedes the earlier handoff's immediate `V/h` rule.
 
 ## Offline rollout labels
 
 For each sampled post-state `x` and outer horizon `H`:
 
-1. Freeze the network, action/horizon grids, threshold, decision clock, exploration
+1. Freeze the network, action grid, training horizons, decision clock, exploration
    mechanism and all economic/valuation settings for the collection stage.
 2. Propose `J` candidate continuations. Each is a reproducible causal controller:
    the network's grid selection plus a fixed exploration seed/rule, optionally
@@ -60,9 +56,9 @@ For each sampled post-state `x` and outer horizon `H`:
    Do not invent stochastic depth/fills absent an explicit model and provenance.
 4. Inside a rollout, use network evaluations for decisions, allowing the candidate's
    prescribed exploration. Do not launch nested rollout searches. At remaining
-   time `r`, eligible positive target horizons satisfy `h <= r`; selecting a new
-   lookahead never extends the fixed outer deadline. Advance all exchange events
-   exactly. Stop selecting actions at the outer deadline.
+   time `r`, choose among admissible actions by `V_theta(post(s,a),r)` plus the
+   candidate's exploration. Reduce r by actual elapsed time; advance all exchange
+   events exactly and stop selecting actions at the fixed outer deadline.
 5. Only at the endpoint evaluate terminal marked liquidation and joint utility,
    giving `G[j,k]`. Earlier marks may be recorded for diagnostics or boundary
    datasets but are not a maximum-along-time reward or an inner action oracle.
@@ -74,7 +70,7 @@ For each sampled post-state `x` and outer horizon `H`:
    bounded collect–fit–improve–evaluate campaign. This is rollout search plus
    regression, not a new actor or recursive MCTS requirement.
 
-`J`, `K`, scenario law/set, candidate seeds, horizon/grid/threshold conventions and
+`J`, `K`, scenario law/set, candidate seeds, horizon/grid/policy conventions and
 marking mode change the target and belong in its versioned identity. Squared-error
 regression across newly sampled batches learns a conditional average of this
 finite-search statistic; it is not a certified worst-case value. Do not silently
@@ -113,10 +109,40 @@ Reference: [Dabbene, Maggioni and Pflug, sampled multi-stage robust optimization
 Its distinctions between sampled and full uncertainty motivate the terminology;
 its convex-model guarantees are not claimed for this nonlinear neural experiment.
 
+## Full-path sampling instead of exhaustive long trees
+
+With two feasible uncertainty outcomes at each of L steps, an unrecombined tree
+has `2**L` leaves. This is the cost of that exhaustive representation, not a universal
+lower bound: small sufficient-state models can merge equivalent states, and some
+deterministic Treasury values have closed forms. No such general exact shortcut
+is assumed for the full order/market simulator. Exact search is confined to tiny
+bounded reference fixtures, never required for long trajectory labels.
+
+For the initial learner sample K complete uncertainty paths for each of J candidate
+controllers. At each step of one path draw only the next outcome, continue to the
+endpoint, then repeat with another scenario seed. Do not fork every node, resample
+a K-way subtree at every step, or enumerate all combinations of local outcomes.
+With L decisions per path this takes roughly J*K*L rollout decision steps, plus
+the cost of the action-grid network evaluations and exact exchange events.
+The sample minimum is an approximation; a small K has no worst-case guarantee.
+
+Recommended initial setup: a fixed matched K across candidates, separate controller
+and uncertainty seeds, batched action evaluations where supported, and independent
+winner reevaluation. Match common exogenous shocks by event/time identity where
+paths diverge; preserve each path's correct joint law and temporal dependence.
+Treat all hypothetical market/execution sampling models as explicit configuration.
+
+Possible later improvements are staged candidate screening and targeted adverse
+scenario searches. Finalists must receive equal scenario support/budgets before
+comparing minima; an adaptive or unequal K otherwise changes the statistic being
+compared. Keep a fresh random audit set and separately labeled stress results.
+If stresses enter the training minimum, version the new scenario law/support and
+target. Neither adaptive sampling nor targeted stress certifies the true worst case.
+
 ## Training tape, held-out evaluation and economic intent
 
 Train and calibrate on training/development history. Test frozen checkpoint/grid/
-threshold settings on chronological held-out history, with all full tails kept
+policy settings on chronological held-out history, with all full tails kept
 inside their split. The executed held-out policy uses only received information
 and network inference. Do not use the realized future test tape to choose its
 current action. Offline oracle labels may be computed separately afterward for
@@ -206,9 +232,44 @@ Plot losses plus learned-minus-matching-reference errors. Never compare the new
 robust head against expected utility and label that discrepancy a regression error.
 Declare all reference supports; no exact claims outside the small specified model.
 
+## Later comparison of horizon-selection policies
+
+Once V(s,h) is learned for several horizons, investigate the following separate
+causal policies; do not implement or tune the latter two in the initial sanity task.
+
+| Policy | Decision rule | Horizon evolution |
+| --- | --- | --- |
+| Fixed deadline, initial baseline | `argmax_a V(post(s,a),r)` | Remaining r decreases to the original terminal date. |
+| Constant lookahead, later | `argmax_a V(post(s,a),T)` | T stays constant at every decision; the planning endpoint moves forward. |
+| Rate-based lookahead, later | `argmax_(a,h) V(post(s,a),h)/h` | Rechoose h from a supported positive grid at every decision. |
+
+For the rate policy investigate a positive minimum h and the previously proposed
+minimum absolute utility v_min. Never divide V(s,0) by zero. Times have a common
+physical unit; multiplying by time/year is a display scale, not utility compounding.
+The implemented utility is relative to original episode holdings, so accumulated
+gains can favor short h without new opportunity. Examine raw and explicitly named
+incremental-score variants and wait comparisons before calibrating this later rule.
+Thresholds cannot suppress mandatory safety responses. This issue does not block
+the fixed-deadline learning experiment.
+
+Compare frozen policies on the same held-out starts, uncertainty seeds, action
+domain, real evaluation duration and terminal liquidation convention. Freeze policy
+selection/hyperparameters on validation data. Require data and trained horizon
+support for rolling lookaheads, report end-of-data handling, and do not extend the
+real scoring window when a planning horizon is reset. Record growth, failure/tail
+results, turnover, costs and computation. Inspect repeated postponement of expected
+gains: a moving planning deadline alone is not realized profit.
+
+Use the same frozen multi-horizon checkpoint for the first policy comparison.
+Changing its deployment rule can change the actual continuation; its learned
+fixed-deadline search values are not automatically calibrated values of either new
+policy. Measure their realized results separately. Any later recollection/refitting
+under a new controller must get a new policy/target identity.
+
 ## Deferred next steps
 
-1. Separate local interactive explorer/Windows package, after the learning task.
+1. Horizon-policy comparison above, and a separate local interactive explorer/Windows
+   package after the learning task. Expose policy identity and horizon behavior.
 2. Broader synthetic market generator for training and stress testing: diverse spot
    paths, premium curves/mean reversion and maturity convergence, rates/cashflows,
    costs, liquidity and execution/funding shocks. Calibrate on training data only;

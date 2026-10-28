@@ -33,8 +33,9 @@ The learning task must publish immutable small inference bundles and a manifest
 with URL, hash/size, source identity, model/feature/normalization versions,
 objective, continuation policy, supported horizons, training domain, acceptance
 result and oracle support. New bundles also identify J/K, uncertainty scenarios,
-candidate-controller law, positive horizon grid/minimum, utility threshold, growth
-benchmark and terminal marking mode. UI task: add a run/checkpoint selector, user-triggered
+candidate-controller law, training horizons, countdown rule, growth benchmark and
+terminal marking mode. Later policy configurations also declare fixed lookahead or
+ratio horizon grids/minima/thresholds. UI task: add a run/checkpoint selector, user-triggered
 download, hash verification, bounded safe extraction/local cache and load-from-file.
 Use actual accessible GitHub artifact URLs or an existing verified storage access
 path. Do not assume a private GCS URI is a browser-downloadable URL. Bundle an
@@ -62,9 +63,12 @@ machine. Bound historical-data reads rather than loading the full archive.
 ## Predictions, exact references and comparison
 
 Evaluate the immediate post-state before fills. Show the value surface over actions
-and positive target horizons, the selected V/h ratio, v_min/h_min eligibility and
-wait/incremental comparisons. V(state,0) is a separate boundary view, never divided
-by zero. The new scalar predicts a sampled max–min search score; it is not called
+and supported horizons, ranking actions by V at a selected remaining time for the
+initial fixed-deadline policy. Constant-lookahead T and horizon-selected V/h are
+separate later policy experiments, not the initial learner's default. Any later
+ratio view names its h_min/v_min and raw/incremental convention; compare wait.
+V(state,0) is a separate boundary view, never divided by zero. The new scalar
+predicts a sampled max–min search score; it is not called
 expected utility or a guaranteed worst-case value. Any auxiliary BTC/USD/growth/
 failure/attainment outputs must name their aggregation (mean or joint-worst replica)
 and share one candidate controller. Never independently optimize commodity heads.
@@ -99,12 +103,15 @@ values as real historical truth. Mark out-of-training-domain inputs.
 
 - Recent received trades with order-limit lines.
 - Quantity/limit-price heatmaps for predictions, oracle references and errors;
-  add a horizon selector and V/h view; mark infeasible/ineligible pairs separately.
+  add a horizon selector; mark infeasible pairs separately. Reserve a separately
+  labeled V/h view and policy selector for the later horizon-policy study.
 - Compare several order portfolios against wait.
 - Optional seeded forward replay after inference, showing decisions, arrivals,
   fills, cash, inventory, maturity receipts and final outcomes versus predictions.
   Keep future tape/hidden exchange state out of the inference input. The replay
   uses the selected declared policy, including later decisions where applicable.
+  Show whether its horizon counts down or resets; fixed lookahead must not extend
+  the replay's real scoring window. No exact long-trajectory uncertainty-tree search.
 - Distinguish synthetic/historical inputs and contractual/projected versus
   externally observed payments. Retain failed-model status.
 

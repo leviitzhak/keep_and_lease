@@ -4,14 +4,18 @@
 
 - [x] Rewrite [the learning handoff](research/post_decision_value/TREASURY_LEARNING_NEXT_PROMPT.md)
   and [changed passages](research/post_decision_value/TREASURY_PROMPT_CHANGES.md):
-  outcome-only max-over-controllers/min-over-replicas, V/h grid policy and idealized
+  outcome-only max-over-controllers/min-over-complete-paths, fixed-deadline policy and idealized
   terminal marking. [Exact design and limitations](research/post_decision_value/ROLLOUT_MAXMIN_SPEC.md).
 - [ ] Implement the small Treasury learning/reference experiment with versioned
   target semantics, fixed scenario/search budgets, fresh-seed reevaluation and
   causal held-out network-only policy tests. No robustness guarantee from a few seeds.
-- [ ] Resolve raw original-benchmark V/h versus incremental-growth scoring before
-  calibrating thresholds or making economic claims; initially retain the user's
-  literal rule and expose wait/incremental comparisons plus positive minimum horizon.
+- [ ] Later: compare fixed-deadline decisions, constant-lookahead argmax_a V(post,T)
+  with T reset unchanged each decision, and argmax_(a,h) V(post,h)/h using a frozen
+  multi-horizon checkpoint and matched held-out scoring windows. Resolve raw versus
+  incremental growth and ratio thresholds in that later study, not initial training.
+- [ ] Keep long-rollout sampling at K complete paths per controller, never K children
+  at every node; exact enumeration is for tiny toys only. Use matched K and fresh
+  winner audits. Optional later screening/stress must preserve declared target identity.
 - [ ] Later: broad synthetic spot/premium/rate/liquidity/funding market generator
   for carry/spread invariance and stress training, calibrated on training data only.
   Tiny Treasury fixtures now are not this broader simulator.
