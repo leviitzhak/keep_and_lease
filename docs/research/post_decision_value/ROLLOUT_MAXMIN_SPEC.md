@@ -39,7 +39,53 @@ later policy experiments. Neither horizon maximization nor the optional minimum
 utility threshold is an initial training-policy requirement. See the dedicated
 comparison below; this supersedes the earlier handoff's immediate `V/h` rule.
 
+## Decision times: reuse the existing observable-state event clock
+
+`research/post_decision_value/decision_clock.py` implements `DecisionSchedule` and
+is already wired into the existing pilot as optional `--decision-clock event`.
+It is not yet wired into the new max–min collector, which remains design only.
+The legacy pilot CLI still defaults to fixed cadence. Use the existing event clock
+for the new repeated-decision collector; retain fixed cadence as an explicit control.
+
+Current configurable defaults: 2 bp received price/index or premium change,
+received order/ledger/fill reports or observed instrument changes, known cashflow/
+maturity/goal dates, and a maximum 30-second wait. Changes accumulate relative to
+the last accepted post-decision state; a 100-ms minimum gap coalesces bursts.
+Therefore this is not exclusively a price-movement trigger: order reports, known
+dates and a heartbeat can also require decisions. The engine still processes every
+trade, message and risk event exactly, without exposing hidden events to the policy.
+During quiet intervals physical remaining time still decreases normally.
+
+Freeze/record the clock and its checkpoint anchor as part of continuation identity.
+Use the same configured mechanism inside subtrajectories, not a hidden half-second
+loop or future-aware trigger. For sparse Treasury fixtures, an explicitly recorded
+coarser heartbeat may be used to keep the bounded experiment practical; its value
+must be fixed before comparison and must not alter the strategic horizon. Report
+actual decision counts, reasons and exchange-event counts separately.
+
 ## Offline rollout labels
+
+At selected decision timestamps of an outer training trajectory, snapshot the
+observable state plus the simulator checkpoint needed to branch. For each selected
+candidate post-state x, evaluate MULTIPLE initial horizons `H_1,...,H_M` from that
+same state/time. Clone the state/queues/clock/RNG for each branch without mutating
+the parent trajectory; keep hidden checkpoint information out of model inputs.
+Give each branch its own strategic deadline `anchor_time+H_i`, preserving original
+benchmark holdings and other economic constraints rather than resetting past growth.
+For each H_i apply the J-controller/K-scenario procedure below and fit a separate
+sample `(x,H_i,y_i)`, where `y_i=max_j min_k G[i,j,k]`. Include H=0 boundary samples
+using the independent closing rule without continuation-controller search.
+
+Select only horizon/state pairs with declared label support, and log the chosen
+grid, anchor subsampling and coverage. This is a bounded offline collection
+operation, not a requirement to branch at every raw exchange event or a held-out
+live-policy decision. Its approximate decision cost per anchor is
+`J*K*sum_i L_i`, plus action-grid inference and liquidation/event costs. Inside each
+subtrajectory, use network-only action decisions; do not recursively launch this
+multi-horizon search. Inner visited states can become later queued training anchors.
+Shared exogenous scenario prefixes are allowed, but horizons can cause different
+actions; truncating one long policy trajectory is not generally equivalent to
+running shorter-horizon controllers from the same anchor.
 
 For each sampled post-state `x` and outer horizon `H`:
 
@@ -212,6 +258,12 @@ Sequential execution and worst-case evaluation are compatible: each scenario
 produces a feasible sequence of closing fills; the minimum selects the least
 favorable JOINT portfolio outcome among those sequences. Do not choose separate
 worst trades for different legs/currency heads that cannot coexist in one scenario.
+For example, suppose the ONLY two allowed joint closing scenarios for selling one
+unit each of A and B are `(90,110)` and `(110,90)`. Both give 200 before fees; using
+the independent minima `(90,90)` invents a 180 outcome outside that scenario set.
+If the declared timing/fill model actually permits both 90 fills together, include
+that joint scenario: different legs may close at different times. The restriction
+is against incompatible combinations, not against legitimately adverse leg prices.
 An optional adversarial trade-subsequence study would need a declared finite tail
 window and feasible quantity/timing constraints. It would change the uncertainty
 support/target and is not the initial sequential sampler. An unrestricted minimum
@@ -221,6 +273,27 @@ Bound tail scans and require their data to remain entirely within the assigned
 training/validation/test split. Exhausted data or incomplete liquidation is explicit
 incomplete/failure status under a fixed policy, never silently a favorable mark or
 dropped adverse case. Ignoring duration in utility does not permit cross-split labels.
+
+Distinguish a split's **decision/evaluation window** from its **label-data window**.
+Reserve a closing-data buffer after the last permitted strategic endpoint, inside
+that split's allocated data. Place the next split's decision window after that
+buffer; do not train on closing labels drawn from the next held-out allocation.
+For a fixed tail cap B and data end E, a conservative eligible anchor/horizon
+condition is `anchor_time + H + B <= E`, with verified instrument coverage.
+The buffer is a data/runtime bound, not a liquidation-time penalty. Predeclare it,
+retain incomplete-tail counts/statuses and do not select only successful closes.
+
+The user is correct that the final raw-data region cannot in general supply H=0
+labels for states needing future closing trades. Reserve the buffer, obtain more
+tail data within scope, or mark those state/horizon labels unsupported/right-censored;
+do not substitute zero utility or pretend exact labels exist. A settled base-only
+USD/BTC state needs no trade tail and may still have a direct H=0 label. Dates alone
+do not imply all horizons are supported; publish endpoint/buffer boundaries and
+per-horizon eligibility/coverage masks. Keep all horizons/replicas from one anchor
+together when assigning splits, and never use unsupported labels in regression.
+The network can still be queried at H=0 for an otherwise supported input state;
+missing tail data prevents an ex-post label/accuracy check, not model inference.
+
 Show simulated outcomes separately from observed executions; preserve synthetic
 labels for fixtures and inverse-source/linear-trading counterfactual provenance.
 

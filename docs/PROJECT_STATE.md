@@ -12,6 +12,9 @@ models are later work. Future trades supply targets, never current policy inputs
 This new scalar is not the old expected-utility head and needs new label/model
 identity. [Specification](research/post_decision_value/ROLLOUT_MAXMIN_SPEC.md).
 No implementation or training changed; UI and broader synthetic markets remain later.
+The prompt now explicitly requires multi-horizon labels from the same sampled state,
+separate decision/label-data windows with closing buffers, and reuse of the existing
+optional event clock. Only the clock exists in code; the revised collector is planned.
 
 ## Learning/UI sequencing — 27 October 2026
 

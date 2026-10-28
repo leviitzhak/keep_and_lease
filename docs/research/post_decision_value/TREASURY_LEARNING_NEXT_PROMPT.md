@@ -16,7 +16,7 @@ preserve all subsequent work. Read AGENTS.md and:
 - docs/research/post_decision_value/ROLLOUT_MAXMIN_SPEC.md (current strategy)
 - TREASURY_SANITY.md, TREASURY_PROMPT_CHANGES.md, WEIGHTED_EVENT_TRAINING_PLAN.md
   and STATE_VALUE_EXPLORER_PLAN.md in that same directory
-- research/post_decision_value/{treasury_sanity,model,pilot,accounting,engine}.py
+- research/post_decision_value/{treasury_sanity,model,pilot,accounting,engine,decision_clock}.py
   and the corresponding tests.
 
 CONTEXT
@@ -50,7 +50,29 @@ experiments, not the initial rule; neither their thresholds nor tuning is requir
 Keep weights BTC/USD=.5/.5, loss penalty lambda=10 and existing failure penalties,
 financing constraints and initial-holding floors. No actor or MCTS is required.
 
+Use the existing DecisionSchedule event mode for repeated-decision rollouts, keeping
+fixed cadence as an explicit control. The existing pilot already supports this
+option; its CLI default is still fixed cadence. Existing event defaults: 2 bp
+received price/index/premium change, received order/ledger reports, known cashflow/
+goal dates, 100-ms minimum gap and 30-second heartbeat. Trigger only on observable
+information/known dates; process all exchange events exactly. Record clock settings,
+anchors, reasons and counts; use the same mechanism inside subtrajectories. Sparse
+Treasury fixtures may explicitly configure a coarser heartbeat within the runtime
+budget. Physical remaining time counts down even without a policy wakeup.
+
 3. TERMINAL-ONLY ROLLOUT TARGET
+At each selected outer-trajectory collection timestamp, evaluate several configured
+horizons H_i from the SAME candidate post-state x. Clone queues/clock/RNG without
+mutating the parent or exposing hidden state to features. Produce separate samples
+(x,H_i,y_i), with y_i=max_j min_k G[i,j,k]. H=0 uses the closing boundary directly.
+Set each branch deadline to anchor_time+H_i, retaining the original benchmark and
+economic constraints; do not reset accumulated growth when changing the horizon.
+Record anchor subsampling, horizon grids and support masks. Budget the total over
+all horizons, roughly J*K*sum_i L_i decision steps per anchor plus other costs.
+This is offline label generation, not future-tape search at held-out policy decisions.
+Inner subtrajectory decisions use the network only; do not recursively branch.
+Different horizons can induce different actions, so one long trajectory truncated
+at several times does not automatically supply these horizon-specific targets.
 For each sampled post-state and outer horizon, freeze the network and settings.
 Propose J causal candidate continuation controllers using network decisions plus
 reproducible exploration. Hold each candidate's action/exploration rule fixed
@@ -98,9 +120,21 @@ Use the minimum joint liquidation outcome across the same K complete scenarios.
 At T=0 the boundary target is min_k L_trade(state,scenario_k), with no strategy
 search; deterministic inputs give one outcome. A worst case is one feasible whole
 closing sequence, not independent worst prices across legs or arbitrary future prints.
+Adverse prices for different legs are allowed together when one feasible joint
+execution scenario permits them; only incompatible cross-scenario combinations
+are prohibited. The specification gives a two-leg numerical example.
 Bound tail scans; all closing data must remain within the assigned split. Missing
 tail data/incomplete liquidation must be explicit, never replaced by convenient
 marks or omitted adverse cases. Test future-label dependence without feature leakage.
+Declare a decision/evaluation window and a longer label-data window for each split,
+reserving a closing buffer after the last strategic endpoint. The next split starts
+after that allocated buffer. For tail cap B and data end E, only request supported
+pairs such as anchor_time+H+B<=E, with verified coverage. Near the raw data end even
+H=0 may lack a closing label; mark it unsupported/right-censored, never zero utility.
+Settled USD/BTC-only states need no closing trades. Publish buffer boundaries,
+per-horizon masks and incomplete counts; do not filter away adverse incomplete paths.
+Missing tails prevent reference labels, not querying a trained V(state,0) on
+otherwise supported inputs. Distinguish unavailable ground truth from inference.
 The network's OWN future-value predictions must not supply boundary ground truth;
 this restriction does NOT prohibit future trades. Separately learning liquidation
 value/time and using those estimates in decisions is later work. Ordinary rollout

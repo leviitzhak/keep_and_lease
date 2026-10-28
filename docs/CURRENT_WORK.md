@@ -12,6 +12,10 @@ Constant-lookahead T, horizon-selected V/h, the broader synthetic market generat
 UI, separate liquidation-value/time models and more realistic cancellation are
 deferred. Exact search is only for tiny reference toys.
 This is documentation only; old models/results remain unchanged and no run launched.
+Latest clarification makes multiple horizons from each sampled post-state explicit,
+reserves split-local liquidation buffers, and reuses the existing optional event
+clock for the planned collector. The new collector remains unimplemented. The nine
+existing `test_weighted_clock.ClockTests` passed again (0.092 s test time).
 
 ## Next task scope — 27 October 2026
 

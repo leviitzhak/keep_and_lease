@@ -10,6 +10,14 @@
 - [ ] Implement the small Treasury learning/reference experiment with versioned
   target semantics, fixed scenario/search budgets, fresh-seed reevaluation and
   causal held-out network-only policy tests. No robustness guarantee from a few seeds.
+- [ ] At sampled training decision states, branch several supported initial horizons
+  from the same post-state and produce separate max–min labels; budget their total
+  work and keep inner decisions network-only. Preserve parent checkpoints/benchmarks.
+- [ ] Reuse the implemented optional DecisionSchedule event clock in that new collector,
+  record trigger settings/reasons and compare fixed cadence only as an explicit control.
+- [ ] Publish each split's decision window, reserved closing buffer, full label-data
+  window and per-horizon support masks. H=0 can be unsupported near the raw-data end;
+  do not fabricate labels or silently omit adverse incomplete closing paths.
 - [ ] Later: compare fixed-deadline decisions, constant-lookahead argmax_a V(post,T)
   with T reset unchanged each decision, and argmax_(a,h) V(post,h)/h using a frozen
   multi-horizon checkpoint and matched held-out scoring windows. Resolve raw versus
