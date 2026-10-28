@@ -1,8 +1,16 @@
 # Current work
 
+## Implementation plan published — 28 October 2026
+
+The conversation handoff is now the canonical
+[Treasury learning implementation plan](research/post_decision_value/TREASURY_LEARNING_IMPLEMENTATION_PLAN.md),
+with stages 0–6, acceptance gates, shared runtime limits and durable deliverables.
+The old prompt path is a compatibility pointer. This publication changes no strategy
+semantics or code and starts no implementation/training run; those stages are pending.
+
 ## Clarified rollout strategy — 28 October 2026
 
-[The revised prompt](research/post_decision_value/TREASURY_LEARNING_NEXT_PROMPT.md)
+[The implementation plan](research/post_decision_value/TREASURY_LEARNING_IMPLEMENTATION_PLAN.md)
 now specifies sampled max–min terminal-outcome labels using complete random paths,
 fixed-deadline action selection by V(post-state,remaining time), independently
 calculated liquidation from sequential subsequent trades and explicit policy BTC
@@ -19,7 +27,7 @@ existing `test_weighted_clock.ClockTests` passed again (0.092 s test time).
 
 ## Next task scope — 27 October 2026
 
-[The revised handoff](research/post_decision_value/TREASURY_LEARNING_NEXT_PROMPT.md)
+[The revised handoff](research/post_decision_value/TREASURY_LEARNING_IMPLEMENTATION_PLAN.md)
 adds exact synthetic policy/optimal reference values, error plots and repeated
 network decisions after an initial hold-only diagnostic. The interactive local
 explorer and Windows launcher are a **separate later implementation**, recorded

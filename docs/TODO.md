@@ -1,8 +1,14 @@
 # TODO
 
+- [x] Promote the conversation prompt to the canonical
+  [Treasury learning implementation plan](research/post_decision_value/TREASURY_LEARNING_IMPLEMENTATION_PLAN.md),
+  preserving agreed semantics, updating incoming links and retaining the old path.
+- [ ] Execute plan stages 0–6 within their shared bounds and report each stage's
+  actual software/learning acceptance status. Publication alone does not complete them.
+
 ## Sampled max–min rollout design, 28 October 2026
 
-- [x] Rewrite [the learning handoff](research/post_decision_value/TREASURY_LEARNING_NEXT_PROMPT.md)
+- [x] Rewrite [the learning handoff](research/post_decision_value/TREASURY_LEARNING_IMPLEMENTATION_PLAN.md)
   and [changed passages](research/post_decision_value/TREASURY_PROMPT_CHANGES.md):
   outcome-only max-over-controllers/min-over-complete-paths, fixed-deadline policy and
   sequential subsequent-trade liquidation with unpriced closing duration.
@@ -53,7 +59,7 @@
   Treasury gate on fresh frozen cases, then carry/pair learning tests.
 - [ ] Add exact synthetic same-policy/optimal reference values and error plots;
   extend the hold-only diagnostic to repeated frozen-network decisions. Follow
-  [the revised learning prompt](research/post_decision_value/TREASURY_LEARNING_NEXT_PROMPT.md).
+  [the implementation plan](research/post_decision_value/TREASURY_LEARNING_IMPLEMENTATION_PLAN.md).
 - [ ] Separate subsequent task: local state-value explorer with editable orders,
   learned/exact/error displays and downloadable checkpoints, then Windows setup
   and launcher. [UI plan](research/post_decision_value/STATE_VALUE_EXPLORER_PLAN.md).

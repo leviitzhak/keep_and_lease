@@ -1,7 +1,7 @@
 # Weighted growth, event-triggered decisions and longer training
 
 28 October design addendum: [sampled max–min rollout specification](ROLLOUT_MAXMIN_SPEC.md)
-and [new learning handoff](TREASURY_LEARNING_NEXT_PROMPT.md) define the next task.
+and [implementation plan](TREASURY_LEARNING_IMPLEMENTATION_PLAN.md) define the next task.
 The terminal U formula is retained, but its aggregation changes to sampled max–min;
 that is not implemented in the expected-utility models described below. A broader
 synthetic market generator and separate liquidation-value/time learning are
@@ -23,7 +23,7 @@ the learner chooses cash even for profitable bills. See
 [TREASURY_SANITY.md](TREASURY_SANITY.md). Years-long training remains blocked by
 the learning gate, streaming runner, data eligibility and cloud integration.
 
-The immediate [learning handoff](TREASURY_LEARNING_NEXT_PROMPT.md) now requires
+The immediate [learning handoff](TREASURY_LEARNING_IMPLEMENTATION_PLAN.md) now requires
 exact synthetic same-policy/optimal references and repeated-decision evaluation.
 [The interactive explorer](STATE_VALUE_EXPLORER_PLAN.md) is documented for a
 separate task afterward, including checkpoint downloads and reference/error views.

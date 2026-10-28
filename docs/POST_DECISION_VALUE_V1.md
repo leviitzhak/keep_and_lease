@@ -1,7 +1,7 @@
 # Post-decision commodity value research v1
 
 28 October design update (not implemented): [sampled max–min rollout specification](research/post_decision_value/ROLLOUT_MAXMIN_SPEC.md)
-and [rewritten next-task prompt](research/post_decision_value/TREASURY_LEARNING_NEXT_PROMPT.md).
+and [implementation plan](research/post_decision_value/TREASURY_LEARNING_IMPLEMENTATION_PLAN.md).
 This is a new target/terminal-valuation mode; existing checkpoints keep their
 original expected-utility and accounting semantics.
 Follow-up clarification: long rollouts sample complete paths; exhaustive search is

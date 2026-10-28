@@ -3,7 +3,7 @@
 28 October 2026. **Design update only. Not implemented or trained.** This supersedes
 conflicting expected-value/hold-only instructions in earlier handoffs, not the
 historical descriptions of completed experiments. The next executable task is
-[TREASURY_LEARNING_NEXT_PROMPT.md](TREASURY_LEARNING_NEXT_PROMPT.md); the UI remains
+[TREASURY_LEARNING_IMPLEMENTATION_PLAN.md](TREASURY_LEARNING_IMPLEMENTATION_PLAN.md); the UI remains
 [a separate later task](STATE_VALUE_EXPLORER_PLAN.md).
 
 ## Objective and policy

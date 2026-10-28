@@ -1,7 +1,13 @@
 # Latest prompt changes — 28 October 2026
 
+The handoff has now been promoted to
+[TREASURY_LEARNING_IMPLEMENTATION_PLAN.md](TREASURY_LEARNING_IMPLEMENTATION_PLAN.md).
+This format update adds execution stages, gates, cumulative budgets and delivery
+checks while retaining the agreed strategy. The old prompt path is a compatibility
+pointer. The notes below retain the preceding semantic clarifications.
+
 These clarifications are relative to `d1d0db2777f7caad0cd04838ee940630d9685f1c`.
-[Full standalone prompt](TREASURY_LEARNING_NEXT_PROMPT.md).
+[Canonical implementation plan](TREASURY_LEARNING_IMPLEMENTATION_PLAN.md).
 [Complete strategy definitions](ROLLOUT_MAXMIN_SPEC.md).
 Future-trade liquidation, ignored closing duration, fixed-deadline learning and
 later horizon-policy comparisons remain unchanged.

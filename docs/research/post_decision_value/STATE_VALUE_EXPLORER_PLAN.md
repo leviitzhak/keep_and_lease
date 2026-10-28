@@ -1,7 +1,7 @@
 # State-value explorer: separate next implementation
 
 Updated 28 October 2026. **Planned, not built, hosted or deployed.** Implement after the
-[Treasury learning/reference task](TREASURY_LEARNING_NEXT_PROMPT.md); this document
+[Treasury learning/reference task](TREASURY_LEARNING_IMPLEMENTATION_PLAN.md); this document
 does not authorize starting the UI during that task. A failed checkpoint can be
 inspected for diagnosis but must retain its failed acceptance status visibly.
 

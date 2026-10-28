@@ -1,5 +1,12 @@
 # Keep & Lease — Project State
 
+## Canonical implementation plan — 28 October 2026
+
+[The Treasury learning plan](research/post_decision_value/TREASURY_LEARNING_IMPLEMENTATION_PLAN.md)
+now replaces the copyable prompt as the implementation task. It specifies ordered
+stages, verification gates, cumulative budgets and artifacts. Publishing this plan
+does not implement the collector or launch training; the old prompt link redirects.
+
 ## Sampled max–min design — 28 October 2026
 
 The next task now uses max-over-candidate/min-over-scenario terminal labels from
@@ -21,7 +28,7 @@ optional event clock. Only the clock exists in code; the revised collector is pl
 The next research task is bounded Treasury learning with exact synthetic
 same-policy/optimal references, repeated decisions and downloadable inference
 artifacts. The localhost explorer is planned for a separate task afterward:
-[learning handoff](research/post_decision_value/TREASURY_LEARNING_NEXT_PROMPT.md),
+[learning handoff](research/post_decision_value/TREASURY_LEARNING_IMPLEMENTATION_PLAN.md),
 [UI implementation plan](research/post_decision_value/STATE_VALUE_EXPLORER_PLAN.md).
 No new training, oracle implementation, hosted UI or checkpoint service exists.
 
