@@ -1,52 +1,51 @@
 # Latest prompt changes — 28 October 2026
 
-These are the follow-up changes relative to the previous max–min handoff at
-`12ae4b6df5fbd970e20246f9308fce0abff6d194`. The complete standalone prompt is
-[TREASURY_LEARNING_NEXT_PROMPT.md](TREASURY_LEARNING_NEXT_PROMPT.md); definitions
-are in [ROLLOUT_MAXMIN_SPEC.md](ROLLOUT_MAXMIN_SPEC.md). The liquidation boundary,
-max–min endpoint target, explicit BTC repurchases, and separate later UI remain.
+These changes follow the liquidation clarification, relative to the handoff at
+`ecc010f83ab660fcc3874b99cd055d98ee4fa7cc`. The full standalone prompt is
+[TREASURY_LEARNING_NEXT_PROMPT.md](TREASURY_LEARNING_NEXT_PROMPT.md); the complete
+strategy is [ROLLOUT_MAXMIN_SPEC.md](ROLLOUT_MAXMIN_SPEC.md). Fixed-deadline initial
+learning, max–min path sampling and later horizon-policy experiments remain unchanged.
 
-## 1. Initial learning counts down to a fixed deadline
-
-```text
-For the initial learner, fix each rollout's terminal deadline and choose the
-admissible action maximizing V(post(s,a),r), where r is its remaining physical
-time. Decrease r by elapsed time; never move the deadline. Allow exploration
-while collecting data. At r=0 use the liquidation boundary. Learn across several
-initial horizons, with each rollout counting down independently.
-```
-
-This replaces the previous immediate V/h selection and threshold requirement.
-No ratio-policy tuning or raw-versus-incremental choice blocks the initial test.
-
-## 2. Sample complete long paths; exact search remains a tiny-toy diagnostic
+## 1. Subsequent trades supply the liquidation labels
 
 ```text
-For each candidate controller sample K complete uncertainty paths. Draw one next
-outcome per step, reach the endpoint, and repeat; do not branch into K children
-at every node. With J controllers and L decisions per path, budget roughly J*K*L
-rollout decision steps plus action-grid inference and exchange-event processing.
-Use matched K/scenarios, separate exploration/uncertainty seeds and fresh winner
-audits. Preserve temporal dependence. Exact enumeration is only for tiny references.
+Calculate L_trade from simulated liquidation using SUBSEQUENT trades sequentially
+under a fixed declared closing/fill rule. Future trades may supply supervised
+labels, but never current features or action-selection inputs. Record source trade
+IDs, timestamps, quantity assumptions, native P&L, fees and net obligations.
+The network's OWN predictions must not supply boundary ground truth; this does
+NOT prohibit future market trades. Keep the temporary cancellation idealization
+explicit and distinguish modeled fills from observed executions.
 ```
 
-Matched sampling and batching are the initial practical refinements. Adaptive
-screening and targeted stress may be studied later, with equal finalist budgets,
-fresh audit data, explicit scenario laws and no worst-case guarantee.
+This replaces the earlier contemporaneous-market-mark requirement. Initial V(s,0)
+training still uses independently calculated outcomes, without a separate liquidation
+prediction model.
 
-## 3. Compare horizon policies later using the same multi-horizon network
+## 2. Ignore liquidation duration for now
 
 ```text
-After multi-horizon learning, compare the initial fixed-deadline policy against:
-(a) argmax_a V(post(s,a),T), keeping T constant at every decision, and
-(b) argmax_(a,h) V(post(s,a),h)/h over positive supported horizons, investigating
-minimum absolute utility and raw versus incremental growth in that later study.
-Use the same frozen checkpoint first, matched held-out starts/seeds and a common
-real scoring window. Resetting a planning horizon must not extend that window.
-A changed policy does not automatically inherit value calibration; measure actual
-performance and record continuation identity, support and end-of-data handling.
-Do not implement or tune these later policies in the initial learning task.
+T measures strategic continuation only. Ignore liquidation duration in the current
+objective: do not extend T, discount for the tail, add a duration penalty or adjust
+a rate denominator. Keep timestamps for sequential execution, dated accounting and
+data-split integrity. Do not resume discretionary strategy trading during closing.
+Separate liquidation-value/time models and using their estimates are later work.
 ```
 
-The UI plan and project status now reflect this separation. No model, training
-result, deployment or implementation changed in this documentation update.
+## 3. Take the worst complete liquidation outcome
+
+```text
+Each sampled scenario includes its sequential closing tail. Compute final joint
+utility, then take the minimum across K complete outcomes for a candidate controller.
+At T=0 use min_k L_trade(state,scenario_k), without a continuation search. One
+deterministic tape/fill rule gives one outcome; repetitions alone add no uncertainty.
+Never combine independent worst trade prices across legs into an infeasible result.
+Bound tail reads and keep complete tails within the assigned train/validation/test
+split. Missing data or incomplete closing is explicit, never a convenient mark
+fallback or an omitted adverse case.
+```
+
+An alternative worst-trade/subsequence search would need a declared finite window
+and feasible timing/quantity constraints; it is not the initial sequential sampler.
+The explorer plan now separates ex-post liquidation-reference trades from current
+model inputs and identifies ignored duration. No code, checkpoint or run changed.

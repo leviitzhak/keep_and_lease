@@ -65,7 +65,9 @@ is only for tiny reference fixtures. Retain a fresh independent winner audit set
 targeted stress and adaptive screening are optional later enhancements, not exact
 worst-case guarantees. Preserve temporal dependence and declared scenario laws.
 Inside subtrajectories use network evaluations only for decisions; no nested
-rollouts. At remaining time zero compute terminal liquidation utility G[j,k].
+rollouts. At remaining strategic time zero simulate closing against subsequent
+trades sequentially, then compute liquidation utility G[j,k]. Ignore closing
+duration in T and the objective; the sampled path includes this closing tail.
 Define R[j]=min_k G[j,k], then training target y=max_j R[j]. Do not maximize over
 intermediate values, include the old prediction in y, or discard negative paths.
 The target must permit downward corrections. Record all terminal results, the
@@ -73,24 +75,36 @@ winning controller and worst joint-utility replica. Never independently minimize
 BTC/USD heads or combine incompatible scenario holdings.
 This is a sampled conservative search statistic, not expected utility or a
 certified worst-case guarantee. Version J,K, scenario law, policy/exploration,
-horizons, marking mode and benchmark. Keep budgets fixed in comparisons,
+horizons, liquidation mode and benchmark. Keep budgets fixed in comparisons,
 reevaluate selected candidates on independent seeds, and report mean/minimum/tails
 and failures without silently changing the max–min training objective.
 Fit, recollect and evaluate in a bounded cycle. Distinguish search-generated target
 from what the network-only policy actually achieves on fresh trajectories.
 
 4. INDEPENDENT LIQUIDATION BOUNDARY
-For now calculate L_mark directly on a copy of the terminal state: atomically
-cancel outstanding/in-flight instructions, release reservations, retain USD/BTC
-(or configured base proxy), and close other instruments at contemporaneous market
-marks with native P&L, configured close fees, collateral release and net liabilities.
-Record mark source/time/age; no future favorable prices, invented quotes/depth,
-double-counted receipts or forgiven debt. Missing marks must be explicit failures
-or excluded/incomplete cases, not fabricated values. Start with debt-free fixtures.
-This idealized terminal mark/cancellation is a valuation proxy, not observed
-execution. It does not change real delays or cancellation races during the rollout.
-Use L_mark as independent labels for V(state,0); future-value predictions must not
-supply boundary targets. Separately learned liquidation/realistic unwind is later.
+Calculate L_trade from simulated liquidation on a copy of the terminal state,
+using SUBSEQUENT trades sequentially under a fixed declared closing/fill rule.
+Keep idealized atomic cancellation of outstanding/in-flight instructions explicit,
+release reservations and retain USD/BTC (or configured base proxy). Close other
+inventory with native P&L, fees, collateral and net obligations; record trade IDs,
+timestamps, source, eligibility and quantity/participation assumptions. No invented
+quotes/depth, double-counted receipts or forgiven debt. Start with debt-free fixtures.
+Future trades may provide supervised labels; do not expose them to current features
+or the policy. This is simulated execution, not proof of executable liquidity.
+Ignore liquidation duration in the score: no extension of T, duration discount,
+time penalty or rate-denominator adjustment. Keep timestamps for event ordering,
+dated accounting and split integrity; never resume strategy trading during closing.
+Use the minimum joint liquidation outcome across the same K complete scenarios.
+At T=0 the boundary target is min_k L_trade(state,scenario_k), with no strategy
+search; deterministic inputs give one outcome. A worst case is one feasible whole
+closing sequence, not independent worst prices across legs or arbitrary future prints.
+Bound tail scans; all closing data must remain within the assigned split. Missing
+tail data/incomplete liquidation must be explicit, never replaced by convenient
+marks or omitted adverse cases. Test future-label dependence without feature leakage.
+The network's OWN future-value predictions must not supply boundary ground truth;
+this restriction does NOT prohibit future trades. Separately learning liquidation
+value/time and using those estimates in decisions is later work. Ordinary rollout
+execution delays and cancellation races remain unchanged.
 Carry path failures through the terminal score. Do not auto-convert USD into BTC:
 after a spot sale and future closing, the policy must explicitly repurchase BTC
 through an admissible funded spot action. A finite loss penalty is not a guarantee
@@ -99,7 +113,7 @@ that both commodity growths are nonnegative; report them individually.
 5. EXACT REFERENCES, EVALUATION AND PLOTS
 Implement an independent reference for the tiny finite toy, under identical
 valuation, actions/horizons, information and max–min scenario definitions.
-Separate exact terminal marking, the sampled-search target, the full declared-toy
+Separate calculated liquidation outcomes, the sampled-search target, the full declared-toy
 optimum, and realized policy performance. Enumerate causal controllers or justify
 the recursion; a minimum at every stage may not equal minimum over fixed full paths.
 Compare learned values to the MATCHING reference, not an expected-value reference
@@ -116,10 +130,11 @@ surfaces, predicted-vs-reference scatter and worst errors. Show generated data
 and a few trajectories with decisions, posted orders, arrivals, fills, cash,
 inventory and maturity receipts; distinguish observed and hidden events.
 Compare cash hold, analytical bill hold, network-only policy, sampled search and
-toy optimum with matching budgets/conventions. Show proxy liquidation labels.
+toy optimum with matching budgets/conventions. Show future-trade liquidation labels.
 Test controlled +1/-1 actions versus stochastic outcomes, sample minima, stable
-controller identity, independent reevaluation, terminal marking/cancellation,
-spot repurchase, causality, fees, horizon countdown and checkpoint restoration.
+controller identity, independent reevaluation, sequential liquidation/cancellation,
+ignored tail duration, split-contained tails, spot repurchase, causality, fees,
+horizon countdown and checkpoint restoration.
 Failure is a result. No exponential-tree exact search for long trajectories.
 
 6. COMPUTE AND DURABLE ARTIFACTS
@@ -131,7 +146,8 @@ retrieve the committed archive when absent. Preserve configs, seeds, source/data
 identities, target matrices, reference values, plots and checkpoints/optimizer/RNG.
 Publish a small immutable inference bundle and manifest with real download URL,
 SHA256/size, feature/scaling/model versions, target semantics, J/K/scenario identity,
-objective/benchmark, horizons/continuation rule, marking mode, acceptance status and
+objective/benchmark, horizons/continuation rule, liquidation rule/tail data references,
+duration-ignored flag, acceptance status and
 examples. Later policies must also record any ratio thresholds.
 Verify loading/downloading via existing artifact infrastructure. Do not provision
 storage or invent GCS URLs. The later local UI consumes this bundle, without training.
@@ -142,8 +158,9 @@ After multi-horizon learning, compare the initial fixed-deadline policy against:
 (b) argmax_(a,h) V(post(s,a),h)/h over positive supported horizons, investigating
 the minimum absolute utility threshold and raw versus incremental growth then.
 Use the same frozen checkpoint first; compare attained performance on matched
-held-out starts/seeds, common real scoring windows and terminal conventions.
-Rolling planning deadlines must not extend the scoring period. A changed policy
+held-out starts/seeds, common strategic scoring windows and terminal conventions.
+Rolling planning deadlines must not extend the strategic period. Subsequent closing
+tails follow the common duration-ignored rule and stay inside the split. A changed policy
 does not automatically inherit value calibration; record its continuation identity,
 data/horizon support and end-of-data handling. Do not implement/tune these policy
 experiments during the initial learning task.

@@ -4,11 +4,14 @@
 and [new learning handoff](TREASURY_LEARNING_NEXT_PROMPT.md) define the next task.
 The terminal U formula is retained, but its aggregation changes to sampled max–min;
 that is not implemented in the expected-utility models described below. A broader
-synthetic market generator and independent realistic liquidation learning are
+synthetic market generator and separate liquidation-value/time learning are
 documented later work, not requirements to launch now.
 The follow-up keeps initial learning on fixed-deadline countdowns and K complete
 sampled paths per controller. Constant-lookahead and V/h policies are later
 comparisons; long trajectories never require exhaustive uncertainty trees.
+Liquidation labels now use sequential subsequent trades under an explicit fill
+model, with duration ignored in the current score/horizon. Future labels are allowed;
+future policy inputs are not. This supersedes the proposed contemporaneous-mark mode.
 
 27 October 2026, UTC. Research branch `agent/btc-post-decision-value-v1`.
 Implemented locally: weighted utility, optional causal decision clock, regression

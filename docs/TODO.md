@@ -4,8 +4,9 @@
 
 - [x] Rewrite [the learning handoff](research/post_decision_value/TREASURY_LEARNING_NEXT_PROMPT.md)
   and [changed passages](research/post_decision_value/TREASURY_PROMPT_CHANGES.md):
-  outcome-only max-over-controllers/min-over-complete-paths, fixed-deadline policy and idealized
-  terminal marking. [Exact design and limitations](research/post_decision_value/ROLLOUT_MAXMIN_SPEC.md).
+  outcome-only max-over-controllers/min-over-complete-paths, fixed-deadline policy and
+  sequential subsequent-trade liquidation with unpriced closing duration.
+  [Exact design and limitations](research/post_decision_value/ROLLOUT_MAXMIN_SPEC.md).
 - [ ] Implement the small Treasury learning/reference experiment with versioned
   target semantics, fixed scenario/search budgets, fresh-seed reevaluation and
   causal held-out network-only policy tests. No robustness guarantee from a few seeds.
@@ -19,8 +20,12 @@
 - [ ] Later: broad synthetic spot/premium/rate/liquidity/funding market generator
   for carry/spread invariance and stress training, calibrated on training data only.
   Tiny Treasury fixtures now are not this broader simulator.
-- [ ] Later: independent liquidation estimator and realistic delayed unwind.
-  Initial market-mark/atomic-cancellation endpoint is explicitly a valuation proxy.
+- [ ] Calculate initial liquidation labels from sequential subsequent trades under
+  a declared fill rule, ignoring duration in the horizon/objective. Keep cancellation
+  idealization explicit and complete closing tails inside their data split. Test that
+  future trades affect labels but never current features; incomplete tails stay visible.
+- [ ] Later: separately learn liquidation value and time, use them in decisions,
+  and refine cancellation/closing execution. No current model-predicted boundary labels.
 - [ ] Verify that carry learning chooses explicit BTC repurchases; do not repair
   commodity holdings automatically in terminal liquidation.
 

@@ -7,6 +7,9 @@ original expected-utility and accounting semantics.
 Follow-up clarification: long rollouts sample complete paths; exhaustive search is
 only a tiny-toy reference. Initial learning counts down to fixed deadlines;
 constant-lookahead and V/h horizon selection are deferred policy experiments.
+Liquidation clarification: construct labels from sequential subsequent trades,
+ignore closing duration in the current objective/horizon, and defer separate
+liquidation-value/time learning. Future data supplies labels, not policy features.
 
 Latest readiness/learning result: [Treasury sanity test](research/post_decision_value/TREASURY_SANITY.md).
 211 software tests pass, but the isolated learner misses profitable Treasury

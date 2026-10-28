@@ -6,7 +6,9 @@ The next task now uses max-over-candidate/min-over-scenario terminal labels from
 complete sampled paths, with fixed-deadline V(post-state,remaining time) decisions.
 Constant-lookahead T and horizon-selected V/h are later policy comparisons, not
 initial requirements. Exact search is restricted to tiny toys. The task values liquidation
-with idealized cancellation and contemporaneous marks, separately from execution.
+from sequential subsequent trades, with idealized cancellation and explicitly
+modeled fills. Closing duration is ignored in the score/horizon; separate value/time
+models are later work. Future trades supply targets, never current policy inputs.
 This new scalar is not the old expected-utility head and needs new label/model
 identity. [Specification](research/post_decision_value/ROLLOUT_MAXMIN_SPEC.md).
 No implementation or training changed; UI and broader synthetic markets remain later.

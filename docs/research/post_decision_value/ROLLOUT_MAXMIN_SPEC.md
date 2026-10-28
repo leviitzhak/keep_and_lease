@@ -59,9 +59,11 @@ For each sampled post-state `x` and outer horizon `H`:
    time `r`, choose among admissible actions by `V_theta(post(s,a),r)` plus the
    candidate's exploration. Reduce r by actual elapsed time; advance all exchange
    events exactly and stop selecting actions at the fixed outer deadline.
-5. Only at the endpoint evaluate terminal marked liquidation and joint utility,
-   giving `G[j,k]`. Earlier marks may be recorded for diagnostics or boundary
-   datasets but are not a maximum-along-time reward or an inner action oracle.
+5. At the strategic endpoint stop decisions, then simulate liquidation using
+   subsequent trades in chronological order, giving final joint utility `G[j,k]`.
+   Ignore the liquidation duration in the objective/horizon for now. Earlier states
+   may supply separate boundary samples with their own subsequent-trade tails;
+   intermediate marks/values are not a maximum-along-time reward or inner action oracle.
 6. Compute `R[j] = min_k G[j,k]`, then `y(x,H) = max_j R[j]`. Train against this
    outcome-derived label, with no current-network prediction in the maximum.
    Labels must allow both downward and upward correction. Retain the full matrix,
@@ -71,7 +73,7 @@ For each sampled post-state `x` and outer horizon `H`:
    regression, not a new actor or recursive MCTS requirement.
 
 `J`, `K`, scenario law/set, candidate seeds, horizon/grid/policy conventions and
-marking mode change the target and belong in its versioned identity. Squared-error
+liquidation mode change the target and belong in its versioned identity. Squared-error
 regression across newly sampled batches learns a conditional average of this
 finite-search statistic; it is not a certified worst-case value. Do not silently
 mix old expected-continuation labels/checkpoints with this target.
@@ -162,40 +164,71 @@ mechanism with a cash/BTC ledger and explicit funding, fees and maturity cashflo
 After both legs are established, distinguish contractual price-neutrality from
 execution leg risk, margin/funding constraints and the cost of eventual conversion.
 
-## Temporary liquidation boundary, separately learnable later
+## Liquidation boundary from subsequent trades; duration ignored for now
 
-Define a separate `L_mark(state)` valuation interface returning the joint utility
-and its supporting net USD/BTC ledger, independent of future-value search. Use
-the scalar utility as the horizon-zero regression target. For this initial
-experiment the user authorizes an idealized terminal
-convention on a COPY of the simulator state:
+The user's clarification replaces the earlier contemporaneous-mark convention.
+Define a separate `L_trade(state, scenario)` calculator returning final joint
+utility, net USD/BTC ledger and trade provenance. It obtains labels from simulated
+liquidation using trades AFTER the strategic endpoint, not from the value network.
+Future observations are legitimate supervised targets; they remain unavailable
+to the state encoder and action-selection policy at the decision timestamp.
 
-- Stop strategy decisions, cancel all outstanding and in-flight order instructions
-  atomically, and release their reservations. No cancellation fee unless specified.
-- Retain USD cash and direct BTC (or the explicitly configured base proxy).
-- Close all other inventory at documented contemporaneous market marks; realize
-  native futures P&L, charge configured close fees, release collateral and account
-  for liabilities. Do not count face/redemption claims and sale proceeds twice.
-- Use the last eligible observation at or before the terminal timestamp; record
-  source/time/age and missing-mark policy. Never choose a favorable later print.
-  Inverse P&L remains native BTC; do not force it into USD without a conversion rule.
-- Process due receipts exactly once. Do not forgive debts/future obligations merely
-  because positions close; include their explicitly defined discharge/valuation.
-  Start with debt-free Treasury fixtures rather than inventing an unsupported model.
-- Apply the joint objective to final net USD/BTC and retain prior path failures.
+On a COPY of the simulator state:
 
-This is a **terminal market-mark proxy with idealized cancellation**, not realized
-liquidation or evidence of executable depth. It changes endpoint valuation only:
-ordinary in-trajectory orders, delays and cancellation races stay exact. A min
-across replicas does not make this optimistic endpoint convention executable.
+- Stop strategic decisions. Retain the initial idealized atomic cancellation of
+  outstanding/in-flight instructions and release reservations; label that assumption.
+  Ordinary in-trajectory cancellation delays/races remain unchanged.
+- Retain USD cash and direct BTC (or the configured base proxy). Submit the fixed
+  closing procedure for other inventory; no further discretionary strategy actions.
+- Consume eligible subsequent trades chronologically under a predeclared execution
+  rule, including native quantities, partial fills, participation assumptions and
+  specified execution uncertainty. Preserve trade IDs, timestamps, source and rule
+  identity. Trade prints alone do not establish executable depth or guaranteed fills.
+- Realize native futures P&L, configured fees, collateral release and net liabilities.
+  Honor dated cashflows/obligations encountered in the tail exactly once; do not
+  double-count redemption and sale proceeds or invent unobserved settlements.
+  Inverse P&L stays BTC absent an explicit conversion. Start with debt-free fixtures.
+- Apply joint utility to the resulting net USD/BTC and retain prior path failures.
+  Do not automatically buy BTC to repair the portfolio.
 
-At horizon zero, use `L_mark` directly as the boundary target for `V(state,0)`;
-create separate supervised boundary samples. Do not generate a boundary label from
-future-value predictions. A separately supervised liquidation estimator and a
-realistic delayed execution/unwind simulator are later extensions. If oracle
-valuation uses hidden ledger truth while the network sees only delayed reports,
-label the per-replica endpoint honestly; exact value conditioned on observed state
-must account for consistent hidden-state uncertainty, not disclose it as a feature.
+**Ignore liquidation duration for now:** T is the strategic horizon only. Do not
+add tail duration to T, discount for that duration, add a duration penalty, or use
+it in a rate denominator. Retain timestamps for chronological execution, dated
+accounting, provenance and split boundaries; this does not make duration an input
+to the current objective. Do not restart strategic trading during the closing tail.
+Learning a separate liquidation-value model and liquidation-time model, then using
+them in decisions/objectives, is deferred. V(s,0) can still be supervised directly
+from calculated liquidation outcomes now; that is not an extra liquidation model.
+
+The scenario's complete path includes its liquidation tail. For candidate j take
+the minimum of final joint utility across the K sampled paths, then maximize over
+candidates as above. At zero strategic horizon there is no continuation search:
+the boundary label is `min_k L_trade(s,omega_k)` under the same sampled-minimum
+definition. A deterministic tape/execution rule gives a single liquidation outcome;
+repeating identical inputs does not create new worst-case cases. Do not add an
+unbudgeted nested branching search just for liquidation.
+
+Sequential execution and worst-case evaluation are compatible: each scenario
+produces a feasible sequence of closing fills; the minimum selects the least
+favorable JOINT portfolio outcome among those sequences. Do not choose separate
+worst trades for different legs/currency heads that cannot coexist in one scenario.
+An optional adversarial trade-subsequence study would need a declared finite tail
+window and feasible quantity/timing constraints. It would change the uncertainty
+support/target and is not the initial sequential sampler. An unrestricted minimum
+over all future prints is not a defined execution model, even when time is unpriced.
+
+Bound tail scans and require their data to remain entirely within the assigned
+training/validation/test split. Exhausted data or incomplete liquidation is explicit
+incomplete/failure status under a fixed policy, never silently a favorable mark or
+dropped adverse case. Ignoring duration in utility does not permit cross-split labels.
+Show simulated outcomes separately from observed executions; preserve synthetic
+labels for fixtures and inverse-source/linear-trading counterfactual provenance.
+
+The phrase "future-value predictions must not supply boundary targets" forbids
+self-generated ground truth from the value network, NOT future market trades.
+Test that later tape changes can alter boundary labels while leaving current
+features/predictions unchanged. Hidden exchange truth may affect replica outcomes
+but must never leak into observed-state features or exact conditional-value claims.
 
 ## BTC repurchases belong to the policy
 
@@ -215,7 +248,7 @@ reduction unless a separate user change is made.
 First diagnose boundary prediction/overfit and one Treasury held to maturity;
 that hold-only task is a training diagnostic, not the intended final policy.
 Then run a tiny repeated-decision toy with finite actions/horizons/scenarios.
-Compute an independent exhaustive reference with the SAME mark convention and
+Compute an independent exhaustive reference with the SAME liquidation convention and
 sampled-max–min definition. Use causal controllers: identical observable histories
 must receive identical actions, even across different hidden future scenarios.
 A pointwise scenario-tree min at every step is not automatically equivalent to
@@ -225,8 +258,9 @@ for the tiny case or prove the chosen backward recursion matches the scenario mo
 Separate exact boundary value, exact sampled-search target, full declared-toy
 optimum, and realized frozen-policy results. Test full deterministic action coverage,
 controlled +1/-1 actions versus stochastic +1/-1 outcomes, sample-min sensitivity,
-independent winning-controller reevaluation, terminal marking/cancellation,
-no automatic BTC restoration, and backward learning corrections.
+independent winning-controller reevaluation, sequential future-trade liquidation,
+cancellation, ignored duration, complete split-contained tails, no automatic BTC
+restoration, and backward learning corrections.
 
 Plot losses plus learned-minus-matching-reference errors. Never compare the new
 robust head against expected utility and label that discrepancy a regression error.
@@ -253,10 +287,12 @@ Thresholds cannot suppress mandatory safety responses. This issue does not block
 the fixed-deadline learning experiment.
 
 Compare frozen policies on the same held-out starts, uncertainty seeds, action
-domain, real evaluation duration and terminal liquidation convention. Freeze policy
+domain, strategic evaluation duration and terminal liquidation convention. Freeze policy
 selection/hyperparameters on validation data. Require data and trained horizon
 support for rolling lookaheads, report end-of-data handling, and do not extend the
-real scoring window when a planning horizon is reset. Record growth, failure/tail
+strategic scoring window when a planning horizon is reset. Closing tails can follow
+that deadline under the common duration-ignored rule, but must stay inside the split.
+Record growth, failure/tail
 results, turnover, costs and computation. Inspect repeated postponement of expected
 gains: a moving planning deadline alone is not realized profit.
 
@@ -277,7 +313,8 @@ under a new controller must get a new policy/target identity.
    known-opportunity and no-opportunity controls to detect simulator shortcuts.
    Vary spot direction/volatility with economic carry structure held comparable;
    separately vary premiums and costs. Synthetic robustness is not historical proof.
-3. Independent liquidation learning and realistic execution-aware closing, then
+3. Separate liquidation-value and liquidation-time learning/use, more realistic
+   cancellation/closing execution, then
    historical spot/Treasury/funding/expiry data completion and long-history runner.
 
 Only tiny explicit Treasury fixtures are required now. The broader simulator,

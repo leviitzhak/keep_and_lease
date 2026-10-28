@@ -34,7 +34,8 @@ with URL, hash/size, source identity, model/feature/normalization versions,
 objective, continuation policy, supported horizons, training domain, acceptance
 result and oracle support. New bundles also identify J/K, uncertainty scenarios,
 candidate-controller law, training horizons, countdown rule, growth benchmark and
-terminal marking mode. Later policy configurations also declare fixed lookahead or
+liquidation rule, complete tail-data identity and duration-ignored flag. Later
+policy configurations also declare fixed lookahead or
 ratio horizon grids/minima/thresholds. UI task: add a run/checkpoint selector, user-triggered
 download, hash verification, bounded safe extraction/local cache and load-from-file.
 Use actual accessible GitHub artifact URLs or an existing verified storage access
@@ -72,13 +73,17 @@ predicts a sampled max–min search score; it is not called
 expected utility or a guaranteed worst-case value. Any auxiliary BTC/USD/growth/
 failure/attainment outputs must name their aggregation (mean or joint-worst replica)
 and share one candidate controller. Never independently optimize commodity heads.
-Display objective, benchmark, horizon, scenario/search budgets, marking mode and
+Display objective, benchmark, strategic horizon, scenario/search budgets, liquidation mode and
 checkpoint domain. Preserve different semantics when loading older checkpoints.
 
 For supported synthetic states show side by side:
 
-1. Independent terminal marked value `L_mark`, with the temporary idealized
-   cancellation/close-at-mark convention visibly identified.
+1. Independent calculated liquidation value `L_trade`, using sequential subsequent
+   trades, the declared fill rule and temporary idealized cancellation. Show the
+   worst joint scenario and underlying closing trades; label these as ex-post
+   reference data, unavailable to the model at the selected decision timestamp.
+   State that liquidation duration is currently ignored in score/horizon. Show
+   unavailable/incomplete when the tail is missing; never replace it silently by marks.
 2. Learned `V_hat` and any explicitly defined auxiliary commodity predictions.
 3. Exact sampled-search reference under matching J/K/controller/scenario settings,
    with signed error against that reference. Older mean-policy models instead
@@ -108,10 +113,13 @@ values as real historical truth. Mark out-of-training-domain inputs.
 - Compare several order portfolios against wait.
 - Optional seeded forward replay after inference, showing decisions, arrivals,
   fills, cash, inventory, maturity receipts and final outcomes versus predictions.
+  Show the subsequent liquidation tail separately from strategic trading. A later
+  value/time-model view is deferred; recorded trade times are provenance now.
   Keep future tape/hidden exchange state out of the inference input. The replay
   uses the selected declared policy, including later decisions where applicable.
   Show whether its horizon counts down or resets; fixed lookahead must not extend
-  the replay's real scoring window. No exact long-trajectory uncertainty-tree search.
+  the replay's strategic scoring window. Closing tails follow the common duration-
+  ignored rule and stay inside the split. No exact long-trajectory uncertainty-tree search.
 - Distinguish synthetic/historical inputs and contractual/projected versus
   externally observed payments. Retain failed-model status.
 

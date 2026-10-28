@@ -5,10 +5,12 @@
 [The revised prompt](research/post_decision_value/TREASURY_LEARNING_NEXT_PROMPT.md)
 now specifies sampled max–min terminal-outcome labels using complete random paths,
 fixed-deadline action selection by V(post-state,remaining time), independently
-calculated market-mark liquidation and explicit policy BTC repurchases.
+calculated liquidation from sequential subsequent trades and explicit policy BTC
+repurchases. Closing duration is ignored in the current objective/horizon.
 [Definitions and later horizon-policy comparisons](research/post_decision_value/ROLLOUT_MAXMIN_SPEC.md).
 Constant-lookahead T, horizon-selected V/h, the broader synthetic market generator,
-UI and realistic unwind are deferred. Exact search is only for tiny reference toys.
+UI, separate liquidation-value/time models and more realistic cancellation are
+deferred. Exact search is only for tiny reference toys.
 This is documentation only; old models/results remain unchanged and no run launched.
 
 ## Next task scope — 27 October 2026
