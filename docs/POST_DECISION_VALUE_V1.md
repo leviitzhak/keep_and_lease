@@ -1,5 +1,10 @@
 # Post-decision commodity value research v1
 
+28 October design update (not implemented): [sampled max–min rollout specification](research/post_decision_value/ROLLOUT_MAXMIN_SPEC.md)
+and [rewritten next-task prompt](research/post_decision_value/TREASURY_LEARNING_NEXT_PROMPT.md).
+This is a new target/terminal-valuation mode; existing checkpoints keep their
+original expected-utility and accounting semantics.
+
 Latest readiness/learning result: [Treasury sanity test](research/post_decision_value/TREASURY_SANITY.md).
 211 software tests pass, but the isolated learner misses profitable Treasury
 opportunities. Years-long cloud training remains unready; no long run launched.

@@ -2,6 +2,10 @@
 
 27 October 2026, UTC. Research branch `agent/btc-post-decision-value-v1`.
 
+28 October: [the new sampled max–min design](ROLLOUT_MAXMIN_SPEC.md) supersedes
+earlier handoff semantics for future work. It does not change this failed run,
+which used expected-value regression and one initial instruction followed by hold.
+
 Next work is specified in [the revised learning prompt](TREASURY_LEARNING_NEXT_PROMPT.md):
 exact synthetic references and repeated decisions after the initial hold-only
 diagnostic. [The local explorer](STATE_VALUE_EXPLORER_PLAN.md) is a separate later

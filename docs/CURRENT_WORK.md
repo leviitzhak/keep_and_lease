@@ -1,5 +1,14 @@
 # Current work
 
+## Clarified rollout strategy — 28 October 2026
+
+[The revised prompt](research/post_decision_value/TREASURY_LEARNING_NEXT_PROMPT.md)
+now specifies sampled max–min terminal-outcome labels, action/horizon selection by
+V/h above a threshold, independently calculated market-mark liquidation and explicit
+policy BTC repurchases. [Definitions and remaining benchmark issue](research/post_decision_value/ROLLOUT_MAXMIN_SPEC.md).
+The broader synthetic market generator, UI and realistic unwind are deferred.
+This is documentation only; old models/results remain unchanged and no run launched.
+
 ## Next task scope — 27 October 2026
 
 [The revised handoff](research/post_decision_value/TREASURY_LEARNING_NEXT_PROMPT.md)

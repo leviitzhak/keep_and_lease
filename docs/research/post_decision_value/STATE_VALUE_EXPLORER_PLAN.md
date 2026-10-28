@@ -1,9 +1,14 @@
 # State-value explorer: separate next implementation
 
-27 October 2026. **Planned, not built, hosted or deployed.** Implement after the
+Updated 28 October 2026. **Planned, not built, hosted or deployed.** Implement after the
 [Treasury learning/reference task](TREASURY_LEARNING_NEXT_PROMPT.md); this document
 does not authorize starting the UI during that task. A failed checkpoint can be
 inspected for diagnosis but must retain its failed acceptance status visibly.
+
+The new [sampled max–min design](ROLLOUT_MAXMIN_SPEC.md) supersedes the earlier
+expected-utility-only explorer semantics for future checkpoints. Existing archived
+models retain their original semantics. The UI must render the checkpoint's actual
+target type rather than silently relabel an old model as conservative.
 
 ## Hosting and checkpoint distribution
 
@@ -27,7 +32,9 @@ catalog or UI download control exists yet.
 The learning task must publish immutable small inference bundles and a manifest
 with URL, hash/size, source identity, model/feature/normalization versions,
 objective, continuation policy, supported horizons, training domain, acceptance
-result and oracle support. UI task: add a run/checkpoint selector, user-triggered
+result and oracle support. New bundles also identify J/K, uncertainty scenarios,
+candidate-controller law, positive horizon grid/minimum, utility threshold, growth
+benchmark and terminal marking mode. UI task: add a run/checkpoint selector, user-triggered
 download, hash verification, bounded safe extraction/local cache and load-from-file.
 Use actual accessible GitHub artifact URLs or an existing verified storage access
 path. Do not assume a private GCS URI is a browser-downloadable URL. Bundle an
@@ -54,25 +61,34 @@ machine. Bound historical-data reads rather than loading the full archive.
 
 ## Predictions, exact references and comparison
 
-Evaluate the immediate post-state before fills. Compare wait and alternative
-instructions using expected terminal BTC/USD, growth, scalar trajectory utility,
-failure and target attainment. Display objective, horizon, checkpoint domain and
-continuation identity; do not silently switch semantics. All heads use the same
-future policy. Rank by scalar expected utility, not independent commodity maxima.
+Evaluate the immediate post-state before fills. Show the value surface over actions
+and positive target horizons, the selected V/h ratio, v_min/h_min eligibility and
+wait/incremental comparisons. V(state,0) is a separate boundary view, never divided
+by zero. The new scalar predicts a sampled max–min search score; it is not called
+expected utility or a guaranteed worst-case value. Any auxiliary BTC/USD/growth/
+failure/attainment outputs must name their aggregation (mean or joint-worst replica)
+and share one candidate controller. Never independently optimize commodity heads.
+Display objective, benchmark, horizon, scenario/search budgets, marking mode and
+checkpoint domain. Preserve different semantics when loading older checkpoints.
 
 For supported synthetic states show side by side:
 
-1. Learned `V_hat` and commodity predictions.
-2. Exact `V_pi`/commodity expectations under the checkpoint's labeled continuation.
-3. Signed error `V_hat - V_pi` and corresponding holding errors.
-4. Exact optimum `V_star` under the same causal information, action grid and
-   constraints, and policy regret `V_star - V_pi` separately.
+1. Independent terminal marked value `L_mark`, with the temporary idealized
+   cancellation/close-at-mark convention visibly identified.
+2. Learned `V_hat` and any explicitly defined auxiliary commodity predictions.
+3. Exact sampled-search reference under matching J/K/controller/scenario settings,
+   with signed error against that reference. Older mean-policy models instead
+   require matching expected-policy reference values.
+4. Exact full declared finite-toy optimum under the same information, grid and
+   uncertainty criterion, displayed separately from sampled-search performance.
+5. Actual frozen network-only policy results/robustness on independent replicas,
+   separately from the rollout teacher's value. No exact label outside support.
 
-For a newly improved greedy policy evaluate its own value separately; a value
-network trained on the preceding continuation is not automatically calibrated
-for its new greedy policy. Store these policy identities rather than conflating
-the two. All optimal commodity references follow one jointly optimal policy and
-documented tie-break. A single realized future is not an expected reference value.
+Evaluate each deployed network-only policy separately from its teacher/controller
+search. Search-target accuracy is not proof that the network-only policy attains
+that score. Store policy, scenario and target identities. All optimal commodity
+references follow one jointly selected controller with a documented tie-break;
+joint-worst holdings must come from the same replica, not separate currency minima.
 
 Offer exact references only where the synthetic oracle supports the state;
 otherwise show **unavailable**, or explicitly **Monte Carlo estimate** with
@@ -83,7 +99,7 @@ values as real historical truth. Mark out-of-training-domain inputs.
 
 - Recent received trades with order-limit lines.
 - Quantity/limit-price heatmaps for predictions, oracle references and errors;
-  mark infeasible combinations separately.
+  add a horizon selector and V/h view; mark infeasible/ineligible pairs separately.
 - Compare several order portfolios against wait.
 - Optional seeded forward replay after inference, showing decisions, arrivals,
   fills, cash, inventory, maturity receipts and final outcomes versus predictions.

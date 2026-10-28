@@ -1,5 +1,12 @@
 # Weighted growth, event-triggered decisions and longer training
 
+28 October design addendum: [sampled max–min rollout specification](ROLLOUT_MAXMIN_SPEC.md)
+and [new learning handoff](TREASURY_LEARNING_NEXT_PROMPT.md) define the next task.
+The terminal U formula is retained, but its aggregation changes to sampled max–min;
+that is not implemented in the expected-utility models described below. A broader
+synthetic market generator and independent realistic liquidation learning are
+documented later work, not requirements to launch now.
+
 27 October 2026, UTC. Research branch `agent/btc-post-decision-value-v1`.
 Implemented locally: weighted utility, optional causal decision clock, regression
 tests and a bounded cached-data clock probe. Conditional orders and cloud training

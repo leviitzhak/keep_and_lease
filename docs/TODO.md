@@ -1,5 +1,25 @@
 # TODO
 
+## Sampled max–min rollout design, 28 October 2026
+
+- [x] Rewrite [the learning handoff](research/post_decision_value/TREASURY_LEARNING_NEXT_PROMPT.md)
+  and [changed passages](research/post_decision_value/TREASURY_PROMPT_CHANGES.md):
+  outcome-only max-over-controllers/min-over-replicas, V/h grid policy and idealized
+  terminal marking. [Exact design and limitations](research/post_decision_value/ROLLOUT_MAXMIN_SPEC.md).
+- [ ] Implement the small Treasury learning/reference experiment with versioned
+  target semantics, fixed scenario/search budgets, fresh-seed reevaluation and
+  causal held-out network-only policy tests. No robustness guarantee from a few seeds.
+- [ ] Resolve raw original-benchmark V/h versus incremental-growth scoring before
+  calibrating thresholds or making economic claims; initially retain the user's
+  literal rule and expose wait/incremental comparisons plus positive minimum horizon.
+- [ ] Later: broad synthetic spot/premium/rate/liquidity/funding market generator
+  for carry/spread invariance and stress training, calibrated on training data only.
+  Tiny Treasury fixtures now are not this broader simulator.
+- [ ] Later: independent liquidation estimator and realistic delayed unwind.
+  Initial market-mark/atomic-cancellation endpoint is explicitly a valuation proxy.
+- [ ] Verify that carry learning chooses explicit BTC repurchases; do not repair
+  commodity holdings automatically in terminal liquidation.
+
 ## Weighted/event-clock research, 27 October 2026
 
 - [x] Continuous weighted positive growth and penalty for each negative growth;

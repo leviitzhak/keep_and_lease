@@ -1,5 +1,14 @@
 # Keep & Lease — Project State
 
+## Sampled max–min design — 28 October 2026
+
+The next task now uses max-over-candidate/min-over-scenario terminal labels and
+the user's thresholded V/h action/horizon grid. It initially values liquidation
+with idealized cancellation and contemporaneous marks, separately from execution.
+This new scalar is not the old expected-utility head and needs new label/model
+identity. [Specification](research/post_decision_value/ROLLOUT_MAXMIN_SPEC.md).
+No implementation or training changed; UI and broader synthetic markets remain later.
+
 ## Learning/UI sequencing — 27 October 2026
 
 The next research task is bounded Treasury learning with exact synthetic
