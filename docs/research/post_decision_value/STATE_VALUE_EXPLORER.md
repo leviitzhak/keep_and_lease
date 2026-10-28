@@ -9,7 +9,20 @@ network policy failed acceptance**. There is no accepted fitted max–min model.
 ## Start on your computer
 
 Clone or update this research branch, then run from its repository directory.
-On x64 Windows with 64-bit CPython 3.12, 3.13 or 3.14 installed:
+A small standalone ZIP is also available as
+[treasury-explorer-windows.zip](treasury-explorer-windows.zip). It contains the UI,
+necessary Python modules, checkpoint, examples and launch scripts; it excludes the
+full repository, historical archives and dependencies. Extract All before running
+scripts. `PACKAGE-MANIFEST.json` records per-file hashes. Build it with
+`python scripts/package_explorer.py --output /tmp/treasury-explorer-windows.zip`.
+
+On Intel/AMD Windows use x64 CPython 3.12, 3.13 or 3.14. On Snapdragon/ARM Windows
+use native ARM64 CPython **3.12 or 3.13**: the pinned PyTorch 2.14.1 CPU index has
+Windows ARM64 wheels for those versions, but not Python 3.14. NumPy 2.3.5 also has
+matching ARM64 wheels. Native wheel availability is verified, Windows runtime is
+still untested. Install Python and its launcher first if absent; setup does not
+install Python itself. The launcher selects a compatible installed version:
+
 
 1. Run `setup_ui.cmd`. It checks Python/architecture and creates `.venv-explorer`.
    Setup installs NumPy 2.3.5 from PyPI and CPU PyTorch 2.14.1 from the official
@@ -21,8 +34,9 @@ On x64 Windows with 64-bit CPython 3.12, 3.13 or 3.14 installed:
 The first setup needs an Internet connection for dependencies. Later launches
 load the repository's checksummed checkpoint archive and development fixtures
 offline. No Node installation, frontend build, CDN, login or cloud account is
-needed. Setup does not train or open the UI automatically. If Python is missing,
-install x64 Python with its launcher. If installation fails, read the terminal
+needed. Setup requests binary wheels only, refuses to reuse an environment from another
+Python/architecture, and does not train or open the UI automatically. If Python is missing,
+install Python matching the architecture/version above, including its launcher. If installation fails, read the terminal
 error, check network/wheel availability, and rerun setup. If the port is occupied,
 stop the previous process or choose another port with the CLI.
 
@@ -42,7 +56,8 @@ is a local research server, not a hosted multi-user application.
 
 **Actually tested:** fresh setup/install and API startup on Linux x86_64,
 CPython 3.12.14, Torch 2.14.1+cpu, NumPy 2.3.5; real-checkpoint, accounting and HTTP
-integration tests; JavaScript syntax and static DOM contracts. **Not tested:**
+integration tests; JavaScript syntax and static DOM contracts. The small extracted package also passes independent inference/simulator startup.
+**Not tested:**
 Windows execution or rendered desktop/mobile interactions. The available cloud
 browser returned `ERR_CONNECTION_REFUSED` for workspace localhost; no rendered
 screenshots are claimed. The repository's prohibited Sites preview was not used.
@@ -184,11 +199,12 @@ calculation receives a busy error. These are diagnostic limits, not production S
 
 ## Verification and remaining work
 
-Validation receipt: [explorer-validation.json](explorer-validation.json). **266 tests
+Validation receipt: [explorer-validation.json](explorer-validation.json). The initial implementation had **266 tests
 passed**: 183 research (including 30 explorer/simulator tests) and 83 existing
 funded-ledger/transfer/execution regressions. A fresh installed CLI successfully
 served actual inference over HTTP, and an actual immutable download verified all
-2,329,910 bytes against the published SHA-256. No training campaign was started.
+2,329,910 bytes against the published SHA-256. No training campaign was started. The subsequent Windows package adds three
+platform/distribution tests, including actual inference from the extracted ZIP.
 
 Tests cover opt-in identity preservation; reproducible and changing seeds; shared
 spot paths; drift/maturity; native linear/inverse signed funding and delayed reports;

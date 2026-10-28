@@ -70,6 +70,9 @@
   supported diagnostic references/errors, value surfaces, optional bounded replay,
   checkpoint verification/download, Windows setup/launcher.
   [Launch guide](research/post_decision_value/STATE_VALUE_EXPLORER.md).
+- [x] Small standalone Windows ZIP with checkpoint and example data; native
+  Snapdragon/ARM64 setup gate for Python 3.12/3.13 and x64 version selection.
+  Wheel availability checked; Windows runtime acceptance remains outstanding.
 - [ ] Rendered desktop/mobile and Windows execution acceptance; cloud browser cannot
   reach workspace localhost. Legacy Transformer UI, matching sampled-search reference
   retrieval and repeated-replica comparisons remain unimplemented.

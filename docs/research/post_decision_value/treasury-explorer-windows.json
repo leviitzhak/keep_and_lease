@@ -1,0 +1,12 @@
+{
+  "file": "treasury-explorer-windows.zip",
+  "bytes": 2409193,
+  "sha256": "2aaa62c1f8751648c7ccf8f7910550e8c5cc51bcfd42937a2e50f32286e9cc54",
+  "tests": {
+    "explorer_and_package": 33,
+    "fresh_extracted_inference": "passed on Linux x64",
+    "setup": "passed on Linux x64",
+    "windows": "not executed"
+  },
+  "source": "Same repository revision as this receipt; embedded manifest identifies every file"
+}
