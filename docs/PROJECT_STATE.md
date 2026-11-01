@@ -12,6 +12,10 @@ Build an interactive research and backtesting application for strategies that al
   records four actual decision steps, all valid horizons and exact liquidation
   targets, with executable source and an auditable spreadsheet. This is a
   synthetic research diagnostic, separate from application strategy behavior.
+  Its [longer-timeline study](research/single_bill_full_search/LONGER_TIMELINES.md)
+  records 58 fits through 64 steps, exact shared-state search and measured
+  simulation budgets. The 32/64-step value estimates reached the prior error
+  tolerance with longer optimization; the tested 8/16-step fits did not.
 
 - Optional rolling worst-lease execution for amortized ranking is implemented
   on `agent/rolling-worst-lease-execution`: trailing observed price-pair bounds,

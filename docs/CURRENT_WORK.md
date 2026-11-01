@@ -7,8 +7,16 @@ synthetic tape, exhaustive search, all ten start/end trajectories, 61 training
 labels and nine-sheet audit. Its 97-parameter network reaches USD 0.3531
 in-sample RMSE after 12,000 updates. It is executable research documentation,
 separate from the application and the delayed value-learning branch. See
-[the example](research/single_bill_full_search/README.md). Longer-timeline
-convergence and simulation-count measurements are being evaluated separately.
+[the example](research/single_bill_full_search/README.md).
+
+The longer-timeline study is complete: 48 fixed 12k-update runs, four 60k-update
+extensions and six smaller-budget refinements. With the same 97-parameter
+network, the smallest tested successful budgets were 256 trajectories at 32
+steps and 16 at 64 steps, with test RMSE USD 0.3016 and USD 0.2754. The 8- and
+16-step 256-trajectory runs still missed the USD 0.3531 tolerance. The successful
+counts are one-seed adaptive diagnostics on reused state holdouts, not robust
+minimum requirements or new-market generalization. All seven focused tests
+passed. See [results and simulation counts](research/single_bill_full_search/LONGER_TIMELINES.md).
 
 ## Rolling worst lease execution — 2026-09-24
 

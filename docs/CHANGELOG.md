@@ -7,6 +7,11 @@
 - Record the small network, 12,000-update fit, independent checks, and spreadsheet
   with each retained/explored continuation. Source and assumptions are under
   `docs/research/single_bill_full_search/` and do not alter the application.
+- Extend the diagnostic through 64 steps with exact shared-state full-depth
+  targets, a three-seed trajectory-budget sweep, state-disjoint validation/test
+  data, and longer-optimization follow-ups. Record all 58 fits, convergence
+  plots, separate simulation/planner/optimizer counts, and seven focused tests.
+  Successful smallest tested budgets remain one-seed diagnostic results.
 
 ## 2026-09-23 — Cloud Run cold-start diagnostics
 

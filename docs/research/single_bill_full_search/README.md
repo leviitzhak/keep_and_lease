@@ -11,6 +11,8 @@ the earlier 44-input delayed Treasury model.
 - [Simulation and training source](simulate.py), [numerical results](data.json),
   and [numerical checks](validation.json).
 - [Workbook builder](build.mjs) and [workbook checks](workbook_validation.json).
+- [Longer-timeline convergence study](LONGER_TIMELINES.md): 58 fits through 64
+  decision steps, simulation budgets, held-out errors and convergence plots.
 
 Run with Python and NumPy:
 
@@ -49,3 +51,18 @@ Excel was not available for application-level verification.
 This directory contains executable documentation and research outputs. It is
 not imported by the application, and changes under `docs/**` are excluded from
 the deployment workflow.
+
+## Longer timelines
+
+The extended study retains the same 97-parameter architecture and uses exact
+full-depth targets for every valid horizon of sampled training states. A
+shared-state dynamic program avoids enumerating exponentially many equivalent
+continuations. Completed training trajectories, planner action evaluations,
+label counts and optimizer updates are reported separately.
+
+After up to 60,000 updates, the smallest tested successful budgets were 256
+trajectories at 32 steps and 16 trajectories at 64 steps, with held-out RMSE
+USD 0.3016 and USD 0.2754 respectively. These follow-up counts use one seed and
+reused state holdouts. The 8- and 16-step 256-trajectory runs still missed the
+USD 0.3531 tolerance. See [the full report](LONGER_TIMELINES.md) for the exact
+comparison, limitations and commands.

@@ -1,0 +1,13 @@
+{
+  "focused_unittests": 7,
+  "passed": true,
+  "source_hash_checks": {
+    "simulate.py": true,
+    "longer_timelines.py": true,
+    "longer_followup.py": true,
+    "sample_refinement.py": true
+  },
+  "fit_runs": 58,
+  "baseline_prefix_reproduction_checks": 10,
+  "application_files_changed": 0
+}
