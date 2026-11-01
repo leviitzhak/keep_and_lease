@@ -1,12 +1,17 @@
 # Keep & Lease — Project State
 
-_Last updated: 2026-09-24_
+_Last updated: 2026-11-01_
 
 ## Purpose
 
 Build an interactive research and backtesting application for strategies that allocate among commodity ETFs, commodity futures across maturities, and Treasury/cash instruments. The application should expose all economically meaningful parameters in a GUI and make the daily decisions auditable.
 
 ## Current scope
+
+- A standalone [single-bill full-depth search example](research/single_bill_full_search/README.md)
+  records four actual decision steps, all valid horizons and exact liquidation
+  targets, with executable source and an auditable spreadsheet. This is a
+  synthetic research diagnostic, separate from application strategy behavior.
 
 - Optional rolling worst-lease execution for amortized ranking is implemented
   on `agent/rolling-worst-lease-execution`: trailing observed price-pair bounds,
@@ -197,3 +202,4 @@ covers native date-input precision and the validated attachment request.
 
 Rolling execution now offers both `relative_price` (default) and `spot` limit
 anchors via `paired_limit_anchor`; both are retained in saved audit contexts.
+

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-01 — Single-bill full-depth search example
+
+- Add the requested four-step USD-only example, generated trades through the
+  liquidation tail, exhaustive continuations and all valid state/horizon labels.
+- Record the small network, 12,000-update fit, independent checks, and spreadsheet
+  with each retained/explored continuation. Source and assumptions are under
+  `docs/research/single_bill_full_search/` and do not alter the application.
+
 ## 2026-09-23 — Cloud Run cold-start diagnostics
 
 - Increase the web revision's startup-probe allowance from 30 to 120 seconds
@@ -491,3 +499,4 @@
 - Renamed Treasury maturity statistics to explicitly plot observed yield.
 - Preserved scatter-specific nearest-point interaction on desktop and mobile.
 - Added regression assertions and reproducible GUI specification requirements.
+

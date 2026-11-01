@@ -1,0 +1,37 @@
+{
+  "reachable_states_by_time": {
+    "0": 1,
+    "1": 2,
+    "2": 4,
+    "3": 9,
+    "4": 18
+  },
+  "labels": 61,
+  "horizon_counts": {
+    "0": 34,
+    "1": 16,
+    "2": 7,
+    "3": 3,
+    "4": 1
+  },
+  "pairs": 10,
+  "search_candidates": [
+    35,
+    22,
+    9,
+    3
+  ],
+  "unique_trade_ids": true,
+  "gradient_max_error": 5.051967177926997e-11,
+  "terminal_liquidation": 1009.5,
+  "final_loss": {
+    "update": 12000,
+    "mse": 0.12467742657100515,
+    "balanced_mse": 0.053920834323505036,
+    "rmse_usd": 0.3530969081866976,
+    "max_abs_utility": 0.0009441243723462556
+  },
+  "independent_closing_checks": 34,
+  "all_targets_match_independent_bellman": true,
+  "all_selected_suffixes_share_terminal_target": true
+}

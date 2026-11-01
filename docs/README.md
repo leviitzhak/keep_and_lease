@@ -8,6 +8,8 @@ Start with [PROJECT_STATE.md](PROJECT_STATE.md).
 
 ## Documents
 
+- [Single-bill full-depth search example](research/single_bill_full_search/README.md) — runnable four-step all-horizon training and its auditable spreadsheet.
+
 - [Project state](PROJECT_STATE.md) — current scope, decisions, and priorities.
 - [Current work](CURRENT_WORK.md) — updatable pointer to the active unmerged branch, PR, and completion scope.
 - [Strategy](STRATEGY.md) — portfolio construction and trading rules.
@@ -31,3 +33,4 @@ Start with [PROJECT_STATE.md](PROJECT_STATE.md).
 ## Working convention
 
 Use these files as shared context across project chats. Durable changes should be reflected in the relevant specification and recorded in the design changelog. Unconfirmed values should remain marked as pending rather than being silently converted into defaults.
+

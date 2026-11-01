@@ -1,5 +1,15 @@
 # Current work
 
+## Single-bill full-depth example — 2026-11-01
+
+The standalone four-decision USD-only example is recorded on `master` with its
+synthetic tape, exhaustive search, all ten start/end trajectories, 61 training
+labels and nine-sheet audit. Its 97-parameter network reaches USD 0.3531
+in-sample RMSE after 12,000 updates. It is executable research documentation,
+separate from the application and the delayed value-learning branch. See
+[the example](research/single_bill_full_search/README.md). Longer-timeline
+convergence and simulation-count measurements are being evaluated separately.
+
 ## Rolling worst lease execution — 2026-09-24
 
 Branch `agent/rolling-worst-lease-execution` is based on GitHub master
@@ -197,3 +207,4 @@ the authoritative deployment target; local Sites remains deferred.
 
 Rolling execution now offers both `relative_price` (default) and `spot` limit
 anchors via `paired_limit_anchor`; both are retained in saved audit contexts.
+
