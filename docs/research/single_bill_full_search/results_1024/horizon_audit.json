@@ -1,0 +1,234 @@
+{
+  "purpose": "Post-hoc diagnostics; the experiments do not isolate a single cause",
+  "prior": [
+    {
+      "T": 8,
+      "short_horizon_training_mass": 0.4444444444444444,
+      "saturated_extension_max_error_usd": 1.375,
+      "heldout": {
+        "all": {
+          "rows": 105,
+          "rmse_usd": 0.558038496018255
+        },
+        "h0_3": {
+          "rows": 95,
+          "rmse_usd": 0.5818400894400358
+        },
+        "h4_plus": {
+          "rows": 10,
+          "rmse_usd": 0.23165310260435248
+        }
+      }
+    },
+    {
+      "T": 16,
+      "short_horizon_training_mass": 0.23529411764705882,
+      "saturated_extension_max_error_usd": 0.6875,
+      "heldout": {
+        "all": {
+          "rows": 960,
+          "rmse_usd": 0.5603605538225824
+        },
+        "h0_3": {
+          "rows": 512,
+          "rmse_usd": 0.6420310339674924
+        },
+        "h4_plus": {
+          "rows": 448,
+          "rmse_usd": 0.44919427320899974
+        }
+      }
+    },
+    {
+      "T": 32,
+      "short_horizon_training_mass": 0.12121212121212122,
+      "saturated_extension_max_error_usd": 0.34375,
+      "heldout": {
+        "all": {
+          "rows": 1627,
+          "rmse_usd": 0.3016263057642044
+        },
+        "h0_3": {
+          "rows": 256,
+          "rmse_usd": 0.4032324472779227
+        },
+        "h4_plus": {
+          "rows": 1371,
+          "rmse_usd": 0.2785777450586864
+        }
+      }
+    },
+    {
+      "T": 64,
+      "short_horizon_training_mass": 0.06153846153846154,
+      "saturated_extension_max_error_usd": 0.171875,
+      "heldout": {
+        "all": {
+          "rows": 1818,
+          "rmse_usd": 0.10184745960359326
+        },
+        "h0_3": {
+          "rows": 128,
+          "rmse_usd": 0.17300405442556002
+        },
+        "h4_plus": {
+          "rows": 1690,
+          "rmse_usd": 0.09429542452479275
+        }
+      }
+    }
+  ],
+  "1024_root_action_gap_usd": 0.0078125,
+  "1024_optimal_path": [
+    {
+      "kind": "random",
+      "seed": 20261101,
+      "trajectories": 1,
+      "rmse_usd": 51.11732825590816,
+      "max_abs_usd": 93.94810386017832,
+      "root_value_error_usd": -0.3700736173985888,
+      "predicted_root_buy_minus_wait_usd": 0.11656526448268778,
+      "policy_regret_usd": 1.35302734375
+    },
+    {
+      "kind": "random",
+      "seed": 20261101,
+      "trajectories": 4,
+      "rmse_usd": 10.837080831064698,
+      "max_abs_usd": 23.039506329483288,
+      "root_value_error_usd": -0.10294253119195673,
+      "predicted_root_buy_minus_wait_usd": 0.0879286565136681,
+      "policy_regret_usd": 3.56640625
+    },
+    {
+      "kind": "random",
+      "seed": 20261101,
+      "trajectories": 16,
+      "rmse_usd": 1.0631903994957614,
+      "max_abs_usd": 1.69738997148022,
+      "root_value_error_usd": -0.09435214227801225,
+      "predicted_root_buy_minus_wait_usd": 0.05879623744908713,
+      "policy_regret_usd": 2.54931640625
+    },
+    {
+      "kind": "random",
+      "seed": 20261101,
+      "trajectories": 64,
+      "rmse_usd": 1.0833256110580025,
+      "max_abs_usd": 1.7132676499441004,
+      "root_value_error_usd": -0.10224430913160631,
+      "predicted_root_buy_minus_wait_usd": 0.06677659371200662,
+      "policy_regret_usd": 3.095703125
+    },
+    {
+      "kind": "random",
+      "seed": 20261102,
+      "trajectories": 1,
+      "rmse_usd": 71.79569814979536,
+      "max_abs_usd": 126.73524278487957,
+      "root_value_error_usd": 0.2500955321016818,
+      "predicted_root_buy_minus_wait_usd": 0.3557365274599533,
+      "policy_regret_usd": 0.0
+    },
+    {
+      "kind": "random",
+      "seed": 20261102,
+      "trajectories": 4,
+      "rmse_usd": 1.3334917122866692,
+      "max_abs_usd": 4.297134318633994,
+      "root_value_error_usd": -0.045845366096841644,
+      "predicted_root_buy_minus_wait_usd": -0.024583694810985435,
+      "policy_regret_usd": 1.05615234375
+    },
+    {
+      "kind": "random",
+      "seed": 20261102,
+      "trajectories": 16,
+      "rmse_usd": 1.0948852864543404,
+      "max_abs_usd": 3.002951510059347,
+      "root_value_error_usd": -0.03994146397644727,
+      "predicted_root_buy_minus_wait_usd": -0.013710498477507826,
+      "policy_regret_usd": 2.0478515625
+    },
+    {
+      "kind": "random",
+      "seed": 20261102,
+      "trajectories": 64,
+      "rmse_usd": 0.9153251811926061,
+      "max_abs_usd": 1.9795531052969864,
+      "root_value_error_usd": -0.06611704282454411,
+      "predicted_root_buy_minus_wait_usd": -0.0014167369579354272,
+      "policy_regret_usd": 1.7998046875
+    },
+    {
+      "kind": "random",
+      "seed": 20261103,
+      "trajectories": 1,
+      "rmse_usd": 69.0017498442445,
+      "max_abs_usd": 121.0804640267869,
+      "root_value_error_usd": -0.18011419057268085,
+      "predicted_root_buy_minus_wait_usd": 0.2225324723618769,
+      "policy_regret_usd": 0.126953125
+    },
+    {
+      "kind": "random",
+      "seed": 20261103,
+      "trajectories": 4,
+      "rmse_usd": 32.70232952592774,
+      "max_abs_usd": 56.10986359908338,
+      "root_value_error_usd": -0.08688406283965833,
+      "predicted_root_buy_minus_wait_usd": 0.14760906804860952,
+      "policy_regret_usd": 0.310546875
+    },
+    {
+      "kind": "random",
+      "seed": 20261103,
+      "trajectories": 16,
+      "rmse_usd": 0.8473208589309795,
+      "max_abs_usd": 1.9643418720957015,
+      "root_value_error_usd": -0.012443415149959947,
+      "predicted_root_buy_minus_wait_usd": -0.02466800360605248,
+      "policy_regret_usd": 5.8525390625
+    },
+    {
+      "kind": "random",
+      "seed": 20261103,
+      "trajectories": 64,
+      "rmse_usd": 0.6798663891360257,
+      "max_abs_usd": 1.320712842747298,
+      "root_value_error_usd": -0.0544387584393462,
+      "predicted_root_buy_minus_wait_usd": 0.006241742297106612,
+      "policy_regret_usd": 0.0
+    },
+    {
+      "kind": "search_augmented",
+      "seed": 20261101,
+      "trajectories": 17,
+      "rmse_usd": 0.21480252146626705,
+      "max_abs_usd": 0.8510024796941025,
+      "root_value_error_usd": -0.013431145715230741,
+      "predicted_root_buy_minus_wait_usd": 0.004737918446721778,
+      "policy_regret_usd": 7.083984375
+    },
+    {
+      "kind": "search_augmented",
+      "seed": 20261102,
+      "trajectories": 17,
+      "rmse_usd": 0.19942160409030948,
+      "max_abs_usd": 0.7141698766484978,
+      "root_value_error_usd": -0.03532124276489412,
+      "predicted_root_buy_minus_wait_usd": -0.013989850643838508,
+      "policy_regret_usd": 8.005859375
+    },
+    {
+      "kind": "search_augmented",
+      "seed": 20261103,
+      "trajectories": 17,
+      "rmse_usd": 0.1441887655022301,
+      "max_abs_usd": 0.5469692810723927,
+      "root_value_error_usd": 0.024467445243317343,
+      "predicted_root_buy_minus_wait_usd": -0.014442812481888723,
+      "policy_regret_usd": 8.005859375
+    }
+  ]
+}

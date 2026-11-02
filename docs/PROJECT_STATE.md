@@ -1,6 +1,6 @@
 # Keep & Lease — Project State
 
-_Last updated: 2026-11-01_
+_Last updated: 2026-11-02_
 
 ## Purpose
 
@@ -16,6 +16,10 @@ Build an interactive research and backtesting application for strategies that al
   records 58 fits through 64 steps, exact shared-state search and measured
   simulation budgets. The 32/64-step value estimates reached the prior error
   tolerance with longer optimization; the tested 8/16-step fits did not.
+  A [1,024-step follow-up](research/single_bill_full_search/TIMELINE_1024.md)
+  reaches the value tolerance with 16 random trajectories in three seeds, but
+  greedy policies remain suboptimal. It records fifteen further fits and
+  corrects the earlier cross-timeline comparison for changing test horizon weights.
 
 - Optional rolling worst-lease execution for amortized ranking is implemented
   on `agent/rolling-worst-lease-execution`: trailing observed price-pair bounds,

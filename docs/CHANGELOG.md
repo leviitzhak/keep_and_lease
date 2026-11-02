@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-11-02 — Single-bill learning at 1,024 timesteps
+
+- Add bounded 1,024-step exact search, lazy all-horizon labels and twelve
+  three-seed trajectory-budget fits with the unchanged 97-parameter network.
+- Separate successful random-state value fitting from suboptimal greedy
+  decisions; record three unsuccessful selected-path augmentation diagnoses.
+- Audit the prior comparison's changing horizon weights, preserve historical
+  results, and add curves, weights, counts, reproduction commands and twelve
+  passing focused checks. Research documentation only; no application changes.
+
 ## 2026-11-01 — Single-bill full-depth search example
 
 - Add the requested four-step USD-only example, generated trades through the

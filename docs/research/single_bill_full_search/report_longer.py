@@ -54,6 +54,11 @@ def main():
 
     lines=['# Longer single-bill timelines: convergence and simulation counts','',
       'Measured on 1 November 2026. The original four-step example is preserved beside this report.','',
+      'Follow-up, 2 November: the [1,024-step study](TIMELINE_1024.md) audits a comparison '
+      'limitation here. The old test-set horizon weights change with T (h=0–3 account '
+      'for 90.5% of eight-step rows but 7.04% of 64-step rows). The results below remain '
+      'valid for their own datasets; across-T RMSE is not a common-distribution '
+      'comparison. The new study also distinguishes value accuracy from greedy policy quality.','',
       '**The 32- and 64-step value functions reached the four-step error benchmark after longer optimization.** '
       'Adding trajectories without extending optimization did not achieve that benchmark. The smaller 8- and 16-step cases '
       'still missed it after 60,000 updates on the tested 256-trajectory datasets.','',

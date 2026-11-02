@@ -1,0 +1,17 @@
+{
+  "focused_tests_passed": 12,
+  "baseline_fits": 12,
+  "diagnostic_fits": 3,
+  "source_hash_checks": {
+    "timeline_1024.py": true,
+    "longer_timelines.py": true,
+    "search_guided_1024.py": true
+  },
+  "source_import_hash_match": true,
+  "all_1024_planner_entries_match_independent_cashflows": true,
+  "python": "3.12.14",
+  "numpy": "2.3.5",
+  "matplotlib": "3.10.8",
+  "machine": "x86_64",
+  "blas_threads": 1
+}

@@ -13,6 +13,9 @@ the earlier 44-input delayed Treasury model.
 - [Workbook builder](build.mjs) and [workbook checks](workbook_validation.json).
 - [Longer-timeline convergence study](LONGER_TIMELINES.md): 58 fits through 64
   decision steps, simulation budgets, held-out errors and convergence plots.
+- [1,024-step study and horizon audit](TIMELINE_1024.md): three-seed value fits,
+  the earlier test-weighting difference, and the gap between accurate values
+  on random states and reliable greedy decisions.
 
 Run with Python and NumPy:
 
@@ -66,3 +69,11 @@ USD 0.3016 and USD 0.2754 respectively. These follow-up counts use one seed and
 reused state holdouts. The 8- and 16-step 256-trajectory runs still missed the
 USD 0.3531 tolerance. See [the full report](LONGER_TIMELINES.md) for the exact
 comparison, limitations and commands.
+
+At 1,024 steps, 16 random trajectories reached the value-error benchmark for
+all three tested seeds (test RMSE USD 0.0332–0.0532 after up to 60k updates).
+The greedy network policy still lost USD 2.0479–5.8525 against exact search.
+Adding one selected path did not fix the policy. This is value fitting on a
+deterministic market, not demonstrated strategy convergence. The new audit also
+shows that the earlier cross-timeline RMSE comparison used changing horizon
+weights; it cannot isolate the effect of timeline length.

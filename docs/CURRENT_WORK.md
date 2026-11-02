@@ -18,6 +18,21 @@ counts are one-seed adaptive diagnostics on reused state holdouts, not robust
 minimum requirements or new-market generalization. All seven focused tests
 passed. See [results and simulation counts](research/single_bill_full_search/LONGER_TIMELINES.md).
 
+## Single-bill 1,024-step study — 2026-11-02
+
+Twelve fixed fits across three seeds and four trajectory budgets are complete.
+Sixteen random trajectories (16,384 transitions) reached the USD 0.3531 value
+benchmark for all three seeds, with selected test RMSE USD 0.0332–0.0532.
+The greedy network policies still fell USD 2.0479–5.8525 short of exact search.
+Three post-hoc fits adding one search-selected path did not fix those decisions.
+All twelve focused checks passed, including independent cashflows for every
+1,024-step planner entry. Source, weights, curves and counts are in the
+[1,024-step report](research/single_bill_full_search/TIMELINE_1024.md).
+
+The earlier 8–64-step comparison had changing test horizon weights; its RMSE
+values do not isolate timeline length. This correction is now recorded beside
+the preserved results. Value accuracy and strategy quality remain separate.
+
 ## Rolling worst lease execution — 2026-09-24
 
 Branch `agent/rolling-worst-lease-execution` is based on GitHub master

@@ -8,7 +8,7 @@ Start with [PROJECT_STATE.md](PROJECT_STATE.md).
 
 ## Documents
 
-- [Single-bill full-depth search example](research/single_bill_full_search/README.md) — runnable four-step all-horizon training, its auditable spreadsheet, and longer-timeline convergence/simulation counts.
+- [Single-bill full-depth search example](research/single_bill_full_search/README.md) — runnable four-step all-horizon training, its auditable spreadsheet, and studies through 1,024 steps separating value accuracy from policy quality.
 
 - [Project state](PROJECT_STATE.md) — current scope, decisions, and priorities.
 - [Current work](CURRENT_WORK.md) — updatable pointer to the active unmerged branch, PR, and completion scope.
