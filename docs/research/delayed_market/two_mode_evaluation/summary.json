@@ -1,0 +1,165 @@
+{
+  "complete": true,
+  "horizon": 10,
+  "training_rounds": 2,
+  "epochs_per_round": 100,
+  "training_seed": 17,
+  "scenario_count": 32,
+  "convergence_claim": false,
+  "advance_to_h24": false,
+  "rows": [
+    {
+      "checkpoint": "adversarial_round2",
+      "controller": "adversarial",
+      "environment": "stochastic",
+      "mean": 1010.890625,
+      "minimum": 1006.25,
+      "maximum": 1013.75,
+      "standard_error": 0.31410876224029316
+    },
+    {
+      "checkpoint": "adversarial_round2",
+      "controller": "adversarial",
+      "environment": "frozen_adversary",
+      "mean": 1012.125,
+      "minimum": 1012.125,
+      "maximum": 1012.125,
+      "standard_error": null
+    },
+    {
+      "checkpoint": "adversarial_round2",
+      "controller": "stochastic",
+      "environment": "stochastic",
+      "mean": 1011.03515625,
+      "minimum": 1006.25,
+      "maximum": 1013.75,
+      "standard_error": 0.3126755744177175
+    },
+    {
+      "checkpoint": "adversarial_round2",
+      "controller": "stochastic",
+      "environment": "frozen_adversary",
+      "mean": 1013.5,
+      "minimum": 1013.5,
+      "maximum": 1013.5,
+      "standard_error": null
+    },
+    {
+      "checkpoint": "stochastic_round2",
+      "controller": "adversarial",
+      "environment": "stochastic",
+      "mean": 1010.4765625,
+      "minimum": 1005.25,
+      "maximum": 1012.75,
+      "standard_error": 0.322102345916573
+    },
+    {
+      "checkpoint": "stochastic_round2",
+      "controller": "adversarial",
+      "environment": "frozen_adversary",
+      "mean": 1011.5,
+      "minimum": 1011.5,
+      "maximum": 1011.5,
+      "standard_error": null
+    },
+    {
+      "checkpoint": "stochastic_round2",
+      "controller": "stochastic",
+      "environment": "stochastic",
+      "mean": 1010.4296875,
+      "minimum": 1005.25,
+      "maximum": 1012.75,
+      "standard_error": 0.3159555668711902
+    },
+    {
+      "checkpoint": "stochastic_round2",
+      "controller": "stochastic",
+      "environment": "frozen_adversary",
+      "mean": 1011.5,
+      "minimum": 1011.5,
+      "maximum": 1011.5,
+      "standard_error": null
+    }
+  ],
+  "comparator_rows": [
+    {
+      "checkpoint": "comparator",
+      "controller": "diagnostic",
+      "environment": "stochastic",
+      "mean": 1012.11328125
+    },
+    {
+      "checkpoint": "comparator",
+      "controller": "diagnostic",
+      "environment": "frozen_adversary",
+      "mean": 1014.0
+    },
+    {
+      "checkpoint": "comparator",
+      "controller": "wait",
+      "environment": "stochastic",
+      "mean": 1000.0
+    },
+    {
+      "checkpoint": "comparator",
+      "controller": "wait",
+      "environment": "frozen_adversary",
+      "mean": 1000.0
+    }
+  ],
+  "paired_differences": {
+    "stochastic_training_and_selector_minus_adversarial_training_and_selector": {
+      "mean": -0.4609375,
+      "standard_error": 0.3368856181745711,
+      "approximate_95_percent_t_interval": [
+        -1.148184161076125,
+        0.22630916107612498
+      ],
+      "n": 32
+    },
+    "mean_selector_minus_min_selector_on_adversarial_trained_network": {
+      "mean": 0.14453125,
+      "standard_error": 0.11907708759907855,
+      "approximate_95_percent_t_interval": [
+        -0.09838600870212025,
+        0.3874485087021202
+      ],
+      "n": 32
+    },
+    "stochastic_mode_minus_diagnostic": {
+      "mean": -1.68359375,
+      "standard_error": 0.16696943449383642,
+      "approximate_95_percent_t_interval": [
+        -2.024211396367426,
+        -1.3429761036325738
+      ],
+      "n": 32
+    },
+    "adversarial_mode_minus_diagnostic": {
+      "mean": -1.22265625,
+      "standard_error": 0.3320253201557772,
+      "approximate_95_percent_t_interval": [
+        -1.8999879031177853,
+        -0.5453245968822146
+      ],
+      "n": 32
+    }
+  },
+  "checks": {
+    "focused_tests_passed": 14,
+    "root_states_and_rngs_identical": 343,
+    "initial_network_arrays_identical": true,
+    "all_timestep_coverage_verified_for_both_rounds_and_modes": true,
+    "source_manifest_unchanged": true,
+    "all_four_checkpoints_finite": true
+  },
+  "limitations": [
+    "Simulator-assisted planning with fixed realized hidden events; not an observation-only deployed policy.",
+    "Mean-value planning uses four conditional samples, not an exact expectation.",
+    "Common event-keyed scenarios share uniforms for matching event identities; changed actions can generate different events.",
+    "Frozen adversary minimizes successor value, not terminal payoff; no robust optimality certificate.",
+    "One training seed and one rising-price fixture.",
+    "Changing to stochastic training also requires independent execution of the chosen action; this is not a single-factor ablation of the local minimum.",
+    "No H24 or longer run launched because H10 policy evidence does not pass the advancement gate."
+  ]
+}

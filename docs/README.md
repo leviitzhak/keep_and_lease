@@ -34,3 +34,11 @@ Start with [PROJECT_STATE.md](PROJECT_STATE.md).
 
 Use these files as shared context across project chats. Durable changes should be reflected in the relevant specification and recorded in the design changelog. Unconfirmed values should remain marked as pending rather than being silently converted into defaults.
 
+
+
+## Delayed synthetic-market research (2026-11-08)
+
+The [H10 two-mode research archive](research/delayed_market/README.md) records
+corrected pending-delay minimization, stochastic training, paired evaluations
+and reproducible source. Neither mode has demonstrated policy convergence.
+This research does not alter or deploy the application.

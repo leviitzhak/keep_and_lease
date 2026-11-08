@@ -1,0 +1,17 @@
+{
+  "horizon": 10,
+  "seed": 17,
+  "epochs": 100,
+  "rollouts": 4,
+  "exploration": {
+    "mode": "both",
+    "constant": 0.3,
+    "first": 0.5,
+    "last": 0.1,
+    "round_decay": 0.5,
+    "floor": 0.05
+  },
+  "source": "two-mode v2 all roots/full histories/all timesteps",
+  "delay_mode": "stochastic",
+  "planning_samples": 4
+}

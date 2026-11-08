@@ -1,0 +1,2239 @@
+{
+  "horizon": 10,
+  "scenarios": [
+    81000,
+    81001,
+    81002,
+    81003,
+    81004,
+    81005,
+    81006,
+    81007,
+    81008,
+    81009,
+    81010,
+    81011,
+    81012,
+    81013,
+    81014,
+    81015,
+    81016,
+    81017,
+    81018,
+    81019,
+    81020,
+    81021,
+    81022,
+    81023,
+    81024,
+    81025,
+    81026,
+    81027,
+    81028,
+    81029,
+    81030,
+    81031
+  ],
+  "frozen_adversary": "fresh seed17",
+  "rows": [
+    {
+      "checkpoint": "adversarial_round2",
+      "controller": "adversarial",
+      "environment": "stochastic",
+      "mean": 1010.890625,
+      "minimum": 1006.25,
+      "maximum": 1013.75,
+      "standard_error": 0.31410876224029316,
+      "trials": [
+        {
+          "seed": 81000,
+          "value": 1010.625,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 3 @ 96.21875",
+            "WAIT",
+            "SEND CANCEL"
+          ]
+        },
+        {
+          "seed": 81001,
+          "value": 1009.5,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 4 @ 95.84375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 2 @ 96.34375",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81002,
+          "value": 1009.5,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 3 @ 96.34375",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81003,
+          "value": 1012.0,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 6 @ 95.84375",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND SELL 1 @ 95.71875"
+          ]
+        },
+        {
+          "seed": 81004,
+          "value": 1008.5,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 6 @ 96.09375",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81005,
+          "value": 1009.75,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 2 @ 96.21875",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81006,
+          "value": 1013.75,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 2 @ 95.96875",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL"
+          ]
+        },
+        {
+          "seed": 81007,
+          "value": 1012.25,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 4 @ 96.03125",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL"
+          ]
+        },
+        {
+          "seed": 81008,
+          "value": 1012.5,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 4 @ 95.96875",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL"
+          ]
+        },
+        {
+          "seed": 81009,
+          "value": 1012.0,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 4 @ 96.09375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL"
+          ]
+        },
+        {
+          "seed": 81010,
+          "value": 1009.5,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 6 @ 95.84375",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 2 @ 96.46875"
+          ]
+        },
+        {
+          "seed": 81011,
+          "value": 1013.625,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 2 @ 96.03125",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81012,
+          "value": 1011.0,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 3 @ 96.09375",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81013,
+          "value": 1012.0,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 6 @ 95.84375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81014,
+          "value": 1011.5625,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 3 @ 95.90625",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81015,
+          "value": 1006.25,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 3 @ 96.34375",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81016,
+          "value": 1009.5,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 4 @ 95.84375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 2 @ 96.46875"
+          ]
+        },
+        {
+          "seed": 81017,
+          "value": 1011.75,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 4 @ 96.15625",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81018,
+          "value": 1012.625,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 1 @ 95.96875",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 1 @ 96.46875"
+          ]
+        },
+        {
+          "seed": 81019,
+          "value": 1012.0,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 6 @ 95.84375",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81020,
+          "value": 1012.4375,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 1 @ 96.15625",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81021,
+          "value": 1011.375,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 3 @ 95.96875",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 1 @ 96.46875"
+          ]
+        },
+        {
+          "seed": 81022,
+          "value": 1010.25,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 2 @ 95.96875",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 2 @ 96.21875"
+          ]
+        },
+        {
+          "seed": 81023,
+          "value": 1010.25,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 2 @ 95.96875",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81024,
+          "value": 1012.25,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 4 @ 96.03125",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL"
+          ]
+        },
+        {
+          "seed": 81025,
+          "value": 1010.0,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 4 @ 95.71875",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 2 @ 96.46875"
+          ]
+        },
+        {
+          "seed": 81026,
+          "value": 1012.0,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 4 @ 96.09375",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81027,
+          "value": 1009.75,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 2 @ 96.21875",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81028,
+          "value": 1009.5,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 4 @ 95.84375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 2 @ 96.46875"
+          ]
+        },
+        {
+          "seed": 81029,
+          "value": 1012.0,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 4 @ 96.09375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL"
+          ]
+        },
+        {
+          "seed": 81030,
+          "value": 1012.0,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 4 @ 96.09375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL"
+          ]
+        },
+        {
+          "seed": 81031,
+          "value": 1006.5,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 6 @ 96.21875",
+            "WAIT",
+            "WAIT"
+          ]
+        }
+      ]
+    },
+    {
+      "checkpoint": "adversarial_round2",
+      "controller": "adversarial",
+      "environment": "frozen_adversary",
+      "mean": 1012.125,
+      "minimum": 1012.125,
+      "maximum": 1012.125,
+      "standard_error": null,
+      "trials": [
+        {
+          "seed": 81000,
+          "value": 1012.125,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 3 @ 95.71875",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 1 @ 96.21875"
+          ]
+        }
+      ]
+    },
+    {
+      "checkpoint": "adversarial_round2",
+      "controller": "stochastic",
+      "environment": "stochastic",
+      "mean": 1011.03515625,
+      "minimum": 1006.25,
+      "maximum": 1013.75,
+      "standard_error": 0.3126755744177175,
+      "trials": [
+        {
+          "seed": 81000,
+          "value": 1010.625,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 3 @ 96.21875",
+            "WAIT",
+            "SEND CANCEL"
+          ]
+        },
+        {
+          "seed": 81001,
+          "value": 1010.75,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 5 @ 95.84375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81002,
+          "value": 1009.5,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 3 @ 96.34375",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81003,
+          "value": 1010.75,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 5 @ 95.84375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 1 @ 96.46875"
+          ]
+        },
+        {
+          "seed": 81004,
+          "value": 1008.5,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 5 @ 96.09375",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81005,
+          "value": 1009.75,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 2 @ 96.21875",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81006,
+          "value": 1013.75,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 2 @ 95.96875",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81007,
+          "value": 1012.25,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 4 @ 96.03125",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL"
+          ]
+        },
+        {
+          "seed": 81008,
+          "value": 1012.5,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 4 @ 95.96875",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL"
+          ]
+        },
+        {
+          "seed": 81009,
+          "value": 1012.0,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 4 @ 96.09375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL"
+          ]
+        },
+        {
+          "seed": 81010,
+          "value": 1009.5,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 6 @ 95.84375",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 2 @ 96.46875"
+          ]
+        },
+        {
+          "seed": 81011,
+          "value": 1013.625,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 2 @ 96.03125",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81012,
+          "value": 1011.0,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 3 @ 96.09375",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81013,
+          "value": 1012.0,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 6 @ 95.84375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81014,
+          "value": 1011.5625,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 3 @ 95.90625",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81015,
+          "value": 1006.25,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 3 @ 96.34375",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81016,
+          "value": 1012.0,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 4 @ 96.09375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL"
+          ]
+        },
+        {
+          "seed": 81017,
+          "value": 1011.75,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 4 @ 96.15625",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81018,
+          "value": 1013.75,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 2 @ 95.96875",
+            "WAIT",
+            "WAIT",
+            "SEND SELL 1 @ 95.71875"
+          ]
+        },
+        {
+          "seed": 81019,
+          "value": 1010.75,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 5 @ 95.84375",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81020,
+          "value": 1012.4375,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 1 @ 96.15625",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81021,
+          "value": 1011.375,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 3 @ 95.96875",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 1 @ 96.46875"
+          ]
+        },
+        {
+          "seed": 81022,
+          "value": 1011.375,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 3 @ 95.96875",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81023,
+          "value": 1011.375,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 3 @ 95.96875",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81024,
+          "value": 1012.25,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 4 @ 96.03125",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL"
+          ]
+        },
+        {
+          "seed": 81025,
+          "value": 1010.0,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 4 @ 95.71875",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 2 @ 96.46875"
+          ]
+        },
+        {
+          "seed": 81026,
+          "value": 1012.0,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 4 @ 96.09375",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81027,
+          "value": 1009.75,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 2 @ 96.21875",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81028,
+          "value": 1009.5,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 4 @ 95.84375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 2 @ 96.46875"
+          ]
+        },
+        {
+          "seed": 81029,
+          "value": 1012.0,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 4 @ 96.09375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL"
+          ]
+        },
+        {
+          "seed": 81030,
+          "value": 1012.0,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 4 @ 96.09375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL"
+          ]
+        },
+        {
+          "seed": 81031,
+          "value": 1006.5,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 6 @ 96.21875",
+            "WAIT",
+            "WAIT"
+          ]
+        }
+      ]
+    },
+    {
+      "checkpoint": "adversarial_round2",
+      "controller": "stochastic",
+      "environment": "frozen_adversary",
+      "mean": 1013.5,
+      "minimum": 1013.5,
+      "maximum": 1013.5,
+      "standard_error": null,
+      "trials": [
+        {
+          "seed": 81000,
+          "value": 1013.5,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 4 @ 95.71875",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND SELL 3 @ 95.46875"
+          ]
+        }
+      ]
+    },
+    {
+      "checkpoint": "comparator",
+      "controller": "diagnostic",
+      "environment": "stochastic",
+      "mean": 1012.11328125,
+      "trials": [
+        {
+          "seed": 81000,
+          "value": 1010.0,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 4 @ 96.09375",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81001,
+          "value": 1013.25,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 2 @ 96.21875",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81002,
+          "value": 1009.5,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 4 @ 96.34375",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81003,
+          "value": 1013.0,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 2 @ 96.34375",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81004,
+          "value": 1013.0,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 2 @ 96.34375",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81005,
+          "value": 1009.75,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 4 @ 96.21875",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81006,
+          "value": 1013.125,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 2 @ 96.28125",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81007,
+          "value": 1013.0,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 2 @ 96.34375",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81008,
+          "value": 1012.5,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 4 @ 95.96875",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81009,
+          "value": 1013.125,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 2 @ 96.28125",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81010,
+          "value": 1013.5,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 2 @ 96.09375",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81011,
+          "value": 1013.625,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 2 @ 96.03125",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81012,
+          "value": 1012.0,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 4 @ 96.09375",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81013,
+          "value": 1013.5,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 2 @ 96.09375",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81014,
+          "value": 1013.5,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 2 @ 96.09375",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81015,
+          "value": 1006.25,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 6 @ 96.34375",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81016,
+          "value": 1011.5,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 2 @ 96.34375",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81017,
+          "value": 1011.5,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 2 @ 96.34375",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81018,
+          "value": 1013.75,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 2 @ 95.96875",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81019,
+          "value": 1009.75,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 4 @ 96.21875",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81020,
+          "value": 1013.375,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 2 @ 96.15625",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81021,
+          "value": 1013.75,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 2 @ 95.96875",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81022,
+          "value": 1013.625,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 2 @ 96.03125",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81023,
+          "value": 1013.25,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 2 @ 96.21875",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81024,
+          "value": 1011.5,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 2 @ 96.34375",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81025,
+          "value": 1013.625,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 2 @ 96.03125",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81026,
+          "value": 1008.25,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 4 @ 96.34375",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81027,
+          "value": 1011.5,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 4 @ 96.21875",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81028,
+          "value": 1013.25,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 2 @ 96.21875",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81029,
+          "value": 1013.125,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 2 @ 96.28125",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81030,
+          "value": 1013.5,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 2 @ 96.09375",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81031,
+          "value": 1009.75,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 4 @ 96.21875",
+            "WAIT",
+            "WAIT"
+          ]
+        }
+      ]
+    },
+    {
+      "checkpoint": "comparator",
+      "controller": "diagnostic",
+      "environment": "frozen_adversary",
+      "mean": 1014.0,
+      "trials": [
+        {
+          "seed": 81000,
+          "value": 1014.0,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 2 @ 95.84375",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        }
+      ]
+    },
+    {
+      "checkpoint": "comparator",
+      "controller": "wait",
+      "environment": "stochastic",
+      "mean": 1000.0,
+      "trials": [
+        {
+          "seed": 81000,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81001,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81002,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81003,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81004,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81005,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81006,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81007,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81008,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81009,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81010,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81011,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81012,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81013,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81014,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81015,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81016,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81017,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81018,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81019,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81020,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81021,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81022,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81023,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81024,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81025,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81026,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81027,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81028,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81029,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81030,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81031,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        }
+      ]
+    },
+    {
+      "checkpoint": "comparator",
+      "controller": "wait",
+      "environment": "frozen_adversary",
+      "mean": 1000.0,
+      "trials": [
+        {
+          "seed": 81000,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        }
+      ]
+    }
+  ],
+  "checkpoint_hashes": {
+    "adversarial_round2": "4cf4f5d2699919d18cce5133140da1bb8aadac180ae3c14e1815c5f6876f811a"
+  },
+  "limitations": [
+    "Simulator-assisted planning with fixed realized hidden events; not an observation-only deployed policy.",
+    "Mean-value planning uses four conditional samples, not an exact expectation.",
+    "Common event-keyed scenarios share uniforms for matching event identities; changed actions can generate different events.",
+    "Frozen adversary minimizes successor value, not terminal payoff; no robust optimality certificate.",
+    "One training seed and one rising-price fixture."
+  ],
+  "complete": true
+}

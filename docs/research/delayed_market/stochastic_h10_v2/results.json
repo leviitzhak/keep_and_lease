@@ -1,0 +1,174 @@
+{
+  "delay_mode": "stochastic",
+  "horizon": 10,
+  "training": [
+    {
+      "stage": 0,
+      "epochs": 100,
+      "best_epoch": 6,
+      "before": {
+        "train": {
+          "rmse": 5.831373123822869,
+          "mae": 5.102673259871267,
+          "max_abs": 12.990800261497498,
+          "n": 851
+        },
+        "validation": {
+          "rmse": 6.6347613930761185,
+          "mae": 6.071882143372395,
+          "max_abs": 13.527653455734253,
+          "n": 366
+        },
+        "test": {
+          "rmse": 7.8643783703989,
+          "mae": 7.3894511590619665,
+          "max_abs": 14.181723415851593,
+          "n": 364
+        },
+        "baseline_test": {
+          "rmse": 7.127467431104547,
+          "mae": 6.647493131868132,
+          "max_abs": 13.25,
+          "n": 364
+        }
+      },
+      "after": {
+        "train": {
+          "rmse": 1.5971469030111458,
+          "mae": 1.2148497728707508,
+          "max_abs": 7.360050678253174,
+          "n": 851
+        },
+        "validation": {
+          "rmse": 1.293330619043711,
+          "mae": 1.0182897362226997,
+          "max_abs": 4.945745468139648,
+          "n": 366
+        },
+        "test": {
+          "rmse": 1.8873989883692528,
+          "mae": 1.55388418108143,
+          "max_abs": 7.503091812133789,
+          "n": 364
+        }
+      },
+      "greedy_liquidation": 1008.25,
+      "greedy_actions": [
+        "SEND BUY 10 @ 95.34375",
+        "WAIT",
+        "WAIT",
+        "WAIT",
+        "WAIT",
+        "WAIT",
+        "WAIT",
+        "WAIT",
+        "WAIT",
+        "SEND CANCEL"
+      ],
+      "seconds": 172.66381669044495
+    },
+    {
+      "stage": 1,
+      "epochs": 100,
+      "best_epoch": 8,
+      "before": {
+        "train": {
+          "rmse": 2.2237034114461105,
+          "mae": 1.6899985511525677,
+          "max_abs": 7.360050678253174,
+          "n": 851
+        },
+        "validation": {
+          "rmse": 1.448498948148654,
+          "mae": 1.1145332843228115,
+          "max_abs": 4.945745468139648,
+          "n": 366
+        },
+        "test": {
+          "rmse": 2.1639478736229654,
+          "mae": 1.7788192711624444,
+          "max_abs": 5.496908187866211,
+          "n": 357
+        },
+        "baseline_test": {
+          "rmse": 8.062106422113553,
+          "mae": 7.682598039215686,
+          "max_abs": 13.4375,
+          "n": 357
+        }
+      },
+      "after": {
+        "train": {
+          "rmse": 1.0419562106680973,
+          "mae": 0.8451344858587979,
+          "max_abs": 2.8910388946533203,
+          "n": 851
+        },
+        "validation": {
+          "rmse": 1.2816293577910844,
+          "mae": 1.0579276039097152,
+          "max_abs": 3.596348762512207,
+          "n": 366
+        },
+        "test": {
+          "rmse": 1.2798671919884064,
+          "mae": 1.067800373590293,
+          "max_abs": 2.917945384979248,
+          "n": 357
+        }
+      },
+      "greedy_liquidation": 1008.25,
+      "greedy_actions": [
+        "SEND BUY 10 @ 95.34375",
+        "WAIT",
+        "WAIT",
+        "WAIT",
+        "WAIT",
+        "WAIT",
+        "WAIT",
+        "WAIT",
+        "SEND CANCEL",
+        "WAIT"
+      ],
+      "seconds": 170.00102519989014
+    }
+  ],
+  "greedy_liquidation": 1008.25,
+  "search_assisted_liquidation": 1009.625,
+  "greedy_actions": [
+    "SEND BUY 10 @ 95.34375",
+    "WAIT",
+    "WAIT",
+    "WAIT",
+    "WAIT",
+    "WAIT",
+    "WAIT",
+    "WAIT",
+    "SEND CANCEL",
+    "WAIT"
+  ],
+  "main_actions": [
+    "SEND BUY 10 @ 95.34375",
+    "WAIT",
+    "WAIT",
+    "WAIT",
+    "WAIT",
+    "SEND CANCEL",
+    "WAIT",
+    "WAIT",
+    "SEND BUY 4 @ 96.28125",
+    "WAIT"
+  ],
+  "elapsed_seconds": 701.0366571019999,
+  "parameters": 73185,
+  "convergence_claim": false,
+  "information_boundary": "Simulator-assisted research planner; adversarial mode reselects causal pending delays; stochastic mode uses conditional planning samples and independent execution. Already occurred events are fixed.",
+  "engineering": [
+    "Full histories retained",
+    "Every original root and retained trajectory endpoint retained",
+    "Independent roots in parallel",
+    "Safe append-only clone sharing",
+    "Discarded inner rollouts not persisted",
+    "Float32 cache batching regression tested separately"
+  ]
+}

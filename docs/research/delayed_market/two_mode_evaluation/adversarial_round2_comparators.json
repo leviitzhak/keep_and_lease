@@ -1,0 +1,3956 @@
+{
+  "horizon": 10,
+  "label": "corrected_round2",
+  "checkpoint": "/workspace/scratch/3f259bafcc13/progressive_horizons/corrected_h10/weights_stage1.npz",
+  "checkpoint_sha256": "4cf4f5d2699919d18cce5133140da1bb8aadac180ae3c14e1815c5f6876f811a",
+  "adversary_source_sha256": "80b549e3f73708fa560aadb6a0e81cdeceffbaddbdacca130c405781762abf2e",
+  "semantics": "Same checkpoint minimizes successor network value over all legal still-pending and newly generated delays independently for each chosen action; elapsed physical events are frozen. Greedy additionally maximizes those minima over actions. Comparator selects its action from received observation only.",
+  "policies": [
+    {
+      "policy": "greedy",
+      "value": 1011.375,
+      "cash": 140.03125,
+      "bills": 9,
+      "rows": [
+        {
+          "time": 0.0,
+          "action": "SEND BUY 10 @ 95.34375",
+          "minimum": 1012.6289501190186,
+          "pending_event_count": 0,
+          "pending_grouped_assignments": 1,
+          "pending_full_assignments": 1,
+          "unique_successor_observations": 11,
+          "pending_reselections": [],
+          "new_delays": [
+            {
+              "channel": "outbound",
+              "source_time": 0.0,
+              "event": "CREATE:cmd1",
+              "delay": 1,
+              "arrival_time": 1.0,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 0.25,
+              "event": "sell-0",
+              "delay": 1,
+              "arrival_time": 1.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 0.75,
+              "event": "buy-0",
+              "delay": 1,
+              "arrival_time": 1.75,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "ack",
+              "source_time": 1.0,
+              "event": "create_ack:order1:v1",
+              "delay": 1,
+              "arrival_time": 2.0,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 1.0,
+          "action": "WAIT",
+          "minimum": 1012.3391227722168,
+          "pending_event_count": 3,
+          "pending_grouped_assignments": 8,
+          "pending_full_assignments": 27,
+          "unique_successor_observations": 8,
+          "pending_reselections": [
+            {
+              "event": "sell-0",
+              "channel": "market",
+              "source_time": 0.25,
+              "old_arrival_time": 1.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 2.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-0",
+              "channel": "market",
+              "source_time": 0.75,
+              "old_arrival_time": 1.75,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 2.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "create_ack:order1:v1",
+              "channel": "ack",
+              "source_time": 1.0,
+              "old_arrival_time": 2.0,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 3.0,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "fill",
+              "source_time": 1.25,
+              "event": "fill:order1:v2",
+              "delay": 1,
+              "arrival_time": 2.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 1.25,
+              "event": "sell-1",
+              "delay": 1,
+              "arrival_time": 2.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 1.75,
+              "event": "buy-1",
+              "delay": 1,
+              "arrival_time": 2.75,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 2.0,
+          "action": "WAIT",
+          "minimum": 1011.7827730178833,
+          "pending_event_count": 6,
+          "pending_grouped_assignments": 64,
+          "pending_full_assignments": 216,
+          "unique_successor_observations": 64,
+          "pending_reselections": [
+            {
+              "event": "sell-0",
+              "channel": "market",
+              "source_time": 0.25,
+              "old_arrival_time": 2.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 3.25,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-0",
+              "channel": "market",
+              "source_time": 0.75,
+              "old_arrival_time": 2.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 3.75,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "create_ack:order1:v1",
+              "channel": "ack",
+              "source_time": 1.0,
+              "old_arrival_time": 3.0,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 4.0,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "fill:order1:v2",
+              "channel": "fill",
+              "source_time": 1.25,
+              "old_arrival_time": 2.25,
+              "chosen_delay": 1,
+              "chosen_arrival_time": 2.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "sell-1",
+              "channel": "market",
+              "source_time": 1.25,
+              "old_arrival_time": 2.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 3.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-1",
+              "channel": "market",
+              "source_time": 1.75,
+              "old_arrival_time": 2.75,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 3.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "fill",
+              "source_time": 2.25,
+              "event": "fill:order1:v3",
+              "delay": 1,
+              "arrival_time": 3.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 2.25,
+              "event": "sell-2",
+              "delay": 1,
+              "arrival_time": 3.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 2.75,
+              "event": "buy-2",
+              "delay": 1,
+              "arrival_time": 3.75,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 3.0,
+          "action": "SEND CANCEL",
+          "minimum": 1011.9069833755493,
+          "pending_event_count": 8,
+          "pending_grouped_assignments": 32,
+          "pending_full_assignments": 108,
+          "unique_successor_observations": 64,
+          "pending_reselections": [
+            {
+              "event": "sell-0",
+              "channel": "market",
+              "source_time": 0.25,
+              "old_arrival_time": 3.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 3.25,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "buy-0",
+              "channel": "market",
+              "source_time": 0.75,
+              "old_arrival_time": 3.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 3.75,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "create_ack:order1:v1",
+              "channel": "ack",
+              "source_time": 1.0,
+              "old_arrival_time": 4.0,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 4.0,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "sell-1",
+              "channel": "market",
+              "source_time": 1.25,
+              "old_arrival_time": 3.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 3.25,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-1",
+              "channel": "market",
+              "source_time": 1.75,
+              "old_arrival_time": 3.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 4.75,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "fill:order1:v3",
+              "channel": "fill",
+              "source_time": 2.25,
+              "old_arrival_time": 3.25,
+              "chosen_delay": 1,
+              "chosen_arrival_time": 3.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "sell-2",
+              "channel": "market",
+              "source_time": 2.25,
+              "old_arrival_time": 3.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 4.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-2",
+              "channel": "market",
+              "source_time": 2.75,
+              "old_arrival_time": 3.75,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 4.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "outbound",
+              "source_time": 3.0,
+              "event": "CANCEL:cmd2",
+              "delay": 1,
+              "arrival_time": 4.0,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "fill",
+              "source_time": 3.25,
+              "event": "fill:order1:v4",
+              "delay": 1,
+              "arrival_time": 4.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 3.25,
+              "event": "sell-3",
+              "delay": 1,
+              "arrival_time": 4.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 3.75,
+              "event": "buy-3",
+              "delay": 1,
+              "arrival_time": 4.75,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "ack",
+              "source_time": 4.0,
+              "event": "cancel_ack:order1:v5",
+              "delay": 1,
+              "arrival_time": 5.0,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 4.0,
+          "action": "WAIT",
+          "minimum": 1011.527419090271,
+          "pending_event_count": 7,
+          "pending_grouped_assignments": 64,
+          "pending_full_assignments": 324,
+          "unique_successor_observations": 64,
+          "pending_reselections": [
+            {
+              "event": "buy-1",
+              "channel": "market",
+              "source_time": 1.75,
+              "old_arrival_time": 4.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 4.75,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "sell-2",
+              "channel": "market",
+              "source_time": 2.25,
+              "old_arrival_time": 4.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 4.25,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-2",
+              "channel": "market",
+              "source_time": 2.75,
+              "old_arrival_time": 4.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 5.75,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "fill:order1:v4",
+              "channel": "fill",
+              "source_time": 3.25,
+              "old_arrival_time": 4.25,
+              "chosen_delay": 1,
+              "chosen_arrival_time": 4.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "sell-3",
+              "channel": "market",
+              "source_time": 3.25,
+              "old_arrival_time": 4.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 5.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-3",
+              "channel": "market",
+              "source_time": 3.75,
+              "old_arrival_time": 4.75,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 5.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "cancel_ack:order1:v5",
+              "channel": "ack",
+              "source_time": 4.0,
+              "old_arrival_time": 5.0,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 6.0,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "market",
+              "source_time": 4.25,
+              "event": "sell-4",
+              "delay": 1,
+              "arrival_time": 5.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 4.75,
+              "event": "buy-4",
+              "delay": 1,
+              "arrival_time": 5.75,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 5.0,
+          "action": "WAIT",
+          "minimum": 1011.1336631774902,
+          "pending_event_count": 6,
+          "pending_grouped_assignments": 32,
+          "pending_full_assignments": 72,
+          "unique_successor_observations": 32,
+          "pending_reselections": [
+            {
+              "event": "buy-2",
+              "channel": "market",
+              "source_time": 2.75,
+              "old_arrival_time": 5.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 5.75,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "sell-3",
+              "channel": "market",
+              "source_time": 3.25,
+              "old_arrival_time": 5.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 6.25,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-3",
+              "channel": "market",
+              "source_time": 3.75,
+              "old_arrival_time": 5.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 6.75,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "cancel_ack:order1:v5",
+              "channel": "ack",
+              "source_time": 4.0,
+              "old_arrival_time": 6.0,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 7.0,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "sell-4",
+              "channel": "market",
+              "source_time": 4.25,
+              "old_arrival_time": 5.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 6.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-4",
+              "channel": "market",
+              "source_time": 4.75,
+              "old_arrival_time": 5.75,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 6.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "market",
+              "source_time": 5.25,
+              "event": "sell-5",
+              "delay": 1,
+              "arrival_time": 6.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 5.75,
+              "event": "buy-5",
+              "delay": 1,
+              "arrival_time": 6.75,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 6.0,
+          "action": "WAIT",
+          "minimum": 1011.2808046340942,
+          "pending_event_count": 7,
+          "pending_grouped_assignments": 16,
+          "pending_full_assignments": 36,
+          "unique_successor_observations": 16,
+          "pending_reselections": [
+            {
+              "event": "sell-3",
+              "channel": "market",
+              "source_time": 3.25,
+              "old_arrival_time": 6.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 6.25,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "buy-3",
+              "channel": "market",
+              "source_time": 3.75,
+              "old_arrival_time": 6.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 6.75,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "cancel_ack:order1:v5",
+              "channel": "ack",
+              "source_time": 4.0,
+              "old_arrival_time": 7.0,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 7.0,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "sell-4",
+              "channel": "market",
+              "source_time": 4.25,
+              "old_arrival_time": 6.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 7.25,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-4",
+              "channel": "market",
+              "source_time": 4.75,
+              "old_arrival_time": 6.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 7.75,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "sell-5",
+              "channel": "market",
+              "source_time": 5.25,
+              "old_arrival_time": 6.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 7.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-5",
+              "channel": "market",
+              "source_time": 5.75,
+              "old_arrival_time": 6.75,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 7.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "market",
+              "source_time": 6.25,
+              "event": "sell-6",
+              "delay": 1,
+              "arrival_time": 7.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 6.75,
+              "event": "buy-6",
+              "delay": 1,
+              "arrival_time": 7.75,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 7.0,
+          "action": "SEND BUY 3 @ 95.96875",
+          "minimum": 1012.26633644104,
+          "pending_event_count": 6,
+          "pending_grouped_assignments": 16,
+          "pending_full_assignments": 36,
+          "unique_successor_observations": 176,
+          "pending_reselections": [
+            {
+              "event": "sell-4",
+              "channel": "market",
+              "source_time": 4.25,
+              "old_arrival_time": 7.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 7.25,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "buy-4",
+              "channel": "market",
+              "source_time": 4.75,
+              "old_arrival_time": 7.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 7.75,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "sell-5",
+              "channel": "market",
+              "source_time": 5.25,
+              "old_arrival_time": 7.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 8.25,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-5",
+              "channel": "market",
+              "source_time": 5.75,
+              "old_arrival_time": 7.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 8.75,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "sell-6",
+              "channel": "market",
+              "source_time": 6.25,
+              "old_arrival_time": 7.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 8.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-6",
+              "channel": "market",
+              "source_time": 6.75,
+              "old_arrival_time": 7.75,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 8.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "outbound",
+              "source_time": 7.0,
+              "event": "CREATE:cmd3",
+              "delay": 1,
+              "arrival_time": 8.0,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 7.25,
+              "event": "sell-7",
+              "delay": 1,
+              "arrival_time": 8.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 7.75,
+              "event": "buy-7",
+              "delay": 1,
+              "arrival_time": 8.75,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "ack",
+              "source_time": 8.0,
+              "event": "create_ack:order2:v1",
+              "delay": 1,
+              "arrival_time": 9.0,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 8.0,
+          "action": "WAIT",
+          "minimum": 1012.3970928192139,
+          "pending_event_count": 7,
+          "pending_grouped_assignments": 32,
+          "pending_full_assignments": 108,
+          "unique_successor_observations": 32,
+          "pending_reselections": [
+            {
+              "event": "sell-5",
+              "channel": "market",
+              "source_time": 5.25,
+              "old_arrival_time": 8.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 8.25,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "buy-5",
+              "channel": "market",
+              "source_time": 5.75,
+              "old_arrival_time": 8.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 8.75,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "sell-6",
+              "channel": "market",
+              "source_time": 6.25,
+              "old_arrival_time": 8.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 9.25,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-6",
+              "channel": "market",
+              "source_time": 6.75,
+              "old_arrival_time": 8.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 9.75,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "sell-7",
+              "channel": "market",
+              "source_time": 7.25,
+              "old_arrival_time": 8.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 9.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-7",
+              "channel": "market",
+              "source_time": 7.75,
+              "old_arrival_time": 8.75,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 9.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "create_ack:order2:v1",
+              "channel": "ack",
+              "source_time": 8.0,
+              "old_arrival_time": 9.0,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 10.0,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "fill",
+              "source_time": 8.25,
+              "event": "fill:order2:v2",
+              "delay": 1,
+              "arrival_time": 9.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 8.25,
+              "event": "sell-8",
+              "delay": 1,
+              "arrival_time": 9.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 8.75,
+              "event": "buy-8",
+              "delay": 1,
+              "arrival_time": 9.75,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 9.0,
+          "action": "WAIT",
+          "minimum": 1012.5082874298096,
+          "pending_event_count": 8,
+          "pending_grouped_assignments": 64,
+          "pending_full_assignments": 216,
+          "unique_successor_observations": 64,
+          "pending_reselections": [
+            {
+              "event": "sell-6",
+              "channel": "market",
+              "source_time": 6.25,
+              "old_arrival_time": 9.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 9.25,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "buy-6",
+              "channel": "market",
+              "source_time": 6.75,
+              "old_arrival_time": 9.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 9.75,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "sell-7",
+              "channel": "market",
+              "source_time": 7.25,
+              "old_arrival_time": 9.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 10.25,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-7",
+              "channel": "market",
+              "source_time": 7.75,
+              "old_arrival_time": 9.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 10.75,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "create_ack:order2:v1",
+              "channel": "ack",
+              "source_time": 8.0,
+              "old_arrival_time": 10.0,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 10.0,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "fill:order2:v2",
+              "channel": "fill",
+              "source_time": 8.25,
+              "old_arrival_time": 9.25,
+              "chosen_delay": 1,
+              "chosen_arrival_time": 9.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "sell-8",
+              "channel": "market",
+              "source_time": 8.25,
+              "old_arrival_time": 9.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 10.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-8",
+              "channel": "market",
+              "source_time": 8.75,
+              "old_arrival_time": 9.75,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 10.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "fill",
+              "source_time": 9.25,
+              "event": "fill:order2:v3",
+              "delay": 1,
+              "arrival_time": 10.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 9.25,
+              "event": "sell-9",
+              "delay": 1,
+              "arrival_time": 10.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 9.75,
+              "event": "buy-9",
+              "delay": 1,
+              "arrival_time": 10.75,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        }
+      ],
+      "seconds": 2.3704791209997893
+    },
+    {
+      "policy": "diagnostic",
+      "value": 1013.5,
+      "cash": 45.0625,
+      "bills": 10,
+      "rows": [
+        {
+          "time": 0.0,
+          "action": "SEND BUY 10 @ 95.34375",
+          "minimum": 1012.6289501190186,
+          "pending_event_count": 0,
+          "pending_grouped_assignments": 1,
+          "pending_full_assignments": 1,
+          "unique_successor_observations": 1,
+          "pending_reselections": [],
+          "new_delays": [
+            {
+              "channel": "outbound",
+              "source_time": 0.0,
+              "event": "CREATE:cmd1",
+              "delay": 1,
+              "arrival_time": 1.0,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 0.25,
+              "event": "sell-0",
+              "delay": 1,
+              "arrival_time": 1.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 0.75,
+              "event": "buy-0",
+              "delay": 1,
+              "arrival_time": 1.75,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "ack",
+              "source_time": 1.0,
+              "event": "create_ack:order1:v1",
+              "delay": 1,
+              "arrival_time": 2.0,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 1.0,
+          "action": "WAIT",
+          "minimum": 1012.3391227722168,
+          "pending_event_count": 3,
+          "pending_grouped_assignments": 8,
+          "pending_full_assignments": 27,
+          "unique_successor_observations": 8,
+          "pending_reselections": [
+            {
+              "event": "sell-0",
+              "channel": "market",
+              "source_time": 0.25,
+              "old_arrival_time": 1.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 2.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-0",
+              "channel": "market",
+              "source_time": 0.75,
+              "old_arrival_time": 1.75,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 2.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "create_ack:order1:v1",
+              "channel": "ack",
+              "source_time": 1.0,
+              "old_arrival_time": 2.0,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 3.0,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "fill",
+              "source_time": 1.25,
+              "event": "fill:order1:v2",
+              "delay": 1,
+              "arrival_time": 2.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 1.25,
+              "event": "sell-1",
+              "delay": 1,
+              "arrival_time": 2.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 1.75,
+              "event": "buy-1",
+              "delay": 1,
+              "arrival_time": 2.75,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 2.0,
+          "action": "WAIT",
+          "minimum": 1011.7827730178833,
+          "pending_event_count": 6,
+          "pending_grouped_assignments": 64,
+          "pending_full_assignments": 216,
+          "unique_successor_observations": 64,
+          "pending_reselections": [
+            {
+              "event": "sell-0",
+              "channel": "market",
+              "source_time": 0.25,
+              "old_arrival_time": 2.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 3.25,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-0",
+              "channel": "market",
+              "source_time": 0.75,
+              "old_arrival_time": 2.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 3.75,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "create_ack:order1:v1",
+              "channel": "ack",
+              "source_time": 1.0,
+              "old_arrival_time": 3.0,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 4.0,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "fill:order1:v2",
+              "channel": "fill",
+              "source_time": 1.25,
+              "old_arrival_time": 2.25,
+              "chosen_delay": 1,
+              "chosen_arrival_time": 2.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "sell-1",
+              "channel": "market",
+              "source_time": 1.25,
+              "old_arrival_time": 2.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 3.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-1",
+              "channel": "market",
+              "source_time": 1.75,
+              "old_arrival_time": 2.75,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 3.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "fill",
+              "source_time": 2.25,
+              "event": "fill:order1:v3",
+              "delay": 1,
+              "arrival_time": 3.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 2.25,
+              "event": "sell-2",
+              "delay": 1,
+              "arrival_time": 3.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 2.75,
+              "event": "buy-2",
+              "delay": 1,
+              "arrival_time": 3.75,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 3.0,
+          "action": "WAIT",
+          "minimum": 1011.6417388916016,
+          "pending_event_count": 8,
+          "pending_grouped_assignments": 32,
+          "pending_full_assignments": 108,
+          "unique_successor_observations": 32,
+          "pending_reselections": [
+            {
+              "event": "sell-0",
+              "channel": "market",
+              "source_time": 0.25,
+              "old_arrival_time": 3.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 3.25,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "buy-0",
+              "channel": "market",
+              "source_time": 0.75,
+              "old_arrival_time": 3.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 3.75,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "create_ack:order1:v1",
+              "channel": "ack",
+              "source_time": 1.0,
+              "old_arrival_time": 4.0,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 4.0,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "sell-1",
+              "channel": "market",
+              "source_time": 1.25,
+              "old_arrival_time": 3.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 3.25,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-1",
+              "channel": "market",
+              "source_time": 1.75,
+              "old_arrival_time": 3.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 4.75,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "fill:order1:v3",
+              "channel": "fill",
+              "source_time": 2.25,
+              "old_arrival_time": 3.25,
+              "chosen_delay": 1,
+              "chosen_arrival_time": 3.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "sell-2",
+              "channel": "market",
+              "source_time": 2.25,
+              "old_arrival_time": 3.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 4.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-2",
+              "channel": "market",
+              "source_time": 2.75,
+              "old_arrival_time": 3.75,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 4.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "fill",
+              "source_time": 3.25,
+              "event": "fill:order1:v4",
+              "delay": 1,
+              "arrival_time": 4.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 3.25,
+              "event": "sell-3",
+              "delay": 1,
+              "arrival_time": 4.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 3.75,
+              "event": "buy-3",
+              "delay": 1,
+              "arrival_time": 4.75,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 4.0,
+          "action": "SEND CANCEL",
+          "minimum": 1011.3388175964355,
+          "pending_event_count": 6,
+          "pending_grouped_assignments": 32,
+          "pending_full_assignments": 108,
+          "unique_successor_observations": 32,
+          "pending_reselections": [
+            {
+              "event": "buy-1",
+              "channel": "market",
+              "source_time": 1.75,
+              "old_arrival_time": 4.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 4.75,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "sell-2",
+              "channel": "market",
+              "source_time": 2.25,
+              "old_arrival_time": 4.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 4.25,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-2",
+              "channel": "market",
+              "source_time": 2.75,
+              "old_arrival_time": 4.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 5.75,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "fill:order1:v4",
+              "channel": "fill",
+              "source_time": 3.25,
+              "old_arrival_time": 4.25,
+              "chosen_delay": 1,
+              "chosen_arrival_time": 4.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "sell-3",
+              "channel": "market",
+              "source_time": 3.25,
+              "old_arrival_time": 4.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 5.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-3",
+              "channel": "market",
+              "source_time": 3.75,
+              "old_arrival_time": 4.75,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 5.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "outbound",
+              "source_time": 4.0,
+              "event": "CANCEL:cmd2",
+              "delay": 1,
+              "arrival_time": 5.0,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "fill",
+              "source_time": 4.25,
+              "event": "fill:order1:v5",
+              "delay": 1,
+              "arrival_time": 5.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 4.25,
+              "event": "sell-4",
+              "delay": 1,
+              "arrival_time": 5.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 4.75,
+              "event": "buy-4",
+              "delay": 1,
+              "arrival_time": 5.75,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "ack",
+              "source_time": 5.0,
+              "event": "cancel_ack:order1:v6",
+              "delay": 1,
+              "arrival_time": 6.0,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 5.0,
+          "action": "WAIT",
+          "minimum": 1011.0387744903564,
+          "pending_event_count": 7,
+          "pending_grouped_assignments": 64,
+          "pending_full_assignments": 324,
+          "unique_successor_observations": 64,
+          "pending_reselections": [
+            {
+              "event": "buy-2",
+              "channel": "market",
+              "source_time": 2.75,
+              "old_arrival_time": 5.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 5.75,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "sell-3",
+              "channel": "market",
+              "source_time": 3.25,
+              "old_arrival_time": 5.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 6.25,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-3",
+              "channel": "market",
+              "source_time": 3.75,
+              "old_arrival_time": 5.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 6.75,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "fill:order1:v5",
+              "channel": "fill",
+              "source_time": 4.25,
+              "old_arrival_time": 5.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 6.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "sell-4",
+              "channel": "market",
+              "source_time": 4.25,
+              "old_arrival_time": 5.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 6.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-4",
+              "channel": "market",
+              "source_time": 4.75,
+              "old_arrival_time": 5.75,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 6.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "cancel_ack:order1:v6",
+              "channel": "ack",
+              "source_time": 5.0,
+              "old_arrival_time": 6.0,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 7.0,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "market",
+              "source_time": 5.25,
+              "event": "sell-5",
+              "delay": 1,
+              "arrival_time": 6.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 5.75,
+              "event": "buy-5",
+              "delay": 1,
+              "arrival_time": 6.75,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 6.0,
+          "action": "WAIT",
+          "minimum": 1011.3490400314331,
+          "pending_event_count": 8,
+          "pending_grouped_assignments": 64,
+          "pending_full_assignments": 144,
+          "unique_successor_observations": 64,
+          "pending_reselections": [
+            {
+              "event": "sell-3",
+              "channel": "market",
+              "source_time": 3.25,
+              "old_arrival_time": 6.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 6.25,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "buy-3",
+              "channel": "market",
+              "source_time": 3.75,
+              "old_arrival_time": 6.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 6.75,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "fill:order1:v5",
+              "channel": "fill",
+              "source_time": 4.25,
+              "old_arrival_time": 6.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 7.25,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "sell-4",
+              "channel": "market",
+              "source_time": 4.25,
+              "old_arrival_time": 6.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 7.25,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-4",
+              "channel": "market",
+              "source_time": 4.75,
+              "old_arrival_time": 6.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 7.75,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "cancel_ack:order1:v6",
+              "channel": "ack",
+              "source_time": 5.0,
+              "old_arrival_time": 7.0,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 8.0,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "sell-5",
+              "channel": "market",
+              "source_time": 5.25,
+              "old_arrival_time": 6.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 7.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-5",
+              "channel": "market",
+              "source_time": 5.75,
+              "old_arrival_time": 6.75,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 7.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "market",
+              "source_time": 6.25,
+              "event": "sell-6",
+              "delay": 1,
+              "arrival_time": 7.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 6.75,
+              "event": "buy-6",
+              "delay": 1,
+              "arrival_time": 7.75,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 7.0,
+          "action": "WAIT",
+          "minimum": 1012.6296424865723,
+          "pending_event_count": 8,
+          "pending_grouped_assignments": 16,
+          "pending_full_assignments": 36,
+          "unique_successor_observations": 16,
+          "pending_reselections": [
+            {
+              "event": "fill:order1:v5",
+              "channel": "fill",
+              "source_time": 4.25,
+              "old_arrival_time": 7.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 7.25,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "sell-4",
+              "channel": "market",
+              "source_time": 4.25,
+              "old_arrival_time": 7.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 7.25,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "buy-4",
+              "channel": "market",
+              "source_time": 4.75,
+              "old_arrival_time": 7.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 7.75,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "cancel_ack:order1:v6",
+              "channel": "ack",
+              "source_time": 5.0,
+              "old_arrival_time": 8.0,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 8.0,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "sell-5",
+              "channel": "market",
+              "source_time": 5.25,
+              "old_arrival_time": 7.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 8.25,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-5",
+              "channel": "market",
+              "source_time": 5.75,
+              "old_arrival_time": 7.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 8.75,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "sell-6",
+              "channel": "market",
+              "source_time": 6.25,
+              "old_arrival_time": 7.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 8.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-6",
+              "channel": "market",
+              "source_time": 6.75,
+              "old_arrival_time": 7.75,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 8.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "market",
+              "source_time": 7.25,
+              "event": "sell-7",
+              "delay": 1,
+              "arrival_time": 8.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 7.75,
+              "event": "buy-7",
+              "delay": 1,
+              "arrival_time": 8.75,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 8.0,
+          "action": "SEND BUY 2 @ 96.09375",
+          "minimum": 1013.2205514907837,
+          "pending_event_count": 6,
+          "pending_grouped_assignments": 16,
+          "pending_full_assignments": 36,
+          "unique_successor_observations": 16,
+          "pending_reselections": [
+            {
+              "event": "sell-5",
+              "channel": "market",
+              "source_time": 5.25,
+              "old_arrival_time": 8.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 8.25,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "buy-5",
+              "channel": "market",
+              "source_time": 5.75,
+              "old_arrival_time": 8.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 8.75,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "sell-6",
+              "channel": "market",
+              "source_time": 6.25,
+              "old_arrival_time": 8.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 9.25,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-6",
+              "channel": "market",
+              "source_time": 6.75,
+              "old_arrival_time": 8.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 9.75,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "sell-7",
+              "channel": "market",
+              "source_time": 7.25,
+              "old_arrival_time": 8.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 9.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-7",
+              "channel": "market",
+              "source_time": 7.75,
+              "old_arrival_time": 8.75,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 9.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "outbound",
+              "source_time": 8.0,
+              "event": "CREATE:cmd3",
+              "delay": 1,
+              "arrival_time": 9.0,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 8.25,
+              "event": "sell-8",
+              "delay": 1,
+              "arrival_time": 9.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 8.75,
+              "event": "buy-8",
+              "delay": 1,
+              "arrival_time": 9.75,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "ack",
+              "source_time": 9.0,
+              "event": "create_ack:order2:v1",
+              "delay": 1,
+              "arrival_time": 10.0,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 9.0,
+          "action": "WAIT",
+          "minimum": 1013.7170000076294,
+          "pending_event_count": 7,
+          "pending_grouped_assignments": 32,
+          "pending_full_assignments": 108,
+          "unique_successor_observations": 32,
+          "pending_reselections": [
+            {
+              "event": "sell-6",
+              "channel": "market",
+              "source_time": 6.25,
+              "old_arrival_time": 9.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 9.25,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "buy-6",
+              "channel": "market",
+              "source_time": 6.75,
+              "old_arrival_time": 9.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 9.75,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "sell-7",
+              "channel": "market",
+              "source_time": 7.25,
+              "old_arrival_time": 9.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 10.25,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-7",
+              "channel": "market",
+              "source_time": 7.75,
+              "old_arrival_time": 9.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 10.75,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "sell-8",
+              "channel": "market",
+              "source_time": 8.25,
+              "old_arrival_time": 9.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 10.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-8",
+              "channel": "market",
+              "source_time": 8.75,
+              "old_arrival_time": 9.75,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 10.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "create_ack:order2:v1",
+              "channel": "ack",
+              "source_time": 9.0,
+              "old_arrival_time": 10.0,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 11.0,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "fill",
+              "source_time": 9.25,
+              "event": "fill:order2:v2",
+              "delay": 1,
+              "arrival_time": 10.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 9.25,
+              "event": "sell-9",
+              "delay": 1,
+              "arrival_time": 10.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 9.75,
+              "event": "buy-9",
+              "delay": 1,
+              "arrival_time": 10.75,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        }
+      ],
+      "seconds": 1.404025150999587
+    },
+    {
+      "policy": "buy8_cancel4",
+      "value": 1013.5,
+      "cash": 45.0625,
+      "bills": 10,
+      "rows": [
+        {
+          "time": 0.0,
+          "action": "SEND BUY 8 @ 95.34375",
+          "minimum": 1010.7880916595459,
+          "pending_event_count": 0,
+          "pending_grouped_assignments": 1,
+          "pending_full_assignments": 1,
+          "unique_successor_observations": 1,
+          "pending_reselections": [],
+          "new_delays": [
+            {
+              "channel": "outbound",
+              "source_time": 0.0,
+              "event": "CREATE:cmd1",
+              "delay": 1,
+              "arrival_time": 1.0,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 0.25,
+              "event": "sell-0",
+              "delay": 1,
+              "arrival_time": 1.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 0.75,
+              "event": "buy-0",
+              "delay": 1,
+              "arrival_time": 1.75,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "ack",
+              "source_time": 1.0,
+              "event": "create_ack:order1:v1",
+              "delay": 1,
+              "arrival_time": 2.0,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 1.0,
+          "action": "WAIT",
+          "minimum": 1011.4919166564941,
+          "pending_event_count": 3,
+          "pending_grouped_assignments": 8,
+          "pending_full_assignments": 27,
+          "unique_successor_observations": 8,
+          "pending_reselections": [
+            {
+              "event": "sell-0",
+              "channel": "market",
+              "source_time": 0.25,
+              "old_arrival_time": 1.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 2.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-0",
+              "channel": "market",
+              "source_time": 0.75,
+              "old_arrival_time": 1.75,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 2.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "create_ack:order1:v1",
+              "channel": "ack",
+              "source_time": 1.0,
+              "old_arrival_time": 2.0,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 3.0,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "fill",
+              "source_time": 1.25,
+              "event": "fill:order1:v2",
+              "delay": 1,
+              "arrival_time": 2.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 1.25,
+              "event": "sell-1",
+              "delay": 1,
+              "arrival_time": 2.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 1.75,
+              "event": "buy-1",
+              "delay": 1,
+              "arrival_time": 2.75,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 2.0,
+          "action": "WAIT",
+          "minimum": 1011.5405645370483,
+          "pending_event_count": 6,
+          "pending_grouped_assignments": 64,
+          "pending_full_assignments": 216,
+          "unique_successor_observations": 64,
+          "pending_reselections": [
+            {
+              "event": "sell-0",
+              "channel": "market",
+              "source_time": 0.25,
+              "old_arrival_time": 2.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 3.25,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-0",
+              "channel": "market",
+              "source_time": 0.75,
+              "old_arrival_time": 2.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 3.75,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "create_ack:order1:v1",
+              "channel": "ack",
+              "source_time": 1.0,
+              "old_arrival_time": 3.0,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 4.0,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "fill:order1:v2",
+              "channel": "fill",
+              "source_time": 1.25,
+              "old_arrival_time": 2.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 3.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "sell-1",
+              "channel": "market",
+              "source_time": 1.25,
+              "old_arrival_time": 2.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 3.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-1",
+              "channel": "market",
+              "source_time": 1.75,
+              "old_arrival_time": 2.75,
+              "chosen_delay": 1,
+              "chosen_arrival_time": 2.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "fill",
+              "source_time": 2.25,
+              "event": "fill:order1:v3",
+              "delay": 1,
+              "arrival_time": 3.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 2.25,
+              "event": "sell-2",
+              "delay": 1,
+              "arrival_time": 3.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 2.75,
+              "event": "buy-2",
+              "delay": 1,
+              "arrival_time": 3.75,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 3.0,
+          "action": "WAIT",
+          "minimum": 1010.9628887176514,
+          "pending_event_count": 8,
+          "pending_grouped_assignments": 32,
+          "pending_full_assignments": 108,
+          "unique_successor_observations": 32,
+          "pending_reselections": [
+            {
+              "event": "sell-0",
+              "channel": "market",
+              "source_time": 0.25,
+              "old_arrival_time": 3.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 3.25,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "buy-0",
+              "channel": "market",
+              "source_time": 0.75,
+              "old_arrival_time": 3.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 3.75,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "create_ack:order1:v1",
+              "channel": "ack",
+              "source_time": 1.0,
+              "old_arrival_time": 4.0,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 4.0,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "fill:order1:v2",
+              "channel": "fill",
+              "source_time": 1.25,
+              "old_arrival_time": 3.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 3.25,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "sell-1",
+              "channel": "market",
+              "source_time": 1.25,
+              "old_arrival_time": 3.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 3.25,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "fill:order1:v3",
+              "channel": "fill",
+              "source_time": 2.25,
+              "old_arrival_time": 3.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 4.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "sell-2",
+              "channel": "market",
+              "source_time": 2.25,
+              "old_arrival_time": 3.25,
+              "chosen_delay": 1,
+              "chosen_arrival_time": 3.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-2",
+              "channel": "market",
+              "source_time": 2.75,
+              "old_arrival_time": 3.75,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 4.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "fill",
+              "source_time": 3.25,
+              "event": "fill:order1:v4",
+              "delay": 1,
+              "arrival_time": 4.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 3.25,
+              "event": "sell-3",
+              "delay": 1,
+              "arrival_time": 4.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 3.75,
+              "event": "buy-3",
+              "delay": 1,
+              "arrival_time": 4.75,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 4.0,
+          "action": "SEND CANCEL",
+          "minimum": 1011.1059885025024,
+          "pending_event_count": 5,
+          "pending_grouped_assignments": 32,
+          "pending_full_assignments": 108,
+          "unique_successor_observations": 32,
+          "pending_reselections": [
+            {
+              "event": "fill:order1:v3",
+              "channel": "fill",
+              "source_time": 2.25,
+              "old_arrival_time": 4.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 4.25,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-2",
+              "channel": "market",
+              "source_time": 2.75,
+              "old_arrival_time": 4.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 5.75,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "fill:order1:v4",
+              "channel": "fill",
+              "source_time": 3.25,
+              "old_arrival_time": 4.25,
+              "chosen_delay": 1,
+              "chosen_arrival_time": 4.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "sell-3",
+              "channel": "market",
+              "source_time": 3.25,
+              "old_arrival_time": 4.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 5.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-3",
+              "channel": "market",
+              "source_time": 3.75,
+              "old_arrival_time": 4.75,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 5.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "outbound",
+              "source_time": 4.0,
+              "event": "CANCEL:cmd2",
+              "delay": 1,
+              "arrival_time": 5.0,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "fill",
+              "source_time": 4.25,
+              "event": "fill:order1:v5",
+              "delay": 1,
+              "arrival_time": 5.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 4.25,
+              "event": "sell-4",
+              "delay": 1,
+              "arrival_time": 5.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 4.75,
+              "event": "buy-4",
+              "delay": 1,
+              "arrival_time": 5.75,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "ack",
+              "source_time": 5.0,
+              "event": "cancel_ack:order1:v6",
+              "delay": 1,
+              "arrival_time": 6.0,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 5.0,
+          "action": "WAIT",
+          "minimum": 1010.8929634094238,
+          "pending_event_count": 7,
+          "pending_grouped_assignments": 64,
+          "pending_full_assignments": 324,
+          "unique_successor_observations": 64,
+          "pending_reselections": [
+            {
+              "event": "buy-2",
+              "channel": "market",
+              "source_time": 2.75,
+              "old_arrival_time": 5.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 5.75,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "sell-3",
+              "channel": "market",
+              "source_time": 3.25,
+              "old_arrival_time": 5.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 6.25,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-3",
+              "channel": "market",
+              "source_time": 3.75,
+              "old_arrival_time": 5.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 6.75,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "fill:order1:v5",
+              "channel": "fill",
+              "source_time": 4.25,
+              "old_arrival_time": 5.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 6.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "sell-4",
+              "channel": "market",
+              "source_time": 4.25,
+              "old_arrival_time": 5.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 6.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-4",
+              "channel": "market",
+              "source_time": 4.75,
+              "old_arrival_time": 5.75,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 6.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "cancel_ack:order1:v6",
+              "channel": "ack",
+              "source_time": 5.0,
+              "old_arrival_time": 6.0,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 7.0,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "market",
+              "source_time": 5.25,
+              "event": "sell-5",
+              "delay": 1,
+              "arrival_time": 6.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 5.75,
+              "event": "buy-5",
+              "delay": 1,
+              "arrival_time": 6.75,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 6.0,
+          "action": "WAIT",
+          "minimum": 1011.1636800765991,
+          "pending_event_count": 8,
+          "pending_grouped_assignments": 64,
+          "pending_full_assignments": 144,
+          "unique_successor_observations": 64,
+          "pending_reselections": [
+            {
+              "event": "sell-3",
+              "channel": "market",
+              "source_time": 3.25,
+              "old_arrival_time": 6.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 6.25,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "buy-3",
+              "channel": "market",
+              "source_time": 3.75,
+              "old_arrival_time": 6.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 6.75,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "fill:order1:v5",
+              "channel": "fill",
+              "source_time": 4.25,
+              "old_arrival_time": 6.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 7.25,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "sell-4",
+              "channel": "market",
+              "source_time": 4.25,
+              "old_arrival_time": 6.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 7.25,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-4",
+              "channel": "market",
+              "source_time": 4.75,
+              "old_arrival_time": 6.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 7.75,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "cancel_ack:order1:v6",
+              "channel": "ack",
+              "source_time": 5.0,
+              "old_arrival_time": 7.0,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 8.0,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "sell-5",
+              "channel": "market",
+              "source_time": 5.25,
+              "old_arrival_time": 6.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 7.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-5",
+              "channel": "market",
+              "source_time": 5.75,
+              "old_arrival_time": 6.75,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 7.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "market",
+              "source_time": 6.25,
+              "event": "sell-6",
+              "delay": 1,
+              "arrival_time": 7.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 6.75,
+              "event": "buy-6",
+              "delay": 1,
+              "arrival_time": 7.75,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 7.0,
+          "action": "WAIT",
+          "minimum": 1012.1899604797363,
+          "pending_event_count": 8,
+          "pending_grouped_assignments": 16,
+          "pending_full_assignments": 36,
+          "unique_successor_observations": 16,
+          "pending_reselections": [
+            {
+              "event": "fill:order1:v5",
+              "channel": "fill",
+              "source_time": 4.25,
+              "old_arrival_time": 7.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 7.25,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "sell-4",
+              "channel": "market",
+              "source_time": 4.25,
+              "old_arrival_time": 7.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 7.25,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "buy-4",
+              "channel": "market",
+              "source_time": 4.75,
+              "old_arrival_time": 7.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 7.75,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "cancel_ack:order1:v6",
+              "channel": "ack",
+              "source_time": 5.0,
+              "old_arrival_time": 8.0,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 8.0,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "sell-5",
+              "channel": "market",
+              "source_time": 5.25,
+              "old_arrival_time": 7.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 8.25,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-5",
+              "channel": "market",
+              "source_time": 5.75,
+              "old_arrival_time": 7.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 8.75,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "sell-6",
+              "channel": "market",
+              "source_time": 6.25,
+              "old_arrival_time": 7.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 8.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-6",
+              "channel": "market",
+              "source_time": 6.75,
+              "old_arrival_time": 7.75,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 8.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "market",
+              "source_time": 7.25,
+              "event": "sell-7",
+              "delay": 1,
+              "arrival_time": 8.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 7.75,
+              "event": "buy-7",
+              "delay": 1,
+              "arrival_time": 8.75,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 8.0,
+          "action": "SEND BUY 2 @ 96.09375",
+          "minimum": 1012.9514970779419,
+          "pending_event_count": 6,
+          "pending_grouped_assignments": 16,
+          "pending_full_assignments": 36,
+          "unique_successor_observations": 16,
+          "pending_reselections": [
+            {
+              "event": "sell-5",
+              "channel": "market",
+              "source_time": 5.25,
+              "old_arrival_time": 8.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 8.25,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "buy-5",
+              "channel": "market",
+              "source_time": 5.75,
+              "old_arrival_time": 8.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 8.75,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "sell-6",
+              "channel": "market",
+              "source_time": 6.25,
+              "old_arrival_time": 8.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 9.25,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-6",
+              "channel": "market",
+              "source_time": 6.75,
+              "old_arrival_time": 8.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 9.75,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "sell-7",
+              "channel": "market",
+              "source_time": 7.25,
+              "old_arrival_time": 8.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 9.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-7",
+              "channel": "market",
+              "source_time": 7.75,
+              "old_arrival_time": 8.75,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 9.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "outbound",
+              "source_time": 8.0,
+              "event": "CREATE:cmd3",
+              "delay": 1,
+              "arrival_time": 9.0,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 8.25,
+              "event": "sell-8",
+              "delay": 1,
+              "arrival_time": 9.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 8.75,
+              "event": "buy-8",
+              "delay": 1,
+              "arrival_time": 9.75,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "ack",
+              "source_time": 9.0,
+              "event": "create_ack:order2:v1",
+              "delay": 1,
+              "arrival_time": 10.0,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 9.0,
+          "action": "WAIT",
+          "minimum": 1013.6757459640503,
+          "pending_event_count": 7,
+          "pending_grouped_assignments": 32,
+          "pending_full_assignments": 108,
+          "unique_successor_observations": 32,
+          "pending_reselections": [
+            {
+              "event": "sell-6",
+              "channel": "market",
+              "source_time": 6.25,
+              "old_arrival_time": 9.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 9.25,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "buy-6",
+              "channel": "market",
+              "source_time": 6.75,
+              "old_arrival_time": 9.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 9.75,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "sell-7",
+              "channel": "market",
+              "source_time": 7.25,
+              "old_arrival_time": 9.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 10.25,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-7",
+              "channel": "market",
+              "source_time": 7.75,
+              "old_arrival_time": 9.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 10.75,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "sell-8",
+              "channel": "market",
+              "source_time": 8.25,
+              "old_arrival_time": 9.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 10.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-8",
+              "channel": "market",
+              "source_time": 8.75,
+              "old_arrival_time": 9.75,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 10.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "create_ack:order2:v1",
+              "channel": "ack",
+              "source_time": 9.0,
+              "old_arrival_time": 10.0,
+              "chosen_delay": 1,
+              "chosen_arrival_time": 10.0,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "fill",
+              "source_time": 9.25,
+              "event": "fill:order2:v2",
+              "delay": 1,
+              "arrival_time": 10.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 9.25,
+              "event": "sell-9",
+              "delay": 1,
+              "arrival_time": 10.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 9.75,
+              "event": "buy-9",
+              "delay": 1,
+              "arrival_time": 10.75,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        }
+      ],
+      "seconds": 1.2581491270002516
+    },
+    {
+      "policy": "wait",
+      "value": 1000.0,
+      "cash": 1000.0,
+      "bills": 0,
+      "rows": [
+        {
+          "time": 0.0,
+          "action": "WAIT",
+          "minimum": 1011.2303628921509,
+          "pending_event_count": 0,
+          "pending_grouped_assignments": 1,
+          "pending_full_assignments": 1,
+          "unique_successor_observations": 1,
+          "pending_reselections": [],
+          "new_delays": [
+            {
+              "channel": "market",
+              "source_time": 0.25,
+              "event": "sell-0",
+              "delay": 1,
+              "arrival_time": 1.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 0.75,
+              "event": "buy-0",
+              "delay": 1,
+              "arrival_time": 1.75,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 1.0,
+          "action": "WAIT",
+          "minimum": 1009.7061948776245,
+          "pending_event_count": 2,
+          "pending_grouped_assignments": 4,
+          "pending_full_assignments": 9,
+          "unique_successor_observations": 4,
+          "pending_reselections": [
+            {
+              "event": "sell-0",
+              "channel": "market",
+              "source_time": 0.25,
+              "old_arrival_time": 1.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 2.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-0",
+              "channel": "market",
+              "source_time": 0.75,
+              "old_arrival_time": 1.75,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 2.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "market",
+              "source_time": 1.25,
+              "event": "sell-1",
+              "delay": 1,
+              "arrival_time": 2.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 1.75,
+              "event": "buy-1",
+              "delay": 1,
+              "arrival_time": 2.75,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 2.0,
+          "action": "WAIT",
+          "minimum": 1009.4666023254395,
+          "pending_event_count": 4,
+          "pending_grouped_assignments": 16,
+          "pending_full_assignments": 36,
+          "unique_successor_observations": 16,
+          "pending_reselections": [
+            {
+              "event": "sell-0",
+              "channel": "market",
+              "source_time": 0.25,
+              "old_arrival_time": 2.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 3.25,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-0",
+              "channel": "market",
+              "source_time": 0.75,
+              "old_arrival_time": 2.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 3.75,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "sell-1",
+              "channel": "market",
+              "source_time": 1.25,
+              "old_arrival_time": 2.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 3.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-1",
+              "channel": "market",
+              "source_time": 1.75,
+              "old_arrival_time": 2.75,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 3.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "market",
+              "source_time": 2.25,
+              "event": "sell-2",
+              "delay": 1,
+              "arrival_time": 3.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 2.75,
+              "event": "buy-2",
+              "delay": 1,
+              "arrival_time": 3.75,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 3.0,
+          "action": "WAIT",
+          "minimum": 1008.7036333084106,
+          "pending_event_count": 6,
+          "pending_grouped_assignments": 16,
+          "pending_full_assignments": 36,
+          "unique_successor_observations": 16,
+          "pending_reselections": [
+            {
+              "event": "sell-0",
+              "channel": "market",
+              "source_time": 0.25,
+              "old_arrival_time": 3.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 3.25,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "buy-0",
+              "channel": "market",
+              "source_time": 0.75,
+              "old_arrival_time": 3.75,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 3.75,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "sell-1",
+              "channel": "market",
+              "source_time": 1.25,
+              "old_arrival_time": 3.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 3.25,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-1",
+              "channel": "market",
+              "source_time": 1.75,
+              "old_arrival_time": 3.75,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 3.75,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "sell-2",
+              "channel": "market",
+              "source_time": 2.25,
+              "old_arrival_time": 3.25,
+              "chosen_delay": 1,
+              "chosen_arrival_time": 3.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-2",
+              "channel": "market",
+              "source_time": 2.75,
+              "old_arrival_time": 3.75,
+              "chosen_delay": 1,
+              "chosen_arrival_time": 3.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "market",
+              "source_time": 3.25,
+              "event": "sell-3",
+              "delay": 1,
+              "arrival_time": 4.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 3.75,
+              "event": "buy-3",
+              "delay": 1,
+              "arrival_time": 4.75,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 4.0,
+          "action": "WAIT",
+          "minimum": 1006.824779510498,
+          "pending_event_count": 2,
+          "pending_grouped_assignments": 4,
+          "pending_full_assignments": 9,
+          "unique_successor_observations": 4,
+          "pending_reselections": [
+            {
+              "event": "sell-3",
+              "channel": "market",
+              "source_time": 3.25,
+              "old_arrival_time": 4.25,
+              "chosen_delay": 1,
+              "chosen_arrival_time": 4.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-3",
+              "channel": "market",
+              "source_time": 3.75,
+              "old_arrival_time": 4.75,
+              "chosen_delay": 1,
+              "chosen_arrival_time": 4.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "market",
+              "source_time": 4.25,
+              "event": "sell-4",
+              "delay": 1,
+              "arrival_time": 5.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 4.75,
+              "event": "buy-4",
+              "delay": 1,
+              "arrival_time": 5.75,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 5.0,
+          "action": "WAIT",
+          "minimum": 1005.6305255889893,
+          "pending_event_count": 2,
+          "pending_grouped_assignments": 4,
+          "pending_full_assignments": 9,
+          "unique_successor_observations": 4,
+          "pending_reselections": [
+            {
+              "event": "sell-4",
+              "channel": "market",
+              "source_time": 4.25,
+              "old_arrival_time": 5.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 6.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-4",
+              "channel": "market",
+              "source_time": 4.75,
+              "old_arrival_time": 5.75,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 6.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "market",
+              "source_time": 5.25,
+              "event": "sell-5",
+              "delay": 1,
+              "arrival_time": 6.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 5.75,
+              "event": "buy-5",
+              "delay": 1,
+              "arrival_time": 6.75,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 6.0,
+          "action": "WAIT",
+          "minimum": 1004.2192840576172,
+          "pending_event_count": 4,
+          "pending_grouped_assignments": 16,
+          "pending_full_assignments": 36,
+          "unique_successor_observations": 16,
+          "pending_reselections": [
+            {
+              "event": "sell-4",
+              "channel": "market",
+              "source_time": 4.25,
+              "old_arrival_time": 6.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 7.25,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-4",
+              "channel": "market",
+              "source_time": 4.75,
+              "old_arrival_time": 6.75,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 6.75,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "sell-5",
+              "channel": "market",
+              "source_time": 5.25,
+              "old_arrival_time": 6.25,
+              "chosen_delay": 1,
+              "chosen_arrival_time": 6.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-5",
+              "channel": "market",
+              "source_time": 5.75,
+              "old_arrival_time": 6.75,
+              "chosen_delay": 1,
+              "chosen_arrival_time": 6.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "market",
+              "source_time": 6.25,
+              "event": "sell-6",
+              "delay": 1,
+              "arrival_time": 7.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 6.75,
+              "event": "buy-6",
+              "delay": 1,
+              "arrival_time": 7.75,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 7.0,
+          "action": "WAIT",
+          "minimum": 1003.8231527805328,
+          "pending_event_count": 3,
+          "pending_grouped_assignments": 4,
+          "pending_full_assignments": 9,
+          "unique_successor_observations": 4,
+          "pending_reselections": [
+            {
+              "event": "sell-4",
+              "channel": "market",
+              "source_time": 4.25,
+              "old_arrival_time": 7.25,
+              "chosen_delay": 3,
+              "chosen_arrival_time": 7.25,
+              "admissible_delays": [
+                3
+              ]
+            },
+            {
+              "event": "sell-6",
+              "channel": "market",
+              "source_time": 6.25,
+              "old_arrival_time": 7.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 8.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-6",
+              "channel": "market",
+              "source_time": 6.75,
+              "old_arrival_time": 7.75,
+              "chosen_delay": 1,
+              "chosen_arrival_time": 7.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "market",
+              "source_time": 7.25,
+              "event": "sell-7",
+              "delay": 1,
+              "arrival_time": 8.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 7.75,
+              "event": "buy-7",
+              "delay": 1,
+              "arrival_time": 8.75,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 8.0,
+          "action": "WAIT",
+          "minimum": 1003.1293635368347,
+          "pending_event_count": 3,
+          "pending_grouped_assignments": 8,
+          "pending_full_assignments": 18,
+          "unique_successor_observations": 8,
+          "pending_reselections": [
+            {
+              "event": "sell-6",
+              "channel": "market",
+              "source_time": 6.25,
+              "old_arrival_time": 8.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 8.25,
+              "admissible_delays": [
+                2,
+                3
+              ]
+            },
+            {
+              "event": "sell-7",
+              "channel": "market",
+              "source_time": 7.25,
+              "old_arrival_time": 8.25,
+              "chosen_delay": 1,
+              "chosen_arrival_time": 8.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-7",
+              "channel": "market",
+              "source_time": 7.75,
+              "old_arrival_time": 8.75,
+              "chosen_delay": 1,
+              "chosen_arrival_time": 8.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "market",
+              "source_time": 8.25,
+              "event": "sell-8",
+              "delay": 1,
+              "arrival_time": 9.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 8.75,
+              "event": "buy-8",
+              "delay": 1,
+              "arrival_time": 9.75,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        },
+        {
+          "time": 9.0,
+          "action": "WAIT",
+          "minimum": 1002.473313331604,
+          "pending_event_count": 2,
+          "pending_grouped_assignments": 4,
+          "pending_full_assignments": 9,
+          "unique_successor_observations": 4,
+          "pending_reselections": [
+            {
+              "event": "sell-8",
+              "channel": "market",
+              "source_time": 8.25,
+              "old_arrival_time": 9.25,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 10.25,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            },
+            {
+              "event": "buy-8",
+              "channel": "market",
+              "source_time": 8.75,
+              "old_arrival_time": 9.75,
+              "chosen_delay": 2,
+              "chosen_arrival_time": 10.75,
+              "admissible_delays": [
+                1,
+                2,
+                3
+              ]
+            }
+          ],
+          "new_delays": [
+            {
+              "channel": "market",
+              "source_time": 9.25,
+              "event": "sell-9",
+              "delay": 1,
+              "arrival_time": 10.25,
+              "source": "minimum-value tie: first vector"
+            },
+            {
+              "channel": "market",
+              "source_time": 9.75,
+              "event": "buy-9",
+              "delay": 1,
+              "arrival_time": 10.75,
+              "source": "minimum-value tie: first vector"
+            }
+          ]
+        }
+      ],
+      "seconds": 0.23384950599984222
+    }
+  ],
+  "limitations": [
+    "Not a terminal-payoff minimax optimum or convergence certificate.",
+    "Different checkpoints define different learned adversaries, so cross-checkpoint returns change both controller and adversary.",
+    "Comparator outcome is feasible against this checkpoint-defined adversary; it is not a guaranteed lower bound against every legal adversary.",
+    "Same deterministic market tape, fixed warmup and no additional random trials."
+  ],
+  "greedy_minus_best_comparator": -2.125
+}

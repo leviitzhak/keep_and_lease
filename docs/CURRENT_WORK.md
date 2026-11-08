@@ -231,3 +231,11 @@ the authoritative deployment target; local Sites remains deferred.
 Rolling execution now offers both `relative_price` (default) and `spot` limit
 anchors via `paired_limit_anchor`; both are retained in saved audit contexts.
 
+
+
+## Delayed synthetic-market research (2026-11-08)
+
+The [H10 two-mode research archive](research/delayed_market/README.md) records
+corrected pending-delay minimization, stochastic training, paired evaluations
+and reproducible source. Neither mode has demonstrated policy convergence.
+This research does not alter or deploy the application.

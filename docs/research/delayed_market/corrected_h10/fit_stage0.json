@@ -1,0 +1,375 @@
+{
+  "summary": {
+    "stage": 0,
+    "epochs": 100,
+    "best_epoch": 8,
+    "before": {
+      "train": {
+        "rmse": 7.0181497223264655,
+        "mae": 6.1482182656766105,
+        "max_abs": 15.123054683208466,
+        "n": 851
+      },
+      "validation": {
+        "rmse": 6.945444147578542,
+        "mae": 6.418821721937921,
+        "max_abs": 13.147915542125702,
+        "n": 360
+      },
+      "test": {
+        "rmse": 9.323903383271336,
+        "mae": 8.825161901985958,
+        "max_abs": 15.086386799812317,
+        "n": 353
+      },
+      "baseline_test": {
+        "rmse": 8.600904342356909,
+        "mae": 8.079851274787535,
+        "max_abs": 14.5,
+        "n": 353
+      }
+    },
+    "after": {
+      "train": {
+        "rmse": 1.5102388177425734,
+        "mae": 1.1090363419924443,
+        "max_abs": 6.422675132751465,
+        "n": 851
+      },
+      "validation": {
+        "rmse": 1.1243567429469055,
+        "mae": 0.939671864774492,
+        "max_abs": 3.6850719451904297,
+        "n": 360
+      },
+      "test": {
+        "rmse": 1.8230579453226834,
+        "mae": 1.4021065186170951,
+        "max_abs": 9.647289276123047,
+        "n": 353
+      }
+    },
+    "greedy_liquidation": 1011.5,
+    "greedy_actions": [
+      "SEND BUY 10 @ 95.34375",
+      "WAIT",
+      "WAIT",
+      "WAIT",
+      "WAIT",
+      "WAIT",
+      "WAIT",
+      "WAIT",
+      "WAIT",
+      "WAIT"
+    ],
+    "seconds": 168.4075310230255
+  },
+  "history": [
+    {
+      "stage": 0,
+      "epoch": 0,
+      "train_rmse": 7.0181497223264655,
+      "validation_rmse": 6.945444147578542
+    },
+    {
+      "stage": 0,
+      "epoch": 2,
+      "train_rmse": 2.0882422468558843,
+      "validation_rmse": 1.8363205857117453
+    },
+    {
+      "stage": 0,
+      "epoch": 4,
+      "train_rmse": 1.759775059383399,
+      "validation_rmse": 1.8245367421471754
+    },
+    {
+      "stage": 0,
+      "epoch": 6,
+      "train_rmse": 1.449449751647254,
+      "validation_rmse": 1.1404755359490468
+    },
+    {
+      "stage": 0,
+      "epoch": 8,
+      "train_rmse": 1.5102387734650884,
+      "validation_rmse": 1.1243567470504126
+    },
+    {
+      "stage": 0,
+      "epoch": 10,
+      "train_rmse": 1.229958153657224,
+      "validation_rmse": 1.1851349673815545
+    },
+    {
+      "stage": 0,
+      "epoch": 12,
+      "train_rmse": 1.3744969055788196,
+      "validation_rmse": 1.8552945935071172
+    },
+    {
+      "stage": 0,
+      "epoch": 14,
+      "train_rmse": 1.1230454266583438,
+      "validation_rmse": 1.5072001769647225
+    },
+    {
+      "stage": 0,
+      "epoch": 16,
+      "train_rmse": 1.091834766150335,
+      "validation_rmse": 1.1366848805693737
+    },
+    {
+      "stage": 0,
+      "epoch": 18,
+      "train_rmse": 1.0406183987109368,
+      "validation_rmse": 1.314226306247148
+    },
+    {
+      "stage": 0,
+      "epoch": 20,
+      "train_rmse": 1.1259916528296556,
+      "validation_rmse": 1.592371020300857
+    },
+    {
+      "stage": 0,
+      "epoch": 22,
+      "train_rmse": 0.9981324414748307,
+      "validation_rmse": 1.589567170399817
+    },
+    {
+      "stage": 0,
+      "epoch": 24,
+      "train_rmse": 1.015126116722534,
+      "validation_rmse": 1.186883148724646
+    },
+    {
+      "stage": 0,
+      "epoch": 26,
+      "train_rmse": 1.0012750284502347,
+      "validation_rmse": 1.2340198011012082
+    },
+    {
+      "stage": 0,
+      "epoch": 28,
+      "train_rmse": 0.8571842421196282,
+      "validation_rmse": 1.4684385927624677
+    },
+    {
+      "stage": 0,
+      "epoch": 30,
+      "train_rmse": 0.8660010989849868,
+      "validation_rmse": 1.306988604763242
+    },
+    {
+      "stage": 0,
+      "epoch": 32,
+      "train_rmse": 0.9341578920513209,
+      "validation_rmse": 1.485261375405432
+    },
+    {
+      "stage": 0,
+      "epoch": 34,
+      "train_rmse": 0.8893857886411164,
+      "validation_rmse": 1.613743668730795
+    },
+    {
+      "stage": 0,
+      "epoch": 36,
+      "train_rmse": 0.8875633136623943,
+      "validation_rmse": 1.4989792729592801
+    },
+    {
+      "stage": 0,
+      "epoch": 38,
+      "train_rmse": 0.8589446820077524,
+      "validation_rmse": 1.668747020715509
+    },
+    {
+      "stage": 0,
+      "epoch": 40,
+      "train_rmse": 0.8041432817266497,
+      "validation_rmse": 1.4979578779728326
+    },
+    {
+      "stage": 0,
+      "epoch": 42,
+      "train_rmse": 0.8296216731946476,
+      "validation_rmse": 1.3836231296525108
+    },
+    {
+      "stage": 0,
+      "epoch": 44,
+      "train_rmse": 0.818053101815154,
+      "validation_rmse": 1.431402412233404
+    },
+    {
+      "stage": 0,
+      "epoch": 46,
+      "train_rmse": 0.8262747445570844,
+      "validation_rmse": 1.4460517417571723
+    },
+    {
+      "stage": 0,
+      "epoch": 48,
+      "train_rmse": 0.9345317854214287,
+      "validation_rmse": 1.6666664921178047
+    },
+    {
+      "stage": 0,
+      "epoch": 50,
+      "train_rmse": 0.8333292110774109,
+      "validation_rmse": 1.6988222918633493
+    },
+    {
+      "stage": 0,
+      "epoch": 52,
+      "train_rmse": 0.767078241577954,
+      "validation_rmse": 1.6760420089136272
+    },
+    {
+      "stage": 0,
+      "epoch": 54,
+      "train_rmse": 0.7367239287844217,
+      "validation_rmse": 1.7223627187690647
+    },
+    {
+      "stage": 0,
+      "epoch": 56,
+      "train_rmse": 0.8773862851453753,
+      "validation_rmse": 1.7892226464654422
+    },
+    {
+      "stage": 0,
+      "epoch": 58,
+      "train_rmse": 0.7473186321027846,
+      "validation_rmse": 1.7069746297492714
+    },
+    {
+      "stage": 0,
+      "epoch": 60,
+      "train_rmse": 0.7597528274443538,
+      "validation_rmse": 1.6601809878160565
+    },
+    {
+      "stage": 0,
+      "epoch": 62,
+      "train_rmse": 0.729772384456567,
+      "validation_rmse": 1.6152534770824467
+    },
+    {
+      "stage": 0,
+      "epoch": 64,
+      "train_rmse": 0.7608409375054563,
+      "validation_rmse": 1.5969140190839406
+    },
+    {
+      "stage": 0,
+      "epoch": 66,
+      "train_rmse": 0.7343229951409849,
+      "validation_rmse": 1.596921018681956
+    },
+    {
+      "stage": 0,
+      "epoch": 68,
+      "train_rmse": 0.7301509002628453,
+      "validation_rmse": 1.910997610040553
+    },
+    {
+      "stage": 0,
+      "epoch": 70,
+      "train_rmse": 0.703192256485997,
+      "validation_rmse": 1.7580360139281697
+    },
+    {
+      "stage": 0,
+      "epoch": 72,
+      "train_rmse": 0.6984808201445984,
+      "validation_rmse": 1.7591871103686498
+    },
+    {
+      "stage": 0,
+      "epoch": 74,
+      "train_rmse": 0.7512325697044413,
+      "validation_rmse": 1.737281685256364
+    },
+    {
+      "stage": 0,
+      "epoch": 76,
+      "train_rmse": 0.7049394780249003,
+      "validation_rmse": 1.8230816467501256
+    },
+    {
+      "stage": 0,
+      "epoch": 78,
+      "train_rmse": 0.6993593077175354,
+      "validation_rmse": 1.642816174878781
+    },
+    {
+      "stage": 0,
+      "epoch": 80,
+      "train_rmse": 0.7098309515509438,
+      "validation_rmse": 1.726726714582514
+    },
+    {
+      "stage": 0,
+      "epoch": 82,
+      "train_rmse": 0.6833350228202586,
+      "validation_rmse": 1.758034968272142
+    },
+    {
+      "stage": 0,
+      "epoch": 84,
+      "train_rmse": 0.7037396558188034,
+      "validation_rmse": 1.716857404888551
+    },
+    {
+      "stage": 0,
+      "epoch": 86,
+      "train_rmse": 0.707053287513687,
+      "validation_rmse": 1.6489629627922242
+    },
+    {
+      "stage": 0,
+      "epoch": 88,
+      "train_rmse": 0.6743767262230725,
+      "validation_rmse": 1.7949505781717447
+    },
+    {
+      "stage": 0,
+      "epoch": 90,
+      "train_rmse": 0.6936277096638694,
+      "validation_rmse": 1.7999897586208544
+    },
+    {
+      "stage": 0,
+      "epoch": 92,
+      "train_rmse": 0.6805548594056463,
+      "validation_rmse": 1.773375060304271
+    },
+    {
+      "stage": 0,
+      "epoch": 94,
+      "train_rmse": 0.7210607623064819,
+      "validation_rmse": 1.7648487187879451
+    },
+    {
+      "stage": 0,
+      "epoch": 96,
+      "train_rmse": 0.7462357393356769,
+      "validation_rmse": 1.648007483785146
+    },
+    {
+      "stage": 0,
+      "epoch": 98,
+      "train_rmse": 0.7030065929780905,
+      "validation_rmse": 1.6570389087127544
+    },
+    {
+      "stage": 0,
+      "epoch": 100,
+      "train_rmse": 0.6842643875875127,
+      "validation_rmse": 1.83231252481428
+    }
+  ]
+}

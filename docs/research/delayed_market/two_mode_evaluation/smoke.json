@@ -1,0 +1,289 @@
+{
+  "horizon": 10,
+  "scenarios": [
+    81000,
+    81001
+  ],
+  "frozen_adversary": "fresh seed17",
+  "rows": [
+    {
+      "checkpoint": "adversarial_round1",
+      "controller": "adversarial",
+      "environment": "stochastic",
+      "mean": 1009.875,
+      "minimum": 1008.25,
+      "maximum": 1011.5,
+      "standard_error": 1.6249999999999998,
+      "trials": [
+        {
+          "seed": 81000,
+          "value": 1008.25,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81001,
+          "value": 1011.5,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        }
+      ]
+    },
+    {
+      "checkpoint": "adversarial_round1",
+      "controller": "adversarial",
+      "environment": "frozen_adversary",
+      "mean": 1011.5,
+      "minimum": 1011.5,
+      "maximum": 1011.5,
+      "standard_error": null,
+      "trials": [
+        {
+          "seed": 81000,
+          "value": 1011.5,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        }
+      ]
+    },
+    {
+      "checkpoint": "adversarial_round1",
+      "controller": "stochastic",
+      "environment": "stochastic",
+      "mean": 1009.875,
+      "minimum": 1008.25,
+      "maximum": 1011.5,
+      "standard_error": 1.6249999999999998,
+      "trials": [
+        {
+          "seed": 81000,
+          "value": 1008.25,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL"
+          ]
+        },
+        {
+          "seed": 81001,
+          "value": 1011.5,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 2 @ 96.46875"
+          ]
+        }
+      ]
+    },
+    {
+      "checkpoint": "adversarial_round1",
+      "controller": "stochastic",
+      "environment": "frozen_adversary",
+      "mean": 1011.5,
+      "minimum": 1011.5,
+      "maximum": 1011.5,
+      "standard_error": null,
+      "trials": [
+        {
+          "seed": 81000,
+          "value": 1011.5,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL"
+          ]
+        }
+      ]
+    },
+    {
+      "checkpoint": "comparator",
+      "controller": "diagnostic",
+      "environment": "stochastic",
+      "mean": 1011.625,
+      "trials": [
+        {
+          "seed": 81000,
+          "value": 1010.0,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 4 @ 96.09375",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81001,
+          "value": 1013.25,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "WAIT",
+            "SEND BUY 2 @ 96.21875",
+            "WAIT",
+            "WAIT"
+          ]
+        }
+      ]
+    },
+    {
+      "checkpoint": "comparator",
+      "controller": "diagnostic",
+      "environment": "frozen_adversary",
+      "mean": 1014.0,
+      "trials": [
+        {
+          "seed": 81000,
+          "value": 1014.0,
+          "actions": [
+            "SEND BUY 10 @ 95.34375",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "SEND CANCEL",
+            "WAIT",
+            "SEND BUY 2 @ 95.84375",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        }
+      ]
+    },
+    {
+      "checkpoint": "comparator",
+      "controller": "wait",
+      "environment": "stochastic",
+      "mean": 1000.0,
+      "trials": [
+        {
+          "seed": 81000,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        },
+        {
+          "seed": 81001,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        }
+      ]
+    },
+    {
+      "checkpoint": "comparator",
+      "controller": "wait",
+      "environment": "frozen_adversary",
+      "mean": 1000.0,
+      "trials": [
+        {
+          "seed": 81000,
+          "value": 1000.0,
+          "actions": [
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT",
+            "WAIT"
+          ]
+        }
+      ]
+    }
+  ],
+  "checkpoint_hashes": {
+    "adversarial_round1": "1669f0cf11207080dbe288a514e8b63ab8c8dc273160c429d47d9f9a9ce9baa7"
+  },
+  "limitations": [
+    "Simulator-assisted planning with fixed realized hidden events; not an observation-only deployed policy.",
+    "Mean-value planning uses four conditional samples, not an exact expectation.",
+    "Common event-keyed scenarios share uniforms for matching event identities; changed actions can generate different events.",
+    "Frozen adversary minimizes successor value, not terminal payoff; no robust optimality certificate.",
+    "One training seed and one rising-price fixture."
+  ],
+  "complete": true
+}
